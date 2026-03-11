@@ -36,6 +36,15 @@ internal struct GlyphVector
 
     public Bounds Bounds { get; set; }
 
+    /// <summary>
+    /// Gets or sets the composite component information used for gvar variation processing.
+    /// Each entry stores the original component offset and the number of control points
+    /// contributed by that component, so that TransformPoints can apply per-component
+    /// offset deltas to the assembled outline.
+    /// Null for simple (non-composite) glyphs.
+    /// </summary>
+    public CompositeComponent[]? CompositeComponents { get; set; }
+
     public static GlyphVector Empty(Bounds bounds = default)
         => new(Array.Empty<ControlPoint>(), Array.Empty<ushort>(), bounds, Array.Empty<byte>(), false);
 
@@ -111,7 +120,12 @@ internal struct GlyphVector
         List<ControlPoint> controlPoints = [.. src.ControlPoints];
         List<ushort> endPoints = [.. src.EndPoints];
 
-        return new(controlPoints, endPoints, src.Bounds, src.Instructions, src.IsComposite);
+        return new(controlPoints, endPoints, src.Bounds, src.Instructions, src.IsComposite)
+        {
+            CompositeComponents = src.CompositeComponents is not null
+                ? [.. src.CompositeComponents]
+                : null
+        };
     }
 
     /// <summary>

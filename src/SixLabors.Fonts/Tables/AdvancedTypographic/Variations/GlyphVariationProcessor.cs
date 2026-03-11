@@ -78,6 +78,18 @@ internal class GlyphVariationProcessor
             return;
         }
 
+        if (glyphPoints.IsComposite && glyphPoints.CompositeComponents is not null)
+        {
+            this.TransformCompositePoints(variationData, ref glyphPoints);
+        }
+        else
+        {
+            this.TransformSimplePoints(variationData, ref glyphPoints);
+        }
+    }
+
+    private void TransformSimplePoints(GlyphVariationData variationData, ref GlyphVector glyphPoints)
+    {
         IList<ControlPoint> controlPoints = glyphPoints.ControlPoints;
         int pointCount = controlPoints.Count;
 
@@ -87,32 +99,7 @@ internal class GlyphVariationProcessor
 
         foreach (TupleVariationHeader tupleHeader in variationData.TupleHeaders)
         {
-            TupleVariation tuple = tupleHeader.TupleVariation;
-
-            // Resolve peak coordinates: either embedded or from shared tuples.
-            float[]? peakCoords = tuple.EmbeddedPeak;
-            if (peakCoords is null)
-            {
-                int sharedIdx = tuple.SharedTupleIndex;
-                if (sharedIdx >= this.gVar.SharedTuples.GetLength(0))
-                {
-                    continue;
-                }
-
-                peakCoords = new float[this.gVar.AxisCount];
-                for (int a = 0; a < this.gVar.AxisCount; a++)
-                {
-                    peakCoords[a] = this.gVar.SharedTuples[sharedIdx, a];
-                }
-            }
-
-            // Calculate the blending factor for this tuple.
-            float factor = this.TupleFactor(
-                tuple.IsIntermediateRegion,
-                peakCoords,
-                tuple.IntermediateStartRegion,
-                tuple.IntermediateEndRegion);
-
+            float factor = this.ResolveTupleFactor(tupleHeader);
             if (factor == 0)
             {
                 continue;
@@ -151,16 +138,12 @@ internal class GlyphVariationProcessor
             else
             {
                 // Deltas apply to specific points only; interpolate the rest.
-                // Use Buffer<T> to avoid per-tuple heap allocations.
-                using Buffer<float> adjustXBuf = new(pointCount);
-                using Buffer<float> adjustYBuf = new(pointCount);
-                using Buffer<byte> hasDeltaBuf = new(pointCount);
+                using Buffer<float> adjustXBuf = new(pointCount, clear: true);
+                using Buffer<float> adjustYBuf = new(pointCount, clear: true);
+                using Buffer<byte> hasDeltaBuf = new(pointCount, clear: true);
                 Span<float> adjustX = adjustXBuf.GetSpan();
                 Span<float> adjustY = adjustYBuf.GetSpan();
                 Span<byte> hasDelta = hasDeltaBuf.GetSpan();
-                adjustX.Clear();
-                adjustY.Clear();
-                hasDelta.Clear();
 
                 for (int i = 0; i < pointNumbers!.Length && i < deltasX.Length; i++)
                 {
@@ -191,6 +174,111 @@ internal class GlyphVariationProcessor
                     controlPoints[i] = cp;
                 }
             }
+        }
+
+        // Recalculate bounds from the transformed points.
+        glyphPoints.Bounds = CalculateBounds(controlPoints);
+    }
+
+    /// <summary>
+    /// Transforms a composite glyph by applying gvar deltas to component offsets.
+    /// For composite glyphs, gvar stores deltas for a synthetic point array:
+    /// one point per component (at the component's offset) plus 4 phantom points.
+    /// After applying deltas, the offset changes are propagated to all assembled
+    /// outline points belonging to each component.
+    /// </summary>
+    private void TransformCompositePoints(GlyphVariationData variationData, ref GlyphVector glyphPoints)
+    {
+        CompositeComponent[] components = glyphPoints.CompositeComponents!;
+        int componentCount = components.Length;
+
+        // gvar "point count" for composites = number of components + 4 phantom points.
+        int syntheticPointCount = componentCount + 4;
+
+        // Build synthetic points from component offsets.
+        using Buffer<float> synXBuf = new(syntheticPointCount, clear: true);
+        using Buffer<float> synYBuf = new(syntheticPointCount, clear: true);
+        Span<float> synX = synXBuf.GetSpan();
+        Span<float> synY = synYBuf.GetSpan();
+
+        for (int i = 0; i < componentCount; i++)
+        {
+            synX[i] = components[i].Dx;
+            synY[i] = components[i].Dy;
+        }
+
+        // Phantom points (LSB, advance width, TSB, advance height) are initialized to 0
+        // and will receive deltas from gvar if present.
+
+        // Apply each tuple's deltas to the synthetic points.
+        foreach (TupleVariationHeader tupleHeader in variationData.TupleHeaders)
+        {
+            float factor = this.ResolveTupleFactor(tupleHeader);
+            if (factor == 0)
+            {
+                continue;
+            }
+
+            ushort[]? pointNumbers = tupleHeader.PointNumbers;
+            short[]? deltasX = tupleHeader.DeltasX;
+            short[]? deltasY = tupleHeader.DeltasY;
+
+            if (deltasX is null && tupleHeader.RawDeltaData is not null)
+            {
+                DecodeAllPointDeltas(tupleHeader.RawDeltaData, syntheticPointCount, out deltasX, out deltasY);
+            }
+
+            if (deltasX is null || deltasY is null)
+            {
+                continue;
+            }
+
+            bool allPoints = pointNumbers is null or { Length: 0 };
+
+            if (allPoints)
+            {
+                int deltaCount = Math.Min(deltasX.Length, syntheticPointCount);
+                for (int i = 0; i < deltaCount; i++)
+                {
+                    synX[i] += deltasX[i] * factor;
+                    synY[i] += deltasY[i] * factor;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < pointNumbers!.Length && i < deltasX.Length; i++)
+                {
+                    int ptIdx = pointNumbers[i];
+                    if (ptIdx < syntheticPointCount)
+                    {
+                        synX[ptIdx] += deltasX[i] * factor;
+                        synY[ptIdx] += deltasY[i] * factor;
+                    }
+                }
+            }
+        }
+
+        // Propagate offset changes to assembled outline points.
+        IList<ControlPoint> controlPoints = glyphPoints.ControlPoints;
+        int pointOffset = 0;
+        for (int c = 0; c < componentCount; c++)
+        {
+            float deltaX = MathF.Round(synX[c] - components[c].Dx);
+            float deltaY = MathF.Round(synY[c] - components[c].Dy);
+
+            if (deltaX != 0 || deltaY != 0)
+            {
+                int end = pointOffset + components[c].PointCount;
+                for (int p = pointOffset; p < end && p < controlPoints.Count; p++)
+                {
+                    ControlPoint cp = controlPoints[p];
+                    cp.Point.X += deltaX;
+                    cp.Point.Y += deltaY;
+                    controlPoints[p] = cp;
+                }
+            }
+
+            pointOffset += components[c].PointCount;
         }
 
         // Recalculate bounds from the transformed points.
@@ -341,6 +429,40 @@ internal class GlyphVariationProcessor
         }
 
         return netAdjustment;
+    }
+
+    /// <summary>
+    /// Resolves peak coordinates and computes the tuple factor for a given tuple header.
+    /// Shared helper used by both simple and composite glyph variation paths.
+    /// </summary>
+    /// <param name="tupleHeader">The tuple variation header.</param>
+    /// <returns>The blending factor, or 0 if the tuple should be skipped.</returns>
+    private float ResolveTupleFactor(TupleVariationHeader tupleHeader)
+    {
+        TupleVariation tuple = tupleHeader.TupleVariation;
+
+        // Resolve peak coordinates: either embedded or from shared tuples.
+        float[]? peakCoords = tuple.EmbeddedPeak;
+        if (peakCoords is null)
+        {
+            int sharedIdx = tuple.SharedTupleIndex;
+            if (sharedIdx >= this.gVar!.SharedTuples.GetLength(0))
+            {
+                return 0;
+            }
+
+            peakCoords = new float[this.gVar.AxisCount];
+            for (int a = 0; a < this.gVar.AxisCount; a++)
+            {
+                peakCoords[a] = this.gVar.SharedTuples[sharedIdx, a];
+            }
+        }
+
+        return this.TupleFactor(
+            tuple.IsIntermediateRegion,
+            peakCoords,
+            tuple.IntermediateStartRegion,
+            tuple.IntermediateEndRegion);
     }
 
     /// <summary>
