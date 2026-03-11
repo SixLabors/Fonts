@@ -288,4 +288,11 @@ public abstract class FontMetrics
     /// </param>
     /// <returns>The delta value in design units, or 0 if no variation data is available.</returns>
     internal abstract float GetGDefVariationDelta(uint packedVariationIndex);
+
+    /// <summary>
+    /// Gets the normalized variation coordinates for this font instance.
+    /// Returns an empty span for non-variable fonts or fonts at default coordinates.
+    /// </summary>
+    /// <returns>The normalized coordinates, or an empty span.</returns>
+    internal abstract ReadOnlySpan<float> GetNormalizedCoordinates();
 }

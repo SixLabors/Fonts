@@ -406,6 +406,12 @@ internal partial class StreamFontMetrics : FontMetrics
         return this.GlyphVariationProcessor.Delta(gdef.ItemVariationStore, outerIndex, innerIndex);
     }
 
+    /// <inheritdoc/>
+    internal override ReadOnlySpan<float> GetNormalizedCoordinates()
+        => this.GlyphVariationProcessor is not null
+            ? this.GlyphVariationProcessor.NormalizedCoordinates
+            : [];
+
     /// <summary>
     /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
     /// </summary>

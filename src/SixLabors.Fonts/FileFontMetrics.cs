@@ -172,6 +172,10 @@ internal sealed class FileFontMetrics : FontMetrics
     internal override float GetGDefVariationDelta(uint packedVariationIndex)
         => this.fontMetrics.Value.GetGDefVariationDelta(packedVariationIndex);
 
+    /// <inheritdoc/>
+    internal override ReadOnlySpan<float> GetNormalizedCoordinates()
+        => this.fontMetrics.Value.GetNormalizedCoordinates();
+
     /// <summary>
     /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
     /// </summary>

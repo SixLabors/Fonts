@@ -19,7 +19,7 @@ internal class TupleVariation
     internal const int IntermediateRegionMask = 0x4000;
 
     /// <summary>
-    /// Flag indicating that the serialized data for this tuple variation table includes packed “point” number data.
+    /// Flag indicating that the serialized data for this tuple variation table includes packed "point" number data.
     /// If set, this tuple variation table uses that number data; if clear, this tuple variation table uses shared number
     /// data found at the start of the serialized data for this glyph variation data or 'cvar' table.
     /// </summary>
@@ -59,8 +59,8 @@ internal class TupleVariation
     public ushort TupleIndex { get; }
 
     /// <summary>
-    /// Gets the shared tuple records index (low 12 bits of <see cref=”TupleIndex”/>).
-    /// Used to look up peak coordinates from <see cref=”GVarTable.SharedTuples”/> when no embedded peak is present.
+    /// Gets the shared tuple records index (low 12 bits of <see cref="TupleIndex"/>).
+    /// Used to look up peak coordinates from <see cref="GVarTable.SharedTuples" /> when no embedded peak is present.
     /// </summary>
     public int SharedTupleIndex => this.TupleIndex & TupleIndexMask;
 
