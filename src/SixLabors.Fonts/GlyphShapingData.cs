@@ -14,6 +14,8 @@ namespace SixLabors.Fonts;
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
 internal class GlyphShapingData
 {
+    private ushort glyphId;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="GlyphShapingData"/> class.
     /// </summary>
@@ -62,6 +64,10 @@ internal class GlyphShapingData
         if (!clearFeatures)
         {
             this.Features.AddRange(data.Features);
+            foreach (Tag tag in data.EnabledFeatureTags)
+            {
+                this.EnabledFeatureTags.Add(tag);
+            }
         }
 
         foreach (Tag feature in data.AppliedFeatures)
@@ -70,12 +76,36 @@ internal class GlyphShapingData
         }
 
         this.Bounds = data.Bounds;
+        this.CachedShapingClass = data.CachedShapingClass;
+        this.ShapingClassCacheKey = data.ShapingClassCacheKey;
     }
 
     /// <summary>
-    /// Gets or sets the glyph id.
+    /// Gets or sets the glyph id. Setting this value invalidates the cached shaping class.
     /// </summary>
-    public ushort GlyphId { get; set; }
+    public ushort GlyphId
+    {
+        get => this.glyphId;
+        set
+        {
+            if (this.glyphId != value)
+            {
+                this.glyphId = value;
+                this.ShapingClassCacheKey = -1;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the cached glyph shaping class, avoiding repeated GDEF lookups.
+    /// </summary>
+    internal GlyphShapingClass CachedShapingClass { get; set; }
+
+    /// <summary>
+    /// Gets or sets the cache key for <see cref="CachedShapingClass"/>.
+    /// A value of <c>-1</c> indicates the cache is invalid. Valid entries store the glyph id.
+    /// </summary>
+    internal int ShapingClassCacheKey { get; set; } = -1;
 
     /// <summary>
     /// Gets or sets the leading codepoint.
@@ -126,6 +156,12 @@ internal class GlyphShapingData
     /// Gets or sets the collection of features.
     /// </summary>
     public List<TagEntry> Features { get; set; } = [];
+
+    /// <summary>
+    /// Gets the set of feature tags that are currently enabled, maintained
+    /// in sync with <see cref="Features"/> for O(1) lookup.
+    /// </summary>
+    internal HashSet<Tag> EnabledFeatureTags { get; } = [];
 
     /// <summary>
     /// Gets or sets the collection of applied features.

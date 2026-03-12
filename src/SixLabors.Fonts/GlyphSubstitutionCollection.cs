@@ -61,12 +61,20 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
 
     /// <inheritdoc />
     public void AddShapingFeature(int index, TagEntry feature)
-        => this.glyphs[index].Data.Features.Add(feature);
+    {
+        GlyphShapingData data = this.glyphs[index].Data;
+        data.Features.Add(feature);
+        if (feature.Enabled)
+        {
+            data.EnabledFeatureTags.Add(feature.Tag);
+        }
+    }
 
     /// <inheritdoc />
     public void EnableShapingFeature(int index, Tag feature)
     {
-        List<TagEntry> features = this.glyphs[index].Data.Features;
+        GlyphShapingData data = this.glyphs[index].Data;
+        List<TagEntry> features = data.Features;
         for (int i = 0; i < features.Count; i++)
         {
             TagEntry tagEntry = features[i];
@@ -74,6 +82,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
             {
                 tagEntry.Enabled = true;
                 features[i] = tagEntry;
+                data.EnabledFeatureTags.Add(feature);
                 break;
             }
         }
@@ -82,7 +91,8 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     /// <inheritdoc />
     public void DisableShapingFeature(int index, Tag feature)
     {
-        List<TagEntry> features = this.glyphs[index].Data.Features;
+        GlyphShapingData data = this.glyphs[index].Data;
+        List<TagEntry> features = data.Features;
         for (int i = 0; i < features.Count; i++)
         {
             TagEntry tagEntry = features[i];
@@ -90,6 +100,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
             {
                 tagEntry.Enabled = false;
                 features[i] = tagEntry;
+                data.EnabledFeatureTags.Remove(feature);
                 break;
             }
         }
@@ -189,27 +200,29 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
 
     /// <summary>
     /// Performs a stable sort of the glyphs by the comparison delegate starting at the specified index.
+    /// Only the <see cref="GlyphShapingData"/> references are reordered; offsets remain in place.
     /// </summary>
     /// <param name="startIndex">The start index.</param>
     /// <param name="endIndex">The end index.</param>
     /// <param name="comparer">The comparison delegate.</param>
     public void Sort(int startIndex, int endIndex, Comparison<GlyphShapingData> comparer)
     {
+        // Stable insertion sort using adjacent swaps of Data references.
+        // The sorted ranges are typically small (syllable clusters of 2-10 glyphs),
+        // so insertion sort is optimal and avoids allocations. Adjacent swaps
+        // replace the previous MoveGlyph approach which shifted all intermediate elements.
+        List<OffsetGlyphDataPair> glyphs = this.glyphs;
         for (int i = startIndex + 1; i < endIndex; i++)
         {
             int j = i;
-            while (j > startIndex && comparer(this[j - 1], this[i]) > 0)
+            while (j > startIndex && comparer(glyphs[j - 1].Data, glyphs[j].Data) > 0)
             {
+                // Swap Data references between adjacent slots.
+                GlyphShapingData temp = glyphs[j - 1].Data;
+                glyphs[j - 1].Data = glyphs[j].Data;
+                glyphs[j].Data = temp;
                 j--;
             }
-
-            if (i == j)
-            {
-                continue;
-            }
-
-            // Move item i to occupy place for item j, shift what's in between.
-            this.MoveGlyph(i, j);
         }
     }
 
