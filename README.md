@@ -10,13 +10,10 @@ SixLabors.Fonts
 [![Build Status](https://img.shields.io/github/actions/workflow/status/SixLabors/Fonts/build-and-test.yml?branch=main)](https://github.com/SixLabors/Fonts/actions)
 [![codecov](https://codecov.io/gh/SixLabors/Fonts/branch/main/graph/badge.svg)](https://codecov.io/gh/SixLabors/Fonts)
 [![License: Six Labors Split](https://img.shields.io/badge/license-Six%20Labors%20Split-%23e30183)](https://github.com/SixLabors/Fonts/blob/main/LICENSE)
-[![GitHub issues](https://img.shields.io/github/issues/SixLabors/Fonts.svg)](https://github.com/SixLabors/Fonts/issues)
-[![GitHub stars](https://img.shields.io/github/stars/SixLabors/Fonts.svg)](https://github.com/SixLabors/Fonts/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/SixLabors/Fonts.svg)](https://github.com/SixLabors/Fonts/network)
 
 </div>
 
-**SixLabors.Fonts** is a new cross-platform font loading and drawing library.
+**SixLabors.Fonts** is a cross-platform library for loading, measuring, and laying out fonts and text. It supports TrueType and OpenType fonts (including CFF1 and CFF2 outlines), WOFF/WOFF2 web fonts, variable fonts, color fonts (COLR v0/v1 and SVG), and TrueType hinting. The library provides a full OpenType layout engine with GSUB/GPOS support, advanced text shaping for complex scripts, and bidirectional text rendering.
 
 ## License
   
@@ -98,15 +95,17 @@ git lfs pull
 
 ### Features
 - Reading font description (name, family, subname etc plus other string metadata).
-- Loading OpenType fonts with with CFF1 and True Type outlines.
-- Loading True Type fonts.
-- Loading [WOFF fonts](https://www.w3.org/Submission/WOFF/).
-- Loading [WOFF2 fonts](https://www.w3.org/TR/WOFF2).
-- Load all compatible fonts from local machine store.
-- Support for line breaking based on [UAX 14](https://www.unicode.org/reports/tr14/)
-- Support for rendering left to right, right to left and bidirectional text.
-- Support for ligatures.
-- Support for advanced OpenType features glyph substitution ([GSUB](https://docs.microsoft.com/en-us/typography/opentype/spec/gsub)) and glyph positioning ([GPOS](https://docs.microsoft.com/en-us/typography/opentype/spec/gpos))
+- Loading TrueType fonts and OpenType fonts with CFF1 and CFF2 outlines.
+- Loading [WOFF](https://www.w3.org/Submission/WOFF/) and [WOFF2](https://www.w3.org/TR/WOFF2) web fonts.
+- Loading all compatible fonts from the local machine store.
+- Support for [variable fonts](https://learn.microsoft.com/en-us/typography/opentype/spec/otvaroverview) (fvar, gvar, cvar, CFF2 variations).
+- Support for color fonts ([COLR](https://learn.microsoft.com/en-us/typography/opentype/spec/colr) v0/v1 and [SVG](https://learn.microsoft.com/en-us/typography/opentype/spec/svg)).
+- TrueType hinting (FreeType v40-compatible interpreter).
+- Support for advanced OpenType layout via glyph substitution ([GSUB](https://learn.microsoft.com/en-us/typography/opentype/spec/gsub)) and glyph positioning ([GPOS](https://learn.microsoft.com/en-us/typography/opentype/spec/gpos)).
+- Advanced text shaping for complex scripts (Indic, Myanmar, Universal Shaping Engine).
+- Support for ligatures and kerning.
+- Support for rendering left to right, right to left, and bidirectional text.
+- Support for line breaking based on [UAX 14](https://www.unicode.org/reports/tr14/).
 
 ## API Examples
 

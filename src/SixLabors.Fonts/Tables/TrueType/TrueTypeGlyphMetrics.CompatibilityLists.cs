@@ -44,8 +44,8 @@ public partial class TrueTypeGlyphMetrics
     private static readonly HashSet<string> NeverHint =
         new(StringComparer.Ordinal)
         {
-            "MgOpen Canonica",
-            "MgOpenCanonica",
+            // Currently empty, but we may add entries here in the future if we identify
+            // any fonts that render better without hinting.
         };
 
     /// <summary>

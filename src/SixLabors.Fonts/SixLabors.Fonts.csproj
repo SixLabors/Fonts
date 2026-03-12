@@ -52,6 +52,8 @@
 
   <ItemGroup>
     <None Include="..\..\LICENSE" Pack="true" PackagePath="" />
+    <None Include="..\..\THIRD-PARTY-NOTICES" Pack="true" PackagePath="" />
+    <None Include="..\..\FTL.TXT" Pack="true" PackagePath="" />
     <None Include="..\..\shared-infrastructure\branding\icons\fonts\sixlabors.fonts.128.png" Pack="true" PackagePath="" />
   </ItemGroup>
 
