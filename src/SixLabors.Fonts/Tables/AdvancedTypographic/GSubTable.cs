@@ -224,8 +224,7 @@ internal class GSubTable : Table
                         return;
                     }
 
-                    List<TagEntry> glyphFeatures = collection[iterator.Index].Features;
-                    if (!HasFeature(glyphFeatures, in feature))
+                    if (!collection[iterator.Index].EnabledFeatureTags.Contains(feature))
                     {
                         iterator.Next();
                         continue;
@@ -378,19 +377,5 @@ internal class GSubTable : Table
 
         // Script for `current` not present in the font: use default shaper.
         return ScriptClass.Default;
-    }
-
-    private static bool HasFeature(List<TagEntry> glyphFeatures, in Tag feature)
-    {
-        for (int i = 0; i < glyphFeatures.Count; i++)
-        {
-            TagEntry entry = glyphFeatures[i];
-            if (entry.Tag == feature && entry.Enabled)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

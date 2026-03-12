@@ -1113,6 +1113,7 @@ internal static class TextLayout
 
         int graphemeIndex;
         int codePointIndex = 0;
+        int glyphSearchIndex = 0;
         List<TextLine> textLines = [];
         TextLine textLine = new();
         int stringIndex = 0;
@@ -1133,6 +1134,7 @@ internal static class TextLayout
             {
                 if (!positionings.TryGetGlyphMetricsAtOffset(
                     codePointIndex,
+                    ref glyphSearchIndex,
                     out float pointSize,
                     out bool isSubstituted,
                     out bool isVerticalSubstitution,

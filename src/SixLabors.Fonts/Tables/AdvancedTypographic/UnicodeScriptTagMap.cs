@@ -99,7 +99,7 @@ internal sealed class UnicodeScriptTagMap : Dictionary<ScriptClass, Tag[]>
             { ScriptClass.Kannada, new[] { Tag.Parse("knd2"), Tag.Parse("knda") } },
             { ScriptClass.Kaithi, new[] { Tag.Parse("kthi") } },
             { ScriptClass.TaiTham, new[] { Tag.Parse("lana") } },
-            { ScriptClass.Lao, new[] { Tag.Parse("laoo") } },
+            { ScriptClass.Lao, new[] { Tag.Parse("lao ") } },
             { ScriptClass.Latin, new[] { Tag.Parse("latn") } },
             { ScriptClass.Lepcha, new[] { Tag.Parse("lepc") } },
             { ScriptClass.Limbu, new[] { Tag.Parse("limb") } },

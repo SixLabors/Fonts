@@ -160,11 +160,25 @@ internal static class LookupType2SubTable
 
             public bool TryGetPairValueRecord(ushort glyphId, [NotNullWhen(true)] out PairValueRecord pairValueRecord)
             {
-                foreach (PairValueRecord pair in this.pairValueRecords)
+                // Records are ordered by SecondGlyph, so use binary search.
+                PairValueRecord[] records = this.pairValueRecords;
+                int lo = 0;
+                int hi = records.Length - 1;
+                while (lo <= hi)
                 {
-                    if (pair.SecondGlyph == glyphId)
+                    int mid = (int)(((uint)lo + (uint)hi) >> 1);
+                    ushort midGlyph = records[mid].SecondGlyph;
+                    if (glyphId < midGlyph)
                     {
-                        pairValueRecord = pair;
+                        hi = mid - 1;
+                    }
+                    else if (glyphId > midGlyph)
+                    {
+                        lo = mid + 1;
+                    }
+                    else
+                    {
+                        pairValueRecord = records[mid];
                         return true;
                     }
                 }

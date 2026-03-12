@@ -1,13 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Reflection;
-using Xunit;
 
 namespace SixLabors.Fonts.Tests;
 
@@ -377,9 +372,13 @@ public static class TestFonts
 
     public static string MyanmarSansRegular => GetFullPath("NotoSansMyanmar-Regular.ttf");
 
+    public static string LaoSerifRegular => GetFullPath("NotoSerifLao-Regular.ttf");
+
     public static string NotoSansOghamRegular => GetFullPath("NotoSansOgham-Regular.ttf");
 
     public static string NotoSansRunicRegular => GetFullPath("NotoSansRunic-Regular.ttf");
+
+    public static string NotoSansHebrewRegular => GetFullPath("NotoSansHebrew-Regular.ttf");
 
     public static string MgOpenCanonicRegular => GetFullPath("mgopencanonicaregular.ttf");
 

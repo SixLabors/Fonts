@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Benchmarks;
 /// </para>
 /// <para>We should see if we can include the Skia HarfBuzz extensions to see how we compare.</para>
 /// </summary>
-[ShortRunJob]
+[MediumRunJob]
 public class MeasureTextBenchmark : IDisposable
 {
     private readonly TextOptions textOptions;

@@ -40,12 +40,20 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
 
     /// <inheritdoc />
     public void AddShapingFeature(int index, TagEntry feature)
-        => this.glyphs[index].Data.Features.Add(feature);
+    {
+        GlyphShapingData data = this.glyphs[index].Data;
+        data.Features.Add(feature);
+        if (feature.Enabled)
+        {
+            data.EnabledFeatureTags.Add(feature.Tag);
+        }
+    }
 
     /// <inheritdoc />
     public void EnableShapingFeature(int index, Tag feature)
     {
-        List<TagEntry> features = this.glyphs[index].Data.Features;
+        GlyphShapingData data = this.glyphs[index].Data;
+        List<TagEntry> features = data.Features;
         for (int i = 0; i < features.Count; i++)
         {
             TagEntry tagEntry = features[i];
@@ -53,6 +61,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
             {
                 tagEntry.Enabled = true;
                 features[i] = tagEntry;
+                data.EnabledFeatureTags.Add(feature);
                 break;
             }
         }
@@ -61,7 +70,8 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     /// <inheritdoc />
     public void DisableShapingFeature(int index, Tag feature)
     {
-        List<TagEntry> features = this.glyphs[index].Data.Features;
+        GlyphShapingData data = this.glyphs[index].Data;
+        List<TagEntry> features = data.Features;
         for (int i = 0; i < features.Count; i++)
         {
             TagEntry tagEntry = features[i];
@@ -69,6 +79,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
             {
                 tagEntry.Enabled = false;
                 features[i] = tagEntry;
+                data.EnabledFeatureTags.Remove(feature);
                 break;
             }
         }
@@ -78,6 +89,10 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     /// Gets the glyph metrics at the given codepoint offset.
     /// </summary>
     /// <param name="offset">The zero-based index within the input codepoint collection.</param>
+    /// <param name="startIndex">
+    /// The index within the glyph list to start searching from. Updated to the position of the match
+    /// so that subsequent calls with increasing offsets avoid rescanning from the beginning.
+    /// </param>
     /// <param name="pointSize">The font size in PT units of the font containing this glyph.</param>
     /// <param name="isSubstituted">Whether the glyph is the result of a substitution.</param>
     /// <param name="isVerticalSubstitution">Whether the glyph is the result of a vertical substitution.</param>
@@ -90,6 +105,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     /// <returns>The metrics.</returns>
     public bool TryGetGlyphMetricsAtOffset(
         int offset,
+        ref int startIndex,
         out float pointSize,
         out bool isSubstituted,
         out bool isVerticalSubstitution,
@@ -106,10 +122,15 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         Tag vrt2 = FeatureTags.VerticalAlternatesAndRotation;
         Tag vrtr = FeatureTags.VerticalAlternatesForRotation;
 
-        for (int i = 0; i < this.glyphs.Count; i++)
+        for (int i = startIndex; i < this.glyphs.Count; i++)
         {
             if (this.glyphs[i].Offset == offset)
             {
+                if (match.Count == 0)
+                {
+                    startIndex = i;
+                }
+
                 GlyphPositioningData glyph = this.glyphs[i];
                 isSubstituted = glyph.Data.IsSubstituted;
                 isDecomposed = glyph.Data.IsDecomposed;

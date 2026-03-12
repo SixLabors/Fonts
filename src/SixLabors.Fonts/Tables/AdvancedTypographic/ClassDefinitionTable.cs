@@ -143,10 +143,24 @@ internal sealed class ClassDefinitionFormat2Table : ClassDefinitionTable
     /// <inheritdoc />
     public override int ClassIndexOf(ushort glyphId)
     {
-        for (int i = 0; i < this.records.Length; i++)
+        // Records are ordered by StartGlyphId, so use binary search to find the
+        // candidate range whose StartGlyphId is <= glyphId.
+        ClassRangeRecord[] records = this.records;
+        int lo = 0;
+        int hi = records.Length - 1;
+        while (lo <= hi)
         {
-            ClassRangeRecord rec = this.records[i];
-            if (rec.StartGlyphId <= glyphId && glyphId <= rec.EndGlyphId)
+            int mid = (int)(((uint)lo + (uint)hi) >> 1);
+            ClassRangeRecord rec = records[mid];
+            if (glyphId < rec.StartGlyphId)
+            {
+                hi = mid - 1;
+            }
+            else if (glyphId > rec.EndGlyphId)
+            {
+                lo = mid + 1;
+            }
+            else
             {
                 return rec.Class;
             }

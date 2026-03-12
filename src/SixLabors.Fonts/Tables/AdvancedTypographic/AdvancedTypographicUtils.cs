@@ -361,6 +361,13 @@ internal static class AdvancedTypographicUtils
 
     public static GlyphShapingClass GetGlyphShapingClass(FontMetrics fontMetrics, ushort glyphId, GlyphShapingData shapingData)
     {
+        // Cache the shaping class on the GlyphShapingData to avoid repeated GDEF lookups.
+        // The cache key stores the glyph id; -1 means "not cached".
+        if (shapingData.ShapingClassCacheKey == glyphId)
+        {
+            return shapingData.CachedShapingClass;
+        }
+
         bool isMark;
         bool isBase;
         bool isLigature;
@@ -383,7 +390,10 @@ internal static class AdvancedTypographicUtils
             isLigature = shapingData.CodePointCount > 1;
         }
 
-        return new GlyphShapingClass(isMark, isBase, isLigature, markAttachmentType);
+        GlyphShapingClass result = new(isMark, isBase, isLigature, markAttachmentType);
+        shapingData.CachedShapingClass = result;
+        shapingData.ShapingClassCacheKey = glyphId;
+        return result;
     }
 
     public static bool IsInMarkFilteringSet(FontMetrics fontMetrics, ushort markFilteringSet, ushort glyphId)
