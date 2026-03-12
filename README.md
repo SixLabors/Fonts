@@ -10,9 +10,6 @@ SixLabors.Fonts
 [![Build Status](https://img.shields.io/github/actions/workflow/status/SixLabors/Fonts/build-and-test.yml?branch=main)](https://github.com/SixLabors/Fonts/actions)
 [![codecov](https://codecov.io/gh/SixLabors/Fonts/branch/main/graph/badge.svg)](https://codecov.io/gh/SixLabors/Fonts)
 [![License: Six Labors Split](https://img.shields.io/badge/license-Six%20Labors%20Split-%23e30183)](https://github.com/SixLabors/Fonts/blob/main/LICENSE)
-[![GitHub issues](https://img.shields.io/github/issues/SixLabors/Fonts.svg)](https://github.com/SixLabors/Fonts/issues)
-[![GitHub stars](https://img.shields.io/github/stars/SixLabors/Fonts.svg)](https://github.com/SixLabors/Fonts/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/SixLabors/Fonts.svg)](https://github.com/SixLabors/Fonts/network)
 
 </div>
 
