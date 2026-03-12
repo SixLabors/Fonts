@@ -84,4 +84,22 @@ public class Issues_488
 
         TextLayoutTestUtilities.TestLayout(text, options);
     }
+
+    [Fact]
+    public void Test_Issue_488_Hebrew()
+    {
+        // Exercises: dagesh (בּ כּ), shin/sin dots (שׁ שׂ), stacked marks (בָּ),
+        // hataf vowels (אֱ), holam (לֹ), hiriq (הִ), meteg with vowels (בָֽ).
+        const string text = "בְּרֵאשִׁית בָּרָא אֱלֹהִים שָׁלוֹם שָׂרָה כָּבוֹד בָֽרְכוּ";
+
+        FontCollection fontCollection = new();
+        string name = fontCollection.Add(TestFonts.NotoSansHebrewRegular).Name;
+
+        FontFamily mainFontFamily = fontCollection.Get(name);
+        Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
+
+        TextOptions options = new(mainFont);
+
+        TextLayoutTestUtilities.TestLayout(text, options);
+    }
 }

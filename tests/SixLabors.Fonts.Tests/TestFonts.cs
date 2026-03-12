@@ -378,6 +378,8 @@ public static class TestFonts
 
     public static string NotoSansRunicRegular => GetFullPath("NotoSansRunic-Regular.ttf");
 
+    public static string NotoSansHebrewRegular => GetFullPath("NotoSansHebrew-Regular.ttf");
+
     public static string MgOpenCanonicRegular => GetFullPath("mgopencanonicaregular.ttf");
 
     public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);

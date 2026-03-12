@@ -387,22 +387,21 @@ internal class ThaiShaper : DefaultShaper
     private static MarkType GetMarkType(int codepoint)
     {
         // Above-vowel marks.
-        if (codepoint == 0x0E31
-            || (codepoint >= 0x0E34 && codepoint <= 0x0E37)
-            || codepoint == 0x0E47
-            || (codepoint >= 0x0E4D && codepoint <= 0x0E4E))
+        if (codepoint is 0x0E31
+            or (>= 0x0E34 and <= 0x0E37) or 0x0E47
+            or (>= 0x0E4D and <= 0x0E4E))
         {
             return MarkType.AV;
         }
 
         // Below-vowel marks.
-        if (codepoint >= 0x0E38 && codepoint <= 0x0E3A)
+        if (codepoint is >= 0x0E38 and <= 0x0E3A)
         {
             return MarkType.BV;
         }
 
         // Tone marks.
-        if (codepoint >= 0x0E48 && codepoint <= 0x0E4C)
+        if (codepoint is >= 0x0E48 and <= 0x0E4C)
         {
             return MarkType.T;
         }
@@ -436,10 +435,8 @@ internal class ThaiShaper : DefaultShaper
     private static bool IsAboveBaseMark(int codepoint)
     {
         int u = codepoint & ~0x0080;
-        return (u >= 0x0E34 && u <= 0x0E37)
-            || (u >= 0x0E47 && u <= 0x0E4E)
-            || u == 0x0E31
-            || u == 0x0E3B;
+        return u is (>= 0x0E34 and <= 0x0E37) or (>= 0x0E47 and <= 0x0E4E) or 0x0E31
+            or 0x0E3B;
     }
 
     /// <summary>
