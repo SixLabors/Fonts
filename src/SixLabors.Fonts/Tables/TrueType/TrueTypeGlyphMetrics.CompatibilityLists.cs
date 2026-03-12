@@ -44,8 +44,8 @@ public partial class TrueTypeGlyphMetrics
     private static readonly HashSet<string> NeverHint =
         new(StringComparer.Ordinal)
         {
-            "MgOpen Canonica",
-            "MgOpenCanonica",
+            // "MgOpen Canonica",
+            // "MgOpenCanonica",
         };
 
     /// <summary>

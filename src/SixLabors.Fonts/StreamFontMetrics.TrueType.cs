@@ -76,6 +76,9 @@ internal partial class StreamFontMetrics
                 cvtValues = this.GlyphVariationProcessor.ApplyCvtDeltas(cvtValues) ?? cvtValues;
             }
 
+            // Provide normalized axis coordinates for the GETVARIATION opcode.
+            interpreter.SetNormalizedAxisCoordinates(this.GlyphVariationProcessor?.NormalizedCoordinates);
+
             interpreter.SetControlValueTable(cvtValues, hintingScaleFactor, pixelSize, prep?.Instructions);
 
             Bounds bounds = glyphVector.Bounds;

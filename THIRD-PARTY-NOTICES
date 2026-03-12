@@ -1,0 +1,62 @@
+SixLabors.Fonts uses third-party libraries or other resources that may be
+distributed under licenses different from the SixLabors.Fonts software.
+
+The attached notices are provided for informational purposes only. Please
+review the original license files for complete terms.
+
+================================================================================
+
+FreeType (https://freetype.org)
+License: FreeType License (FTL)
+
+The TrueType hinting interpreter in this library is based in part on the work
+of the FreeType Project. The full license text is available in the accompanying
+FTL.TXT file.
+
+Portions of this software are copyright (c) 1996-2002, 2006 The FreeType
+Project (https://freetype.org). All rights reserved.
+
+================================================================================
+
+HarfBuzz (https://harfbuzz.github.io)
+License: MIT (Old MIT)
+
+The text shaping engine in this library is based in part on the work of the
+HarfBuzz Project, including the OpenType layout engine (GPOS/GSUB) and the
+advanced typographic shaping engines (Default, Indic, Myanmar, Universal).
+
+Copyright © 2010-2022 Google, Inc.
+Copyright © 2015-2020 Ebrahim Byagowi
+Copyright © 2019,2020 Facebook, Inc.
+Copyright © 2012,2015 Mozilla Foundation
+Copyright © 2011 Codethink Limited
+Copyright © 2008,2010 Nokia Corporation and/or its subsidiary(-ies)
+Copyright © 2009 Keith Stribley
+Copyright © 2011 Martin Hosken and SIL International
+Copyright © 2007 Chris Wilson
+Copyright © 2005,2006,2020,2021,2022,2023 Behdad Esfahbod
+Copyright © 2004,2007,2008,2009,2010,2013,2021,2022,2023 Red Hat, Inc.
+Copyright © 1998-2005 David Turner and Werner Lemberg
+Copyright © 2016 Igalia S.L.
+Copyright © 2022 Matthias Clasen
+Copyright © 2018,2021 Khaled Hosny
+Copyright © 2018,2019,2020 Adobe, Inc
+Copyright © 2013-2015 Alexei Podtelezhnikov
+
+Permission is hereby granted, without written agreement and without license or
+royalty fees, to use, copy, modify, and distribute this software and its
+documentation for any purpose, provided that the above copyright notice and
+the following two paragraphs appear in all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR DIRECT,
+INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE
+USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF THE COPYRIGHT HOLDER HAS
+BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE. THE SOFTWARE PROVIDED HEREUNDER IS ON AN "AS IS" BASIS,
+AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT,
+UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+
+================================================================================

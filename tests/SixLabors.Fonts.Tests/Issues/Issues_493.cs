@@ -56,8 +56,8 @@ public class Issues_493
         FontFamily mainFontFamily = fontCollection.Get(name);
         Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
 
-        TextOptions options = new(mainFont) { HintingMode = HintingMode.Standard };
+        TextOptions hintOptions = new(mainFont) { HintingMode = HintingMode.Standard };
 
-        TextLayoutTestUtilities.TestLayout(text, options);
+        TextLayoutTestUtilities.TestLayout(text, hintOptions);
     }
 }

@@ -75,7 +75,7 @@ internal class GlyphVariationProcessor
     /// Gets the normalized variation coordinates for this processor instance.
     /// Used by FeatureVariations condition evaluation.
     /// </summary>
-    internal ReadOnlySpan<float> NormalizedCoordinates => this.normalizedCoords;
+    internal float[] NormalizedCoordinates => this.normalizedCoords;
 
     /// <summary>
     /// Transforms glyph outline points by applying gvar variation deltas.

@@ -34,29 +34,63 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting;
 /// which v40 intentionally omits.
 /// </para>
 /// </summary>
-internal class TrueTypeInterpreter
+internal partial class TrueTypeInterpreter
 {
+    // Current and saved graphics state. cvtState is captured after the prep (CVT) program
+    // runs so that each glyph program begins with a consistent baseline.
     private GraphicsState state;
     private GraphicsState cvtState;
+
     private readonly ExecutionStack stack;
     private readonly InstructionStream[] functions;
     private readonly InstructionStream[] instructionDefs;
+
+    // Control Value Table: baseControlValueTable holds the scaled values after prep execution;
+    // controlValueTable is a working copy restored at the start of each glyph program.
     private float[] baseControlValueTable;
     private float[] controlValueTable;
-    private readonly int[] storage;
+
+    // Storage area shared between prep and glyph programs. prepStorage holds the reference
+    // to the storage array as it was after prep execution. Glyph programs use copy-on-write
+    // (see WS instruction) so that prep state is preserved across glyphs.
+    private int[] storage;
+    private int[]? prepStorage;
+    private bool inGlyphProgram;
+
     private IReadOnlyList<ushort> contours;
     private float scale;
     private int ppem;
     private int callStackSize;
+
+    // Dot product of freedom and projection vectors, used to decompose
+    // scalar distances into movement along the freedom vector.
     private float fdotp;
+
+    // Super-rounding parameters set by SROUND/S45ROUND.
     private float roundThreshold;
     private float roundPhase;
     private float roundPeriod;
 
+    // IUP tracking — once both axes have been interpolated, further IUP calls are skipped
+    // and v40 backward compatibility blocks Y movement (post-IUP restriction).
     private bool iupXCalled;
     private bool iupYCalled;
     private bool isComposite;
 
+    // Normalized variation axis coordinates for variable fonts, used by GETVARIATION/GETINFO.
+    private float[]? normalizedAxisCoordinates;
+
+    // FreeType TT_RunIns safety counters to prevent pathological fonts
+    // from hanging the interpreter. Limits are computed per-glyph based on
+    // point count and CVT size.
+    private long insCounter;
+    private long loopcallCounter;
+    private long negJumpCounter;
+    private long loopcallCounterMax;
+    private long negJumpCounterMax;
+
+    // Zone pointers: zp0/zp1/zp2 are the three zone pointer registers (ZP0-ZP2).
+    // They can reference either the glyph zone (points) or the twilight zone.
     private Zone zp0;
     private Zone zp1;
     private Zone zp2;
@@ -65,12 +99,27 @@ internal class TrueTypeInterpreter
 
     private static readonly float Sqrt2Over2 = (float)(Math.Sqrt(2) / 2);
     private const int MaxCallStack = 128;
+    private const long MaxRunnableOpcodes = 1_000_000;
     private const float Epsilon = 0.000001F;
 
 #if DEBUG
     private readonly List<OpCode> debugList = [];
 #endif
 
+#if HINTING_TRACE
+    private readonly System.Text.StringBuilder traceLog = new();
+    private int traceGlyphIndex;
+#endif
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TrueTypeInterpreter"/> class
+    /// with resource limits sourced from the font's <c>maxp</c> table.
+    /// </summary>
+    /// <param name="maxStack">Maximum stack depth.</param>
+    /// <param name="maxStorage">Number of storage area locations.</param>
+    /// <param name="maxFunctions">Number of function definition slots (FDEF).</param>
+    /// <param name="maxInstructionDefs">Number of instruction definition slots (IDEF). When non-zero, a full 256-entry lookup table is allocated.</param>
+    /// <param name="maxTwilightPoints">Number of points in the twilight zone.</param>
     public TrueTypeInterpreter(int maxStack, int maxStorage, int maxFunctions, int maxInstructionDefs, int maxTwilightPoints)
     {
         this.stack = new ExecutionStack(maxStack);
@@ -85,9 +134,32 @@ internal class TrueTypeInterpreter
         this.contours = [];
     }
 
+    /// <summary>
+    /// Sets the normalized axis coordinates for variable font hinting.
+    /// These are used by the GETVARIATION and GETINFO instructions.
+    /// </summary>
+    /// <param name="coordinates">Normalized axis coordinates in the range [-1, 1], or <see langword="null"/> for non-variable fonts.</param>
+    public void SetNormalizedAxisCoordinates(float[]? coordinates)
+        => this.normalizedAxisCoordinates = coordinates;
+
+    /// <summary>
+    /// Executes the font program (fpgm) to populate function definitions (FDEF/IDEF).
+    /// This must be called once per font before any CVT or glyph programs are executed.
+    /// </summary>
+    /// <param name="instructions">The raw font program bytecode.</param>
     public void InitializeFunctionDefs(byte[] instructions)
         => this.Execute(new StackInstructionStream(instructions, 0), false, true);
 
+    /// <summary>
+    /// Scales the Control Value Table and executes the prep (CVT) program.
+    /// The prep program typically sets up the graphics state and may modify CVT entries
+    /// for the current pixel size. The resulting state is saved and restored for each
+    /// subsequent glyph program execution.
+    /// </summary>
+    /// <param name="cvt">The raw CVT entries from the font, or <see langword="null"/> if absent.</param>
+    /// <param name="scale">The scale factor to apply to CVT entries (units-per-em to pixels).</param>
+    /// <param name="ppem">The pixels-per-em value at the current size.</param>
+    /// <param name="cvProgram">The raw prep program bytecode, or <see langword="null"/> if absent.</param>
     public void SetControlValueTable(short[]? cvt, float scale, float ppem, byte[]? cvProgram)
     {
         if (this.scale == scale || cvt == null)
@@ -115,7 +187,18 @@ internal class TrueTypeInterpreter
 
         if (cvProgram != null)
         {
+            // Initialize safety counters for the prep program (no glyph points yet).
+            this.insCounter = 0;
+            this.loopcallCounter = 0;
+            this.negJumpCounter = 0;
+            int cvtSize = this.controlValueTable.Length;
+            this.loopcallCounterMax = 300 + (22 * (long)cvtSize);
+            this.negJumpCounterMax = this.loopcallCounterMax;
+
             this.Execute(new StackInstructionStream(cvProgram, 0), false, false);
+
+            // Save prep program storage state so glyph programs can read it (copy-on-write in WS).
+            this.prepStorage = this.storage;
 
             // save off the CVT graphics state so that we can restore it for each glyph we hint
             if ((this.state.InstructionControl & InstructionControlFlags.UseDefaultGraphicsState) != 0)
@@ -189,9 +272,18 @@ internal class TrueTypeInterpreter
             this.state = this.cvtState;
             this.callStackSize = 0;
 
-            // FreeType's interpreter treats the storage area and glyph-level CVT modifications as non-persistent.
-            // Reset storage and restore the baseline CVT state for each glyph.
-            Array.Clear(this.storage, 0, this.storage.Length);
+            // FreeType preserves prep program storage via copy-on-write in WS.
+            // Restore the prep storage pointer; if glyph writes, WS will copy first.
+            if (this.prepStorage != null)
+            {
+                this.storage = this.prepStorage;
+            }
+            else
+            {
+                Array.Clear(this.storage, 0, this.storage.Length);
+            }
+
+            this.inGlyphProgram = true;
 
             if (this.baseControlValueTable.Length > 0)
             {
@@ -213,11 +305,33 @@ internal class TrueTypeInterpreter
             this.debugList.Clear();
 #endif
 
+#if HINTING_TRACE
+            this.traceLog.Clear();
+            this.traceLog.AppendLine(System.FormattableString.Invariant($"=== GLYPH {this.traceGlyphIndex++} pts={controlPoints.Length - 4} composite={isComposite} ==="));
+#endif
+
             this.stack.Clear();
             this.OnVectorsUpdated();
             this.iupXCalled = false;
             this.iupYCalled = false;
             this.isComposite = isComposite;
+
+            // FreeType TT_RunIns — initialize safety counters.
+            this.insCounter = 0;
+            this.loopcallCounter = 0;
+            this.negJumpCounter = 0;
+            int nPoints = controlPoints.Length;
+            int cvtSize = this.controlValueTable.Length;
+            if (nPoints > 0)
+            {
+                this.loopcallCounterMax = Math.Max(50, 10 * (long)nPoints) + Math.Max(50, cvtSize / 10);
+            }
+            else
+            {
+                this.loopcallCounterMax = 300 + (22 * (long)cvtSize);
+            }
+
+            this.negJumpCounterMax = this.loopcallCounterMax;
 
             // normalize the round state settings
             switch (this.state.RoundState)
@@ -231,24 +345,21 @@ internal class TrueTypeInterpreter
             }
 
             this.Execute(new StackInstructionStream(instructions, 0), false, false);
+
+#if HINTING_TRACE
+            System.Console.Error.Write(this.traceLog);
+#endif
+
             return true;
         }
         catch (Exception)
         {
-            // The interpreter can fail for malformed instructions; in that case we skip hinting.
-            Array.Clear(this.points.TouchState, 0, this.points.TouchState.Length);
+#if HINTING_TRACE
+            System.Console.Error.Write(this.traceLog);
 
-            // Reset interpreter state so nothing leaks if the caller catches.
-            this.stack.Clear();
-            this.callStackSize = 0;
-            this.contours = [];
-            this.zp0 = this.zp1 = this.zp2 = this.points = default;
-
-            this.state = this.cvtState;
-            this.OnVectorsUpdated();
-            this.iupXCalled = false;
-            this.iupYCalled = false;
-            this.isComposite = false;
+            // Rethrow to diagnose hinting failures.
+            throw;
+#endif
             return false;
         }
     }
@@ -270,16 +381,63 @@ internal class TrueTypeInterpreter
         Array.Clear(this.twilight.TouchState, 0, this.twilight.TouchState.Length);
     }
 
+    /// <summary>
+    /// Core instruction dispatch loop. Reads and executes opcodes from the given
+    /// instruction stream until the stream is exhausted or an error terminates execution.
+    /// </summary>
+    /// <param name="stream">The instruction stream to execute.</param>
+    /// <param name="inFunction">
+    /// <see langword="true"/> when executing inside a CALL/LOOPCALL function body.
+    /// Controls whether ENDF returns to the caller or exits execution.
+    /// </param>
+    /// <param name="allowFunctionDefs">
+    /// <see langword="true"/> when executing the font program (fpgm), which permits
+    /// FDEF and IDEF instructions. Glyph and prep programs set this to <see langword="false"/>.
+    /// </param>
     private void Execute(StackInstructionStream stream, bool inFunction, bool allowFunctionDefs)
     {
-        // dispatch each instruction in the stream
         while (!stream.Done)
         {
-            OpCode opcode = stream.NextOpCode();
+            int rawOpcode = stream.NextByte();
+            OpCode opcode = (OpCode)rawOpcode;
 
 #if DEBUG
             this.debugList.Add(opcode);
 #endif
+
+            // FreeType TT_RunIns — global instruction counter to prevent infinite loops.
+            if (++this.insCounter > MaxRunnableOpcodes)
+            {
+                return;
+            }
+
+            // FreeType TT_RunIns — pre-validate stack depth before dispatch.
+            byte popPush = PopPushCount[rawOpcode];
+            int pops = popPush >> 4;
+            int pushes = popPush & 0xF;
+
+#if HINTING_TRACE
+            int preStackCount = this.stack.Count;
+            this.TracePreInstruction(opcode, pops);
+#endif
+
+            // Underflow: push zeroes to fill missing args (FreeType non-pedantic mode).
+            if (this.stack.Count < pops)
+            {
+                int missing = pops - this.stack.Count;
+                this.stack.Clear();
+                for (int z = 0; z < pops; z++)
+                {
+                    this.stack.Push(0);
+                }
+            }
+
+            // Overflow: exit the run loop (FreeType non-pedantic: set error and return).
+            if (this.stack.Count - pops + pushes > this.stack.Capacity)
+            {
+                return;
+            }
+
             switch (opcode)
             {
                 // ==== PUSH INSTRUCTIONS ====
@@ -323,16 +481,35 @@ internal class TrueTypeInterpreter
                 // ==== STORAGE MANAGEMENT ====
                 case OpCode.RS:
                 {
-                    int loc = CheckIndex(this.stack.Pop(), this.storage.Length);
-                    this.stack.Push(this.storage[loc]);
+                    int loc = this.stack.Pop();
+                    if ((uint)loc >= (uint)this.storage.Length)
+                    {
+                        this.stack.Push(0);
+                    }
+                    else
+                    {
+                        this.stack.Push(this.storage[loc]);
+                    }
                 }
 
                 break;
                 case OpCode.WS:
                 {
                     int value = this.stack.Pop();
-                    int loc = CheckIndex(this.stack.Pop(), this.storage.Length);
-                    this.storage[loc] = value;
+                    int loc = this.stack.Pop();
+                    if ((uint)loc < (uint)this.storage.Length)
+                    {
+                        // FreeType copy-on-write: when glyph program first writes to storage,
+                        // make a private copy so prep program state is preserved for other glyphs.
+                        if (this.inGlyphProgram && this.storage == this.prepStorage)
+                        {
+                            int[] glyphStorage = new int[this.storage.Length];
+                            Array.Copy(this.storage, glyphStorage, this.storage.Length);
+                            this.storage = glyphStorage;
+                        }
+
+                        this.storage[loc] = value;
+                    }
                 }
 
                 break;
@@ -341,22 +518,37 @@ internal class TrueTypeInterpreter
                 case OpCode.WCVTP:
                 {
                     float value = this.stack.PopFloat();
-                    int loc = CheckIndex(this.stack.Pop(), this.controlValueTable.Length);
-                    this.controlValueTable[loc] = value;
+                    int loc = this.stack.Pop();
+                    if ((uint)loc < (uint)this.controlValueTable.Length)
+                    {
+                        this.controlValueTable[loc] = value;
+                    }
                 }
 
                 break;
                 case OpCode.WCVTF:
                 {
                     int value = this.stack.Pop();
-                    int loc = CheckIndex(this.stack.Pop(), this.controlValueTable.Length);
-                    this.controlValueTable[loc] = value * this.scale;
+                    int loc = this.stack.Pop();
+                    if ((uint)loc < (uint)this.controlValueTable.Length)
+                    {
+                        this.controlValueTable[loc] = value * this.scale;
+                    }
                 }
 
                 break;
                 case OpCode.RCVT:
                 {
-                    this.stack.Push(this.ReadCvt());
+                    int loc = this.stack.Pop();
+                    if ((uint)loc >= (uint)this.controlValueTable.Length)
+                    {
+                        this.stack.Push(0);
+                    }
+                    else
+                    {
+                        this.stack.Push(this.controlValueTable[loc]);
+                    }
+
                     break;
                 }
 
@@ -458,25 +650,41 @@ internal class TrueTypeInterpreter
 
                 case OpCode.SZP0:
                 {
-                    this.zp0 = this.GetZoneFromStack();
+                    if (this.TryGetZoneFromStack(out Zone szp0Zone))
+                    {
+                        this.zp0 = szp0Zone;
+                    }
+
                     break;
                 }
 
                 case OpCode.SZP1:
                 {
-                    this.zp1 = this.GetZoneFromStack();
+                    if (this.TryGetZoneFromStack(out Zone szp1Zone))
+                    {
+                        this.zp1 = szp1Zone;
+                    }
+
                     break;
                 }
 
                 case OpCode.SZP2:
                 {
-                    this.zp2 = this.GetZoneFromStack();
+                    if (this.TryGetZoneFromStack(out Zone szp2Zone))
+                    {
+                        this.zp2 = szp2Zone;
+                    }
+
                     break;
                 }
 
                 case OpCode.SZPS:
                 {
-                    this.zp0 = this.zp1 = this.zp2 = this.GetZoneFromStack();
+                    if (this.TryGetZoneFromStack(out Zone szpsZone))
+                    {
+                        this.zp0 = this.zp1 = this.zp2 = szpsZone;
+                    }
+
                     break;
                 }
 
@@ -532,16 +740,24 @@ internal class TrueTypeInterpreter
 
                 case OpCode.INSTCTRL:
                 {
+                    // FreeType Ins_INSTCTRL.
+                    // Always pop both arguments to keep the stack balanced.
                     int selector = this.stack.Pop();
-                    if (selector is >= 1 and <= 2)
+                    int value = this.stack.Pop();
+
+                    // FreeType restricts selectors 1-2 to the prep (CVT) program only.
+                    // Selector 3 (NativeClearType) can also be set during prep.
+                    // Glyph programs cannot modify instruction control flags.
+                    if (selector is >= 1 and <= 3 && !this.inGlyphProgram)
                     {
-                        // value is false if zero, otherwise shift the right bit into the flags
                         int bit = 1 << (selector - 1);
-                        if (this.stack.Pop() == 0)
+
+                        // FreeType validates: if value != 0, it must equal the expected bit.
+                        if (value == 0)
                         {
                             this.state.InstructionControl = (InstructionControlFlags)((int)this.state.InstructionControl & ~bit);
                         }
-                        else
+                        else if (value == bit)
                         {
                             this.state.InstructionControl = (InstructionControlFlags)((int)this.state.InstructionControl | bit);
                         }
@@ -559,7 +775,15 @@ internal class TrueTypeInterpreter
 
                 case OpCode.SLOOP:
                 {
-                    this.state.Loop = this.stack.Pop();
+                    int loop = this.stack.Pop();
+                    if (loop < 0)
+                    {
+                        // FreeType sets Bad_Argument error and returns without modifying state.
+                        break;
+                    }
+
+                    // FreeType heuristically caps loop count at 16 bits.
+                    this.state.Loop = loop > 0xFFFF ? 0xFFFF : loop;
                     break;
                 }
 
@@ -614,13 +838,27 @@ internal class TrueTypeInterpreter
                 // ==== POINT MEASUREMENT ====
                 case OpCode.GC0:
                 {
-                    this.stack.Push(this.Project(this.zp2.GetCurrent(this.stack.Pop())));
+                    int pointIndex = this.stack.Pop();
+                    if ((uint)pointIndex >= (uint)this.zp2.Current.Length)
+                    {
+                        this.stack.Push(0);
+                        break;
+                    }
+
+                    this.stack.Push(this.Project(this.zp2.GetCurrent(pointIndex)));
                     break;
                 }
 
                 case OpCode.GC1:
                 {
-                    this.stack.Push(this.DualProject(this.zp2.GetOriginal(this.stack.Pop())));
+                    int pointIndex = this.stack.Pop();
+                    if ((uint)pointIndex >= (uint)this.zp2.Current.Length)
+                    {
+                        this.stack.Push(0);
+                        break;
+                    }
+
+                    this.stack.Push(this.DualProject(this.zp2.GetOriginal(pointIndex)));
                     break;
                 }
 
@@ -628,6 +866,11 @@ internal class TrueTypeInterpreter
                 {
                     float value = this.stack.PopFloat();
                     int index = this.stack.Pop();
+                    if ((uint)index >= (uint)this.zp2.Current.Length)
+                    {
+                        break;
+                    }
+
                     Vector2 point = this.zp2.GetCurrent(index);
                     this.MovePoint(this.zp2, index, value - this.Project(point));
 
@@ -641,17 +884,31 @@ internal class TrueTypeInterpreter
                 break;
                 case OpCode.MD0:
                 {
-                    Vector2 p1 = this.zp1.GetOriginal(this.stack.Pop());
-                    Vector2 p2 = this.zp0.GetOriginal(this.stack.Pop());
-                    this.stack.Push(this.DualProject(p2 - p1));
+                    int i0 = this.stack.Pop();
+                    int i1 = this.stack.Pop();
+                    if ((uint)i0 >= (uint)this.zp1.Current.Length ||
+                        (uint)i1 >= (uint)this.zp0.Current.Length)
+                    {
+                        this.stack.Push(0);
+                        break;
+                    }
+
+                    this.stack.Push(this.DualProject(this.zp0.GetOriginal(i1) - this.zp1.GetOriginal(i0)));
                 }
 
                 break;
                 case OpCode.MD1:
                 {
-                    Vector2 p1 = this.zp1.GetCurrent(this.stack.Pop());
-                    Vector2 p2 = this.zp0.GetCurrent(this.stack.Pop());
-                    this.stack.Push(this.Project(p2 - p1));
+                    int i0 = this.stack.Pop();
+                    int i1 = this.stack.Pop();
+                    if ((uint)i0 >= (uint)this.zp1.Current.Length ||
+                        (uint)i1 >= (uint)this.zp0.Current.Length)
+                    {
+                        this.stack.Push(0);
+                        break;
+                    }
+
+                    this.stack.Push(this.Project(this.zp0.GetCurrent(i1) - this.zp1.GetCurrent(i0)));
                 }
 
                 break;
@@ -671,15 +928,13 @@ internal class TrueTypeInterpreter
                 // ==== POINT MODIFICATION ====
                 case OpCode.FLIPPT:
                 {
-                    // FLIPRGON, FLIPRGOFF, and FLIPPT don't execute post-IUP.  This
-                    // prevents dents in e.g. Arial-Regular's `D' and `G' glyphs at
-                    // various sizes.
-                    // https://github.com/freetype/freetype/blob/3ab1875cd22536b3d715b3b104b7fb744b9c25c5/src/truetype/ttinterp.h#L298
-                    bool postIUP = this.iupXCalled && this.iupYCalled;
+                    // FreeType: FLIP instructions skip when backward_compatibility == 0x7.
+                    bool nativeClearType = (this.state.InstructionControl & InstructionControlFlags.NativeClearType) != 0;
+                    bool blocked = !nativeClearType && this.iupXCalled && this.iupYCalled;
                     for (int i = 0; i < this.state.Loop; i++)
                     {
                         int index = this.stack.Pop();
-                        if (postIUP)
+                        if (blocked || (uint)index >= (uint)this.points.Current.Length)
                         {
                             continue;
                         }
@@ -693,19 +948,19 @@ internal class TrueTypeInterpreter
                 break;
                 case OpCode.FLIPRGON:
                 {
-                    // FLIPRGON, FLIPRGOFF, and FLIPPT don't execute post-IUP.  This
-                    // prevents dents in e.g. Arial-Regular's `D' and `G' glyphs at
-                    // various sizes.
-                    // https://github.com/freetype/freetype/blob/3ab1875cd22536b3d715b3b104b7fb744b9c25c5/src/truetype/ttinterp.h#L298
-                    bool postIUP = this.iupXCalled && this.iupYCalled;
+                    bool nativeClearType = (this.state.InstructionControl & InstructionControlFlags.NativeClearType) != 0;
+                    bool blocked = !nativeClearType && this.iupXCalled && this.iupYCalled;
                     int end = this.stack.Pop();
-                    for (int i = this.stack.Pop(); i <= end; i++)
+                    int start = this.stack.Pop();
+                    if (blocked ||
+                        (uint)end >= (uint)this.points.Current.Length ||
+                        (uint)start >= (uint)this.points.Current.Length)
                     {
-                        if (postIUP)
-                        {
-                            continue;
-                        }
+                        break;
+                    }
 
+                    for (int i = start; i <= end; i++)
+                    {
                         this.points.Current[i].OnCurve = true;
                     }
                 }
@@ -713,19 +968,19 @@ internal class TrueTypeInterpreter
                 break;
                 case OpCode.FLIPRGOFF:
                 {
-                    // FLIPRGON, FLIPRGOFF, and FLIPPT don't execute post-IUP.  This
-                    // prevents dents in e.g. Arial-Regular's `D' and `G' glyphs at
-                    // various sizes.
-                    // https://github.com/freetype/freetype/blob/3ab1875cd22536b3d715b3b104b7fb744b9c25c5/src/truetype/ttinterp.h#L298
-                    bool postIUP = this.iupXCalled && this.iupYCalled;
+                    bool nativeClearType = (this.state.InstructionControl & InstructionControlFlags.NativeClearType) != 0;
+                    bool blocked = !nativeClearType && this.iupXCalled && this.iupYCalled;
                     int end = this.stack.Pop();
-                    for (int i = this.stack.Pop(); i <= end; i++)
+                    int start = this.stack.Pop();
+                    if (blocked ||
+                        (uint)end >= (uint)this.points.Current.Length ||
+                        (uint)start >= (uint)this.points.Current.Length)
                     {
-                        if (postIUP)
-                        {
-                            continue;
-                        }
+                        break;
+                    }
 
+                    for (int i = start; i <= end; i++)
+                    {
                         this.points.Current[i].OnCurve = false;
                     }
                 }
@@ -734,23 +989,90 @@ internal class TrueTypeInterpreter
                 case OpCode.SHP0:
                 case OpCode.SHP1:
                 {
-                    Vector2 displacement = this.ComputeDisplacement((int)opcode, out Zone zone, out int point);
-                    this.ShiftPoints(displacement);
+                    // FreeType Ins_SHP: uses Move_Zp2_Point for each point.
+                    if (!this.TryComputeDisplacement((int)opcode, out _, out _, out Vector2 displacement))
+                    {
+                        // FreeType: Compute_Point_Displacement failure returns (no Fail label, loop NOT reset).
+                        for (int i = 0; i < this.state.Loop; i++)
+                        {
+                            this.stack.Pop();
+                        }
+
+                        this.state.Loop = 1;
+                        break;
+                    }
+
+                    for (int i = 0; i < this.state.Loop; i++)
+                    {
+                        int pointIndex = this.stack.Pop();
+                        if ((uint)pointIndex < (uint)this.zp2.Current.Length)
+                        {
+                            this.MoveZp2Point(this.zp2, pointIndex, displacement.X, displacement.Y, true);
+                        }
+                    }
+
+                    this.state.Loop = 1;
                 }
 
                 break;
                 case OpCode.SHPIX:
                 {
-                    this.ShiftPoints(this.stack.PopFloat() * this.state.Freedom);
+                    // FreeType Ins_SHPIX: v40 backward compatibility gating.
+                    float magnitude = this.stack.PopFloat();
+                    float dx = magnitude * this.state.Freedom.X;
+                    float dy = magnitude * this.state.Freedom.Y;
+                    bool nativeClearType = (this.state.InstructionControl & InstructionControlFlags.NativeClearType) != 0;
+                    bool postIUP = this.iupXCalled && this.iupYCalled;
+                    bool inTwilight = this.zp0.IsTwilight || this.zp1.IsTwilight || this.zp2.IsTwilight;
+
+                    for (int i = 0; i < this.state.Loop; i++)
+                    {
+                        int pointIndex = this.stack.Pop();
+                        if ((uint)pointIndex >= (uint)this.zp2.Current.Length)
+                        {
+                            continue;
+                        }
+
+                        if (!nativeClearType)
+                        {
+                            // Backward compat mode: gated Y-only movement.
+                            // Twilight zone always allowed; otherwise need composite+freeY or Y-touched.
+                            // Post-IUP (0x7): nothing moves (MoveZp2Point blocks Y at post-IUP).
+                            if (inTwilight ||
+                                (!postIUP &&
+                                 ((this.isComposite && this.state.Freedom.Y != 0) ||
+                                  ((this.zp2.TouchState[pointIndex] & TouchState.Y) == TouchState.Y))))
+                            {
+                                this.MoveZp2Point(this.zp2, pointIndex, 0, dy, true);
+                            }
+                        }
+                        else
+                        {
+                            // Native ClearType: move freely on both axes.
+                            this.MoveZp2Point(this.zp2, pointIndex, dx, dy, true);
+                        }
+                    }
+
+                    this.state.Loop = 1;
                     break;
                 }
 
                 case OpCode.SHC0:
                 case OpCode.SHC1:
                 {
-                    Vector2 displacement = this.ComputeDisplacement((int)opcode, out Zone zone, out int point);
+                    if (!this.TryComputeDisplacement((int)opcode, out Zone zone, out int point, out Vector2 displacement))
+                    {
+                        this.stack.Pop();
+                        break;
+                    }
 
                     int contour = this.stack.Pop();
+                    int bounds = this.zp2.IsTwilight ? 1 : this.contours.Count;
+                    if ((uint)contour >= (uint)bounds)
+                    {
+                        break;
+                    }
+
                     int start = contour == 0 ? 0 : this.contours[contour - 1] + 1;
                     int count = this.zp2.IsTwilight ? this.zp2.Current.Length : this.contours[contour] + 1;
                     ControlPoint[] current = this.zp2.Current;
@@ -761,8 +1083,7 @@ internal class TrueTypeInterpreter
                         // Don't move the reference point
                         if (zone.Current != current || point != i)
                         {
-                            current[i].Point.Y += displacement.Y;
-                            states[i] |= TouchState.Y;
+                            this.MoveZp2Point(this.zp2, i, displacement.X, displacement.Y, true);
                         }
                     }
                 }
@@ -771,7 +1092,18 @@ internal class TrueTypeInterpreter
                 case OpCode.SHZ0:
                 case OpCode.SHZ1:
                 {
-                    Vector2 displacement = this.ComputeDisplacement((int)opcode, out Zone zone, out int point);
+                    // FreeType Ins_SHZ: pop zone index first, then compute displacement.
+                    int shzZone = this.stack.Pop();
+                    if ((uint)shzZone >= 2)
+                    {
+                        break;
+                    }
+
+                    if (!this.TryComputeDisplacement((int)opcode, out Zone zone, out int point, out Vector2 displacement))
+                    {
+                        break;
+                    }
+
                     int count = 0;
                     if (this.zp2.IsTwilight)
                     {
@@ -788,7 +1120,7 @@ internal class TrueTypeInterpreter
                         // Don't move the reference point
                         if (zone.Current != current || point != i)
                         {
-                            current[i].Point.Y += displacement.Y;
+                            this.MoveZp2Point(this.zp2, i, displacement.X, displacement.Y, false);
                         }
                     }
                 }
@@ -799,6 +1131,13 @@ internal class TrueTypeInterpreter
                 {
                     float distance = this.ReadCvt();
                     int pointIndex = this.stack.Pop();
+                    if ((uint)pointIndex >= (uint)this.zp0.Current.Length)
+                    {
+                        // FreeType Fail label: still sets rp0/rp1.
+                        this.state.Rp0 = pointIndex;
+                        this.state.Rp1 = pointIndex;
+                        break;
+                    }
 
                     // this instruction is used in the CVT to set up twilight points with original values
                     if (this.zp0.IsTwilight)
@@ -831,7 +1170,13 @@ internal class TrueTypeInterpreter
                 case OpCode.MDAP0:
                 case OpCode.MDAP1:
                 {
+                    // FreeType Ins_MDAP: bounds check before access.
                     int pointIndex = this.stack.Pop();
+                    if ((uint)pointIndex >= (uint)this.zp0.Current.Length)
+                    {
+                        break;
+                    }
+
                     Vector2 point = this.zp0.GetCurrent(pointIndex);
                     float distance = 0.0f;
                     if (opcode == OpCode.MDAP1)
@@ -851,6 +1196,11 @@ internal class TrueTypeInterpreter
                 {
                     float targetDistance = this.stack.PopFloat();
                     int pointIndex = this.stack.Pop();
+                    if ((uint)pointIndex >= (uint)this.zp1.Current.Length ||
+                        (uint)this.state.Rp0 >= (uint)this.zp0.Current.Length)
+                    {
+                        break;
+                    }
 
                     // if we're operating on the twilight zone, initialize the points
                     if (this.zp1.IsTwilight)
@@ -876,14 +1226,39 @@ internal class TrueTypeInterpreter
                 break;
                 case OpCode.IP:
                 {
+                    // FreeType Ins_IP: bounds check rp1 first.
+                    if ((uint)this.state.Rp1 >= (uint)this.zp0.Current.Length)
+                    {
+                        // Fail label: drain stack and reset loop.
+                        for (int i = 0; i < this.state.Loop; i++)
+                        {
+                            this.stack.Pop();
+                        }
+
+                        this.state.Loop = 1;
+                        break;
+                    }
+
                     Vector2 originalBase = this.zp0.GetOriginal(this.state.Rp1);
                     Vector2 currentBase = this.zp0.GetCurrent(this.state.Rp1);
-                    float originalRange = this.DualProject(this.zp1.GetOriginal(this.state.Rp2) - originalBase);
-                    float currentRange = this.Project(this.zp1.GetCurrent(this.state.Rp2) - currentBase);
+
+                    // FreeType: if rp2 fails, set ranges to 0 but continue.
+                    float originalRange = 0;
+                    float currentRange = 0;
+                    if ((uint)this.state.Rp2 < (uint)this.zp1.Current.Length)
+                    {
+                        originalRange = this.DualProject(this.zp1.GetOriginal(this.state.Rp2) - originalBase);
+                        currentRange = this.Project(this.zp1.GetCurrent(this.state.Rp2) - currentBase);
+                    }
 
                     for (int i = 0; i < this.state.Loop; i++)
                     {
                         int pointIndex = this.stack.Pop();
+                        if ((uint)pointIndex >= (uint)this.zp2.Current.Length)
+                        {
+                            continue;
+                        }
+
                         Vector2 point = this.zp2.GetCurrent(pointIndex);
                         float currentDistance = this.Project(point - currentBase);
                         float originalDistance = this.DualProject(this.zp2.GetOriginal(pointIndex) - originalBase);
@@ -911,9 +1286,26 @@ internal class TrueTypeInterpreter
                 break;
                 case OpCode.ALIGNRP:
                 {
+                    // FreeType Ins_ALIGNRP: bounds check rp0 first.
+                    if ((uint)this.state.Rp0 >= (uint)this.zp0.Current.Length)
+                    {
+                        for (int i = 0; i < this.state.Loop; i++)
+                        {
+                            this.stack.Pop();
+                        }
+
+                        this.state.Loop = 1;
+                        break;
+                    }
+
                     for (int i = 0; i < this.state.Loop; i++)
                     {
                         int pointIndex = this.stack.Pop();
+                        if ((uint)pointIndex >= (uint)this.zp1.Current.Length)
+                        {
+                            continue;
+                        }
+
                         Vector2 p1 = this.zp1.GetCurrent(pointIndex);
                         Vector2 p2 = this.zp0.GetCurrent(this.state.Rp0);
                         this.MovePoint(this.zp1, pointIndex, -this.Project(p1 - p2));
@@ -925,8 +1317,15 @@ internal class TrueTypeInterpreter
                 break;
                 case OpCode.ALIGNPTS:
                 {
-                    int p1 = this.stack.Pop();
+                    // FreeType Ins_ALIGNPTS: args[1] (top) = p2 in zp0, args[0] (deeper) = p1 in zp1.
                     int p2 = this.stack.Pop();
+                    int p1 = this.stack.Pop();
+                    if ((uint)p1 >= (uint)this.zp1.Current.Length ||
+                        (uint)p2 >= (uint)this.zp0.Current.Length)
+                    {
+                        break;
+                    }
+
                     float distance = this.Project(this.zp0.GetCurrent(p2) - this.zp1.GetCurrent(p1)) / 2;
                     this.MovePoint(this.zp1, p1, distance);
                     this.MovePoint(this.zp0, p2, -distance);
@@ -935,13 +1334,25 @@ internal class TrueTypeInterpreter
                 break;
                 case OpCode.UTP:
                 {
-                    this.zp0.TouchState[this.stack.Pop()] &= ~this.GetTouchState();
+                    int pointIndex = this.stack.Pop();
+                    if ((uint)pointIndex >= (uint)this.zp0.Current.Length)
+                    {
+                        break;
+                    }
+
+                    this.zp0.TouchState[pointIndex] &= ~this.GetTouchState();
                     break;
                 }
 
                 case OpCode.IUP0:
                 case OpCode.IUP1:
                 {
+                    // FreeType: IUP returns immediately once both axes have been processed.
+                    if (this.iupXCalled && this.iupYCalled)
+                    {
+                        break;
+                    }
+
                     unsafe
                     {
                         // bail if no contours (empty outline)
@@ -1048,11 +1459,24 @@ internal class TrueTypeInterpreter
                 case OpCode.ISECT:
                 {
                     // move point P to the intersection of lines A and B
-                    Vector2 b1 = this.zp0.GetCurrent(this.stack.Pop());
-                    Vector2 b0 = this.zp0.GetCurrent(this.stack.Pop());
-                    Vector2 a1 = this.zp1.GetCurrent(this.stack.Pop());
-                    Vector2 a0 = this.zp1.GetCurrent(this.stack.Pop());
+                    int ib1 = this.stack.Pop();
+                    int ib0 = this.stack.Pop();
+                    int ia1 = this.stack.Pop();
+                    int ia0 = this.stack.Pop();
                     int index = this.stack.Pop();
+                    if ((uint)ib0 >= (uint)this.zp0.Current.Length ||
+                        (uint)ib1 >= (uint)this.zp0.Current.Length ||
+                        (uint)ia0 >= (uint)this.zp1.Current.Length ||
+                        (uint)ia1 >= (uint)this.zp1.Current.Length ||
+                        (uint)index >= (uint)this.zp2.Current.Length)
+                    {
+                        break;
+                    }
+
+                    Vector2 b1 = this.zp0.GetCurrent(ib1);
+                    Vector2 b0 = this.zp0.GetCurrent(ib0);
+                    Vector2 a1 = this.zp1.GetCurrent(ia1);
+                    Vector2 a0 = this.zp1.GetCurrent(ia0);
 
                     // calculate intersection using determinants: https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line
                     Vector2 da = a0 - a1;
@@ -1188,7 +1612,13 @@ internal class TrueTypeInterpreter
                 {
                     if (this.stack.PopBool() == (opcode == OpCode.JROT))
                     {
-                        stream.Jump(this.stack.Pop() - 1);
+                        int offset = this.stack.Pop();
+                        if (offset < 0 && ++this.negJumpCounter > this.negJumpCounterMax)
+                        {
+                            return;
+                        }
+
+                        stream.Jump(offset - 1);
                     }
                     else
                     {
@@ -1199,7 +1629,14 @@ internal class TrueTypeInterpreter
                 break;
                 case OpCode.JMPR:
                 {
-                    stream.Jump(this.stack.Pop() - 1);
+                    int offset = this.stack.Pop();
+                    if (offset < 0 && ++this.negJumpCounter > this.negJumpCounterMax)
+                    {
+                        // FreeType sets Execution_Too_Long error and returns.
+                        return;
+                    }
+
+                    stream.Jump(offset - 1);
                     break;
                 }
 
@@ -1309,12 +1746,13 @@ internal class TrueTypeInterpreter
                 case OpCode.DIV:
                 {
                     int b = this.stack.Pop();
+                    int a = this.stack.Pop();
                     if (b == 0)
                     {
-                        throw new InvalidOperationException("Division by zero.");
+                        // FreeType sets Divide_By_Zero error and returns.
+                        return;
                     }
 
-                    int a = this.stack.Pop();
                     long result = ((long)a << 6) / b;
                     this.stack.Push((int)result);
                 }
@@ -1370,7 +1808,7 @@ internal class TrueTypeInterpreter
                 {
                     if (!allowFunctionDefs || inFunction)
                     {
-                        throw new FontException("Can't define functions here.");
+                        return;
                     }
 
                     this.functions[this.stack.Pop()] = stream.ToMemory();
@@ -1384,7 +1822,7 @@ internal class TrueTypeInterpreter
                 {
                     if (!allowFunctionDefs || inFunction)
                     {
-                        throw new FontException("Can't define functions here.");
+                        return;
                     }
 
                     this.instructionDefs[this.stack.Pop()] = stream.ToMemory();
@@ -1398,7 +1836,7 @@ internal class TrueTypeInterpreter
                 {
                     if (!inFunction)
                     {
-                        throw new FontException("Found invalid ENDF marker outside of a function definition.");
+                        return;
                     }
 
                     return;
@@ -1410,14 +1848,37 @@ internal class TrueTypeInterpreter
                     this.callStackSize++;
                     if (this.callStackSize > MaxCallStack)
                     {
-                        throw new FontException("Stack overflow; infinite recursion?");
+                        // FreeType sets Stack_Overflow error and returns.
+                        return;
                     }
 
-                    InstructionStream function = this.functions[this.stack.Pop()];
-                    int count = opcode == OpCode.LOOPCALL ? this.stack.Pop() : 1;
-                    for (int i = 0; i < count; i++)
+                    int funcIndex = this.stack.Pop();
+                    if ((uint)funcIndex >= (uint)this.functions.Length)
                     {
-                        this.Execute(function.ToStack(), true, false);
+                        // FreeType sets Invalid_Reference error and returns.
+                        return;
+                    }
+
+                    InstructionStream function = this.functions[funcIndex];
+                    int count = opcode == OpCode.LOOPCALL ? this.stack.Pop() : 1;
+
+                    // FreeType: only LOOPCALL increments the loopcall counter, not CALL.
+                    if (opcode == OpCode.LOOPCALL)
+                    {
+                        this.loopcallCounter += count;
+                        if (this.loopcallCounter > this.loopcallCounterMax)
+                        {
+                            // FreeType sets Execution_Too_Long error and returns.
+                            return;
+                        }
+                    }
+
+                    if (count > 0)
+                    {
+                        for (int i = 0; i < count; i++)
+                        {
+                            this.Execute(function.ToStack(), true, false);
+                        }
                     }
 
                     this.callStackSize--;
@@ -1474,9 +1935,11 @@ internal class TrueTypeInterpreter
 
                             amount *= 1 << (6 - this.state.DeltaShift);
 
-                            // update the CVT
-                            CheckIndex(cvtIndex, this.controlValueTable.Length);
-                            this.controlValueTable[cvtIndex] += F26Dot6ToFloat(amount);
+                            // update the CVT (FreeType non-pedantic: silently ignore out-of-bounds)
+                            if ((uint)cvtIndex < (uint)this.controlValueTable.Length)
+                            {
+                                this.controlValueTable[cvtIndex] += F26Dot6ToFloat(amount);
+                            }
                         }
                     }
                 }
@@ -1496,6 +1959,10 @@ internal class TrueTypeInterpreter
                     {
                         int pointIndex = this.stack.Pop();
                         int arg = this.stack.Pop();
+                        if ((uint)pointIndex >= (uint)this.zp0.Current.Length)
+                        {
+                            continue;
+                        }
 
                         // upper 4 bits of the 8-bit arg is the relative ppem
                         // the opcode specifies the base to add to the ppem
@@ -1519,12 +1986,22 @@ internal class TrueTypeInterpreter
 
                             amount *= 1 << (6 - this.state.DeltaShift);
 
-                            // SHPIX and DELTAP don't execute unless moving a composite on the
-                            // y axis or moving a previously y touched point.
-                            TouchState state = this.zp0.TouchState[pointIndex];
-                            if (!postIUP && ((composite && this.state.Freedom.Y != 0) || ((state & TouchState.Y) == TouchState.Y)))
+                            // FreeType Ins_DELTAP: v40 backward compatibility gating.
+                            bool nativeClearType = (this.state.InstructionControl & InstructionControlFlags.NativeClearType) != 0;
+                            if (nativeClearType)
                             {
                                 this.MovePoint(this.zp0, pointIndex, F26Dot6ToFloat(amount));
+                            }
+                            else
+                            {
+                                // Compat mode: gate on !postIUP AND (composite+freeY or Y-touched).
+                                TouchState state = this.zp0.TouchState[pointIndex];
+                                if (!postIUP &&
+                                    ((composite && this.state.Freedom.Y != 0) ||
+                                     ((state & TouchState.Y) == TouchState.Y)))
+                                {
+                                    this.MovePoint(this.zp0, pointIndex, F26Dot6ToFloat(amount));
+                                }
                             }
                         }
                     }
@@ -1541,29 +2018,76 @@ internal class TrueTypeInterpreter
 
                 case OpCode.GETINFO:
                 {
+                    // FreeType Ins_GETINFO.
+                    // Report v40 interpreter identity and ClearType capability flags.
                     int selector = this.stack.Pop();
                     int result = 0;
+
+                    // Selector bit 0: interpreter version.
                     if ((selector & 0x1) != 0)
                     {
-                        // pretend we are MS Rasterizer v35
-                        result = 35;
+                        result = 40;
                     }
 
-                    // TODO: rotation and stretching
-                    // if ((selector & 0x2) != 0)
-                    // if ((selector & 0x4) != 0)
+                    // Selector bits 1-2: rotation/stretching — always false in v40.
 
-                    // we're always rendering in grayscale
-                    if ((selector & 0x20) != 0)
+                    // Selector bit 3: variation glyph (FreeType Ins_GETINFO).
+                    // Set result bit 10 when the font is a variable font instance.
+                    if ((selector & 0x8) != 0 && this.normalizedAxisCoordinates is not null)
                     {
-                        result |= 1 << 12;
+                        result |= 1 << 10;
                     }
 
-                    // TODO: ClearType flags
+                    // Selector bit 5: grayscale rendering.
+                    // FreeType v40 sets grayscale = FALSE, so this bit is NOT set.
+
+                    // Selector bit 6: subpixel hinting is available (v40 default).
+                    if ((selector & 0x40) != 0)
+                    {
+                        result |= 1 << 13;
+                    }
+
+                    // Selector bit 10: subpixel positioned.
+                    if ((selector & 0x400) != 0)
+                    {
+                        result |= 1 << 17;
+                    }
+
+                    // Selector bit 11: symmetrical smoothing.
+                    if ((selector & 0x800) != 0)
+                    {
+                        result |= 1 << 18;
+                    }
+
                     this.stack.Push(result);
                 }
 
                 break;
+
+                case OpCode.GETVARIATION:
+                {
+                    // FreeType Ins_GETVARIATION.
+                    // Push normalized axis coordinates as F2Dot14 integers.
+                    // FreeType stores coords as F16Dot16 and does >> 2 to get F2Dot14.
+                    // We store floats in [-1,1], so multiply by 16384 to get F2Dot14.
+                    if (this.normalizedAxisCoordinates is not null)
+                    {
+                        for (int i = 0; i < this.normalizedAxisCoordinates.Length; i++)
+                        {
+                            this.stack.Push((int)Math.Round(this.normalizedAxisCoordinates[i] * 16384));
+                        }
+                    }
+
+                    break;
+                }
+
+                case OpCode.GETDATA:
+                {
+                    // FreeType Ins_GETDATA.
+                    // Always returns 17.
+                    this.stack.Push(17);
+                    break;
+                }
 
                 default:
                 {
@@ -1581,13 +2105,14 @@ internal class TrueTypeInterpreter
                         int index = (int)opcode;
                         if (index > this.instructionDefs.Length || !this.instructionDefs[index].IsValid)
                         {
-                            throw new FontException("Unknown opcode in font program.");
+                            // FreeType sets Invalid_Opcode error and terminates execution.
+                            return;
                         }
 
                         this.callStackSize++;
                         if (this.callStackSize > MaxCallStack)
                         {
-                            throw new FontException("Stack overflow; infinite recursion?");
+                            return;
                         }
 
                         this.Execute(this.instructionDefs[index].ToStack(), true, false);
@@ -1597,17 +2122,32 @@ internal class TrueTypeInterpreter
                     break;
                 }
             }
+
+#if HINTING_TRACE
+            this.TracePostInstruction(opcode, pops, pushes, preStackCount);
+#endif
         }
     }
 
-    private static int CheckIndex(int index, int length)
+    /// <summary>
+    /// Pops a CVT index from the stack and returns the corresponding value.
+    /// Returns 0 for out-of-bounds indices (FreeType non-pedantic behavior).
+    /// </summary>
+    private float ReadCvt()
     {
-        Guard.MustBeBetweenOrEqualTo(index, 0, length - 1, nameof(index));
-        return index;
+        int loc = this.stack.Pop();
+        if ((uint)loc >= (uint)this.controlValueTable.Length)
+        {
+            return 0;
+        }
+
+        return this.controlValueTable[loc];
     }
 
-    private float ReadCvt() => this.controlValueTable[CheckIndex(this.stack.Pop(), this.controlValueTable.Length)];
-
+    /// <summary>
+    /// Recomputes the cached dot product of the freedom and projection vectors.
+    /// Must be called whenever either vector changes.
+    /// </summary>
     private void OnVectorsUpdated()
     {
         this.fdotp = Vector2.Dot(this.state.Freedom, this.state.Projection);
@@ -1617,12 +2157,20 @@ internal class TrueTypeInterpreter
         }
     }
 
+    /// <summary>
+    /// Sets the freedom vector to one of the coordinate axes (SFVTCA).
+    /// </summary>
+    /// <param name="axis">0 for the Y-axis, 1 for the X-axis.</param>
     private void SetFreedomVectorToAxis(int axis)
     {
         this.state.Freedom = axis == 0 ? Vector2.UnitY : Vector2.UnitX;
         this.OnVectorsUpdated();
     }
 
+    /// <summary>
+    /// Sets the projection and dual-projection vectors to one of the coordinate axes (SPVTCA).
+    /// </summary>
+    /// <param name="axis">0 for the Y-axis, 1 for the X-axis.</param>
     private void SetProjectionVectorToAxis(int axis)
     {
         this.state.Projection = axis == 0 ? Vector2.UnitY : Vector2.UnitX;
@@ -1631,13 +2179,14 @@ internal class TrueTypeInterpreter
         this.OnVectorsUpdated();
     }
 
+    /// <summary>
+    /// Sets a projection or freedom vector to the direction of a line between two points
+    /// (SPVTL/SFVTL/SDPVTL). The mode's low bit selects the perpendicular direction.
+    /// </summary>
+    /// <param name="mode">0=SPVTL0, 1=SPVTL1, 2=SFVTL0, 3=SFVTL1.</param>
+    /// <param name="dual">When <see langword="true"/>, also sets the dual-projection vector from original coordinates.</param>
     private void SetVectorToLine(int mode, bool dual)
     {
-        // mode here should be as follows:
-        // 0: SPVTL0
-        // 1: SPVTL1
-        // 2: SFVTL0
-        // 3: SFVTL1
         int index1 = this.stack.Pop();
         int index2 = this.stack.Pop();
         Vector2 p1 = this.zp2.GetCurrent(index1);
@@ -1703,25 +2252,42 @@ internal class TrueTypeInterpreter
         this.OnVectorsUpdated();
     }
 
-    private Zone GetZoneFromStack()
-        => this.stack.Pop() switch
+    /// <summary>
+    /// Pops a zone index from the stack and returns the corresponding zone.
+    /// Returns <see langword="false"/> for invalid indices (FreeType non-pedantic: silently ignores).
+    /// </summary>
+    private bool TryGetZoneFromStack(out Zone zone)
+    {
+        int zoneIndex = this.stack.Pop();
+        switch (zoneIndex)
         {
-            0 => this.twilight,
-            1 => this.points,
-            _ => throw new FontException("Invalid zone pointer."),
-        };
+            case 0:
+                zone = this.twilight;
+                return true;
+            case 1:
+                zone = this.points;
+                return true;
+            default:
+                // FreeType non-pedantic: silently ignore invalid zone pointers.
+                zone = default;
+                return false;
+        }
+    }
 
+    /// <summary>
+    /// Configures super-rounding parameters from a packed mode byte (SROUND/S45ROUND).
+    /// Bits 7-6 select the period multiplier, bits 5-4 the phase, and bits 3-0 the threshold.
+    /// </summary>
+    /// <param name="period">Base period: 1.0 for SROUND, sqrt(2)/2 for S45ROUND.</param>
     private void SetSuperRound(float period)
     {
-        // mode is a bunch of packed flags
-        // bits 7-6 are the period multiplier
         int mode = this.stack.Pop();
         this.roundPeriod = (mode & 0xC0) switch
         {
             0 => period / 2,
             0x40 => period,
             0x80 => period * 2,
-            _ => throw new FontException("Unknown rounding period multiplier."),
+            _ => period * 2, // Reserved; FreeType treats as period * 2.
         };
 
         // bits 5-4 are the phase
@@ -1752,13 +2318,29 @@ internal class TrueTypeInterpreter
         }
     }
 
+    /// <summary>
+    /// Move Indirect Relative Point (MIRP). Moves a point so that its distance from RP0
+    /// matches a CVT value, subject to rounding, cut-in, and minimum distance constraints
+    /// controlled by the instruction's flag bits.
+    /// </summary>
+    /// <param name="flags">MIRP flag bits: bit 4=set RP0, bit 3=minimum distance, bit 2=round, bits 1-0=engine compensation.</param>
     private void MoveIndirectRelative(int flags)
     {
-        // this instruction tries to make the current distance between a given point
-        // and the reference point rp0 be equivalent to the same distance in the original outline
-        // there are a bunch of flags that control how that distance is measured
         float cvt = this.ReadCvt();
         int pointIndex = this.stack.Pop();
+        if ((uint)pointIndex >= (uint)this.zp1.Current.Length ||
+            (uint)this.state.Rp0 >= (uint)this.zp0.Current.Length)
+        {
+            // FreeType Fail label: still sets reference points.
+            this.state.Rp1 = this.state.Rp0;
+            this.state.Rp2 = pointIndex;
+            if ((flags & 0x10) != 0)
+            {
+                this.state.Rp0 = pointIndex;
+            }
+
+            return;
+        }
 
         if (Math.Abs(cvt - this.state.SingleWidthValue) < this.state.SingleWidthCutIn)
         {
@@ -1826,10 +2408,29 @@ internal class TrueTypeInterpreter
         }
     }
 
+    /// <summary>
+    /// Move Direct Relative Point (MDRP). Moves a point so that its distance from RP0
+    /// matches the original outline distance, subject to rounding and minimum distance
+    /// constraints controlled by the instruction's flag bits.
+    /// </summary>
+    /// <param name="flags">MDRP flag bits: bit 4=set RP0, bit 3=minimum distance, bit 2=round, bits 1-0=engine compensation.</param>
     private void MoveDirectRelative(int flags)
     {
-        // determine the original distance between the two reference points
         int pointIndex = this.stack.Pop();
+        if ((uint)pointIndex >= (uint)this.zp1.Current.Length ||
+            (uint)this.state.Rp0 >= (uint)this.zp0.Current.Length)
+        {
+            // FreeType Fail label: still sets reference points.
+            this.state.Rp1 = this.state.Rp0;
+            this.state.Rp2 = pointIndex;
+            if ((flags & 0x10) != 0)
+            {
+                this.state.Rp0 = pointIndex;
+            }
+
+            return;
+        }
+
         Vector2 p1 = this.zp0.GetOriginal(this.state.Rp0);
         Vector2 p2 = this.zp1.GetOriginal(pointIndex);
         float originalDistance = this.DualProject(p2 - p1);
@@ -1878,9 +2479,18 @@ internal class TrueTypeInterpreter
         }
     }
 
-    private Vector2 ComputeDisplacement(int mode, out Zone zone, out int point)
+    /// <summary>
+    /// Computes the displacement vector for SHP/SHC/SHZ instructions by projecting the
+    /// movement of the reference point (RP1 or RP2 depending on mode) from its original
+    /// to its current position onto the freedom vector.
+    /// </summary>
+    /// <param name="mode">Opcode value; bit 0 selects RP1 in ZP0 (1) or RP2 in ZP1 (0).</param>
+    /// <param name="zone">Receives the reference zone.</param>
+    /// <param name="point">Receives the reference point index.</param>
+    /// <param name="displacement">Receives the computed displacement vector.</param>
+    /// <returns><see langword="true"/> if the reference point is valid; otherwise <see langword="false"/>.</returns>
+    private bool TryComputeDisplacement(int mode, out Zone zone, out int point, out Vector2 displacement)
     {
-        // compute displacement of the reference point
         if ((mode & 1) == 0)
         {
             zone = this.zp1;
@@ -1892,10 +2502,21 @@ internal class TrueTypeInterpreter
             point = this.state.Rp1;
         }
 
+        if ((uint)point >= (uint)zone.Current.Length)
+        {
+            displacement = default;
+            return false;
+        }
+
         float distance = this.Project(zone.GetCurrent(point) - zone.GetOriginal(point));
-        return distance * this.state.Freedom / this.fdotp;
+        displacement = distance * this.state.Freedom / this.fdotp;
+        return true;
     }
 
+    /// <summary>
+    /// Returns the touch state flags corresponding to the current freedom vector axes.
+    /// Used by UTP to selectively clear touch bits.
+    /// </summary>
     private TouchState GetTouchState()
     {
         TouchState touch = TouchState.None;
@@ -1912,56 +2533,94 @@ internal class TrueTypeInterpreter
         return touch;
     }
 
-    private void ShiftPoints(Vector2 displacement)
+    /// <summary>
+    /// Moves a point along the freedom vector by the given distance, applying v40
+    /// backward compatibility restrictions: X movement is always blocked in compat mode,
+    /// Y movement is blocked only after both IUP passes have completed (post-IUP).
+    /// Corresponds to FreeType's <c>Direct_Move</c> / <c>func_move</c>.
+    /// </summary>
+    private void MovePoint(Zone zone, int index, float distance)
     {
-        // SHPIX and DELTAP don't execute unless moving a composite on the
-        // y axis or moving a previously y touched point.
-        // https://github.com/freetype/freetype/blob/3ab1875cd22536b3d715b3b104b7fb744b9c25c5/src/truetype/ttinterp.h#L298
+        // X is always blocked in backward compat mode.
+        // Y is blocked only when backward_compatibility == 0x7 (post-IUP).
+        bool nativeClearType = (this.state.InstructionControl & InstructionControlFlags.NativeClearType) != 0;
         bool postIUP = this.iupXCalled && this.iupYCalled;
-        bool composite = this.isComposite;
-        ControlPoint[] current = this.zp2.Current;
-        bool inTwilight = this.zp0.IsTwilight || this.zp1.IsTwilight || this.zp2.IsTwilight;
 
-        for (int i = 0; i < this.state.Loop; i++)
+        if (this.state.Freedom.X != 0)
         {
-            // Special case: allow SHPIX to move points in the twilight zone.
-            // Otherwise, treat SHPIX the same as DELTAP.  Unbreaks various
-            // fonts such as older versions of Rokkitt and DTL Argo T Light
-            // that would glitch severely after calling ALIGNRP after a
-            // blocked SHPIX.
-            int pointIndex = this.stack.Pop();
-            ref TouchState state = ref this.zp2.TouchState[pointIndex];
-            if (inTwilight || (!postIUP && ((composite && this.state.Freedom.Y != 0) || ((state & TouchState.Y) == TouchState.Y))))
+            if (nativeClearType)
             {
-                // Copy FreeType Interpreter V40 and ignore instructions on the x-axis.
-                // This prevents outline distortion on legacy fonts.
-                // https://github.com/freetype/freetype/blob/3ab1875cd22536b3d715b3b104b7fb744b9c25c5/src/truetype/ttinterp.h#L298
-                current[pointIndex].Point.Y += displacement.Y;
-                state |= TouchState.Y;
+                float dx = distance * this.state.Freedom.X / this.fdotp;
+                zone.Current[index].Point.X += dx;
+            }
+
+            zone.TouchState[index] |= TouchState.X;
+        }
+
+        if (this.state.Freedom.Y != 0)
+        {
+            if (nativeClearType || !postIUP)
+            {
+                float dy = distance * this.state.Freedom.Y / this.fdotp;
+                zone.Current[index].Point.Y += dy;
+            }
+
+            zone.TouchState[index] |= TouchState.Y;
+        }
+
+#if HINTING_TRACE
+        this.traceLog.AppendLine(System.FormattableString.Invariant($"  -> pt[{index}] = ({zone.Current[index].Point.X:F2}, {zone.Current[index].Point.Y:F2}) dist={distance:F2}"));
+#endif
+    }
+
+    /// <summary>
+    /// Moves a ZP2 point by explicit (dx, dy) deltas with the same v40 backward
+    /// compatibility restrictions as <see cref="MovePoint"/>. Used by SHP, SHC, SHZ,
+    /// and SHPIX where the displacement is pre-computed rather than derived from a scalar distance.
+    /// Corresponds to FreeType's <c>Move_Zp2_Point</c>.
+    /// </summary>
+    private void MoveZp2Point(Zone zone, int index, float dx, float dy, bool touch)
+    {
+        // X is always blocked in compat mode.
+        // Y is blocked only at backward_compatibility == 0x7 (post-IUP).
+        bool nativeClearType = (this.state.InstructionControl & InstructionControlFlags.NativeClearType) != 0;
+        bool postIUP = this.iupXCalled && this.iupYCalled;
+
+        if (this.state.Freedom.X != 0)
+        {
+            if (nativeClearType)
+            {
+                zone.Current[index].Point.X += dx;
+            }
+
+            if (touch)
+            {
+                zone.TouchState[index] |= TouchState.X;
             }
         }
 
-        this.state.Loop = 1;
-    }
-
-    private void MovePoint(Zone zone, int index, float distance)
-    {
-        // Copy FreeType Interpreter V40 and ignore instructions on the x-axis.
-        // This increases resolution on the x-axis and prevents glyph explosions on legacy fonts.
-        // https://github.com/freetype/freetype/blob/3ab1875cd22536b3d715b3b104b7fb744b9c25c5/src/truetype/ttinterp.h#L298
-        Vector2 cur = zone.GetCurrent(index);
-
-        // V40: ignore x movement, apply only the Y component.
-        float dy = distance * this.state.Freedom.Y / this.fdotp;
-
-        // Only mark Y as touched if Y actually changed.
-        if (dy != 0F)
+        if (this.state.Freedom.Y != 0)
         {
-            zone.Current[index].Point.Y = cur.Y + dy;
-            zone.TouchState[index] |= TouchState.Y;
+            if (nativeClearType || !postIUP)
+            {
+                zone.Current[index].Point.Y += dy;
+            }
+
+            if (touch)
+            {
+                zone.TouchState[index] |= TouchState.Y;
+            }
         }
+
+#if HINTING_TRACE
+        this.traceLog.AppendLine(System.FormattableString.Invariant($"  -> zp2[{index}] = ({zone.Current[index].Point.X:F2}, {zone.Current[index].Point.Y:F2}) dx={dx:F2} dy={dy:F2}"));
+#endif
     }
 
+    /// <summary>
+    /// Rounds a distance value according to the current round state.
+    /// FreeType v40 uses zero engine compensation for all modes.
+    /// </summary>
     private float Round(float value)
     {
         switch (this.state.RoundState)
@@ -2138,13 +2797,19 @@ internal class TrueTypeInterpreter
         }
     }
 
+    /// <summary>Projects a point difference onto the projection vector.</summary>
     private float Project(Vector2 point) => Vector2.Dot(point, this.state.Projection);
 
+    /// <summary>Projects a point difference onto the dual-projection vector (used for original coordinates).</summary>
     private float DualProject(Vector2 point) => Vector2.Dot(point, this.state.DualProjection);
 
+    /// <summary>
+    /// Reads and skips the next instruction in the stream, advancing past any inline
+    /// data bytes for push instructions. Used by FDEF/IDEF to scan for ENDF and by
+    /// IF/ELSE to skip over conditional blocks.
+    /// </summary>
     private static OpCode SkipNext(ref StackInstructionStream stream)
     {
-        // grab the next opcode, and if it's one of the push instructions skip over its arguments
         OpCode opcode = stream.NextOpCode();
         switch (opcode)
         {
@@ -2183,6 +2848,11 @@ internal class TrueTypeInterpreter
         return opcode;
     }
 
+    /// <summary>
+    /// Interpolates untouched points between two reference points, preserving
+    /// their relative positions in the original outline. Used by IUP.
+    /// Operates on raw byte pointers to support direction-agnostic X/Y processing.
+    /// </summary>
     private static unsafe void InterpolatePoints(byte* current, byte* original, int start, int end, int ref1, int ref2)
     {
         if (start > end)
@@ -2235,6 +2905,11 @@ internal class TrueTypeInterpreter
         }
     }
 
+    // Fixed-point conversion helpers.
+    // F2Dot14: 2-bit integer + 14-bit fraction, range [-2, ~2). Used for unit vectors.
+    // F26Dot6: 26-bit integer + 6-bit fraction. The native format for point coordinates
+    // in the TrueType interpreter. Our implementation uses float throughout but converts
+    // at the stack boundary to maintain compatibility with instruction semantics.
     private static float F2Dot14ToFloat(int value) => (short)value / 16384.0f;
 
     private static int FloatToF2Dot14(float value) => (int)(uint)(short)Math.Round(value * 16384.0f);
@@ -2244,6 +2919,70 @@ internal class TrueTypeInterpreter
     private static int FloatToF26Dot6(float value) => (int)Math.Round(value * 64.0f);
 
     private static unsafe float* GetPoint(byte* data, int index) => (float*)(data + (sizeof(ControlPoint) * index));
+
+#if HINTING_TRACE
+    private void TracePreInstruction(OpCode opcode, int pops)
+    {
+        System.Text.StringBuilder sb = this.traceLog;
+        sb.Append(System.FormattableString.Invariant($"[{this.insCounter}] {opcode} (stk={this.stack.Count})"));
+
+        // Show the top stack values that this instruction will consume.
+        int available = Math.Min(pops, this.stack.Count);
+        if (available > 0)
+        {
+            sb.Append(" args=[");
+            for (int i = available - 1; i >= 0; i--)
+            {
+                if (i < available - 1)
+                {
+                    sb.Append(", ");
+                }
+
+                sb.Append(this.stack.Peek(i));
+            }
+
+            sb.Append(']');
+        }
+
+        sb.AppendLine();
+    }
+
+    private void TracePostInstruction(OpCode opcode, int pops, int pushes, int preStackCount)
+    {
+        int postStackCount = this.stack.Count;
+        int expectedDelta = pushes - pops;
+        int actualDelta = postStackCount - preStackCount;
+
+        // Skip variable-pop/push instructions where PopPushCount is not authoritative.
+        bool variablePop = opcode is
+            OpCode.NPUSHB or OpCode.NPUSHW or
+            OpCode.PUSHB1 or OpCode.PUSHB2 or OpCode.PUSHB3 or OpCode.PUSHB4 or
+            OpCode.PUSHB5 or OpCode.PUSHB6 or OpCode.PUSHB7 or OpCode.PUSHB8 or
+            OpCode.PUSHW1 or OpCode.PUSHW2 or OpCode.PUSHW3 or OpCode.PUSHW4 or
+            OpCode.PUSHW5 or OpCode.PUSHW6 or OpCode.PUSHW7 or OpCode.PUSHW8 or
+            OpCode.SHP0 or OpCode.SHP1 or
+            OpCode.FLIPRGON or OpCode.FLIPRGOFF or
+            OpCode.DELTAP1 or OpCode.DELTAP2 or OpCode.DELTAP3 or
+            OpCode.DELTAC1 or OpCode.DELTAC2 or OpCode.DELTAC3 or
+            OpCode.LOOPCALL or OpCode.CALL or
+            OpCode.FDEF or OpCode.IDEF or
+            OpCode.GETVARIATION or
+            OpCode.ENDF or OpCode.AA;
+
+        if (!variablePop && actualDelta != expectedDelta)
+        {
+            this.traceLog.AppendLine(
+                System.FormattableString.Invariant(
+                    $"  *** STACK IMBALANCE: expected delta={expectedDelta} (pop={pops} push={pushes}), actual delta={actualDelta} (pre={preStackCount} post={postStackCount})"));
+        }
+    }
+
+    /// <summary>
+    /// Gets the accumulated trace log for the most recent glyph hinting operation.
+    /// Only available when compiled with the HINTING_TRACE constant.
+    /// </summary>
+    internal string GetTraceLog() => this.traceLog.ToString();
+#endif
 
 #pragma warning disable SA1201 // Elements should appear in the correct order
     private enum RoundMode
@@ -2264,7 +3003,8 @@ internal class TrueTypeInterpreter
     {
         None,
         InhibitGridFitting = 0x1,
-        UseDefaultGraphicsState = 0x2
+        UseDefaultGraphicsState = 0x2,
+        NativeClearType = 0x4
     }
 
     [Flags]
@@ -2274,171 +3014,6 @@ internal class TrueTypeInterpreter
         X = 0x1,
         Y = 0x2,
         Both = X | Y
-    }
-
-    private enum OpCode : byte
-    {
-        SVTCA0,
-        SVTCA1,
-        SPVTCA0,
-        SPVTCA1,
-        SFVTCA0,
-        SFVTCA1,
-        SPVTL0,
-        SPVTL1,
-        SFVTL0,
-        SFVTL1,
-        SPVFS,
-        SFVFS,
-        GPV,
-        GFV,
-        SFVTPV,
-        ISECT,
-        SRP0,
-        SRP1,
-        SRP2,
-        SZP0,
-        SZP1,
-        SZP2,
-        SZPS,
-        SLOOP,
-        RTG,
-        RTHG,
-        SMD,
-        ELSE,
-        JMPR,
-        SCVTCI,
-        SSWCI,
-        SSW,
-        DUP,
-        POP,
-        CLEAR,
-        SWAP,
-        DEPTH,
-        CINDEX,
-        MINDEX,
-        ALIGNPTS,
-        /* unused: 0x28 */
-        UTP = 0x29,
-        LOOPCALL,
-        CALL,
-        FDEF,
-        ENDF,
-        MDAP0,
-        MDAP1,
-        IUP0,
-        IUP1,
-        SHP0,
-        SHP1,
-        SHC0,
-        SHC1,
-        SHZ0,
-        SHZ1,
-        SHPIX,
-        IP,
-        MSIRP0,
-        MSIRP1,
-        ALIGNRP,
-        RTDG,
-        MIAP0,
-        MIAP1,
-        NPUSHB,
-        NPUSHW,
-        WS,
-        RS,
-        WCVTP,
-        RCVT,
-        GC0,
-        GC1,
-        SCFS,
-        MD0,
-        MD1,
-        MPPEM,
-        MPS,
-        FLIPON,
-        FLIPOFF,
-        DEBUG,
-        LT,
-        LTEQ,
-        GT,
-        GTEQ,
-        EQ,
-        NEQ,
-        ODD,
-        EVEN,
-        IF,
-        EIF,
-        AND,
-        OR,
-        NOT,
-        DELTAP1,
-        SDB,
-        SDS,
-        ADD,
-        SUB,
-        DIV,
-        MUL,
-        ABS,
-        NEG,
-        FLOOR,
-        CEILING,
-        ROUND0,
-        ROUND1,
-        ROUND2,
-        ROUND3,
-        NROUND0,
-        NROUND1,
-        NROUND2,
-        NROUND3,
-        WCVTF,
-        DELTAP2,
-        DELTAP3,
-        DELTAC1,
-        DELTAC2,
-        DELTAC3,
-        SROUND,
-        S45ROUND,
-        JROT,
-        JROF,
-        ROFF,
-        /* unused: 0x7B */
-        RUTG = 0x7C,
-        RDTG,
-        SANGW,
-        AA,
-        FLIPPT,
-        FLIPRGON,
-        FLIPRGOFF,
-        /* unused: 0x83 - 0x84 */
-        SCANCTRL = 0x85,
-        SDPVTL0,
-        SDPVTL1,
-        GETINFO,
-        IDEF,
-        ROLL,
-        MAX,
-        MIN,
-        SCANTYPE,
-        INSTCTRL,
-        /* unused: 0x8F - 0xAF */
-        PUSHB1 = 0xB0,
-        PUSHB2,
-        PUSHB3,
-        PUSHB4,
-        PUSHB5,
-        PUSHB6,
-        PUSHB7,
-        PUSHB8,
-        PUSHW1,
-        PUSHW2,
-        PUSHW3,
-        PUSHW4,
-        PUSHW5,
-        PUSHW6,
-        PUSHW7,
-        PUSHW8,
-        MDRP, // range of 32 values, 0xC0 - 0xDF,
-        MIRP = 0xE0 // range of 32 values, 0xE0 - 0xFF
     }
 
     private readonly struct InstructionStream
@@ -2582,9 +3157,12 @@ internal class TrueTypeInterpreter
     private class ExecutionStack
     {
         private readonly int[] s;
-        private int count;
 
         public ExecutionStack(int maxStack) => this.s = new int[maxStack];
+
+        public int Count { get; private set; }
+
+        public int Capacity => this.s.Length;
 
         public int Peek() => this.Peek(0);
 
@@ -2596,9 +3174,9 @@ internal class TrueTypeInterpreter
 
         public void Push(float value) => this.Push(FloatToF26Dot6(value));
 
-        public void Clear() => this.count = 0;
+        public void Clear() => this.Count = 0;
 
-        public void Depth() => this.Push(this.count);
+        public void Depth() => this.Push(this.Count);
 
         public void Duplicate() => this.Push(this.Peek());
 
@@ -2612,7 +3190,7 @@ internal class TrueTypeInterpreter
 
         public void Move(int index)
         {
-            int c = this.count;
+            int c = this.Count;
             int[] a = this.s;
             int val = this.Peek(index);
             for (int i = c - index - 1; i < c - 1; i++)
@@ -2625,7 +3203,7 @@ internal class TrueTypeInterpreter
 
         public void Swap()
         {
-            int c = this.count;
+            int c = this.Count;
             if (c < 2)
             {
                 ThrowStackOverflow();
@@ -2637,32 +3215,32 @@ internal class TrueTypeInterpreter
 
         public void Push(int value)
         {
-            if (this.count == this.s.Length)
+            if (this.Count == this.s.Length)
             {
                 ThrowStackOverflow();
             }
 
-            this.s[this.count++] = value;
+            this.s[this.Count++] = value;
         }
 
         public int Pop()
         {
-            if (this.count == 0)
+            if (this.Count == 0)
             {
                 ThrowStackOverflow();
             }
 
-            return this.s[--this.count];
+            return this.s[--this.Count];
         }
 
         public int Peek(int index)
         {
-            if (index < 0 || index >= this.count)
+            if (index < 0 || index >= this.Count)
             {
                 ThrowStackOverflow();
             }
 
-            return this.s[this.count - index - 1];
+            return this.s[this.Count - index - 1];
         }
 
         private static void ThrowStackOverflow() => throw new FontException("stack overflow");
