@@ -34,6 +34,10 @@ internal static class ShaperFactory
             or ScriptClass.Manichaean
             or ScriptClass.PsalterPahlavi => new ArabicShaper(script, textOptions),
 
+            // Thai / Lao
+            ScriptClass.Thai
+            or ScriptClass.Lao => new ThaiShaper(script, textOptions, fontMetrics, unicodeScriptTag != default),
+
             // Hangul
             ScriptClass.Hangul => new HangulShaper(script, textOptions, fontMetrics),
 

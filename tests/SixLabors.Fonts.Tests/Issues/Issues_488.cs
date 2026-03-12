@@ -68,4 +68,20 @@ public class Issues_488
 
         TextLayoutTestUtilities.TestLayout(text, options);
     }
+
+    [Fact]
+    public void Test_Issue_488_Lao()
+    {
+        const string text = "ໝາຈິ້ງຈອກສີນ້ຳຕານທີ່ວ່ອງໄວກະໂດດຂ້າມໝາຂີ້ຄ້ານ ສະຫຼັບ: ກ່ ງ່ ຍ່";
+
+        FontCollection fontCollection = new();
+        string name = fontCollection.Add(TestFonts.LaoSerifRegular).Name;
+
+        FontFamily mainFontFamily = fontCollection.Get(name);
+        Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
+
+        TextOptions options = new(mainFont);
+
+        TextLayoutTestUtilities.TestLayout(text, options);
+    }
 }
