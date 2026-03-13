@@ -12,8 +12,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 /// </summary>
 internal class HebrewShaper : DefaultShaper
 {
-    // Hebrew presentation forms with dagesh for U+05D0..U+05EA.
-    // 0x0000 means no dagesh form exists for that letter.
+    /// <summary>
+    /// Hebrew presentation forms with dagesh for U+05D0..U+05EA.
+    /// A value of 0x0000 means no dagesh form exists for that letter.
+    /// </summary>
     private static readonly ushort[] DageshForms =
     [
         0xFB30, // ALEF
@@ -45,9 +47,19 @@ internal class HebrewShaper : DefaultShaper
         0xFB4A, // TAV
     ];
 
+    /// <summary>The font metrics used for glyph lookups during composition.</summary>
     private readonly FontMetrics fontMetrics;
+
+    /// <summary>Whether the font has GSUB features for Hebrew.</summary>
     private readonly bool hasGsub;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HebrewShaper"/> class.
+    /// </summary>
+    /// <param name="script">The script classification.</param>
+    /// <param name="textOptions">The text options.</param>
+    /// <param name="fontMetrics">The font metrics for glyph lookups.</param>
+    /// <param name="hasGsub">Whether the font has GSUB features for Hebrew.</param>
     public HebrewShaper(ScriptClass script, TextOptions textOptions, FontMetrics fontMetrics, bool hasGsub)
         : base(script, MarkZeroingMode.PostGpos, textOptions)
     {
@@ -86,6 +98,9 @@ internal class HebrewShaper : DefaultShaper
     /// and the meteg stress mark.
     /// </para>
     /// </summary>
+    /// <param name="collection">The glyph substitution collection.</param>
+    /// <param name="index">The zero-based start index.</param>
+    /// <param name="count">The number of elements to process.</param>
     private static void ReorderMarks(GlyphSubstitutionCollection collection, int index, int count)
     {
         int end = index + count;
@@ -116,6 +131,10 @@ internal class HebrewShaper : DefaultShaper
     /// Composes Hebrew base + mark sequences into precomposed presentation forms.
     /// This is a fallback for legacy fonts that lack GPOS mark-to-base positioning.
     /// </summary>
+    /// <param name="collection">The glyph substitution collection.</param>
+    /// <param name="fontMetrics">The font metrics for glyph lookups.</param>
+    /// <param name="index">The zero-based start index.</param>
+    /// <param name="count">The number of elements to process.</param>
     private static void ComposeHebrewForms(GlyphSubstitutionCollection collection, FontMetrics fontMetrics, int index, int count)
     {
         int end = index + count;
@@ -139,6 +158,9 @@ internal class HebrewShaper : DefaultShaper
     /// Attempts to compose two Hebrew codepoints into a precomposed presentation form.
     /// Returns the composed codepoint, or 0 if no composition exists.
     /// </summary>
+    /// <param name="a">The first (base) codepoint value.</param>
+    /// <param name="b">The second (combining mark) codepoint value.</param>
+    /// <returns>The composed codepoint, or 0 if no composition exists.</returns>
     private static int TryCompose(int a, int b)
     {
         switch (b)
@@ -262,18 +284,24 @@ internal class HebrewShaper : DefaultShaper
         return 0;
     }
 
-    /// <summary>PATAH (U+05B7) or QAMATS (U+05B8).</summary>
+    /// <summary>Returns <see langword="true"/> if the codepoint is PATAH (U+05B7) or QAMATS (U+05B8).</summary>
+    /// <param name="codepoint">The codepoint value to test.</param>
+    /// <returns><see langword="true"/> if the codepoint is PATAH or QAMATS.</returns>
     private static bool IsPatahOrQamats(int codepoint)
         => codepoint is 0x05B7 or 0x05B8;
 
-    /// <summary>SHEVA (U+05B0) or HIRIQ (U+05B4).</summary>
+    /// <summary>Returns <see langword="true"/> if the codepoint is SHEVA (U+05B0) or HIRIQ (U+05B4).</summary>
+    /// <param name="codepoint">The codepoint value to test.</param>
+    /// <returns><see langword="true"/> if the codepoint is SHEVA or HIRIQ.</returns>
     private static bool IsShevaOrHiriq(int codepoint)
         => codepoint is 0x05B0 or 0x05B4;
 
     /// <summary>
-    /// METEG (U+05BD) or a combining mark with Unicode Canonical Combining Class = Below (220).
+    /// Returns <see langword="true"/> if the codepoint is METEG (U+05BD) or a combining mark with CCC = Below (220).
     /// Currently checks METEG only; generic CCC=220 detection would require combining class data.
     /// </summary>
+    /// <param name="codepoint">The codepoint value to test.</param>
+    /// <returns><see langword="true"/> if the codepoint is METEG or a below-class mark.</returns>
     private static bool IsMetegOrBelow(int codepoint)
         => codepoint == 0x05BD;
 }

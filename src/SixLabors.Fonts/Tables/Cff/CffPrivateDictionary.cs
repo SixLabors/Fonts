@@ -9,6 +9,12 @@ namespace SixLabors.Fonts.Tables.Cff;
 /// </summary>
 internal class CffPrivateDictionary
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CffPrivateDictionary"/> class.
+    /// </summary>
+    /// <param name="localSubrRawBuffers">The local subroutine byte buffers.</param>
+    /// <param name="defaultWidthX">The default glyph width.</param>
+    /// <param name="nominalWidthX">The nominal width bias.</param>
     public CffPrivateDictionary(byte[][]? localSubrRawBuffers, int defaultWidthX, int nominalWidthX)
     {
         this.LocalSubrRawBuffers = localSubrRawBuffers;

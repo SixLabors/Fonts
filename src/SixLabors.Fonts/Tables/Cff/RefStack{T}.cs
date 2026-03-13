@@ -17,6 +17,10 @@ internal ref struct RefStack<T>
     private Span<T> stack;
     private bool isDisposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RefStack{T}"/> struct with the specified initial capacity.
+    /// </summary>
+    /// <param name="capacity">The initial capacity of the stack. Values less than 1 default to 4.</param>
     public RefStack(int capacity)
     {
         if (capacity < 1)
@@ -30,8 +34,16 @@ internal ref struct RefStack<T>
         this.Length = 0;
     }
 
+    /// <summary>
+    /// Gets the number of elements currently in the stack.
+    /// </summary>
     public int Length { get; private set; }
 
+    /// <summary>
+    /// Gets or sets the element at the specified index in the stack.
+    /// </summary>
+    /// <param name="index">The zero-based index of the element.</param>
+    /// <returns>The element at the specified index.</returns>
     public T this[int index]
     {
         readonly get
@@ -130,6 +142,9 @@ internal ref struct RefStack<T>
         this.stack = this.buffer.GetSpan();
     }
 
+    /// <summary>
+    /// Releases the pooled buffer used by this stack.
+    /// </summary>
     public void Dispose()
     {
         if (this.isDisposed)
@@ -141,10 +156,16 @@ internal ref struct RefStack<T>
         this.isDisposed = true;
     }
 
+    /// <summary>
+    /// Throws an <see cref="InvalidOperationException"/> for an out-of-range index access.
+    /// </summary>
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowForOutOfRange()
         => throw new InvalidOperationException("Index must be greater or equal to zero or less than the stack length.");
 
+    /// <summary>
+    /// Throws an <see cref="InvalidOperationException"/> when attempting to pop or shift from an empty stack.
+    /// </summary>
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowForEmptyStack() => throw new InvalidOperationException("Empty stack!");
 }

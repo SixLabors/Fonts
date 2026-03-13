@@ -12,6 +12,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal static class LookupType8SubTable
 {
+    /// <summary>
+    /// Loads the chaining context positioning subtable from the specified reader.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers.</param>
+    /// <param name="markFilteringSet">The mark filtering set index.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
@@ -26,11 +34,21 @@ internal static class LookupType8SubTable
         };
     }
 
+    /// <summary>
+    /// Chained Context Positioning Format 1: simple glyph contexts.
+    /// </summary>
     internal sealed class LookupType8Format1SubTable : LookupSubTable
     {
         private readonly CoverageTable coverageTable;
         private readonly ChainedSequenceRuleSetTable[] seqRuleSetTables;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LookupType8Format1SubTable"/> class.
+        /// </summary>
+        /// <param name="coverageTable">The coverage table.</param>
+        /// <param name="seqRuleSetTables">The array of chained sequence rule set tables.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
         private LookupType8Format1SubTable(
             CoverageTable coverageTable,
             ChainedSequenceRuleSetTable[] seqRuleSetTables,
@@ -42,6 +60,14 @@ internal static class LookupType8SubTable
             this.seqRuleSetTables = seqRuleSetTables;
         }
 
+        /// <summary>
+        /// Loads the Format 1 chained context positioning subtable.
+        /// </summary>
+        /// <param name="reader">The big endian binary reader.</param>
+        /// <param name="offset">The offset to the beginning of the subtable.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
+        /// <returns>The loaded <see cref="LookupType8Format1SubTable"/>.</returns>
         public static LookupType8Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             ChainedSequenceRuleSetTable[] seqRuleSets =
@@ -50,6 +76,7 @@ internal static class LookupType8SubTable
             return new LookupType8Format1SubTable(coverageTable, seqRuleSets, lookupFlags, markFilteringSet);
         }
 
+        /// <inheritdoc/>
         public override bool TryUpdatePosition(
             FontMetrics fontMetrics,
             GPosTable table,
@@ -114,6 +141,9 @@ internal static class LookupType8SubTable
         }
     }
 
+    /// <summary>
+    /// Chained Context Positioning Format 2: class-based glyph contexts.
+    /// </summary>
     internal sealed class LookupType8Format2SubTable : LookupSubTable
     {
         private readonly CoverageTable coverageTable;
@@ -122,6 +152,16 @@ internal static class LookupType8SubTable
         private readonly ClassDefinitionTable lookaheadClassDefinitionTable;
         private readonly ChainedClassSequenceRuleSetTable[] sequenceRuleSetTables;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LookupType8Format2SubTable"/> class.
+        /// </summary>
+        /// <param name="sequenceRuleSetTables">The array of chained class sequence rule set tables.</param>
+        /// <param name="backtrackClassDefinitionTable">The backtrack class definition table.</param>
+        /// <param name="inputClassDefinitionTable">The input class definition table.</param>
+        /// <param name="lookaheadClassDefinitionTable">The lookahead class definition table.</param>
+        /// <param name="coverageTable">The coverage table.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
         private LookupType8Format2SubTable(
             ChainedClassSequenceRuleSetTable[] sequenceRuleSetTables,
             ClassDefinitionTable backtrackClassDefinitionTable,
@@ -139,6 +179,14 @@ internal static class LookupType8SubTable
             this.coverageTable = coverageTable;
         }
 
+        /// <summary>
+        /// Loads the Format 2 chained context positioning subtable.
+        /// </summary>
+        /// <param name="reader">The big endian binary reader.</param>
+        /// <param name="offset">The offset to the beginning of the subtable.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
+        /// <returns>The loaded <see cref="LookupType8Format2SubTable"/>.</returns>
         public static LookupType8Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             ChainedClassSequenceRuleSetTable[] seqRuleSets = TableLoadingUtils.LoadChainedSequenceContextFormat2(
@@ -159,6 +207,7 @@ internal static class LookupType8SubTable
                 markFilteringSet);
         }
 
+        /// <inheritdoc/>
         public override bool TryUpdatePosition(
             FontMetrics fontMetrics,
             GPosTable table,
@@ -221,6 +270,9 @@ internal static class LookupType8SubTable
         }
     }
 
+    /// <summary>
+    /// Chained Context Positioning Format 3: coverage-based glyph contexts.
+    /// </summary>
     internal sealed class LookupType8Format3SubTable : LookupSubTable
     {
         private readonly SequenceLookupRecord[] seqLookupRecords;
@@ -228,6 +280,15 @@ internal static class LookupType8SubTable
         private readonly CoverageTable[] inputCoverageTables;
         private readonly CoverageTable[] lookaheadCoverageTables;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LookupType8Format3SubTable"/> class.
+        /// </summary>
+        /// <param name="seqLookupRecords">The array of sequence lookup records.</param>
+        /// <param name="backtrackCoverageTables">The array of backtrack coverage tables.</param>
+        /// <param name="inputCoverageTables">The array of input coverage tables.</param>
+        /// <param name="lookaheadCoverageTables">The array of lookahead coverage tables.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
         private LookupType8Format3SubTable(
             SequenceLookupRecord[] seqLookupRecords,
             CoverageTable[] backtrackCoverageTables,
@@ -243,6 +304,14 @@ internal static class LookupType8SubTable
             this.lookaheadCoverageTables = lookaheadCoverageTables;
         }
 
+        /// <summary>
+        /// Loads the Format 3 chained context positioning subtable.
+        /// </summary>
+        /// <param name="reader">The big endian binary reader.</param>
+        /// <param name="offset">The offset to the beginning of the subtable.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
+        /// <returns>The loaded <see cref="LookupType8Format3SubTable"/>.</returns>
         public static LookupType8Format3SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             SequenceLookupRecord[] seqLookupRecords = TableLoadingUtils.LoadChainedSequenceContextFormat3(
@@ -261,6 +330,7 @@ internal static class LookupType8SubTable
                 markFilteringSet);
         }
 
+        /// <inheritdoc/>
         public override bool TryUpdatePosition(
             FontMetrics fontMetrics,
             GPosTable table,

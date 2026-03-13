@@ -83,8 +83,8 @@ internal sealed class SystemFontCollection : IReadOnlySystemFontCollection, IRea
         }
         else
         {
-            string[] expanded = StandardFontLocations.Select(x => Environment.ExpandEnvironmentVariables(x)).ToArray();
-            string[] existingDirectories = expanded.Where(x => Directory.Exists(x)).ToArray();
+            string[] expanded = [.. StandardFontLocations.Select(Environment.ExpandEnvironmentVariables)];
+            string[] existingDirectories = [.. expanded.Where(x => Directory.Exists(x))];
 
             // We do this to provide a consistent experience with case sensitive file systems.
             paths = existingDirectories
@@ -144,7 +144,7 @@ internal sealed class SystemFontCollection : IReadOnlySystemFontCollection, IRea
 
     private static FontCollection CreateSystemFontCollection(IEnumerable<string> paths, IReadOnlyCollection<string> searchDirectories)
     {
-        var collection = new FontCollection(searchDirectories);
+        FontCollection collection = new(searchDirectories);
 
         foreach (string path in paths)
         {
@@ -152,11 +152,11 @@ internal sealed class SystemFontCollection : IReadOnlySystemFontCollection, IRea
             {
                 if (path.EndsWith(".ttc", StringComparison.OrdinalIgnoreCase))
                 {
-                    collection.AddCollection(path);
+                    _ = collection.AddCollection(path);
                 }
                 else
                 {
-                    collection.Add(path);
+                    _ = collection.Add(path);
                 }
             }
             catch

@@ -14,36 +14,79 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 /// </summary>
 internal sealed class UniversalShaper : DefaultShaper
 {
+    /// <summary>The state machine for Universal Shaping Engine syllable identification.</summary>
     private static readonly StateMachine StateMachine =
         new(UniversalShapingData.StateTable, UniversalShapingData.AcceptingStates, UniversalShapingData.Tags);
 
+    /// <summary>The 'rphf' (reph forms) feature tag.</summary>
     private static readonly Tag RphfTag = Tag.Parse("rphf");
+
+    /// <summary>The 'nukt' (nukta forms) feature tag.</summary>
     private static readonly Tag NuktTag = Tag.Parse("nukt");
+
+    /// <summary>The 'akhn' (akhands) feature tag.</summary>
     private static readonly Tag AkhnTag = Tag.Parse("akhn");
+
+    /// <summary>The 'pref' (pre-base forms) feature tag.</summary>
     private static readonly Tag PrefTag = Tag.Parse("pref");
 
+    /// <summary>The 'rkrf' (rakar forms) feature tag.</summary>
     private static readonly Tag RkrfTag = Tag.Parse("rkrf");
+
+    /// <summary>The 'abvf' (above-base forms) feature tag.</summary>
     private static readonly Tag AbvfTag = Tag.Parse("abvf");
+
+    /// <summary>The 'blwf' (below-base forms) feature tag.</summary>
     private static readonly Tag BlwfTag = Tag.Parse("blwf");
+
+    /// <summary>The 'half' (half forms) feature tag.</summary>
     private static readonly Tag HalfTag = Tag.Parse("half");
+
+    /// <summary>The 'pstf' (post-base forms) feature tag.</summary>
     private static readonly Tag PstfTag = Tag.Parse("pstf");
+
+    /// <summary>The 'vatu' (vattu variants) feature tag.</summary>
     private static readonly Tag VatuTag = Tag.Parse("vatu");
+
+    /// <summary>The 'cjct' (conjunct forms) feature tag.</summary>
     private static readonly Tag CjctTag = Tag.Parse("cjct");
 
+    /// <summary>The 'abvs' (above-base substitutions) feature tag.</summary>
     private static readonly Tag AbvsTag = Tag.Parse("abvs");
+
+    /// <summary>The 'blws' (below-base substitutions) feature tag.</summary>
     private static readonly Tag BlwsTag = Tag.Parse("blws");
+
+    /// <summary>The 'pres' (pre-base substitutions) feature tag.</summary>
     private static readonly Tag PresTag = Tag.Parse("pres");
+
+    /// <summary>The 'psts' (post-base substitutions) feature tag.</summary>
     private static readonly Tag PstsTag = Tag.Parse("psts");
+
+    /// <summary>The 'dist' (distances) feature tag.</summary>
     private static readonly Tag DistTag = Tag.Parse("dist");
+
+    /// <summary>The 'abvm' (above-base mark positioning) feature tag.</summary>
     private static readonly Tag AbvmTag = Tag.Parse("abvm");
+
+    /// <summary>The 'blwm' (below-base mark positioning) feature tag.</summary>
     private static readonly Tag BlwmTag = Tag.Parse("blwm");
 
+    /// <summary>Dotted circle code point (U+25CC) used as a placeholder base.</summary>
     private const int DottedCircle = 0x25cc;
 
+    /// <summary>The font metrics used for glyph lookups.</summary>
     private readonly FontMetrics fontMetrics;
 
+    /// <summary>Whether any broken clusters were detected during syllable setup.</summary>
     private bool hasBrokenClusters;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UniversalShaper"/> class.
+    /// </summary>
+    /// <param name="script">The script classification.</param>
+    /// <param name="textOptions">The text options.</param>
+    /// <param name="fontMetrics">The font metrics for glyph lookups.</param>
     public UniversalShaper(ScriptClass script, TextOptions textOptions, FontMetrics fontMetrics)
        : base(script, MarkZeroingMode.PreGPos, textOptions)
         => this.fontMetrics = fontMetrics;
@@ -84,6 +127,12 @@ internal sealed class UniversalShaper : DefaultShaper
     protected override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
         => this.DecomposeSplitVowels(collection, index, count);
 
+    /// <summary>
+    /// Decomposes split vowels into their constituent parts if supported by the font.
+    /// </summary>
+    /// <param name="collection">The glyph shaping collection.</param>
+    /// <param name="index">The zero-based start index.</param>
+    /// <param name="count">The number of elements to process.</param>
     private void DecomposeSplitVowels(IGlyphShapingCollection collection, int index, int count)
     {
         if (collection is not GlyphSubstitutionCollection substitutionCollection)
@@ -124,6 +173,12 @@ internal sealed class UniversalShaper : DefaultShaper
         }
     }
 
+    /// <summary>
+    /// Identifies syllables using the Universal Shaping Engine state machine and assigns shaping info to each glyph.
+    /// </summary>
+    /// <param name="collection">The glyph shaping collection.</param>
+    /// <param name="index">The zero-based start index.</param>
+    /// <param name="count">The number of elements to process.</param>
     private void SetupSyllables(IGlyphShapingCollection collection, int index, int count)
     {
         if (collection is not GlyphSubstitutionCollection substitutionCollection)
@@ -174,6 +229,12 @@ internal sealed class UniversalShaper : DefaultShaper
         }
     }
 
+    /// <summary>
+    /// Clears substitution flags on all glyphs in the range, preparing for the next substitution pass.
+    /// </summary>
+    /// <param name="collection">The glyph shaping collection.</param>
+    /// <param name="index">The zero-based start index.</param>
+    /// <param name="count">The number of elements to process.</param>
     private static void ClearSubstitutionFlags(IGlyphShapingCollection collection, int index, int count)
     {
         if (collection is not GlyphSubstitutionCollection substitutionCollection)
@@ -189,6 +250,12 @@ internal sealed class UniversalShaper : DefaultShaper
         }
     }
 
+    /// <summary>
+    /// Records glyphs substituted by the 'rphf' feature by marking their category as repha ("R").
+    /// </summary>
+    /// <param name="collection">The glyph shaping collection.</param>
+    /// <param name="index">The zero-based start index.</param>
+    /// <param name="count">The number of elements to process.</param>
     private static void RecordRhpf(IGlyphShapingCollection collection, int index, int count)
     {
         if (collection is not GlyphSubstitutionCollection substitutionCollection)
@@ -211,6 +278,12 @@ internal sealed class UniversalShaper : DefaultShaper
         }
     }
 
+    /// <summary>
+    /// Records glyphs substituted by the 'pref' feature by marking their category as pre-base vowel ("VPre").
+    /// </summary>
+    /// <param name="collection">The glyph shaping collection.</param>
+    /// <param name="index">The zero-based start index.</param>
+    /// <param name="count">The number of elements to process.</param>
     private static void RecordPref(IGlyphShapingCollection collection, int index, int count)
     {
         if (collection is not GlyphSubstitutionCollection substitutionCollection)
@@ -233,6 +306,13 @@ internal sealed class UniversalShaper : DefaultShaper
         }
     }
 
+    /// <summary>
+    /// Reorders glyphs within syllables, handling repha movement, pre-base vowel movement,
+    /// and dotted circle insertion for broken clusters.
+    /// </summary>
+    /// <param name="collection">The glyph shaping collection.</param>
+    /// <param name="index">The zero-based start index.</param>
+    /// <param name="count">The number of elements to process.</param>
     private void Reorder(IGlyphShapingCollection collection, int index, int count)
     {
         if (collection is not GlyphSubstitutionCollection substitutionCollection)
@@ -363,6 +443,13 @@ internal sealed class UniversalShaper : DefaultShaper
         }
     }
 
+    /// <summary>
+    /// Finds the start index of the next syllable in the collection.
+    /// </summary>
+    /// <param name="collection">The glyph substitution collection.</param>
+    /// <param name="index">The current index.</param>
+    /// <param name="count">The maximum index bound.</param>
+    /// <returns>The start index of the next syllable.</returns>
     private static int NextSyllable(GlyphSubstitutionCollection collection, int index, int count)
     {
         if (index >= count)
@@ -382,9 +469,19 @@ internal sealed class UniversalShaper : DefaultShaper
         return index;
     }
 
+    /// <summary>
+    /// Determines whether the glyph is a halant, halant-like, or invisible stacker character.
+    /// </summary>
+    /// <param name="data">The glyph shaping data.</param>
+    /// <returns><see langword="true"/> if the glyph is a halant or equivalent.</returns>
     private static bool IsHalant(GlyphShapingData data)
         => (data.UniversalShapingEngineInfo?.Category is "H" or "HVM" or "IS") && !data.IsLigated;
 
+    /// <summary>
+    /// Determines whether the shaping info represents a base consonant or generic base.
+    /// </summary>
+    /// <param name="info">The universal shaping engine info.</param>
+    /// <returns><see langword="true"/> if the glyph is a base.</returns>
     private static bool IsBase(UniversalShapingEngineInfo? info)
         => info?.Category is "B" or "GB";
 }

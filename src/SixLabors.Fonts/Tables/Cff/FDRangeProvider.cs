@@ -17,6 +17,10 @@ internal struct FDRangeProvider
     private FDRange currentRange;
     private int currentSelectedRangeIndex;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FDRangeProvider"/> struct.
+    /// </summary>
+    /// <param name="cidFontInfo">The CIDFont information containing FDSelect data.</param>
     public FDRangeProvider(CidFontInfo cidFontInfo)
     {
         this.format = cidFontInfo.FdSelectFormat;
@@ -40,8 +44,15 @@ internal struct FDRangeProvider
         this.SelectedFDArray = 0;
     }
 
+    /// <summary>
+    /// Gets the currently selected Font DICT array index.
+    /// </summary>
     public ushort SelectedFDArray { get; private set; }
 
+    /// <summary>
+    /// Sets the current glyph index and resolves the corresponding Font DICT index.
+    /// </summary>
+    /// <param name="index">The glyph index to look up.</param>
     public void SetCurrentGlyphIndex(ushort index)
     {
         switch (this.format)

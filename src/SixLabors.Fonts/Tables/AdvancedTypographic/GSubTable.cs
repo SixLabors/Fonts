@@ -15,8 +15,18 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 /// </summary>
 internal class GSubTable : Table
 {
+    /// <summary>
+    /// The OpenType table tag for the GSUB table.
+    /// </summary>
     internal const string TableName = "GSUB";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GSubTable"/> class.
+    /// </summary>
+    /// <param name="scriptList">The script list table, or <see langword="null"/> if not present.</param>
+    /// <param name="featureList">The feature list table.</param>
+    /// <param name="lookupList">The lookup list table.</param>
+    /// <param name="featureVariations">The feature variations table for variable fonts, or <see langword="null"/>.</param>
     public GSubTable(ScriptList? scriptList, FeatureListTable featureList, LookupListTable lookupList, FeatureVariationsTable? featureVariations = null)
     {
         this.ScriptList = scriptList;
@@ -25,14 +35,31 @@ internal class GSubTable : Table
         this.FeatureVariations = featureVariations;
     }
 
+    /// <summary>
+    /// Gets the script list table, or <see langword="null"/> if not present.
+    /// </summary>
     public ScriptList? ScriptList { get; }
 
+    /// <summary>
+    /// Gets the feature list table.
+    /// </summary>
     public FeatureListTable FeatureList { get; }
 
+    /// <summary>
+    /// Gets the lookup list table containing all substitution lookups.
+    /// </summary>
     public LookupListTable LookupList { get; }
 
+    /// <summary>
+    /// Gets the feature variations table for variable fonts, or <see langword="null"/> if not present.
+    /// </summary>
     public FeatureVariationsTable? FeatureVariations { get; }
 
+    /// <summary>
+    /// Loads the <see cref="GSubTable"/> from the font reader.
+    /// </summary>
+    /// <param name="fontReader">The font reader.</param>
+    /// <returns>The <see cref="GSubTable"/>, or <see langword="null"/> if not present.</returns>
     public static GSubTable? Load(FontReader fontReader)
     {
         if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
@@ -46,6 +73,11 @@ internal class GSubTable : Table
         }
     }
 
+    /// <summary>
+    /// Loads the <see cref="GSubTable"/> from a big endian binary reader.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <returns>The <see cref="GSubTable"/>.</returns>
     internal static GSubTable Load(BigEndianBinaryReader reader)
     {
         // GSUB Header, Version 1.0
@@ -101,6 +133,11 @@ internal class GSubTable : Table
         return new GSubTable(scriptList, featureList, lookupList, featureVariations);
     }
 
+    /// <summary>
+    /// Applies glyph substitution to the collection using GSUB lookup rules.
+    /// </summary>
+    /// <param name="fontMetrics">The font metrics.</param>
+    /// <param name="collection">The glyph substitution collection.</param>
     public void ApplySubstitution(FontMetrics fontMetrics, GlyphSubstitutionCollection collection)
     {
         // Set max constraints to prevent OutOfMemoryException or infinite loops from attacks.
@@ -194,6 +231,21 @@ internal class GSubTable : Table
         }
     }
 
+    /// <summary>
+    /// Applies a specific feature's lookups to the glyph substitution collection.
+    /// </summary>
+    /// <param name="fontMetrics">The font metrics.</param>
+    /// <param name="collection">The glyph substitution collection.</param>
+    /// <param name="iterator">The skipping glyph iterator.</param>
+    /// <param name="featureTag">The feature tag to apply.</param>
+    /// <param name="current">The current script class.</param>
+    /// <param name="index">The starting index in the collection.</param>
+    /// <param name="count">The number of glyphs to process (updated by substitutions).</param>
+    /// <param name="i">The outer loop index (updated by substitutions).</param>
+    /// <param name="collectionCount">The tracked collection count (updated by substitutions).</param>
+    /// <param name="maxCount">The maximum allowable collection count.</param>
+    /// <param name="maxOperationsCount">The maximum allowable operations count.</param>
+    /// <param name="currentOperations">The current operations counter.</param>
     internal void ApplyFeature(
         FontMetrics fontMetrics,
         GlyphSubstitutionCollection collection,
@@ -243,6 +295,14 @@ internal class GSubTable : Table
         }
     }
 
+    /// <summary>
+    /// Tries to get the feature lookups for the given stage feature and script.
+    /// </summary>
+    /// <param name="fontMetrics">The font metrics.</param>
+    /// <param name="stageFeature">The feature tag for the current shaping stage.</param>
+    /// <param name="script">The script class.</param>
+    /// <param name="value">When this method returns, contains the list of feature lookups if found.</param>
+    /// <returns><see langword="true"/> if lookups were found; otherwise, <see langword="false"/>.</returns>
     internal bool TryGetFeatureLookups(
         FontMetrics fontMetrics,
         in Tag stageFeature,
@@ -281,6 +341,11 @@ internal class GSubTable : Table
         return value.Count > 0;
     }
 
+    /// <summary>
+    /// Gets the OpenType script tag for the given script class, checking against the font's ScriptList.
+    /// </summary>
+    /// <param name="script">The script class.</param>
+    /// <returns>The matching script tag, or default if not found.</returns>
     private Tag GetUnicodeScriptTag(ScriptClass script)
     {
         if (this.ScriptList is null)
@@ -300,6 +365,13 @@ internal class GSubTable : Table
         return default;
     }
 
+    /// <summary>
+    /// Gets the feature lookups for the given stage feature from the specified language system tables.
+    /// </summary>
+    /// <param name="stageFeature">The feature tag for the current shaping stage.</param>
+    /// <param name="substitutions">Optional feature table substitutions from FeatureVariations.</param>
+    /// <param name="langSysTables">The language system tables to search.</param>
+    /// <returns>A sorted list of feature lookups.</returns>
     private List<(Tag Feature, ushort Index, LookupTable LookupTable)> GetFeatureLookups(
         in Tag stageFeature,
         FeatureTableSubstitutionRecord[]? substitutions,
@@ -334,6 +406,13 @@ internal class GSubTable : Table
         return lookups;
     }
 
+    /// <summary>
+    /// Resolves the feature table for the given index, checking for substitutions from FeatureVariations first.
+    /// </summary>
+    /// <param name="featureList">The feature list table.</param>
+    /// <param name="featureIndex">The feature index.</param>
+    /// <param name="substitutions">Optional feature table substitutions from FeatureVariations.</param>
+    /// <returns>The resolved feature table.</returns>
     private static FeatureTable ResolveFeatureTable(
         FeatureListTable featureList,
         ushort featureIndex,
@@ -353,6 +432,12 @@ internal class GSubTable : Table
         return featureList.FeatureTables[featureIndex];
     }
 
+    /// <summary>
+    /// Maps a script class to an effective script class, checking whether the font supports it.
+    /// Falls back to <see cref="ScriptClass.Default"/> if the script is not present in the font.
+    /// </summary>
+    /// <param name="current">The script class to check.</param>
+    /// <returns>The effective script class.</returns>
     private ScriptClass GetScriptClass(ScriptClass current)
     {
         if (current is ScriptClass.Common or ScriptClass.Unknown or ScriptClass.Inherited)

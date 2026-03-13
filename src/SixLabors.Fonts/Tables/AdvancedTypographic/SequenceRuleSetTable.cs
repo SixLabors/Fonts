@@ -3,13 +3,31 @@
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 
+/// <summary>
+/// A SequenceRuleSet table contains an array of SequenceRule tables that define context rules
+/// for simple (glyph ID based) glyph contexts in Sequence Context Format 1.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/chapter2#sequence-context-format-1-simple-glyph-contexts"/>
+/// </summary>
 internal sealed class SequenceRuleSetTable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SequenceRuleSetTable"/> class.
+    /// </summary>
+    /// <param name="sequenceRuleTables">The array of sequence rule tables.</param>
     private SequenceRuleSetTable(SequenceRuleTable[] sequenceRuleTables)
         => this.SequenceRuleTables = sequenceRuleTables;
 
+    /// <summary>
+    /// Gets the array of sequence rule tables.
+    /// </summary>
     public SequenceRuleTable[] SequenceRuleTables { get; }
 
+    /// <summary>
+    /// Loads the <see cref="SequenceRuleSetTable"/> from the binary reader at the specified offset.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Offset from the beginning of the SequenceRuleSet table.</param>
+    /// <returns>The <see cref="SequenceRuleSetTable"/>.</returns>
     public static SequenceRuleSetTable Load(BigEndianBinaryReader reader, long offset)
     {
         // SequenceRuleSet

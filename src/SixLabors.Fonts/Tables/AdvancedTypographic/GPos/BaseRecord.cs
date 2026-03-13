@@ -3,6 +3,11 @@
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 
+/// <summary>
+/// Represents a BaseRecord in the BaseArray table. Each BaseRecord contains an array of offsets
+/// to Anchor tables, one per mark class, that define the attachment points for base glyphs.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/gpos#mark-to-base-attachment-positioning-format-1-mark-to-base-attachment-point"/>
+/// </summary>
 internal readonly struct BaseRecord
 {
     /// <summary>

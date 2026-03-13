@@ -10,6 +10,12 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs;
 /// </summary>
 internal readonly struct CompositeComponent
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CompositeComponent"/> struct.
+    /// </summary>
+    /// <param name="dx">The original X offset of this component.</param>
+    /// <param name="dy">The original Y offset of this component.</param>
+    /// <param name="pointCount">The number of control points contributed by this component.</param>
     public CompositeComponent(float dx, float dy, int pointCount)
     {
         this.Dx = dx;

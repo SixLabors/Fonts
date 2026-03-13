@@ -10,8 +10,18 @@ namespace SixLabors.Fonts.Tables.Woff;
 // Source code is based on https://github.com/LayoutFarm/Typography
 // see https://github.com/LayoutFarm/Typography/blob/master/Typography.OpenFont/WebFont/Woff2Reader.cs
 // TODO: There's still some cleanup required here to bring the code up to a maintainable standard.
+
+/// <summary>
+/// Provides utility methods for reading and decoding WOFF2 font data,
+/// including variable-length integer decoding and transformed glyph table reconstruction.
+/// See: <see href="https://www.w3.org/TR/WOFF2/"/>.
+/// </summary>
 internal static class Woff2Utils
 {
+    /// <summary>
+    /// The set of known table tags used for WOFF2 table directory encoding.
+    /// Table indices 0-62 map to these well-known tags; index 63 indicates an arbitrary 4-byte tag follows.
+    /// </summary>
     // We don't reuse the const tag headers from our table types for clarity.
     private static readonly string[] KnownTableTags =
     {
@@ -24,11 +34,33 @@ internal static class Woff2Utils
         "opbd", "prop", "trak", "Zapf", "Silf", "Glat", "Gloc", "Feat", "Sill"
     };
 
+    /// <summary>
+    /// The 255UInt16 encoding code indicating the value is stored as a following big-endian 16-bit word.
+    /// </summary>
     private const byte OneMoreByteCode1 = 255;
+
+    /// <summary>
+    /// The 255UInt16 encoding code indicating the value is a following byte plus <c>LowestUCode * 2</c>.
+    /// </summary>
     private const byte OneMoreByteCode2 = 254;
+
+    /// <summary>
+    /// The 255UInt16 encoding code indicating the value is stored as a following big-endian 16-bit word (explicit two bytes).
+    /// </summary>
     private const byte WordCode = 253;
+
+    /// <summary>
+    /// The lowest single-byte code value that triggers multi-byte 255UInt16 decoding.
+    /// Values below this are returned directly as the decoded result.
+    /// </summary>
     private const byte LowestUCode = 253;
 
+    /// <summary>
+    /// Reads the WOFF2 table directory headers from the given reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader positioned at the start of the table directory.</param>
+    /// <param name="tableCount">The number of table directory entries to read.</param>
+    /// <returns>A read-only dictionary mapping table tags to their <see cref="TableHeader"/> entries.</returns>
     public static ReadOnlyDictionary<string, TableHeader> ReadWoff2Headers(BigEndianBinaryReader reader, int tableCount)
     {
         uint expectedTableStartAt = 0;
@@ -43,6 +75,15 @@ internal static class Woff2Utils
         return new ReadOnlyDictionary<string, TableHeader>(headers);
     }
 
+    /// <summary>
+    /// Reads a single WOFF2 table directory entry, decoding the flags byte, table tag,
+    /// original length, and optional transform length.
+    /// See: <see href="https://www.w3.org/TR/WOFF2/#table_dir_format"/>.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="expectedTableStartAt">The expected offset for this table within the decompressed data stream.</param>
+    /// <param name="nextExpectedTableStartAt">When this method returns, contains the expected offset for the next table.</param>
+    /// <returns>The parsed <see cref="Woff2TableHeader"/>.</returns>
     public static Woff2TableHeader Read(BigEndianBinaryReader reader, uint expectedTableStartAt, out uint nextExpectedTableStartAt)
     {
         // Leave the first byte open to store flagByte
@@ -97,6 +138,15 @@ internal static class Woff2Utils
         return new Woff2TableHeader(tableName, 0, expectedTableStartAt, tableTransformLength);
     }
 
+    /// <summary>
+    /// Loads all glyph outlines from a WOFF2 transformed glyph table stream.
+    /// This reconstructs both simple and composite glyphs from the WOFF2 sub-streams
+    /// (nContour, nPoints, flags, glyph, composite, bbox, and instruction streams).
+    /// See: <see href="https://www.w3.org/TR/WOFF2/#glyf_table_format"/>.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader positioned at the start of the transformed glyf table.</param>
+    /// <param name="emptyGlyphLoader">The empty glyph loader to use for glyphs with no outline data.</param>
+    /// <returns>An array of <see cref="GlyphLoader"/> instances, one per glyph.</returns>
     public static GlyphLoader[] LoadAllGlyphs(BigEndianBinaryReader reader, EmptyGlyphLoader emptyGlyphLoader)
     {
         // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
@@ -284,6 +334,17 @@ internal static class Woff2Utils
         return glyphLoaders;
     }
 
+    /// <summary>
+    /// Reads simple glyph outline data from the WOFF2 glyph stream, decoding point coordinates
+    /// using the triple encoding format defined in the WOFF2 specification.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader positioned in the glyph stream.</param>
+    /// <param name="glyphData">A reference to the glyph data containing contour count and instruction metadata.</param>
+    /// <param name="pntPerContours">The array of point counts per contour across all glyphs.</param>
+    /// <param name="pntContourIndex">A reference to the current index within <paramref name="pntPerContours"/>.</param>
+    /// <param name="flagStream">The flag stream bytes, one per outline point.</param>
+    /// <param name="flagStreamIndex">A reference to the current index within <paramref name="flagStream"/>.</param>
+    /// <returns>The decoded <see cref="GlyphVector"/>, or <see langword="default"/> for empty or composite glyphs.</returns>
     private static GlyphVector ReadSimpleGlyphData(
         BigEndianBinaryReader reader,
         ref GlyphData glyphData,
@@ -381,6 +442,12 @@ internal static class Woff2Utils
         return new GlyphVector(controlPoints, endPoints, default, Array.Empty<byte>(), false);
     }
 
+    /// <summary>
+    /// Determines whether a composite glyph record in the composite stream contains instructions
+    /// by scanning through all component entries and checking the <see cref="CompositeGlyphFlags.WeHaveInstructions"/> flag.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader positioned at the start of the composite glyph record.</param>
+    /// <returns><see langword="true"/> if the composite glyph contains instructions; otherwise, <see langword="false"/>.</returns>
     private static bool CompositeHasInstructions(BigEndianBinaryReader reader)
     {
         bool weHaveInstructions = false;
@@ -418,6 +485,13 @@ internal static class Woff2Utils
         return weHaveInstructions;
     }
 
+    /// <summary>
+    /// Reads composite glyph data from the WOFF2 composite stream, recursively resolving
+    /// component glyphs and applying their transforms.
+    /// </summary>
+    /// <param name="createdGlyphs">The array of all glyph vectors, used for resolving component references.</param>
+    /// <param name="reader">The big-endian binary reader positioned in the composite stream.</param>
+    /// <returns>The assembled composite <see cref="GlyphVector"/>.</returns>
     private static GlyphVector ReadCompositeGlyphData(GlyphVector[] createdGlyphs, BigEndianBinaryReader reader)
     {
         List<ControlPoint> controlPoints = new();
@@ -475,6 +549,13 @@ internal static class Woff2Utils
         return new GlyphVector(controlPoints, endPoints, default, Array.Empty<byte>(), true);
     }
 
+    /// <summary>
+    /// Expands a packed bitmap byte array into an array of individual bit values,
+    /// where each byte in the result is either 0 or 1.
+    /// Used to decode the bounding box bitmap in the WOFF2 glyf table.
+    /// </summary>
+    /// <param name="orgBBoxBitmap">The packed bitmap bytes.</param>
+    /// <returns>An expanded byte array where each element represents a single bit from the input.</returns>
     private static byte[] ExpandBitmap(byte[] orgBBoxBitmap)
     {
         byte[] expandArr = new byte[orgBBoxBitmap.Length * 8];
@@ -594,13 +675,38 @@ internal static class Woff2Utils
         }
     }
 
+    /// <summary>
+    /// Stores intermediate metadata for a glyph being decoded from a WOFF2 transformed glyph table,
+    /// including its contour count, instruction length, and whether a composite glyph has instructions.
+    /// </summary>
     private struct GlyphData
     {
+        /// <summary>
+        /// The index of the glyph within the font.
+        /// </summary>
         public readonly ushort GlyphIndex;
+
+        /// <summary>
+        /// The number of contours for this glyph.
+        /// A positive value indicates a simple glyph, negative indicates composite, and zero indicates empty.
+        /// </summary>
         public readonly short NumContour;
+
+        /// <summary>
+        /// The length in bytes of the TrueType instructions for this glyph.
+        /// </summary>
         public int InstructionsLength;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether this composite glyph contains TrueType instructions.
+        /// </summary>
         public bool CompositeHasInstructions;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GlyphData"/> struct.
+        /// </summary>
+        /// <param name="glyphIndex">The index of the glyph within the font.</param>
+        /// <param name="contourCount">The number of contours for the glyph.</param>
         public GlyphData(ushort glyphIndex, short contourCount)
         {
             this.GlyphIndex = glyphIndex;

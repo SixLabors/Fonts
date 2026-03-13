@@ -18,6 +18,21 @@ public partial class TrueTypeGlyphMetrics : GlyphMetrics
     private readonly GlyphVector vector;
     private readonly ConcurrentDictionary<float, GlyphVector> scaledVectorCache = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TrueTypeGlyphMetrics"/> class.
+    /// </summary>
+    /// <param name="font">The font metrics this glyph belongs to.</param>
+    /// <param name="glyphId">The glyph identifier.</param>
+    /// <param name="codePoint">The Unicode code point for this glyph.</param>
+    /// <param name="vector">The glyph outline vector.</param>
+    /// <param name="advanceWidth">The advance width in font units.</param>
+    /// <param name="advanceHeight">The advance height in font units.</param>
+    /// <param name="leftSideBearing">The left side bearing in font units.</param>
+    /// <param name="topSideBearing">The top side bearing in font units.</param>
+    /// <param name="unitsPerEM">The units per em for the font.</param>
+    /// <param name="textAttributes">The text attributes.</param>
+    /// <param name="textDecorations">The text decorations.</param>
+    /// <param name="glyphType">The glyph type.</param>
     internal TrueTypeGlyphMetrics(
         StreamFontMetrics font,
         ushort glyphId,
@@ -46,6 +61,23 @@ public partial class TrueTypeGlyphMetrics : GlyphMetrics
               glyphType)
         => this.vector = vector;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TrueTypeGlyphMetrics"/> class
+    /// with explicit offset, scale, and text run for rendering clones.
+    /// </summary>
+    /// <param name="font">The font metrics this glyph belongs to.</param>
+    /// <param name="glyphId">The glyph identifier.</param>
+    /// <param name="codePoint">The Unicode code point for this glyph.</param>
+    /// <param name="vector">The glyph outline vector.</param>
+    /// <param name="advanceWidth">The advance width in font units.</param>
+    /// <param name="advanceHeight">The advance height in font units.</param>
+    /// <param name="leftSideBearing">The left side bearing in font units.</param>
+    /// <param name="topSideBearing">The top side bearing in font units.</param>
+    /// <param name="unitsPerEM">The units per em for the font.</param>
+    /// <param name="offset">The rendering offset.</param>
+    /// <param name="scaleFactor">The scale factor.</param>
+    /// <param name="textRun">The text run this glyph is associated with.</param>
+    /// <param name="glyphType">The glyph type.</param>
     internal TrueTypeGlyphMetrics(
         StreamFontMetrics font,
         ushort glyphId,

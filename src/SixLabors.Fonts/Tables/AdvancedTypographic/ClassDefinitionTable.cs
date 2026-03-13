@@ -22,6 +22,13 @@ internal abstract class ClassDefinitionTable
     /// <returns>The class id.</returns>
     public abstract int ClassIndexOf(ushort glyphId);
 
+    /// <summary>
+    /// Tries to load a <see cref="ClassDefinitionTable"/> from the binary reader at the specified offset.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Offset from the beginning of the table. If 0, no table is loaded.</param>
+    /// <param name="table">When this method returns, contains the loaded table if successful.</param>
+    /// <returns><see langword="true"/> if the table was loaded; otherwise, <see langword="false"/>.</returns>
     public static bool TryLoad(BigEndianBinaryReader reader, long offset, [NotNullWhen(true)] out ClassDefinitionTable? table)
     {
         if (offset == 0)
@@ -42,6 +49,13 @@ internal abstract class ClassDefinitionTable
         return table is not null;
     }
 
+    /// <summary>
+    /// Loads a <see cref="ClassDefinitionTable"/> from the binary reader at the specified offset.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Offset from the beginning of the table.</param>
+    /// <returns>The <see cref="ClassDefinitionTable"/>.</returns>
+    /// <exception cref="InvalidFontFileException">Thrown when the class format is invalid.</exception>
     public static ClassDefinitionTable Load(BigEndianBinaryReader reader, long offset)
     {
         reader.Seek(offset, SeekOrigin.Begin);
@@ -55,17 +69,32 @@ internal abstract class ClassDefinitionTable
     }
 }
 
+/// <summary>
+/// Class Definition Format 1: class assignment is defined by an array of class values
+/// indexed by glyph ID minus a start glyph ID.
+/// </summary>
 internal sealed class ClassDefinitionFormat1Table : ClassDefinitionTable
 {
     private readonly ushort startGlyphId;
     private readonly ushort[] classValueArray;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ClassDefinitionFormat1Table"/> class.
+    /// </summary>
+    /// <param name="startGlyphId">The first glyph ID of the class value array.</param>
+    /// <param name="classValueArray">The array of class values, one per glyph ID.</param>
     private ClassDefinitionFormat1Table(ushort startGlyphId, ushort[] classValueArray)
     {
         this.startGlyphId = startGlyphId;
         this.classValueArray = classValueArray;
     }
 
+    /// <summary>
+    /// Loads a <see cref="ClassDefinitionFormat1Table"/> from the binary reader.
+    /// The format identifier has already been read.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <returns>The <see cref="ClassDefinitionFormat1Table"/>.</returns>
     public static ClassDefinitionFormat1Table Load(BigEndianBinaryReader reader)
     {
         // +--------+-----------------------------+------------------------------------------+
@@ -99,13 +128,27 @@ internal sealed class ClassDefinitionFormat1Table : ClassDefinitionTable
     }
 }
 
+/// <summary>
+/// Class Definition Format 2: class assignment is defined by an array of ranges,
+/// each mapping a range of glyph IDs to a class value.
+/// </summary>
 internal sealed class ClassDefinitionFormat2Table : ClassDefinitionTable
 {
     private readonly ClassRangeRecord[] records;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ClassDefinitionFormat2Table"/> class.
+    /// </summary>
+    /// <param name="records">The array of class range records.</param>
     private ClassDefinitionFormat2Table(ClassRangeRecord[] records)
         => this.records = records;
 
+    /// <summary>
+    /// Loads a <see cref="ClassDefinitionFormat2Table"/> from the binary reader.
+    /// The format identifier has already been read.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <returns>The <see cref="ClassDefinitionFormat2Table"/>.</returns>
     public static ClassDefinitionFormat2Table Load(BigEndianBinaryReader reader)
     {
         // +------------------+------------------------------------+-----------------------------------------+

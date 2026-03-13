@@ -3,6 +3,11 @@
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
+/// <summary>
+/// Represents a tuple variation header from the gvar or cvar table, containing
+/// the variation data size, tuple index flags, and optional peak/intermediate coordinates.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/otvarcommonformats"/>
+/// </summary>
 internal class TupleVariation
 {
     /// <summary>
@@ -30,6 +35,15 @@ internal class TupleVariation
     /// </summary>
     internal const int TupleIndexMask = 0x0FFF;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TupleVariation"/> class.
+    /// </summary>
+    /// <param name="axisCount">The number of variation axes.</param>
+    /// <param name="variationDataSize">The size in bytes of the serialized data for this tuple.</param>
+    /// <param name="tupleIndex">The packed tuple index containing flags and shared tuple index.</param>
+    /// <param name="embeddedPeak">The optional embedded peak tuple coordinates, or null if using shared tuples.</param>
+    /// <param name="intermediateStartRegion">The optional intermediate region start coordinates.</param>
+    /// <param name="intermediateEndRegion">The optional intermediate region end coordinates.</param>
     public TupleVariation(
         int axisCount,
         ushort variationDataSize,
@@ -46,6 +60,9 @@ internal class TupleVariation
         this.IntermediateEndRegion = intermediateEndRegion;
     }
 
+    /// <summary>
+    /// Gets the number of variation axes.
+    /// </summary>
     public int AxisCount { get; }
 
     /// <summary>
@@ -74,12 +91,27 @@ internal class TupleVariation
     /// </summary>
     public bool IsIntermediateRegion => (this.TupleIndex & IntermediateRegionMask) != 0;
 
+    /// <summary>
+    /// Gets the embedded peak tuple coordinates, or null if the peak is referenced from shared tuples.
+    /// </summary>
     public float[]? EmbeddedPeak { get; }
 
+    /// <summary>
+    /// Gets the intermediate region start coordinates, or null if this is not an intermediate tuple.
+    /// </summary>
     public float[]? IntermediateStartRegion { get; }
 
+    /// <summary>
+    /// Gets the intermediate region end coordinates, or null if this is not an intermediate tuple.
+    /// </summary>
     public float[]? IntermediateEndRegion { get; }
 
+    /// <summary>
+    /// Loads a <see cref="TupleVariation"/> from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="axisCount">The number of variation axes.</param>
+    /// <returns>The <see cref="TupleVariation"/>.</returns>
     public static TupleVariation Load(BigEndianBinaryReader reader, int axisCount)
     {
         // TupleVariation

@@ -3,15 +3,30 @@
 
 namespace SixLabors.Fonts.Tables;
 
-// Source code is based on https://github.com/LayoutFarm/Typography
-// see https://github.com/LayoutFarm/Typography/blob/master/Typography.OpenFont/WebFont/Woff2Reader.cs
+/// <summary>
+/// Provides the WOFF2 triplet encoding lookup table. Each of the 128 index values
+/// maps to a <see cref="TripleEncodingRecord"/> that defines how a glyph coordinate
+/// triplet (flag, x, y) is packed into bytes.
+/// <see href="https://www.w3.org/TR/WOFF2/#triplet_encoding"/>
+/// </summary>
+/// <remarks>
+/// Source code is based on https://github.com/LayoutFarm/Typography.
+/// </remarks>
 internal class TripleEncodingTable
 {
+    /// <summary>
+    /// Gets the singleton instance of the triplet encoding table.
+    /// </summary>
     public static readonly TripleEncodingTable EncTable = new TripleEncodingTable();
     private readonly List<TripleEncodingRecord> records = new List<TripleEncodingRecord>();
 
     private TripleEncodingTable() => this.BuildTable();
 
+    /// <summary>
+    /// Gets the <see cref="TripleEncodingRecord"/> at the specified index (0–127).
+    /// </summary>
+    /// <param name="i">The triplet encoding index derived from the glyph flag byte.</param>
+    /// <returns>The encoding record for the given index.</returns>
     public TripleEncodingRecord this[int i] => this.records[i];
 
     private void BuildTable()

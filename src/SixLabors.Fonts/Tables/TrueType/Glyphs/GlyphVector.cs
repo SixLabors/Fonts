@@ -12,6 +12,14 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs;
 /// </summary>
 internal struct GlyphVector
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GlyphVector"/> struct.
+    /// </summary>
+    /// <param name="controlPoints">The control points defining the glyph outline.</param>
+    /// <param name="endPoints">The indices of the last point of each contour.</param>
+    /// <param name="bounds">The glyph bounding box.</param>
+    /// <param name="instructions">The TrueType hinting instructions.</param>
+    /// <param name="isComposite">Whether this glyph is a composite glyph.</param>
     internal GlyphVector(
         IList<ControlPoint> controlPoints,
         IReadOnlyList<ushort> endPoints,
@@ -26,14 +34,29 @@ internal struct GlyphVector
         this.IsComposite = isComposite;
     }
 
+    /// <summary>
+    /// Gets or sets the control points defining the glyph outline.
+    /// </summary>
     public IList<ControlPoint> ControlPoints { get; set; }
 
+    /// <summary>
+    /// Gets or sets the indices of the last point of each contour.
+    /// </summary>
     public IReadOnlyList<ushort> EndPoints { get; set; }
 
+    /// <summary>
+    /// Gets or sets the TrueType hinting instructions for this glyph.
+    /// </summary>
     public ReadOnlyMemory<byte> Instructions { get; set; }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether this is a composite glyph.
+    /// </summary>
     public bool IsComposite { get; set; }
 
+    /// <summary>
+    /// Gets or sets the glyph bounding box.
+    /// </summary>
     public Bounds Bounds { get; set; }
 
     /// <summary>
@@ -45,6 +68,11 @@ internal struct GlyphVector
     /// </summary>
     public CompositeComponent[]? CompositeComponents { get; set; }
 
+    /// <summary>
+    /// Creates an empty glyph vector with no control points or contours.
+    /// </summary>
+    /// <param name="bounds">The optional bounds to assign to the empty glyph.</param>
+    /// <returns>An empty <see cref="GlyphVector"/>.</returns>
     public static GlyphVector Empty(Bounds bounds = default)
         => new(Array.Empty<ControlPoint>(), Array.Empty<ushort>(), bounds, Array.Empty<byte>(), false);
 

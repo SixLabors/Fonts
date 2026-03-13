@@ -13,16 +13,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 #pragma warning disable SA1201 // Nested types are grouped with the static data they define.
 internal class ThaiShaper : DefaultShaper
 {
-    // Above-base state machine.
-    // Start states by consonant type: NC=0, AC=1, RC=0, DC=0, NotConsonant=3
+    /// <summary>
+    /// Above-base state machine start states indexed by <see cref="ConsonantType"/>.
+    /// </summary>
     private static readonly int[] AboveStartState = [0, 1, 0, 0, 3];
 
-    // State transitions [state, markType] → (action, nextState)
-    //              AV              BV              T
-    // T0:  {NOP,T3}        {NOP,T0}        {SD, T3}
-    // T1:  {SL, T2}        {NOP,T1}        {SDL,T2}
-    // T2:  {NOP,T3}        {NOP,T2}        {SL, T3}
-    // T3:  {NOP,T3}        {NOP,T3}        {NOP,T3}
+    /// <summary>
+    /// Above-base state machine transitions. Rows are states (T0-T3), columns are <see cref="MarkType"/> (AV, BV, T).
+    /// </summary>
     private static readonly StateTransition[,] AboveStateMachine =
     {
         { new(PuaAction.NOP, 3), new(PuaAction.NOP, 0), new(PuaAction.SD, 3) },
@@ -31,15 +29,14 @@ internal class ThaiShaper : DefaultShaper
         { new(PuaAction.NOP, 3), new(PuaAction.NOP, 3), new(PuaAction.NOP, 3) },
     };
 
-    // Below-base state machine.
-    // Start states by consonant type: NC=0, AC=0, RC=1, DC=2, NotConsonant=2
+    /// <summary>
+    /// Below-base state machine start states indexed by <see cref="ConsonantType"/>.
+    /// </summary>
     private static readonly int[] BelowStartState = [0, 0, 1, 2, 2];
 
-    // State transitions [state, markType] → (action, nextState)
-    //              AV              BV              T
-    // B0:  {NOP,B0}        {NOP,B2}        {NOP,B0}
-    // B1:  {NOP,B1}        {RD, B2}        {NOP,B1}
-    // B2:  {NOP,B2}        {SD, B2}        {NOP,B2}
+    /// <summary>
+    /// Below-base state machine transitions. Rows are states (B0-B2), columns are <see cref="MarkType"/> (AV, BV, T).
+    /// </summary>
     private static readonly StateTransition[,] BelowStateMachine =
     {
         { new(PuaAction.NOP, 0), new(PuaAction.NOP, 2), new(PuaAction.NOP, 0) },
@@ -47,7 +44,7 @@ internal class ThaiShaper : DefaultShaper
         { new(PuaAction.NOP, 2), new(PuaAction.SD, 2), new(PuaAction.NOP, 2) },
     };
 
-    // Shift-Down PUA mappings.
+    /// <summary>Shift-Down PUA mappings for tone marks and below-vowel marks.</summary>
     private static readonly PuaMapping[] SdMappings =
     [
         new(0x0E48, 0xF70A, 0xF88B), // MAI EK
@@ -60,7 +57,7 @@ internal class ThaiShaper : DefaultShaper
         new(0x0E3A, 0xF71A, 0xF89D), // PHINTHU
     ];
 
-    // Shift-Down-Left PUA mappings.
+    /// <summary>Shift-Down-Left PUA mappings for tone marks.</summary>
     private static readonly PuaMapping[] SdlMappings =
     [
         new(0x0E48, 0xF705, 0xF88C), // MAI EK
@@ -70,7 +67,7 @@ internal class ThaiShaper : DefaultShaper
         new(0x0E4C, 0xF709, 0xF898), // THANTHAKHAT
     ];
 
-    // Shift-Left PUA mappings.
+    /// <summary>Shift-Left PUA mappings for tone marks and above-vowel marks.</summary>
     private static readonly PuaMapping[] SlMappings =
     [
         new(0x0E48, 0xF713, 0xF88A), // MAI EK
@@ -87,14 +84,17 @@ internal class ThaiShaper : DefaultShaper
         new(0x0E4D, 0xF711, 0xF899), // NIKHAHIT
     ];
 
-    // Remove-Descender PUA mappings.
+    /// <summary>Remove-Descender PUA mappings for consonants with removable descenders.</summary>
     private static readonly PuaMapping[] RdMappings =
     [
         new(0x0E0D, 0xF70F, 0xF89A), // YO YING
         new(0x0E10, 0xF700, 0xF89E), // THO THAN
     ];
 
+    /// <summary>The font metrics used for glyph lookups and PUA shaping.</summary>
     private readonly FontMetrics fontMetrics;
+
+    /// <summary>Whether the font has GSUB features for Thai/Lao.</summary>
     private readonly bool hasGsub;
 
     /// <summary>
@@ -157,6 +157,13 @@ internal class ThaiShaper : DefaultShaper
         RD
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ThaiShaper"/> class.
+    /// </summary>
+    /// <param name="script">The script classification.</param>
+    /// <param name="textOptions">The text options.</param>
+    /// <param name="fontMetrics">The font metrics for glyph lookups.</param>
+    /// <param name="hasGsub">Whether the font has GSUB features for Thai/Lao.</param>
     public ThaiShaper(ScriptClass script, TextOptions textOptions, FontMetrics fontMetrics, bool hasGsub)
         : base(script, MarkZeroingMode.PostGpos, textOptions)
     {
@@ -194,6 +201,10 @@ internal class ThaiShaper : DefaultShaper
     /// </para>
     /// <see href="https://linux.thai.net/~thep/th-otf/shaping.html"/>
     /// </summary>
+    /// <param name="collection">The glyph substitution collection.</param>
+    /// <param name="fontMetrics">The font metrics for glyph lookups.</param>
+    /// <param name="index">The zero-based start index.</param>
+    /// <param name="count">The number of elements to process.</param>
     /// <returns>The updated count after decomposition.</returns>
     private static int PreprocessSaraAm(GlyphSubstitutionCollection collection, FontMetrics fontMetrics, int index, int count)
     {
@@ -258,6 +269,10 @@ internal class ThaiShaper : DefaultShaper
     /// Applies PUA-based fallback mark positioning using state machines.
     /// Only used for Thai fonts that lack GSUB features.
     /// </summary>
+    /// <param name="collection">The glyph substitution collection.</param>
+    /// <param name="fontMetrics">The font metrics for glyph lookups.</param>
+    /// <param name="index">The zero-based start index.</param>
+    /// <param name="count">The number of elements to process.</param>
     private static void DoThaiPuaShaping(GlyphSubstitutionCollection collection, FontMetrics fontMetrics, int index, int count)
     {
         int aboveState = AboveStartState[(int)ConsonantType.NotConsonant];
@@ -313,6 +328,10 @@ internal class ThaiShaper : DefaultShaper
     /// Maps a Thai codepoint to its PUA variant based on the action.
     /// Tries Windows PUA first, then Mac PUA.
     /// </summary>
+    /// <param name="codepoint">The original Thai codepoint value.</param>
+    /// <param name="action">The PUA action to apply.</param>
+    /// <param name="fontMetrics">The font metrics for glyph lookups.</param>
+    /// <returns>The PUA codepoint if found in the font; otherwise, the original codepoint.</returns>
     private static int ThaiPuaShape(int codepoint, PuaAction action, FontMetrics fontMetrics)
     {
         ReadOnlySpan<PuaMapping> mappings = action switch
@@ -351,6 +370,8 @@ internal class ThaiShaper : DefaultShaper
     /// Classifies a Thai consonant by its vertical extent.
     /// Only works for Thai codepoints (U+0E01..U+0E2E).
     /// </summary>
+    /// <param name="codepoint">The codepoint value to classify.</param>
+    /// <returns>The consonant type classification.</returns>
     private static ConsonantType GetConsonantType(int codepoint)
     {
         // Ascending consonants (tall right stroke).
@@ -384,6 +405,8 @@ internal class ThaiShaper : DefaultShaper
     /// Classifies a Thai mark by its position relative to the base consonant.
     /// Only works for Thai codepoints.
     /// </summary>
+    /// <param name="codepoint">The codepoint value to classify.</param>
+    /// <returns>The mark type classification.</returns>
     private static MarkType GetMarkType(int codepoint)
     {
         // Above-vowel marks.
@@ -410,20 +433,26 @@ internal class ThaiShaper : DefaultShaper
     }
 
     /// <summary>
-    /// SARA AM: Thai U+0E33, Lao U+0EB3. The Lao variant is Thai + 0x80.
+    /// Returns <see langword="true"/> if the codepoint is SARA AM (Thai U+0E33 or Lao U+0EB3).
     /// </summary>
+    /// <param name="codepoint">The codepoint value to test.</param>
+    /// <returns><see langword="true"/> if the codepoint is SARA AM.</returns>
     private static bool IsSaraAm(int codepoint)
         => (codepoint & ~0x0080) == 0x0E33;
 
     /// <summary>
     /// Derives NIKHAHIT/NIGGAHITA from SARA AM. Thai: U+0E4D, Lao: U+0ECD.
     /// </summary>
+    /// <param name="codepoint">The SARA AM codepoint value.</param>
+    /// <returns>The corresponding NIKHAHIT codepoint value.</returns>
     private static int NikhahitFromSaraAm(int codepoint)
         => codepoint - 0x0E33 + 0x0E4D;
 
     /// <summary>
     /// Derives SARA AA from SARA AM. Thai: U+0E32, Lao: U+0EB2.
     /// </summary>
+    /// <param name="codepoint">The SARA AM codepoint value.</param>
+    /// <returns>The corresponding SARA AA codepoint value.</returns>
     private static int SaraAAFromSaraAm(int codepoint)
         => codepoint - 1;
 
@@ -432,6 +461,8 @@ internal class ThaiShaper : DefaultShaper
     /// should reorder past during SARA AM decomposition.
     /// Uses the <c>(codepoint &amp; ~0x80)</c> trick to handle both Thai and Lao uniformly.
     /// </summary>
+    /// <param name="codepoint">The codepoint value to test.</param>
+    /// <returns><see langword="true"/> if the codepoint is an above-base mark.</returns>
     private static bool IsAboveBaseMark(int codepoint)
     {
         int u = codepoint & ~0x0080;
@@ -444,8 +475,10 @@ internal class ThaiShaper : DefaultShaper
     /// </summary>
     private readonly struct StateTransition(PuaAction action, int nextState)
     {
+        /// <summary>Gets the PUA action to apply.</summary>
         public PuaAction Action { get; } = action;
 
+        /// <summary>Gets the next state for the state machine.</summary>
         public int NextState { get; } = nextState;
     }
 
@@ -454,10 +487,13 @@ internal class ThaiShaper : DefaultShaper
     /// </summary>
     private readonly struct PuaMapping(ushort original, ushort winPua, ushort macPua)
     {
+        /// <summary>Gets the original Thai codepoint.</summary>
         public ushort Original { get; } = original;
 
+        /// <summary>Gets the Windows PUA replacement codepoint.</summary>
         public ushort WinPua { get; } = winPua;
 
+        /// <summary>Gets the Mac PUA replacement codepoint.</summary>
         public ushort MacPua { get; } = macPua;
     }
 }

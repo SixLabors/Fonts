@@ -8,6 +8,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 /// </summary>
 internal readonly struct MetricValueRecord
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MetricValueRecord"/> struct.
+    /// </summary>
+    /// <param name="tag">The four-byte tag identifying the metric.</param>
+    /// <param name="deltaSetOuterIndex">The outer index into the ItemVariationStore.</param>
+    /// <param name="deltaSetInnerIndex">The inner index into the ItemVariationStore.</param>
     public MetricValueRecord(Tag tag, ushort deltaSetOuterIndex, ushort deltaSetInnerIndex)
     {
         this.Tag = tag;

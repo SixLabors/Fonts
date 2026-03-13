@@ -16,12 +16,20 @@ using SixLabors.Fonts.Tables.TrueType.Hinting;
 
 namespace SixLabors.Fonts.Tables;
 
+/// <summary>
+/// Provides registration and loading of font tables by tag or CLR type.
+/// Maps four-byte table tags (e.g. "cmap", "head") to their static <c>Load</c> factory methods.
+/// </summary>
 internal class TableLoader
 {
     private readonly Dictionary<string, Func<FontReader, Table?>> loaders = [];
     private readonly Dictionary<Type, string> types = [];
     private readonly Dictionary<Type, Func<FontReader, Table?>> typesLoaders = [];
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TableLoader"/> class
+    /// with all known table parsers registered.
+    /// </summary>
     public TableLoader()
     {
         // We will hard code mapping registration in here for all the tables
@@ -58,8 +66,16 @@ internal class TableLoader
         this.Register(SvgTable.TableName, SvgTable.Load);
     }
 
+    /// <summary>
+    /// Gets the default shared <see cref="TableLoader"/> instance with all standard tables registered.
+    /// </summary>
     public static TableLoader Default { get; } = new();
 
+    /// <summary>
+    /// Gets the four-byte tag string associated with the given table type.
+    /// </summary>
+    /// <param name="type">The CLR type of the table.</param>
+    /// <returns>The tag string, or <see langword="null"/> if the type is not registered.</returns>
     public string? GetTag(Type type)
     {
         this.types.TryGetValue(type, out string? value);
@@ -67,14 +83,25 @@ internal class TableLoader
         return value;
     }
 
+    /// <summary>
+    /// Gets the four-byte tag string associated with the given table type.
+    /// </summary>
+    /// <typeparam name="TType">The CLR type of the table.</typeparam>
+    /// <returns>The tag string.</returns>
     public string GetTag<TType>()
     {
         this.types.TryGetValue(typeof(TType), out string? value);
         return value!;
     }
 
+    /// <summary>
+    /// Gets all registered table CLR types.
+    /// </summary>
     internal IEnumerable<Type> RegisteredTypes() => this.types.Keys;
 
+    /// <summary>
+    /// Gets all registered four-byte table tags.
+    /// </summary>
     internal IEnumerable<string> RegisteredTags() => this.types.Values;
 
     private void Register<T>(string tag, Func<FontReader, T?> createFunc)
@@ -91,6 +118,13 @@ internal class TableLoader
         }
     }
 
+    /// <summary>
+    /// Loads a table by its four-byte tag string.
+    /// Returns an <see cref="UnknownTable"/> if no parser is registered for the tag.
+    /// </summary>
+    /// <param name="tag">The four-byte table tag.</param>
+    /// <param name="reader">The font reader.</param>
+    /// <returns>The loaded table, or an <see cref="UnknownTable"/> for unrecognized tags.</returns>
     internal Table? Load(string tag, FontReader reader)
 
          // loader missing? register an unknown type loader and carry on
@@ -98,6 +132,13 @@ internal class TableLoader
             ? func.Invoke(reader)
             : new UnknownTable(tag);
 
+    /// <summary>
+    /// Loads a table by its CLR type.
+    /// </summary>
+    /// <typeparam name="TTable">The table type to load.</typeparam>
+    /// <param name="reader">The font reader.</param>
+    /// <returns>The loaded table instance, or <see langword="null"/>.</returns>
+    /// <exception cref="MissingFontTableException">Thrown when the table type has not been registered.</exception>
     internal TTable? Load<TTable>(FontReader reader)
         where TTable : Table
     {

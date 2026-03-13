@@ -3,6 +3,11 @@
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 
+/// <summary>
+/// Represents the Mark2Array table used in MarkToMark attachment positioning (GPOS LookupType 6).
+/// The Mark2Array table contains an array of Mark2Records, one for each mark2 glyph (the base mark), ordered by the mark2 Coverage index.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/gpos#mark-to-mark-attachment-positioning-format-1-mark-to-mark-attachment"/>
+/// </summary>
 internal class Mark2ArrayTable
 {
     /// <summary>
@@ -29,5 +34,8 @@ internal class Mark2ArrayTable
         }
     }
 
+    /// <summary>
+    /// Gets the array of Mark2 records, in Coverage order.
+    /// </summary>
     public Mark2Record[] Mark2Records { get; }
 }

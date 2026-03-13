@@ -6,8 +6,20 @@ using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Tables.General.CMap;
 
+/// <summary>
+/// Format 12 is a segmented coverage subtable used for character codes beyond the BMP (U+0000 to U+10FFFF).
+/// It uses 32-bit character codes and groups of sequential mappings.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/cmap#format-12-segmented-coverage"/>
+/// </summary>
 internal sealed class Format12SubTable : CMapSubTable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Format12SubTable"/> class.
+    /// </summary>
+    /// <param name="language">The language code for this subtable.</param>
+    /// <param name="platform">The platform identifier.</param>
+    /// <param name="encoding">The platform-specific encoding identifier.</param>
+    /// <param name="groups">The array of sequential map groups.</param>
     public Format12SubTable(uint language, PlatformIDs platform, ushort encoding, SequentialMapGroup[] groups)
         : base(platform, encoding, 4)
     {
@@ -15,10 +27,17 @@ internal sealed class Format12SubTable : CMapSubTable
         this.SequentialMapGroups = groups;
     }
 
+    /// <summary>
+    /// Gets the array of sequential map groups defining character-to-glyph mappings.
+    /// </summary>
     public SequentialMapGroup[] SequentialMapGroups { get; }
 
+    /// <summary>
+    /// Gets the language code for this subtable.
+    /// </summary>
     public uint Language { get; }
 
+    /// <inheritdoc/>
     public override bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
     {
         int charAsInt = codePoint.Value;
@@ -38,6 +57,7 @@ internal sealed class Format12SubTable : CMapSubTable
         return false;
     }
 
+    /// <inheritdoc/>
     public override bool TryGetCodePoint(ushort glyphId, out CodePoint codePoint)
     {
         for (int i = 0; i < this.SequentialMapGroups.Length; i++)
@@ -57,6 +77,7 @@ internal sealed class Format12SubTable : CMapSubTable
         return false;
     }
 
+    /// <inheritdoc/>
     public override IEnumerable<int> GetAvailableCodePoints()
         => this.SequentialMapGroups.SelectMany(segment =>
         {
@@ -65,6 +86,12 @@ internal sealed class Format12SubTable : CMapSubTable
             return Enumerable.Range(start, end - start + 1);
         });
 
+    /// <summary>
+    /// Loads one or more <see cref="Format12SubTable"/> instances from the specified encoding records and reader.
+    /// </summary>
+    /// <param name="encodings">The encoding records that share this subtable.</param>
+    /// <param name="reader">The binary reader positioned after the format field.</param>
+    /// <returns>An enumerable of <see cref="Format12SubTable"/> instances, one per encoding record.</returns>
     public static IEnumerable<Format12SubTable> Load(IEnumerable<EncodingRecord> encodings, BigEndianBinaryReader reader)
     {
         // 'cmap' Subtable Format 4:
@@ -95,12 +122,33 @@ internal sealed class Format12SubTable : CMapSubTable
         }
     }
 
+    /// <summary>
+    /// Represents a sequential map group record that maps a contiguous range of character codes
+    /// to a contiguous range of glyph indices.
+    /// </summary>
     internal readonly struct SequentialMapGroup
     {
+        /// <summary>
+        /// The first character code in this group.
+        /// </summary>
         public readonly uint StartCodePoint;
+
+        /// <summary>
+        /// The last character code in this group (inclusive).
+        /// </summary>
         public readonly uint EndCodePoint;
+
+        /// <summary>
+        /// The glyph index corresponding to the starting character code.
+        /// </summary>
         public readonly uint StartGlyphId;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SequentialMapGroup"/> struct.
+        /// </summary>
+        /// <param name="startCodePoint">The first character code in this group.</param>
+        /// <param name="endCodePoint">The last character code in this group.</param>
+        /// <param name="startGlyph">The glyph index corresponding to the starting character code.</param>
         public SequentialMapGroup(uint startCodePoint, uint endCodePoint, uint startGlyph)
         {
             this.StartCodePoint = startCodePoint;
@@ -108,6 +156,11 @@ internal sealed class Format12SubTable : CMapSubTable
             this.StartGlyphId = startGlyph;
         }
 
+        /// <summary>
+        /// Loads a <see cref="SequentialMapGroup"/> from the specified reader.
+        /// </summary>
+        /// <param name="reader">The binary reader positioned at the sequential map group data.</param>
+        /// <returns>The parsed <see cref="SequentialMapGroup"/>.</returns>
         public static SequentialMapGroup Load(BigEndianBinaryReader reader)
         {
             var startCodePoint = reader.ReadUInt32();

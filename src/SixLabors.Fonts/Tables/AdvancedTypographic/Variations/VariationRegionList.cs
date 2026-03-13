@@ -17,8 +17,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 [DebuggerDisplay("AxisCount: {AxisCount}, RegionCount: {RegionCount}")]
 internal class VariationRegionList
 {
+    /// <summary>
+    /// An empty variation region list with no axes or regions.
+    /// </summary>
     public static readonly VariationRegionList EmptyVariationRegionList = new(0, 0, new[] { Array.Empty<RegionAxisCoordinates>() });
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="VariationRegionList"/> class.
+    /// </summary>
+    /// <param name="axisCount">The number of variation axes.</param>
+    /// <param name="regionCount">The number of variation regions.</param>
+    /// <param name="variationRegions">The two-dimensional array of region axis coordinates, indexed by region then axis.</param>
     private VariationRegionList(ushort axisCount, ushort regionCount, RegionAxisCoordinates[][] variationRegions)
     {
         this.AxisCount = axisCount;
@@ -26,12 +35,27 @@ internal class VariationRegionList
         this.VariationRegions = variationRegions;
     }
 
+    /// <summary>
+    /// Gets the number of variation axes for this font. Must match the axisCount in the fvar table.
+    /// </summary>
     public ushort AxisCount { get; }
 
+    /// <summary>
+    /// Gets the number of variation regions in this list.
+    /// </summary>
     public ushort RegionCount { get; }
 
+    /// <summary>
+    /// Gets the array of variation regions. Each region is an array of <see cref="RegionAxisCoordinates"/>, one per axis.
+    /// </summary>
     public RegionAxisCoordinates[][] VariationRegions { get; }
 
+    /// <summary>
+    /// Loads the variation region list from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The byte offset from the start of the stream to this region list.</param>
+    /// <returns>The <see cref="VariationRegionList"/>.</returns>
     public static VariationRegionList Load(BigEndianBinaryReader reader, long offset)
     {
         // VariationRegionList

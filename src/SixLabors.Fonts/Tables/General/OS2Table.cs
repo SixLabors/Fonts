@@ -3,33 +3,159 @@
 
 namespace SixLabors.Fonts.Tables.General;
 
+/// <summary>
+/// Represents the OS/2 and Windows metrics table, which contains metrics required for Windows and OS/2.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/os2"/>
+/// </summary>
 internal sealed class OS2Table : Table
 {
+    /// <summary>
+    /// The table name identifier.
+    /// </summary>
     internal const string TableName = "OS/2";
 
+    /// <summary>
+    /// The font embedding licensing rights (fsType).
+    /// </summary>
     private readonly ushort styleType;
+
+    /// <summary>
+    /// The PANOSE classification number.
+    /// </summary>
     private readonly byte[] panose;
+
+    /// <summary>
+    /// The cap height in font design units.
+    /// </summary>
     private readonly short capHeight;
+
+    /// <summary>
+    /// The font family class and subclass (sFamilyClass).
+    /// </summary>
     private readonly short familyClass;
+
+    /// <summary>
+    /// The x-height in font design units.
+    /// </summary>
     private readonly short heightX;
+
+    /// <summary>
+    /// The four-character font vendor identification tag.
+    /// </summary>
     private readonly string tag;
+
+    /// <summary>
+    /// The code page range bits 0-31.
+    /// </summary>
     private readonly ushort codePageRange1;
+
+    /// <summary>
+    /// The code page range bits 32-63.
+    /// </summary>
     private readonly ushort codePageRange2;
+
+    /// <summary>
+    /// The Unicode range bits 0-31.
+    /// </summary>
     private readonly uint unicodeRange1;
+
+    /// <summary>
+    /// The Unicode range bits 32-63.
+    /// </summary>
     private readonly uint unicodeRange2;
+
+    /// <summary>
+    /// The Unicode range bits 64-95.
+    /// </summary>
     private readonly uint unicodeRange3;
+
+    /// <summary>
+    /// The Unicode range bits 96-127.
+    /// </summary>
     private readonly uint unicodeRange4;
+
+    /// <summary>
+    /// The break character (usBreakChar).
+    /// </summary>
     private readonly ushort breakChar;
+
+    /// <summary>
+    /// The default character displayed when a requested character is not in the font.
+    /// </summary>
     private readonly ushort defaultChar;
+
+    /// <summary>
+    /// The minimum Unicode index in this font.
+    /// </summary>
     private readonly ushort firstCharIndex;
+
+    /// <summary>
+    /// The maximum Unicode index in this font.
+    /// </summary>
     private readonly ushort lastCharIndex;
+
+    /// <summary>
+    /// The lower value of the size range for which this font is designed (version 5+).
+    /// </summary>
     private readonly ushort lowerOpticalPointSize;
+
+    /// <summary>
+    /// The maximum length of a target glyph context for any feature in this font.
+    /// </summary>
     private readonly ushort maxContext;
+
+    /// <summary>
+    /// The upper value of the size range for which this font is designed (version 5+).
+    /// </summary>
     private readonly ushort upperOpticalPointSize;
+
+    /// <summary>
+    /// The visual weight class of the font (usWeightClass).
+    /// </summary>
     private readonly ushort weightClass;
+
+    /// <summary>
+    /// The relative change from the normal aspect ratio (usWidthClass).
+    /// </summary>
     private readonly ushort widthClass;
+
+    /// <summary>
+    /// The average weighted width of the lower case letters and space.
+    /// </summary>
     private readonly short averageCharWidth;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OS2Table"/> class with version 0 fields.
+    /// </summary>
+    /// <param name="averageCharWidth">The average character width.</param>
+    /// <param name="weightClass">The visual weight class.</param>
+    /// <param name="widthClass">The relative width class.</param>
+    /// <param name="styleType">The embedding licensing rights.</param>
+    /// <param name="subscriptXSize">The horizontal size for subscripts.</param>
+    /// <param name="subscriptYSize">The vertical size for subscripts.</param>
+    /// <param name="subscriptXOffset">The horizontal offset for subscripts.</param>
+    /// <param name="subscriptYOffset">The vertical offset for subscripts.</param>
+    /// <param name="superscriptXSize">The horizontal size for superscripts.</param>
+    /// <param name="superscriptYSize">The vertical size for superscripts.</param>
+    /// <param name="superscriptXOffset">The horizontal offset for superscripts.</param>
+    /// <param name="superscriptYOffset">The vertical offset for superscripts.</param>
+    /// <param name="strikeoutSize">The width of the strikeout stroke.</param>
+    /// <param name="strikeoutPosition">The position of the strikeout stroke relative to the baseline.</param>
+    /// <param name="familyClass">The font family class and subclass.</param>
+    /// <param name="panose">The PANOSE classification bytes.</param>
+    /// <param name="unicodeRange1">Unicode range bits 0-31.</param>
+    /// <param name="unicodeRange2">Unicode range bits 32-63.</param>
+    /// <param name="unicodeRange3">Unicode range bits 64-95.</param>
+    /// <param name="unicodeRange4">Unicode range bits 96-127.</param>
+    /// <param name="tag">The four-character vendor identification tag.</param>
+    /// <param name="fontStyle">The font style selection flags.</param>
+    /// <param name="firstCharIndex">The minimum Unicode index.</param>
+    /// <param name="lastCharIndex">The maximum Unicode index.</param>
+    /// <param name="typoAscender">The typographic ascender.</param>
+    /// <param name="typoDescender">The typographic descender.</param>
+    /// <param name="typoLineGap">The typographic line gap.</param>
+    /// <param name="winAscent">The Windows ascent metric.</param>
+    /// <param name="winDescent">The Windows descent metric.</param>
     public OS2Table(
         short averageCharWidth,
         ushort weightClass,
@@ -92,6 +218,17 @@ internal sealed class OS2Table : Table
         this.WinDescent = winDescent;
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OS2Table"/> class with version 1-4 fields.
+    /// </summary>
+    /// <param name="version0Table">The base version 0 table to extend.</param>
+    /// <param name="codePageRange1">Code page range bits 0-31.</param>
+    /// <param name="codePageRange2">Code page range bits 32-63.</param>
+    /// <param name="heightX">The x-height.</param>
+    /// <param name="capHeight">The cap height.</param>
+    /// <param name="defaultChar">The default character index.</param>
+    /// <param name="breakChar">The break character index.</param>
+    /// <param name="maxContext">The maximum target glyph context length.</param>
     public OS2Table(
         OS2Table version0Table,
         ushort codePageRange1,
@@ -141,6 +278,12 @@ internal sealed class OS2Table : Table
         this.maxContext = maxContext;
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OS2Table"/> class with version 5 fields.
+    /// </summary>
+    /// <param name="versionLessThan5Table">The base table (version &lt; 5) to extend.</param>
+    /// <param name="lowerOpticalPointSize">The lower optical point size.</param>
+    /// <param name="upperOpticalPointSize">The upper optical point size.</param>
     public OS2Table(OS2Table versionLessThan5Table, ushort lowerOpticalPointSize, ushort upperOpticalPointSize)
         : this(
             versionLessThan5Table,
@@ -156,76 +299,155 @@ internal sealed class OS2Table : Table
         this.upperOpticalPointSize = upperOpticalPointSize;
     }
 
+    /// <summary>
+    /// Font style selection flags (fsSelection).
+    /// </summary>
     [Flags]
     internal enum FontStyleSelection : ushort
     {
+        /// <summary>
+        /// No style flags set.
+        /// </summary>
         NONE = 0,
 
-        // 0    bit 1   ITALIC  Font contains italic or oblique characters, otherwise they are upright.
+        /// <summary>
+        /// Font contains italic or oblique characters.
+        /// </summary>
         ITALIC = 1,
 
-        // 1        UNDERSCORE  Characters are underscored.
+        /// <summary>
+        /// Characters are underscored.
+        /// </summary>
         UNDERSCORE = 1 << 1,
 
-        // 2        NEGATIVE    Characters have their foreground and background reversed.
+        /// <summary>
+        /// Characters have their foreground and background reversed.
+        /// </summary>
         NEGATIVE = 1 << 2,
 
-        // 3        OUTLINED    Outline (hollow) characters, otherwise they are solid.
+        /// <summary>
+        /// Outline (hollow) characters, otherwise they are solid.
+        /// </summary>
         OUTLINED = 1 << 3,
 
-        // 4        STRIKEOUT   Characters are overstruck.
+        /// <summary>
+        /// Characters are overstruck.
+        /// </summary>
         STRIKEOUT = 1 << 4,
 
-        // 5    bit 0   BOLD    Characters are emboldened.
+        /// <summary>
+        /// Characters are emboldened.
+        /// </summary>
         BOLD = 1 << 5,
 
-        // 6        REGULAR Characters are in the standard weight/style for the font.
+        /// <summary>
+        /// Characters are in the standard weight/style for the font.
+        /// </summary>
         REGULAR = 1 << 6,
 
-        // 7        USE_TYPO_METRICS    If set, it is strongly recommended to use OS/2.typoAscender - OS/2.typoDescender+ OS/2.typoLineGap as a value for default line spacing for this font.
+        /// <summary>
+        /// If set, it is strongly recommended to use OS/2.typoAscender - OS/2.typoDescender + OS/2.typoLineGap
+        /// as a value for default line spacing.
+        /// </summary>
         USE_TYPO_METRICS = 1 << 7,
 
-        // 8        WWS The font has ‘name’ table strings consistent with a weight/width/slope family without requiring use of ‘name’ IDs 21 and 22. (Please see more detailed description below.)
+        /// <summary>
+        /// The font has ‘name’ table strings consistent with a weight/width/slope family
+        /// without requiring use of ‘name’ IDs 21 and 22.
+        /// </summary>
         WWS = 1 << 8,
 
-        // 9        OBLIQUE Font contains oblique characters.
+        /// <summary>
+        /// Font contains oblique characters.
+        /// </summary>
         OBLIQUE = 1 << 9,
-
-        // 10–15        <reserved>  Reserved; set to 0.
     }
 
+    /// <summary>
+    /// Gets the font style selection flags.
+    /// </summary>
     public FontStyleSelection FontStyle { get; }
 
+    /// <summary>
+    /// Gets the typographic ascender value.
+    /// </summary>
     public short TypoAscender { get; }
 
+    /// <summary>
+    /// Gets the typographic descender value.
+    /// </summary>
     public short TypoDescender { get; }
 
+    /// <summary>
+    /// Gets the typographic line gap value.
+    /// </summary>
     public short TypoLineGap { get; }
 
+    /// <summary>
+    /// Gets the Windows ascent metric used for clipping.
+    /// </summary>
     public ushort WinAscent { get; }
 
+    /// <summary>
+    /// Gets the Windows descent metric used for clipping.
+    /// </summary>
     public ushort WinDescent { get; }
 
+    /// <summary>
+    /// Gets the position of the strikeout stroke relative to the baseline.
+    /// </summary>
     public short StrikeoutPosition { get; }
 
+    /// <summary>
+    /// Gets the width of the strikeout stroke in font design units.
+    /// </summary>
     public short StrikeoutSize { get; }
 
+    /// <summary>
+    /// Gets the horizontal offset for subscript characters.
+    /// </summary>
     public short SubscriptXOffset { get; }
 
+    /// <summary>
+    /// Gets the horizontal size for subscript characters.
+    /// </summary>
     public short SubscriptXSize { get; }
 
+    /// <summary>
+    /// Gets the vertical offset for subscript characters.
+    /// </summary>
     public short SubscriptYOffset { get; }
 
+    /// <summary>
+    /// Gets the vertical size for subscript characters.
+    /// </summary>
     public short SubscriptYSize { get; }
 
+    /// <summary>
+    /// Gets the horizontal offset for superscript characters.
+    /// </summary>
     public short SuperscriptXOffset { get; }
 
+    /// <summary>
+    /// Gets the horizontal size for superscript characters.
+    /// </summary>
     public short SuperscriptXSize { get; }
 
+    /// <summary>
+    /// Gets the vertical offset for superscript characters.
+    /// </summary>
     public short SuperscriptYOffset { get; }
 
+    /// <summary>
+    /// Gets the vertical size for superscript characters.
+    /// </summary>
     public short SuperscriptYSize { get; }
 
+    /// <summary>
+    /// Loads the <see cref="OS2Table"/> from the specified font reader.
+    /// </summary>
+    /// <param name="fontReader">The font reader.</param>
+    /// <returns>The <see cref="OS2Table"/>, or <see langword="null"/> if the table is not present.</returns>
     public static OS2Table? Load(FontReader fontReader)
     {
         if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
@@ -239,6 +461,11 @@ internal sealed class OS2Table : Table
         }
     }
 
+    /// <summary>
+    /// Loads the <see cref="OS2Table"/> from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <returns>The <see cref="OS2Table"/>.</returns>
     public static OS2Table Load(BigEndianBinaryReader reader)
     {
         // Version 1.0

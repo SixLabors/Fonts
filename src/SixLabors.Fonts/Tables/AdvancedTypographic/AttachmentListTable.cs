@@ -3,12 +3,29 @@
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 
+/// <summary>
+/// The Attachment List table (AttachList) identifies all the attachment points defined in the GDEF table
+/// and their associated glyphs so a client can quickly access coordinates for each glyph's attachment points.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/gdef#attachment-point-list-table"/>
+/// </summary>
 internal sealed class AttachmentListTable
 {
+    /// <summary>
+    /// Gets or sets the coverage table that defines which glyphs have attachment points.
+    /// </summary>
     public CoverageTable? CoverageTable { get; internal set; }
 
+    /// <summary>
+    /// Gets or sets the array of attachment point tables, one per covered glyph, in Coverage Index order.
+    /// </summary>
     public AttachPoint[]? AttachPoints { get; internal set; }
 
+    /// <summary>
+    /// Loads the <see cref="AttachmentListTable"/> from the binary reader at the specified offset.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Offset from the beginning of the GDEF table to the AttachList table.</param>
+    /// <returns>The <see cref="AttachmentListTable"/>.</returns>
     public static AttachmentListTable Load(BigEndianBinaryReader reader, long offset)
     {
         // Attachment Point List Table

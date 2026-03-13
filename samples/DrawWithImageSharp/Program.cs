@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Globalization;
 using System.Numerics;
 using System.Text;
 using DrawWithImageSharp;

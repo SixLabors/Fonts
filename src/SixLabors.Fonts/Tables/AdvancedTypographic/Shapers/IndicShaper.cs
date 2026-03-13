@@ -14,44 +14,101 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 /// </summary>
 internal sealed class IndicShaper : DefaultShaper
 {
+    /// <summary>The state machine for Indic syllable identification.</summary>
     private static readonly StateMachine StateMachine =
         new(StateTable, AcceptingStates, Tags);
 
+    /// <summary>Maps Indic shaping category codes to compact DFA symbol indices.</summary>
     private static readonly int[] CategoryToSymbolId = BuildCategoryToSymbolId();
 
+    /// <summary>The 'rphf' (reph forms) feature tag.</summary>
     private static readonly Tag RphfTag = Tag.Parse("rphf");
+
+    /// <summary>The 'nukt' (nukta forms) feature tag.</summary>
     private static readonly Tag NuktTag = Tag.Parse("nukt");
+
+    /// <summary>The 'akhn' (akhands) feature tag.</summary>
     private static readonly Tag AkhnTag = Tag.Parse("akhn");
+
+    /// <summary>The 'pref' (pre-base forms) feature tag.</summary>
     private static readonly Tag PrefTag = Tag.Parse("pref");
 
+    /// <summary>The 'rkrf' (rakar forms) feature tag.</summary>
     private static readonly Tag RkrfTag = Tag.Parse("rkrf");
+
+    /// <summary>The 'abvf' (above-base forms) feature tag.</summary>
     private static readonly Tag AbvfTag = Tag.Parse("abvf");
+
+    /// <summary>The 'blwf' (below-base forms) feature tag.</summary>
     private static readonly Tag BlwfTag = Tag.Parse("blwf");
+
+    /// <summary>The 'half' (half forms) feature tag.</summary>
     private static readonly Tag HalfTag = Tag.Parse("half");
+
+    /// <summary>The 'pstf' (post-base forms) feature tag.</summary>
     private static readonly Tag PstfTag = Tag.Parse("pstf");
+
+    /// <summary>The 'vatu' (vattu variants) feature tag.</summary>
     private static readonly Tag VatuTag = Tag.Parse("vatu");
+
+    /// <summary>The 'cjct' (conjunct forms) feature tag.</summary>
     private static readonly Tag CjctTag = Tag.Parse("cjct");
+
+    /// <summary>The 'cfar' (conjunct form after Ra) feature tag.</summary>
     private static readonly Tag CfarTag = Tag.Parse("cfar");
 
+    /// <summary>The 'init' (initial forms) feature tag.</summary>
     private static readonly Tag InitTag = Tag.Parse("init");
+
+    /// <summary>The 'abvs' (above-base substitutions) feature tag.</summary>
     private static readonly Tag AbvsTag = Tag.Parse("abvs");
+
+    /// <summary>The 'blws' (below-base substitutions) feature tag.</summary>
     private static readonly Tag BlwsTag = Tag.Parse("blws");
+
+    /// <summary>The 'pres' (pre-base substitutions) feature tag.</summary>
     private static readonly Tag PresTag = Tag.Parse("pres");
+
+    /// <summary>The 'psts' (post-base substitutions) feature tag.</summary>
     private static readonly Tag PstsTag = Tag.Parse("psts");
+
+    /// <summary>The 'haln' (halant forms) feature tag.</summary>
     private static readonly Tag HalnTag = Tag.Parse("haln");
+
+    /// <summary>The 'dist' (distances) feature tag.</summary>
     private static readonly Tag DistTag = Tag.Parse("dist");
+
+    /// <summary>The 'abvm' (above-base mark positioning) feature tag.</summary>
     private static readonly Tag AbvmTag = Tag.Parse("abvm");
+
+    /// <summary>The 'blwm' (below-base mark positioning) feature tag.</summary>
     private static readonly Tag BlwmTag = Tag.Parse("blwm");
 
+    /// <summary>Dotted circle code point (U+25CC) used as a placeholder base.</summary>
     private const int DottedCircle = 0x25cc;
 
+    /// <summary>The text options.</summary>
     private readonly TextOptions textOptions;
+
+    /// <summary>The font metrics used for glyph lookups.</summary>
     private readonly FontMetrics fontMetrics;
+
+    /// <summary>The script-specific shaping configuration for this Indic script.</summary>
     private ShapingConfiguration indicConfiguration;
+
+    /// <summary>Whether this font uses old-spec Indic script tags.</summary>
     private readonly bool isOldSpec;
 
+    /// <summary>Whether any broken clusters were detected during syllable setup.</summary>
     private bool hasBrokenClusters;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IndicShaper"/> class.
+    /// </summary>
+    /// <param name="script">The script classification.</param>
+    /// <param name="unicodeScriptTag">The Unicode script tag found in the font.</param>
+    /// <param name="textOptions">The text options.</param>
+    /// <param name="fontMetrics">The font metrics for glyph lookups.</param>
     public IndicShaper(ScriptClass script, Tag unicodeScriptTag, TextOptions textOptions, FontMetrics fontMetrics)
         : base(script, MarkZeroingMode.None, textOptions)
     {
@@ -70,6 +127,7 @@ internal sealed class IndicShaper : DefaultShaper
         this.isOldSpec = this.indicConfiguration.HasOldSpec && !unicodeScriptTag.ToString().EndsWith("2", StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <inheritdoc />
     protected override void PlanFeatures(IGlyphShapingCollection collection, int index, int count)
     {
         this.AddFeature(collection, index, count, LoclTag, preAction: this.SetupSyllables);
@@ -100,6 +158,7 @@ internal sealed class IndicShaper : DefaultShaper
         this.AddFeature(collection, index, count, BlwmTag);
     }
 
+    /// <inheritdoc />
     protected override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
     {
         if (collection is not GlyphSubstitutionCollection substitutionCollection)
@@ -144,6 +203,12 @@ internal sealed class IndicShaper : DefaultShaper
         }
     }
 
+    /// <summary>
+    /// Identifies Indic syllables using the state machine and assigns shaping info to each glyph.
+    /// </summary>
+    /// <param name="collection">The glyph shaping collection.</param>
+    /// <param name="index">The zero-based start index.</param>
+    /// <param name="count">The number of elements to process.</param>
     private void SetupSyllables(IGlyphShapingCollection collection, int index, int count)
     {
         if (collection is not GlyphSubstitutionCollection substitutionCollection)
@@ -222,12 +287,29 @@ internal sealed class IndicShaper : DefaultShaper
         }
     }
 
+    /// <summary>
+    /// Gets the Indic shaping category for a code point (upper 8 bits of the shaping properties).
+    /// </summary>
+    /// <param name="codePoint">The code point.</param>
+    /// <returns>The shaping category value.</returns>
     private static int IndicShapingCategory(CodePoint codePoint)
         => UnicodeData.GetIndicShapingProperties((uint)codePoint.Value) >> 8;
 
+    /// <summary>
+    /// Gets the Indic shaping position for a code point (lower 8 bits as a bit flag).
+    /// </summary>
+    /// <param name="codePoint">The code point.</param>
+    /// <returns>The shaping position as a bit flag.</returns>
     private static int IndicShapingPosition(CodePoint codePoint)
         => 1 << (UnicodeData.GetIndicShapingProperties((uint)codePoint.Value) & 0xFF);
 
+    /// <summary>
+    /// Performs the initial reordering pass for Indic syllables, including base consonant
+    /// identification, reph handling, matra reordering, and feature assignment.
+    /// </summary>
+    /// <param name="collection">The glyph shaping collection.</param>
+    /// <param name="index">The zero-based start index.</param>
+    /// <param name="count">The number of elements to process.</param>
     private void InitialReorder(IGlyphShapingCollection collection, int index, int count)
     {
         if (collection is not GlyphSubstitutionCollection substitutionCollection)
@@ -806,6 +888,13 @@ internal sealed class IndicShaper : DefaultShaper
         }
     }
 
+    /// <summary>
+    /// Determines the positional class of a consonant by testing whether it would be
+    /// substituted by below-base, post-base, or pre-base features.
+    /// </summary>
+    /// <param name="collection">A temporary substitution collection for testing.</param>
+    /// <param name="data">The consonant and virama glyph data to test.</param>
+    /// <returns>The consonant's positional class.</returns>
     private Positions ConsonantPosition(GlyphSubstitutionCollection collection, ReadOnlySpan<GlyphShapingData> data)
     {
         if (this.WouldSubstitute(collection, in BlwfTag, data[..2]) ||
@@ -829,6 +918,13 @@ internal sealed class IndicShaper : DefaultShaper
         return Positions.Base_C;
     }
 
+    /// <summary>
+    /// Tests whether applying a specific feature to the given glyphs would produce a substitution.
+    /// </summary>
+    /// <param name="collection">A temporary substitution collection for testing.</param>
+    /// <param name="featureTag">The feature tag to test.</param>
+    /// <param name="buffer">The glyph data to test.</param>
+    /// <returns><see langword="true"/> if a substitution would occur.</returns>
     private bool WouldSubstitute(GlyphSubstitutionCollection collection, in Tag featureTag, ReadOnlySpan<GlyphShapingData> buffer)
     {
         collection.Clear();
@@ -873,15 +969,37 @@ internal sealed class IndicShaper : DefaultShaper
         return false;
     }
 
+    /// <summary>
+    /// Determines whether the glyph data represents an Indic consonant.
+    /// </summary>
+    /// <param name="data">The glyph shaping data.</param>
+    /// <returns><see langword="true"/> if the glyph is a consonant.</returns>
     private static bool IsConsonant(GlyphShapingData data)
         => data.IndicShapingEngineInfo != null && (FlagUnsafe(data.IndicShapingEngineInfo.Category) & ConsonantFlags) != 0;
 
+    /// <summary>
+    /// Determines whether the glyph data represents a joiner (ZWJ or ZWNJ).
+    /// </summary>
+    /// <param name="data">The glyph shaping data.</param>
+    /// <returns><see langword="true"/> if the glyph is a joiner.</returns>
     private static bool IsJoiner(GlyphShapingData data)
         => data.IndicShapingEngineInfo != null && (FlagUnsafe(data.IndicShapingEngineInfo.Category) & JoinerFlags) != 0;
 
+    /// <summary>
+    /// Determines whether the glyph data represents a halant or coeng character.
+    /// </summary>
+    /// <param name="data">The glyph shaping data.</param>
+    /// <returns><see langword="true"/> if the glyph is a halant or coeng.</returns>
     private static bool IsHalantOrCoeng(GlyphShapingData data)
         => data.IndicShapingEngineInfo != null && (FlagUnsafe(data.IndicShapingEngineInfo.Category) & HalantOrCoengFlags) != 0;
 
+    /// <summary>
+    /// Finds the start index of the next syllable in the collection.
+    /// </summary>
+    /// <param name="collection">The glyph substitution collection.</param>
+    /// <param name="index">The current index.</param>
+    /// <param name="count">The maximum index bound.</param>
+    /// <returns>The start index of the next syllable.</returns>
     private static int NextSyllable(GlyphSubstitutionCollection collection, int index, int count)
     {
         if (index >= count)
@@ -901,6 +1019,13 @@ internal sealed class IndicShaper : DefaultShaper
         return index;
     }
 
+    /// <summary>
+    /// Performs the final reordering pass for Indic syllables, repositioning reph,
+    /// pre-base consonants, and pre-base matras after basic shaping.
+    /// </summary>
+    /// <param name="collection">The glyph shaping collection.</param>
+    /// <param name="index">The zero-based start index.</param>
+    /// <param name="count">The number of elements to process.</param>
     private void FinalReorder(IGlyphShapingCollection collection, int index, int count)
     {
         if (collection is not GlyphSubstitutionCollection substitutionCollection)
@@ -1323,6 +1448,10 @@ internal sealed class IndicShaper : DefaultShaper
         }
     }
 
+    /// <summary>
+    /// Builds a lookup table mapping Indic shaping category codes to compact DFA symbol indices.
+    /// </summary>
+    /// <returns>An array mapping category codes to symbol IDs.</returns>
     private static int[] BuildCategoryToSymbolId()
     {
         // Get all enum values in declared order (important!)

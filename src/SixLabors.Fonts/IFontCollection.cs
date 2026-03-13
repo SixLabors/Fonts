@@ -16,7 +16,7 @@ public interface IFontCollection : IReadOnlyFontCollection
     /// </summary>
     /// <param name="path">The filesystem path to the font file.</param>
     /// <returns>The new <see cref="FontFamily"/>.</returns>
-    FontFamily Add(string path);
+    public FontFamily Add(string path);
 
     /// <summary>
     /// Adds a font to the collection.
@@ -24,14 +24,14 @@ public interface IFontCollection : IReadOnlyFontCollection
     /// <param name="path">The filesystem path to the font file.</param>
     /// <param name="description">The description of the added font.</param>
     /// <returns>The new <see cref="FontFamily"/>.</returns>
-    FontFamily Add(string path, out FontDescription description);
+    public FontFamily Add(string path, out FontDescription description);
 
     /// <summary>
     /// Adds a font to the collection.
     /// </summary>
     /// <param name="stream">The font stream.</param>
     /// <returns>The new <see cref="FontFamily"/>.</returns>
-    FontFamily Add(Stream stream);
+    public FontFamily Add(Stream stream);
 
     /// <summary>
     /// Adds a font to the collection.
@@ -39,7 +39,7 @@ public interface IFontCollection : IReadOnlyFontCollection
     /// <param name="stream">The font stream.</param>
     /// <param name="description">The description of the added font.</param>
     /// <returns>The new <see cref="FontFamily"/>.</returns>
-    FontFamily Add(Stream stream, out FontDescription description);
+    public FontFamily Add(Stream stream, out FontDescription description);
 
     /// <summary>
     /// Adds a true type font collection (.ttc).
@@ -77,7 +77,7 @@ public interface IFontCollection : IReadOnlyFontCollection
     /// <param name="path">The filesystem path to the font file.</param>
     /// <param name="culture">The culture of the font to add.</param>
     /// <returns>The new <see cref="FontFamily"/>.</returns>
-    FontFamily Add(string path, CultureInfo culture);
+    public FontFamily AddWithCulture(string path, CultureInfo culture);
 
     /// <summary>
     /// Adds a font to the collection.
@@ -86,7 +86,7 @@ public interface IFontCollection : IReadOnlyFontCollection
     /// <param name="culture">The culture of the font to add.</param>
     /// <param name="description">The description of the added font.</param>
     /// <returns>The new <see cref="FontFamily"/>.</returns>
-    FontFamily Add(string path, CultureInfo culture, out FontDescription description);
+    public FontFamily AddWithCulture(string path, CultureInfo culture, out FontDescription description);
 
     /// <summary>
     /// Adds a font to the collection.
@@ -94,7 +94,7 @@ public interface IFontCollection : IReadOnlyFontCollection
     /// <param name="stream">The font stream.</param>
     /// <param name="culture">The culture of the font to add.</param>
     /// <returns>The new <see cref="FontFamily"/>.</returns>
-    FontFamily Add(Stream stream, CultureInfo culture);
+    public FontFamily AddWithCulture(Stream stream, CultureInfo culture);
 
     /// <summary>
     /// Adds a font to the collection.
@@ -103,7 +103,7 @@ public interface IFontCollection : IReadOnlyFontCollection
     /// <param name="culture">The culture of the font to add.</param>
     /// <param name="description">The description of the added font.</param>
     /// <returns>The new <see cref="FontFamily"/>.</returns>
-    FontFamily Add(Stream stream, CultureInfo culture, out FontDescription description);
+    public FontFamily AddWithCulture(Stream stream, CultureInfo culture, out FontDescription description);
 
     /// <summary>
     /// Adds a true type font collection (.ttc).

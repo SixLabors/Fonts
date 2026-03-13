@@ -13,6 +13,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal static class LookupType5SubTable
 {
+    /// <summary>
+    /// Loads the mark-to-ligature attachment positioning subtable from the specified reader.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers.</param>
+    /// <param name="markFilteringSet">The mark filtering set index.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
@@ -25,6 +33,10 @@ internal static class LookupType5SubTable
         };
     }
 
+    /// <summary>
+    /// MarkToLigature Attachment Positioning Format 1: positions combining mark glyphs relative to ligature glyph components.
+    /// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/gpos#mark-to-ligature-attachment-positioning-format-1-mark-to-ligature-attachment-point"/>
+    /// </summary>
     internal sealed class LookupType5Format1SubTable : LookupSubTable
     {
         private readonly CoverageTable markCoverage;
@@ -32,6 +44,15 @@ internal static class LookupType5SubTable
         private readonly MarkArrayTable markArrayTable;
         private readonly LigatureArrayTable ligatureArrayTable;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LookupType5Format1SubTable"/> class.
+        /// </summary>
+        /// <param name="markCoverage">The mark coverage table.</param>
+        /// <param name="ligatureCoverage">The ligature coverage table.</param>
+        /// <param name="markArrayTable">The mark array table.</param>
+        /// <param name="ligatureArrayTable">The ligature array table.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
         public LookupType5Format1SubTable(
             CoverageTable markCoverage,
             CoverageTable ligatureCoverage,
@@ -47,6 +68,14 @@ internal static class LookupType5SubTable
             this.ligatureArrayTable = ligatureArrayTable;
         }
 
+        /// <summary>
+        /// Loads the Format 1 mark-to-ligature attachment positioning subtable.
+        /// </summary>
+        /// <param name="reader">The big endian binary reader.</param>
+        /// <param name="offset">The offset to the beginning of the subtable.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
+        /// <returns>The loaded <see cref="LookupType5Format1SubTable"/>.</returns>
         public static LookupType5Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             // MarkLigPosFormat1 Subtable.
@@ -83,6 +112,7 @@ internal static class LookupType5SubTable
             return new LookupType5Format1SubTable(markCoverage, ligatureCoverage, markArrayTable, ligatureArrayTable, lookupFlags, markFilteringSet);
         }
 
+        /// <inheritdoc/>
         public override bool TryUpdatePosition(
             FontMetrics fontMetrics,
             GPosTable table,

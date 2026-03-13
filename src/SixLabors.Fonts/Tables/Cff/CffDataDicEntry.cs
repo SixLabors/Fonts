@@ -13,6 +13,11 @@ namespace SixLabors.Fonts.Tables.Cff;
 /// </summary>
 internal class CffDataDicEntry
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CffDataDicEntry"/> class.
+    /// </summary>
+    /// <param name="operator">The DICT operator.</param>
+    /// <param name="operands">The operand values for this operator.</param>
     public CffDataDicEntry(CFFOperator @operator, CffOperand[] operands)
     {
         this.Operator = @operator;
@@ -30,6 +35,7 @@ internal class CffDataDicEntry
     public CffOperand[] Operands { get; }
 
 #if DEBUG
+    /// <inheritdoc/>
     public override string ToString()
     {
         StringBuilder builder = new();

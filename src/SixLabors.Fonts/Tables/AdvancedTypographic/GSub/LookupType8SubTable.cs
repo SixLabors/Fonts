@@ -4,12 +4,21 @@
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub;
 
 /// <summary>
-/// An Alternate Substitution (AlternateSubst) subtable identifies any number of aesthetic alternatives
-/// from which a user can choose a glyph variant to replace the input glyph.
-/// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-3-alternate-substitution-subtable"/>
+/// A Reverse Chaining Contextual Single Substitution subtable describes single glyph substitutions
+/// in context with an ability to look back and/or look ahead in the sequence of glyphs.
+/// The difference from other chaining lookups is that processing is applied in reverse order (from end of glyph sequence).
+/// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-8-reverse-chaining-contextual-single-substitution-subtable"/>
 /// </summary>
 internal static class LookupType8SubTable
 {
+    /// <summary>
+    /// Loads the reverse chaining contextual single substitution lookup subtable from the given offset.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the substitution subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
@@ -23,13 +32,42 @@ internal static class LookupType8SubTable
     }
 }
 
+/// <summary>
+/// Implements reverse chaining contextual single substitution format 1 (coverage-based glyph contexts).
+/// Substitution is processed in reverse order from the end of the glyph sequence.
+/// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#81-reverse-chaining-contextual-single-substitution-format-1-coverage-based-glyph-contexts"/>
+/// </summary>
 internal sealed class LookupType8Format1SubTable : LookupSubTable
 {
+    /// <summary>
+    /// The array of substitute glyph IDs, ordered by coverage index.
+    /// </summary>
     private readonly ushort[] substituteGlyphIds;
+
+    /// <summary>
+    /// The coverage table that defines the set of input glyph IDs.
+    /// </summary>
     private readonly CoverageTable coverageTable;
+
+    /// <summary>
+    /// The array of coverage tables for the backtrack sequence.
+    /// </summary>
     private readonly CoverageTable[] backtrackCoverageTables;
+
+    /// <summary>
+    /// The array of coverage tables for the lookahead sequence.
+    /// </summary>
     private readonly CoverageTable[] lookaheadCoverageTables;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LookupType8Format1SubTable"/> class.
+    /// </summary>
+    /// <param name="substituteGlyphIds">The array of substitute glyph IDs.</param>
+    /// <param name="coverageTable">The coverage table defining input glyphs.</param>
+    /// <param name="backtrackCoverageTables">The coverage tables for the backtrack sequence.</param>
+    /// <param name="lookaheadCoverageTables">The coverage tables for the lookahead sequence.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
     private LookupType8Format1SubTable(
         ushort[] substituteGlyphIds,
         CoverageTable coverageTable,
@@ -45,6 +83,14 @@ internal sealed class LookupType8Format1SubTable : LookupSubTable
         this.lookaheadCoverageTables = lookaheadCoverageTables;
     }
 
+    /// <summary>
+    /// Loads the reverse chaining contextual single substitution format 1 subtable from the given offset.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the substitution subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
+    /// <returns>The loaded <see cref="LookupType8Format1SubTable"/>.</returns>
     public static LookupType8Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         // ReverseChainSingleSubstFormat1
@@ -102,6 +148,7 @@ internal sealed class LookupType8Format1SubTable : LookupSubTable
             markFilteringSet);
     }
 
+    /// <inheritdoc />
     public override bool TrySubstitution(
         FontMetrics fontMetrics,
         GSubTable table,

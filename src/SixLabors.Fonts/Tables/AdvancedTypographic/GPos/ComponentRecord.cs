@@ -43,5 +43,8 @@ internal class ComponentRecord
         reader.BaseStream.Position = position;
     }
 
+    /// <summary>
+    /// Gets the array of Anchor tables, one per mark class, that define the attachment points for this ligature component.
+    /// </summary>
     public AnchorTable[] LigatureAnchorTables { get; }
 }

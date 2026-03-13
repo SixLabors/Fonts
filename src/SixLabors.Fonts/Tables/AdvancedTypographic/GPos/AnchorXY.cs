@@ -8,6 +8,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal readonly struct AnchorXY
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AnchorXY"/> struct.
+    /// </summary>
+    /// <param name="x">The horizontal value, in design units.</param>
+    /// <param name="y">The vertical value, in design units.</param>
     public AnchorXY(short x, short y)
     {
         this.XCoordinate = x;

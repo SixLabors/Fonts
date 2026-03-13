@@ -9,6 +9,12 @@ namespace SixLabors.Fonts.Tables.Cff;
 /// </summary>
 internal class FontDict
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FontDict"/> class.
+    /// </summary>
+    /// <param name="name">The Font DICT name SID.</param>
+    /// <param name="dictSize">The size in bytes of the associated Private DICT.</param>
+    /// <param name="dictOffset">The offset to the associated Private DICT.</param>
     public FontDict(int name, int dictSize, int dictOffset)
     {
         this.FontName = name;

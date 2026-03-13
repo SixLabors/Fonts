@@ -3,10 +3,32 @@
 
 namespace SixLabors.Fonts.Tables.General;
 
+/// <summary>
+/// Represents the horizontal header table, which contains information needed to lay out fonts
+/// whose characters are written horizontally.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/hhea"/>
+/// </summary>
 internal class HorizontalHeadTable : Table
 {
+    /// <summary>
+    /// The table name identifier.
+    /// </summary>
     internal const string TableName = "hhea";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HorizontalHeadTable"/> class.
+    /// </summary>
+    /// <param name="ascender">The typographic ascender.</param>
+    /// <param name="descender">The typographic descender.</param>
+    /// <param name="lineGap">The typographic line gap.</param>
+    /// <param name="advanceWidthMax">The maximum advance width in font design units.</param>
+    /// <param name="minLeftSideBearing">The minimum left side bearing.</param>
+    /// <param name="minRightSideBearing">The minimum right side bearing.</param>
+    /// <param name="xMaxExtent">The maximum x extent: max(lsb + (xMax - xMin)).</param>
+    /// <param name="caretSlopeRise">The caret slope rise used to calculate the slope of the caret.</param>
+    /// <param name="caretSlopeRun">The caret slope run used to calculate the slope of the caret.</param>
+    /// <param name="caretOffset">The caret offset for slanted fonts.</param>
+    /// <param name="numberOfHMetrics">The number of horizontal metrics in the 'hmtx' table.</param>
     public HorizontalHeadTable(
         short ascender,
         short descender,
@@ -33,28 +55,66 @@ internal class HorizontalHeadTable : Table
         this.NumberOfHMetrics = numberOfHMetrics;
     }
 
+    /// <summary>
+    /// Gets the maximum advance width, in font design units.
+    /// </summary>
     public ushort AdvanceWidthMax { get; }
 
+    /// <summary>
+    /// Gets the typographic ascender distance from the baseline.
+    /// </summary>
     public short Ascender { get; }
 
+    /// <summary>
+    /// Gets the caret offset for slanted fonts. Set to 0 for non-slanted fonts.
+    /// </summary>
     public short CaretOffset { get; }
 
+    /// <summary>
+    /// Gets the caret slope rise. Set to 1 for a vertical caret.
+    /// </summary>
     public short CaretSlopeRise { get; }
 
+    /// <summary>
+    /// Gets the caret slope run. Set to 0 for a vertical caret.
+    /// </summary>
     public short CaretSlopeRun { get; }
 
+    /// <summary>
+    /// Gets the typographic descender distance from the baseline (typically negative).
+    /// </summary>
     public short Descender { get; }
 
+    /// <summary>
+    /// Gets the typographic line gap.
+    /// </summary>
     public short LineGap { get; }
 
+    /// <summary>
+    /// Gets the minimum left side bearing value.
+    /// </summary>
     public short MinLeftSideBearing { get; }
 
+    /// <summary>
+    /// Gets the minimum right side bearing value.
+    /// </summary>
     public short MinRightSideBearing { get; }
 
+    /// <summary>
+    /// Gets the number of horizontal metrics in the 'hmtx' table.
+    /// </summary>
     public ushort NumberOfHMetrics { get; }
 
+    /// <summary>
+    /// Gets the maximum x extent: max(lsb + (xMax - xMin)).
+    /// </summary>
     public short XMaxExtent { get; }
 
+    /// <summary>
+    /// Loads the <see cref="HorizontalHeadTable"/> from the specified font reader.
+    /// </summary>
+    /// <param name="fontReader">The font reader.</param>
+    /// <returns>The <see cref="HorizontalHeadTable"/>, or <see langword="null"/> if the table is not present.</returns>
     public static HorizontalHeadTable? Load(FontReader fontReader)
     {
         if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
@@ -68,6 +128,11 @@ internal class HorizontalHeadTable : Table
         }
     }
 
+    /// <summary>
+    /// Loads the <see cref="HorizontalHeadTable"/> from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <returns>The <see cref="HorizontalHeadTable"/>.</returns>
     public static HorizontalHeadTable Load(BigEndianBinaryReader reader)
     {
         // +--------+---------------------+---------------------------------------------------------------------------------+

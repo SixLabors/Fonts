@@ -19,24 +19,54 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 /// </summary>
 internal class GlyphVariationProcessor
 {
+    /// <summary>
+    /// The item variation store shared by CFF2 and other variation lookups.
+    /// </summary>
     private readonly ItemVariationStore? itemStore;
 
+    /// <summary>
+    /// The font variations table defining variation axes.
+    /// </summary>
     private readonly FVarTable fvar;
 
+    /// <summary>
+    /// The optional axis variations table for axis normalization remapping.
+    /// </summary>
     private readonly AVarTable? avar;
 
+    /// <summary>
+    /// The optional glyph variation table with per-glyph deltas.
+    /// </summary>
     private readonly GVarTable? gVar;
 
+    /// <summary>
+    /// The optional horizontal metrics variations table.
+    /// </summary>
     private readonly HVarTable? hVar;
 
+    /// <summary>
+    /// The optional vertical metrics variations table.
+    /// </summary>
     private readonly VVarTable? vVar;
 
+    /// <summary>
+    /// The optional metrics variations table for global font values.
+    /// </summary>
     private readonly MVarTable? mVar;
 
+    /// <summary>
+    /// The optional CVT variations table for hinting.
+    /// </summary>
     private readonly CVarTable? cVar;
 
+    /// <summary>
+    /// The normalized variation coordinates for the current font instance, one per axis.
+    /// </summary>
     private readonly float[] normalizedCoords;
 
+    /// <summary>
+    /// Cache of computed blend vectors, keyed by <see cref="ItemVariationData"/> instance.
+    /// </summary>
     private readonly ConcurrentDictionary<ItemVariationData, float[]> blendVectors;
 
     /// <summary>
@@ -46,6 +76,18 @@ internal class GlyphVariationProcessor
     /// </summary>
     private readonly ConcurrentDictionary<short[], short[]> cvtCache = new(ReferenceEqualityComparer.Instance);
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GlyphVariationProcessor"/> class.
+    /// </summary>
+    /// <param name="itemStore">The optional shared item variation store (used by CFF2).</param>
+    /// <param name="fVar">The font variations table defining axes. Required.</param>
+    /// <param name="aVar">The optional axis variations table for normalization remapping.</param>
+    /// <param name="gVar">The optional glyph variation table.</param>
+    /// <param name="hVar">The optional horizontal metrics variations table.</param>
+    /// <param name="vVar">The optional vertical metrics variations table.</param>
+    /// <param name="mVar">The optional global metrics variations table.</param>
+    /// <param name="cVar">The optional CVT variations table.</param>
+    /// <param name="userCoordinates">The optional user-specified axis values in design space.</param>
     public GlyphVariationProcessor(
         ItemVariationStore? itemStore,
         FVarTable fVar,
@@ -110,6 +152,11 @@ internal class GlyphVariationProcessor
         }
     }
 
+    /// <summary>
+    /// Transforms a simple (non-composite) glyph by applying gvar variation deltas to its outline points.
+    /// </summary>
+    /// <param name="variationData">The glyph's variation data from the gvar table.</param>
+    /// <param name="glyphPoints">The glyph vector whose control points will be modified in-place.</param>
     private void TransformSimplePoints(GlyphVariationData variationData, ref GlyphVector glyphPoints)
     {
         IList<ControlPoint> controlPoints = glyphPoints.ControlPoints;
@@ -390,6 +437,11 @@ internal class GlyphVariationProcessor
         return this.cvtCache.GetOrAdd(baseCvt, this.ComputeCvtDeltas);
     }
 
+    /// <summary>
+    /// Computes the CVT values with cvar deltas applied for the given base CVT array.
+    /// </summary>
+    /// <param name="baseCvt">The base CVT values from the cvt table.</param>
+    /// <returns>A new array of CVT values with variation deltas applied.</returns>
     private short[] ComputeCvtDeltas(short[] baseCvt)
     {
         // Work on a copy so we don't modify the original CVT values.
@@ -542,6 +594,13 @@ internal class GlyphVariationProcessor
         return this.blendVectors.GetOrAdd(variationData, _ => this.ComputeBlendVector(store, variationData));
     }
 
+    /// <summary>
+    /// Computes the blend vector for the given item variation data by evaluating the region scalars
+    /// against the normalized coordinates.
+    /// </summary>
+    /// <param name="store">The item variation store containing the region list.</param>
+    /// <param name="variationData">The item variation data subtable whose regions to evaluate.</param>
+    /// <returns>An array of blend scalars, one per region index.</returns>
     private float[] ComputeBlendVector(ItemVariationStore store, ItemVariationData variationData)
     {
         float[] blendVector = new float[variationData.RegionIndexes.Length];
@@ -782,6 +841,14 @@ internal class GlyphVariationProcessor
         return normalized;
     }
 
+    /// <summary>
+    /// Gets the metric delta for a given glyph by resolving the delta-set index mapping
+    /// and computing the delta from the item variation store.
+    /// </summary>
+    /// <param name="glyphId">The glyph identifier.</param>
+    /// <param name="mapping">The optional delta-set index mapping array.</param>
+    /// <param name="store">The item variation store containing the delta data.</param>
+    /// <returns>The computed delta value.</returns>
     private float GetMetricDelta(int glyphId, DeltaSetIndexMap[]? mapping, ItemVariationStore store)
     {
         int outerIndex;
@@ -911,6 +978,17 @@ internal class GlyphVariationProcessor
         InterpolateAxis(p1, p2, ref1, ref2, origPoints, adjustY, isX: false);
     }
 
+    /// <summary>
+    /// Interpolates delta values for points between two reference points along a single axis (X or Y).
+    /// Uses linear interpolation with clamping per the OpenType IUP algorithm.
+    /// </summary>
+    /// <param name="p1">The first point index to interpolate (inclusive).</param>
+    /// <param name="p2">The last point index to interpolate (inclusive).</param>
+    /// <param name="ref1">The first reference point index with a known delta.</param>
+    /// <param name="ref2">The second reference point index with a known delta.</param>
+    /// <param name="origPoints">The original (unmodified) control points for coordinate reference.</param>
+    /// <param name="adjust">The delta adjustment array to populate.</param>
+    /// <param name="isX">Whether to interpolate the X axis; if false, interpolates Y.</param>
     private static void InterpolateAxis(
         int p1,
         int p2,
@@ -987,6 +1065,11 @@ internal class GlyphVariationProcessor
         }
     }
 
+    /// <summary>
+    /// Calculates the bounding box of the given control points.
+    /// </summary>
+    /// <param name="points">The control points.</param>
+    /// <returns>The bounding box encompassing all control points.</returns>
     private static Bounds CalculateBounds(IList<ControlPoint> points)
     {
         if (points.Count == 0)

@@ -10,6 +10,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub;
 /// </summary>
 internal static class LookupType6SubTable
 {
+    /// <summary>
+    /// Loads the chaining context substitution lookup subtable from the given offset.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the substitution subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
@@ -25,11 +33,30 @@ internal static class LookupType6SubTable
     }
 }
 
+/// <summary>
+/// Implements chaining context substitution format 1 (simple glyph contexts).
+/// Rules include backtrack, input, and lookahead glyph sequences for matching.
+/// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#61-chained-contexts-substitution-format-1-simple-glyph-contexts"/>
+/// </summary>
 internal sealed class LookupType6Format1SubTable : LookupSubTable
 {
+    /// <summary>
+    /// The coverage table that defines the set of first input glyph IDs.
+    /// </summary>
     private readonly CoverageTable coverageTable;
+
+    /// <summary>
+    /// The array of chained sequence rule set tables, ordered by coverage index.
+    /// </summary>
     private readonly ChainedSequenceRuleSetTable[] seqRuleSetTables;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LookupType6Format1SubTable"/> class.
+    /// </summary>
+    /// <param name="coverageTable">The coverage table defining first input glyphs.</param>
+    /// <param name="seqRuleSetTables">The array of chained sequence rule set tables.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
     private LookupType6Format1SubTable(
         CoverageTable coverageTable,
         ChainedSequenceRuleSetTable[] seqRuleSetTables,
@@ -41,12 +68,21 @@ internal sealed class LookupType6Format1SubTable : LookupSubTable
         this.seqRuleSetTables = seqRuleSetTables;
     }
 
+    /// <summary>
+    /// Loads the chaining context substitution format 1 subtable from the given offset.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the substitution subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
+    /// <returns>The loaded <see cref="LookupType6Format1SubTable"/>.</returns>
     public static LookupType6Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         ChainedSequenceRuleSetTable[] seqRuleSets = TableLoadingUtils.LoadChainedSequenceContextFormat1(reader, offset, out CoverageTable coverageTable);
         return new LookupType6Format1SubTable(coverageTable, seqRuleSets, lookupFlags, markFilteringSet);
     }
 
+    /// <inheritdoc />
     public override bool TrySubstitution(
         FontMetrics fontMetrics,
         GSubTable table,
@@ -103,14 +139,48 @@ internal sealed class LookupType6Format1SubTable : LookupSubTable
     }
 }
 
+/// <summary>
+/// Implements chaining context substitution format 2 (class-based glyph contexts).
+/// Rules use class definitions for backtrack, input, and lookahead sequences.
+/// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#62-chained-contexts-substitution-format-2-class-based-glyph-contexts"/>
+/// </summary>
 internal sealed class LookupType6Format2SubTable : LookupSubTable
 {
+    /// <summary>
+    /// The coverage table that defines the set of first input glyph IDs.
+    /// </summary>
     private readonly CoverageTable coverageTable;
+
+    /// <summary>
+    /// The class definition table used to classify input glyphs.
+    /// </summary>
     private readonly ClassDefinitionTable inputClassDefinitionTable;
+
+    /// <summary>
+    /// The class definition table used to classify backtrack glyphs.
+    /// </summary>
     private readonly ClassDefinitionTable backtrackClassDefinitionTable;
+
+    /// <summary>
+    /// The class definition table used to classify lookahead glyphs.
+    /// </summary>
     private readonly ClassDefinitionTable lookaheadClassDefinitionTable;
+
+    /// <summary>
+    /// The array of chained class sequence rule set tables, indexed by input class value.
+    /// </summary>
     private readonly ChainedClassSequenceRuleSetTable[] sequenceRuleSetTables;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LookupType6Format2SubTable"/> class.
+    /// </summary>
+    /// <param name="sequenceRuleSetTables">The array of chained class sequence rule set tables.</param>
+    /// <param name="backtrackClassDefinitionTable">The class definition table for backtrack glyphs.</param>
+    /// <param name="inputClassDefinitionTable">The class definition table for input glyphs.</param>
+    /// <param name="lookaheadClassDefinitionTable">The class definition table for lookahead glyphs.</param>
+    /// <param name="coverageTable">The coverage table defining first input glyphs.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
     private LookupType6Format2SubTable(
         ChainedClassSequenceRuleSetTable[] sequenceRuleSetTables,
         ClassDefinitionTable backtrackClassDefinitionTable,
@@ -128,6 +198,14 @@ internal sealed class LookupType6Format2SubTable : LookupSubTable
         this.coverageTable = coverageTable;
     }
 
+    /// <summary>
+    /// Loads the chaining context substitution format 2 subtable from the given offset.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the substitution subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
+    /// <returns>The loaded <see cref="LookupType6Format2SubTable"/>.</returns>
     public static LookupType6Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         ChainedClassSequenceRuleSetTable[] seqRuleSets = TableLoadingUtils.LoadChainedSequenceContextFormat2(
@@ -148,6 +226,7 @@ internal sealed class LookupType6Format2SubTable : LookupSubTable
             markFilteringSet);
     }
 
+    /// <inheritdoc />
     public override bool TrySubstitution(
         FontMetrics fontMetrics,
         GSubTable table,
@@ -206,13 +285,42 @@ internal sealed class LookupType6Format2SubTable : LookupSubTable
     }
 }
 
+/// <summary>
+/// Implements chaining context substitution format 3 (coverage-based glyph contexts).
+/// Rules use separate coverage tables for backtrack, input, and lookahead sequences.
+/// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#63-chained-contexts-substitution-format-3-coverage-based-glyph-contexts"/>
+/// </summary>
 internal sealed class LookupType6Format3SubTable : LookupSubTable
 {
+    /// <summary>
+    /// The array of sequence lookup records that define the substitutions to apply.
+    /// </summary>
     private readonly SequenceLookupRecord[] sequenceLookupRecords;
+
+    /// <summary>
+    /// The array of coverage tables for the backtrack sequence.
+    /// </summary>
     private readonly CoverageTable[] backtrackCoverageTables;
+
+    /// <summary>
+    /// The array of coverage tables for the input sequence.
+    /// </summary>
     private readonly CoverageTable[] inputCoverageTables;
+
+    /// <summary>
+    /// The array of coverage tables for the lookahead sequence.
+    /// </summary>
     private readonly CoverageTable[] lookaheadCoverageTables;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LookupType6Format3SubTable"/> class.
+    /// </summary>
+    /// <param name="seqLookupRecords">The array of sequence lookup records.</param>
+    /// <param name="backtrackCoverageTables">The coverage tables for the backtrack sequence.</param>
+    /// <param name="inputCoverageTables">The coverage tables for the input sequence.</param>
+    /// <param name="lookaheadCoverageTables">The coverage tables for the lookahead sequence.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
     private LookupType6Format3SubTable(
         SequenceLookupRecord[] seqLookupRecords,
         CoverageTable[] backtrackCoverageTables,
@@ -228,6 +336,14 @@ internal sealed class LookupType6Format3SubTable : LookupSubTable
         this.lookaheadCoverageTables = lookaheadCoverageTables;
     }
 
+    /// <summary>
+    /// Loads the chaining context substitution format 3 subtable from the given offset.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the substitution subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
+    /// <returns>The loaded <see cref="LookupType6Format3SubTable"/>.</returns>
     public static LookupType6Format3SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         SequenceLookupRecord[] seqLookupRecords = TableLoadingUtils.LoadChainedSequenceContextFormat3(
@@ -246,6 +362,7 @@ internal sealed class LookupType6Format3SubTable : LookupSubTable
             markFilteringSet);
     }
 
+    /// <inheritdoc />
     public override bool TrySubstitution(
         FontMetrics fontMetrics,
         GSubTable table,

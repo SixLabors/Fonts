@@ -14,6 +14,9 @@ namespace SixLabors.Fonts.Tables.General.Colr;
 /// </summary>
 internal sealed class ColrV0GlyphSource : ColrGlyphSourceBase
 {
+    /// <summary>
+    /// Cache of previously resolved painted glyphs keyed by glyph ID.
+    /// </summary>
     private readonly ConcurrentDictionary<ushort, (PaintedGlyph Glyph, PaintedCanvasMetadata Canvas)> cachedGlyphs = [];
 
     /// <summary>

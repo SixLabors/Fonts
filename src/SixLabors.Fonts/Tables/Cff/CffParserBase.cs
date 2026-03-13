@@ -15,6 +15,12 @@ internal abstract class CffParserBase
 {
     private readonly StringBuilder pooledStringBuilder = new();
 
+    /// <summary>
+    /// Reads the FDSelect structure that maps glyph indices to Font DICT indices.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="offset">The absolute offset of the CFF table.</param>
+    /// <param name="cidFontInfo">The CIDFont information to populate with FDSelect data.</param>
     protected static void ReadFdSelect(BigEndianBinaryReader reader, long offset, CidFontInfo cidFontInfo)
     {
         if (cidFontInfo.FDSelect is 0)
@@ -75,6 +81,14 @@ internal abstract class CffParserBase
         }
     }
 
+    /// <summary>
+    /// Reads the Font DICT Array (FDArray), which contains per-font-dictionary entries for CIDFonts.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="offset">The absolute offset of the CFF table.</param>
+    /// <param name="fdArrayOffset">The offset to the FDArray INDEX relative to the CFF table.</param>
+    /// <param name="cff2">Whether to use CFF2 INDEX format (32-bit count).</param>
+    /// <returns>An array of <see cref="FontDict"/> entries.</returns>
     protected FontDict[] ReadFdArray(BigEndianBinaryReader reader, long offset, long fdArrayOffset, bool cff2 = false)
     {
         if (fdArrayOffset is 0)
@@ -153,6 +167,11 @@ internal abstract class CffParserBase
         return fontDicts;
     }
 
+    /// <summary>
+    /// Reads a single DICT entry consisting of operands followed by an operator.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <returns>The parsed <see cref="CffDataDicEntry"/>.</returns>
     protected CffDataDicEntry ReadEntry(BigEndianBinaryReader reader)
     {
         List<CffOperand> operands = new();
@@ -206,6 +225,13 @@ internal abstract class CffParserBase
         return new CffDataDicEntry(@operator!, operands.ToArray());
     }
 
+    /// <summary>
+    /// Attempts to read the offset array from a CFF INDEX structure.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="value">When this method returns, contains the parsed index offsets, or <see langword="null"/> if the INDEX is empty.</param>
+    /// <param name="cff2">Whether to use CFF2 INDEX format (32-bit count).</param>
+    /// <returns><see langword="true"/> if the INDEX contained at least one element; otherwise, <see langword="false"/>.</returns>
     protected static bool TryReadIndexDataOffsets(BigEndianBinaryReader reader, [NotNullWhen(true)] out CffIndexOffset[]? value, bool cff2 = false)
     {
         // INDEX Data
@@ -266,6 +292,12 @@ internal abstract class CffParserBase
         return true;
     }
 
+    /// <summary>
+    /// Reads a subroutine INDEX and returns the raw byte buffers for each subroutine.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="cff2">Whether to use CFF2 INDEX format (32-bit count).</param>
+    /// <returns>An array of byte arrays, each containing a subroutine charstring.</returns>
     protected static byte[][] ReadSubrBuffer(BigEndianBinaryReader reader, bool cff2 = false)
     {
         if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets, cff2))
@@ -284,6 +316,12 @@ internal abstract class CffParserBase
         return rawBufferList;
     }
 
+    /// <summary>
+    /// Reads DICT data of the specified length, parsing all operator-operand entries.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="length">The length in bytes of the DICT data to read.</param>
+    /// <returns>A list of parsed <see cref="CffDataDicEntry"/> entries.</returns>
     protected List<CffDataDicEntry> ReadDictData(BigEndianBinaryReader reader, int length)
     {
         // 4. DICT Data
@@ -310,6 +348,12 @@ internal abstract class CffParserBase
         return dicData;
     }
 
+    /// <summary>
+    /// Reads a DICT operator (one or two bytes) from the reader.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="b0">The first byte of the operator.</param>
+    /// <returns>The resolved <see cref="CFFOperator"/>.</returns>
     private static CFFOperator ReadOperator(BigEndianBinaryReader reader, byte b0)
     {
         // Read operator key.
@@ -324,6 +368,11 @@ internal abstract class CffParserBase
         return CFFOperator.GetOperatorByKey(b0, b1);
     }
 
+    /// <summary>
+    /// Reads a real number operand encoded as a nibble-based BCD sequence.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <returns>The decoded real number value.</returns>
     private double ReadRealNumber(BigEndianBinaryReader reader)
     {
         // from https://typekit.files.wordpress.com/2013/05/5176.cff.pdf
@@ -416,6 +465,12 @@ internal abstract class CffParserBase
         return value;
     }
 
+    /// <summary>
+    /// Reads an integer number operand from the DICT data based on the initial byte.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="b0">The initial byte that determines the encoding format.</param>
+    /// <returns>The decoded integer value.</returns>
     private static int ReadIntegerNumber(BigEndianBinaryReader reader, byte b0)
     {
         if (b0 == 28)

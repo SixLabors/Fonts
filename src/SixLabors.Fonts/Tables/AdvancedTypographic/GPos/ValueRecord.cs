@@ -104,12 +104,24 @@ internal readonly struct ValueRecord
         }
     }
 
+    /// <summary>
+    /// Gets the horizontal adjustment for placement, in design units.
+    /// </summary>
     public short XPlacement { get; }
 
+    /// <summary>
+    /// Gets the vertical adjustment for placement, in design units.
+    /// </summary>
     public short YPlacement { get; }
 
+    /// <summary>
+    /// Gets the horizontal adjustment for advance, in design units.
+    /// </summary>
     public short XAdvance { get; }
 
+    /// <summary>
+    /// Gets the vertical adjustment for advance, in design units.
+    /// </summary>
     public short YAdvance { get; }
 
     /// <summary>
@@ -147,6 +159,10 @@ internal readonly struct ValueRecord
     /// (outerIndex &lt;&lt; 16 | innerIndex) if it is a VariationIndex table (deltaFormat == 0x8000),
     /// or 0 if null, a Device table, or invalid.
     /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="parentBase">The absolute stream position of the parent table.</param>
+    /// <param name="deviceOffset">The offset to the Device/VariationIndex table from the parent table base.</param>
+    /// <returns>The packed VariationIndex, or 0 if not applicable.</returns>
     private static uint ResolveVariationIndex(BigEndianBinaryReader reader, long parentBase, short deviceOffset)
     {
         if (deviceOffset == 0)

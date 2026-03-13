@@ -15,8 +15,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 /// </summary>
 internal abstract class CoverageTable
 {
+    /// <summary>
+    /// Gets the coverage index for the specified glyph, or -1 if the glyph is not covered.
+    /// </summary>
+    /// <param name="glyphId">The glyph identifier.</param>
+    /// <returns>The zero-based coverage index, or -1 if not found.</returns>
     public abstract int CoverageIndexOf(ushort glyphId);
 
+    /// <summary>
+    /// Loads a <see cref="CoverageTable"/> from the binary reader at the specified offset.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Offset from the beginning of the table.</param>
+    /// <returns>The <see cref="CoverageTable"/>.</returns>
     public static CoverageTable Load(BigEndianBinaryReader reader, long offset)
     {
         reader.Seek(offset, SeekOrigin.Begin);
@@ -32,6 +43,13 @@ internal abstract class CoverageTable
         };
     }
 
+    /// <summary>
+    /// Loads an array of <see cref="CoverageTable"/> values from the binary reader.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">The base offset from which coverage offsets are relative.</param>
+    /// <param name="coverageOffsets">The array of offsets to individual coverage tables.</param>
+    /// <returns>The array of <see cref="CoverageTable"/>.</returns>
     public static CoverageTable[] LoadArray(BigEndianBinaryReader reader, long offset, ReadOnlySpan<ushort> coverageOffsets)
     {
         CoverageTable[] tables = new CoverageTable[coverageOffsets.Length];
@@ -44,19 +62,33 @@ internal abstract class CoverageTable
     }
 }
 
+/// <summary>
+/// Coverage Format 1: individual glyph indices listed in numerical order.
+/// </summary>
 internal sealed class CoverageFormat1Table : CoverageTable
 {
     private readonly ushort[] glyphArray;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CoverageFormat1Table"/> class.
+    /// </summary>
+    /// <param name="glyphArray">The array of glyph IDs in numerical order.</param>
     private CoverageFormat1Table(ushort[] glyphArray)
         => this.glyphArray = glyphArray;
 
+    /// <inheritdoc />
     public override int CoverageIndexOf(ushort glyphId)
     {
         int n = Array.BinarySearch(this.glyphArray, glyphId);
         return n < 0 ? -1 : n;
     }
 
+    /// <summary>
+    /// Loads a <see cref="CoverageFormat1Table"/> from the binary reader.
+    /// The format identifier has already been read.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <returns>The <see cref="CoverageFormat1Table"/>.</returns>
     public static CoverageFormat1Table Load(BigEndianBinaryReader reader)
     {
         // +--------+------------------------+-----------------------------------------+
@@ -75,13 +107,21 @@ internal sealed class CoverageFormat1Table : CoverageTable
     }
 }
 
+/// <summary>
+/// Coverage Format 2: ranges of consecutive glyph IDs, ordered by startGlyphID.
+/// </summary>
 internal sealed class CoverageFormat2Table : CoverageTable
 {
     private readonly CoverageRangeRecord[] records;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CoverageFormat2Table"/> class.
+    /// </summary>
+    /// <param name="records">The array of coverage range records.</param>
     private CoverageFormat2Table(CoverageRangeRecord[] records)
         => this.records = records;
 
+    /// <inheritdoc />
     public override int CoverageIndexOf(ushort glyphId)
     {
         // Records are ordered by StartGlyphId, so use binary search to find the
@@ -110,6 +150,12 @@ internal sealed class CoverageFormat2Table : CoverageTable
         return -1;
     }
 
+    /// <summary>
+    /// Loads a <see cref="CoverageFormat2Table"/> from the binary reader.
+    /// The format identifier has already been read.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <returns>The <see cref="CoverageFormat2Table"/>.</returns>
     public static CoverageFormat2Table Load(BigEndianBinaryReader reader)
     {
         // +-------------+--------------------------+--------------------------------------------------+
@@ -144,14 +190,24 @@ internal sealed class CoverageFormat2Table : CoverageTable
         return new CoverageFormat2Table(records);
     }
 
+    /// <summary>
+    /// An empty coverage table that never matches any glyph. Used as a fallback for invalid coverage formats.
+    /// </summary>
     internal sealed class EmptyCoverageTable : CoverageTable
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EmptyCoverageTable"/> class.
+        /// </summary>
         private EmptyCoverageTable()
         {
         }
 
+        /// <summary>
+        /// Gets the singleton instance of the empty coverage table.
+        /// </summary>
         public static EmptyCoverageTable Instance { get; } = new();
 
+        /// <inheritdoc />
         public override int CoverageIndexOf(ushort glyphId) => -1;
     }
 }

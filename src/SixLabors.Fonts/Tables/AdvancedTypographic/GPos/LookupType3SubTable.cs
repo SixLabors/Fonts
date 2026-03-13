@@ -12,6 +12,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal static class LookupType3SubTable
 {
+    /// <summary>
+    /// Loads the cursive attachment positioning subtable from the specified reader.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers.</param>
+    /// <param name="markFilteringSet">The mark filtering set index.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
@@ -24,11 +32,22 @@ internal static class LookupType3SubTable
         };
     }
 
+    /// <summary>
+    /// Cursive Attachment Positioning Format 1: connects adjacent glyphs via entry and exit anchor points.
+    /// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/gpos#cursive-attachment-positioning-format1-cursive-attachment"/>
+    /// </summary>
     internal sealed class LookupType3Format1SubTable : LookupSubTable
     {
         private readonly CoverageTable coverageTable;
         private readonly EntryExitAnchors[] entryExitAnchors;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LookupType3Format1SubTable"/> class.
+        /// </summary>
+        /// <param name="coverageTable">The coverage table.</param>
+        /// <param name="entryExitAnchors">The array of entry/exit anchor pairs.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
         public LookupType3Format1SubTable(
             CoverageTable coverageTable,
             EntryExitAnchors[] entryExitAnchors,
@@ -40,6 +59,14 @@ internal static class LookupType3SubTable
             this.entryExitAnchors = entryExitAnchors;
         }
 
+        /// <summary>
+        /// Loads the Format 1 cursive attachment positioning subtable.
+        /// </summary>
+        /// <param name="reader">The big endian binary reader.</param>
+        /// <param name="offset">The offset to the beginning of the subtable.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
+        /// <returns>The loaded <see cref="LookupType3Format1SubTable"/>.</returns>
         public static LookupType3Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             // Cursive Attachment Positioning Format1.
@@ -74,6 +101,7 @@ internal static class LookupType3SubTable
             return new LookupType3Format1SubTable(coverageTable, entryExitAnchors, lookupFlags, markFilteringSet);
         }
 
+        /// <inheritdoc/>
         public override bool TryUpdatePosition(
             FontMetrics fontMetrics,
             GPosTable table,
@@ -216,6 +244,15 @@ internal static class LookupType3SubTable
             return true;
         }
 
+        /// <summary>
+        /// Recursively reverses the cursive minor offset chain so that the entire tree
+        /// of a previous connection attaches to the new parent.
+        /// </summary>
+        /// <param name="collection">The glyph positioning collection.</param>
+        /// <param name="position">The original glyph position that initiated the chain reversal.</param>
+        /// <param name="i">The current index in the chain being reversed.</param>
+        /// <param name="horizontal">Whether the layout is horizontal.</param>
+        /// <param name="parent">The new parent index to stop at.</param>
         private static void ReverseCursiveMinorOffset(
             GlyphPositioningCollection collection,
             int position,

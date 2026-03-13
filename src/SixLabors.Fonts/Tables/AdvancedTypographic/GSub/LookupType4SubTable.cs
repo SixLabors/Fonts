@@ -11,6 +11,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub;
 /// </summary>
 internal static class LookupType4SubTable
 {
+    /// <summary>
+    /// Loads the ligature substitution lookup subtable from the given offset.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the substitution subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
@@ -24,11 +32,31 @@ internal static class LookupType4SubTable
     }
 }
 
+/// <summary>
+/// Implements ligature substitution format 1. A sequence of glyphs is replaced by a single
+/// ligature glyph. The first glyph in the sequence is identified via the coverage table, and
+/// the remaining component glyphs are specified in each ligature table.
+/// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#41-ligature-substitution-format-1"/>
+/// </summary>
 internal sealed class LookupType4Format1SubTable : LookupSubTable
 {
+    /// <summary>
+    /// The array of ligature set tables, ordered by coverage index.
+    /// </summary>
     private readonly LigatureSetTable[] ligatureSetTables;
+
+    /// <summary>
+    /// The coverage table that defines the set of first-component glyph IDs.
+    /// </summary>
     private readonly CoverageTable coverageTable;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LookupType4Format1SubTable"/> class.
+    /// </summary>
+    /// <param name="ligatureSetTables">The array of ligature set tables.</param>
+    /// <param name="coverageTable">The coverage table defining first-component glyphs.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
     private LookupType4Format1SubTable(LigatureSetTable[] ligatureSetTables, CoverageTable coverageTable, LookupFlags lookupFlags, ushort markFilteringSet)
         : base(lookupFlags, markFilteringSet)
     {
@@ -36,6 +64,14 @@ internal sealed class LookupType4Format1SubTable : LookupSubTable
         this.coverageTable = coverageTable;
     }
 
+    /// <summary>
+    /// Loads the ligature substitution format 1 subtable from the given offset.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the substitution subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
+    /// <returns>The loaded <see cref="LookupType4Format1SubTable"/>.</returns>
     public static LookupType4Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         // Ligature Substitution Format 1
@@ -109,6 +145,7 @@ internal sealed class LookupType4Format1SubTable : LookupSubTable
         return new LookupType4Format1SubTable(ligatureSetTables, coverageTable, lookupFlags, markFilteringSet);
     }
 
+    /// <inheritdoc />
     public override bool TrySubstitution(
         FontMetrics fontMetrics,
         GSubTable table,
@@ -256,24 +293,51 @@ internal sealed class LookupType4Format1SubTable : LookupSubTable
         return false;
     }
 
+    /// <summary>
+    /// Represents a ligature set table containing an array of ligature tables
+    /// for a single first-component glyph, ordered by preference.
+    /// </summary>
     public readonly struct LigatureSetTable
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LigatureSetTable"/> struct.
+        /// </summary>
+        /// <param name="ligatures">The array of ligature tables.</param>
         public LigatureSetTable(LigatureTable[] ligatures)
             => this.Ligatures = ligatures;
 
+        /// <summary>
+        /// Gets the array of ligature tables, ordered by preference.
+        /// </summary>
         public LigatureTable[] Ligatures { get; }
     }
 
+    /// <summary>
+    /// Represents a ligature table that maps a sequence of component glyphs to a single
+    /// ligature glyph.
+    /// </summary>
     public readonly struct LigatureTable
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LigatureTable"/> struct.
+        /// </summary>
+        /// <param name="glyphId">The glyph ID of the ligature to substitute.</param>
+        /// <param name="componentGlyphs">The array of component glyph IDs (starting with the second component).</param>
         public LigatureTable(ushort glyphId, ushort[] componentGlyphs)
         {
             this.GlyphId = glyphId;
             this.ComponentGlyphs = componentGlyphs;
         }
 
+        /// <summary>
+        /// Gets the glyph ID of the ligature to substitute.
+        /// </summary>
         public ushort GlyphId { get; }
 
+        /// <summary>
+        /// Gets the array of component glyph IDs, starting with the second component,
+        /// ordered in writing direction.
+        /// </summary>
         public ushort[] ComponentGlyphs { get; }
     }
 }

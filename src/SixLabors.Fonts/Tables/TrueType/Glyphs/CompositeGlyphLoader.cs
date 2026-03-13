@@ -5,12 +5,23 @@ using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.TrueType.Glyphs;
 
+/// <summary>
+/// Implements loading of composite (compound) glyph descriptions from the 'glyf' table.
+/// A composite glyph references one or more component glyphs, each with its own transformation.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/glyf"/>
+/// </summary>
 internal sealed class CompositeGlyphLoader : GlyphLoader
 {
     private readonly Bounds bounds;
     private readonly Composite[] composites;
     private readonly ReadOnlyMemory<byte> instructions;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CompositeGlyphLoader"/> class.
+    /// </summary>
+    /// <param name="composites">The component glyph references.</param>
+    /// <param name="bounds">The composite glyph bounding box.</param>
+    /// <param name="instructions">The hinting instructions for this composite glyph.</param>
     public CompositeGlyphLoader(IEnumerable<Composite> composites, Bounds bounds, ReadOnlyMemory<byte> instructions)
     {
         this.composites = [.. composites];
@@ -18,6 +29,7 @@ internal sealed class CompositeGlyphLoader : GlyphLoader
         this.instructions = instructions;
     }
 
+    /// <inheritdoc/>
     public override GlyphVector CreateGlyph(GlyphTable table)
     {
         List<ControlPoint> controlPoints = [];
@@ -49,6 +61,12 @@ internal sealed class CompositeGlyphLoader : GlyphLoader
         };
     }
 
+    /// <summary>
+    /// Reads a composite glyph description from the binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader positioned after the glyph header.</param>
+    /// <param name="bounds">The glyph bounding box.</param>
+    /// <returns>A <see cref="CompositeGlyphLoader"/> containing the composite glyph data.</returns>
     public static CompositeGlyphLoader LoadCompositeGlyph(BigEndianBinaryReader reader, in Bounds bounds)
     {
         List<Composite> composites = [];
@@ -97,6 +115,14 @@ internal sealed class CompositeGlyphLoader : GlyphLoader
         return new CompositeGlyphLoader(composites, bounds, instructions);
     }
 
+    /// <summary>
+    /// Reads the component arguments (offsets or point numbers) from the binary reader
+    /// based on the specified composite glyph flags.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="flags">The composite glyph flags for this component.</param>
+    /// <param name="dx">When this method returns, contains the x offset or point number.</param>
+    /// <param name="dy">When this method returns, contains the y offset or point number.</param>
     public static void LoadArguments(BigEndianBinaryReader reader, CompositeGlyphFlags flags, out int dx, out int dy)
     {
         // are we 16 or 8 bits values?
@@ -136,8 +162,18 @@ internal sealed class CompositeGlyphLoader : GlyphLoader
         }
     }
 
+    /// <summary>
+    /// Represents a single component reference within a composite glyph,
+    /// storing the referenced glyph index, flags, and transformation matrix.
+    /// </summary>
     public readonly struct Composite
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Composite"/> struct.
+        /// </summary>
+        /// <param name="glyphIndex">The glyph index of the component.</param>
+        /// <param name="flags">The composite glyph flags.</param>
+        /// <param name="transformation">The transformation matrix to apply to the component.</param>
         public Composite(ushort glyphIndex, CompositeGlyphFlags flags, Matrix3x2 transformation)
         {
             this.GlyphIndex = glyphIndex;
@@ -145,10 +181,19 @@ internal sealed class CompositeGlyphLoader : GlyphLoader
             this.Transformation = transformation;
         }
 
+        /// <summary>
+        /// Gets the glyph index of the component.
+        /// </summary>
         public ushort GlyphIndex { get; }
 
+        /// <summary>
+        /// Gets the composite glyph flags for this component.
+        /// </summary>
         public CompositeGlyphFlags Flags { get; }
 
+        /// <summary>
+        /// Gets the transformation matrix to apply to the component's outline.
+        /// </summary>
         public Matrix3x2 Transformation { get; }
     }
 }

@@ -23,6 +23,13 @@ internal sealed class ItemVariationData
     /// </summary>
     private const int LongWordsMask = 0x8000;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ItemVariationData"/> class.
+    /// </summary>
+    /// <param name="itemCount">The number of delta sets for distinct items.</param>
+    /// <param name="wordDeltaCount">The packed word delta count field.</param>
+    /// <param name="regionIndices">The array of region indices referenced by this subtable.</param>
+    /// <param name="deltaSets">The array of delta set rows.</param>
     private ItemVariationData(ushort itemCount, ushort wordDeltaCount, ushort[] regionIndices, DeltaSet[] deltaSets)
     {
         this.ItemCount = itemCount;
@@ -31,14 +38,33 @@ internal sealed class ItemVariationData
         this.DeltaSets = deltaSets;
     }
 
+    /// <summary>
+    /// Gets the number of delta sets for distinct items.
+    /// </summary>
     public ushort ItemCount { get; }
 
+    /// <summary>
+    /// Gets the packed word delta count field. The high bit is a flag indicating long words;
+    /// the low 15 bits give the count of word-sized deltas.
+    /// </summary>
     public ushort WordDeltaCount { get; }
 
+    /// <summary>
+    /// Gets the array of indices into the variation region list for the regions referenced by this subtable.
+    /// </summary>
     public ushort[] RegionIndexes { get; }
 
+    /// <summary>
+    /// Gets the array of delta set rows, one per item.
+    /// </summary>
     public DeltaSet[] DeltaSets { get; }
 
+    /// <summary>
+    /// Loads an <see cref="ItemVariationData"/> from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The byte offset from the start of the stream to this subtable.</param>
+    /// <returns>The <see cref="ItemVariationData"/>.</returns>
     public static ItemVariationData Load(BigEndianBinaryReader reader, long offset)
     {
         // ItemVariationData

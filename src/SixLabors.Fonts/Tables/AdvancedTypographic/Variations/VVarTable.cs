@@ -11,8 +11,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 /// </summary>
 internal class VVarTable : Table
 {
+    /// <summary>
+    /// The table name identifier for the VVAR table.
+    /// </summary>
     internal const string TableName = "VVAR";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="VVarTable"/> class.
+    /// </summary>
+    /// <param name="itemVariationStore">The item variation store containing delta data.</param>
+    /// <param name="advanceWidthMapping">The optional delta-set index mapping for advance heights.</param>
+    /// <param name="tsbMapping">The optional delta-set index mapping for top side bearings.</param>
+    /// <param name="bsbMapping">The optional delta-set index mapping for bottom side bearings.</param>
+    /// <param name="vOrgMapping">The optional delta-set index mapping for vertical origin Y coordinates.</param>
     public VVarTable(
         ItemVariationStore itemVariationStore,
         DeltaSetIndexMap[]? advanceWidthMapping,
@@ -27,16 +38,36 @@ internal class VVarTable : Table
         this.VOrgMapping = vOrgMapping;
     }
 
+    /// <summary>
+    /// Gets the item variation store containing the variation delta data.
+    /// </summary>
     public ItemVariationStore ItemVariationStore { get; }
 
+    /// <summary>
+    /// Gets the optional delta-set index mapping for advance heights.
+    /// </summary>
     public DeltaSetIndexMap[]? AdvanceWidthMapping { get; }
 
+    /// <summary>
+    /// Gets the optional delta-set index mapping for top side bearings.
+    /// </summary>
     public DeltaSetIndexMap[]? TsbMapping { get; }
 
+    /// <summary>
+    /// Gets the optional delta-set index mapping for bottom side bearings.
+    /// </summary>
     public DeltaSetIndexMap[]? BsbMapping { get; }
 
+    /// <summary>
+    /// Gets the optional delta-set index mapping for Y coordinates of vertical origins.
+    /// </summary>
     public DeltaSetIndexMap[]? VOrgMapping { get; }
 
+    /// <summary>
+    /// Loads the VVAR table from the specified font reader.
+    /// </summary>
+    /// <param name="reader">The font reader.</param>
+    /// <returns>The <see cref="VVarTable"/>, or <see langword="null"/> if the table is not present.</returns>
     public static VVarTable? Load(FontReader reader)
     {
         if (!reader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
@@ -50,6 +81,11 @@ internal class VVarTable : Table
         }
     }
 
+    /// <summary>
+    /// Loads the VVAR table from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader positioned at the start of the VVAR table.</param>
+    /// <returns>The <see cref="VVarTable"/>.</returns>
     public static VVarTable Load(BigEndianBinaryReader reader)
     {
         // Horizontal metrics variations table

@@ -3,8 +3,20 @@
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 
+/// <summary>
+/// A ChainedSequenceRule table describes a chained context rule using glyph IDs
+/// for backtrack, input, and lookahead sequences.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/chapter2#chained-sequence-context-format-1-simple-glyph-contexts"/>
+/// </summary>
 internal sealed class ChainedSequenceRuleTable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ChainedSequenceRuleTable"/> class.
+    /// </summary>
+    /// <param name="backtrackSequence">The array of backtrack glyph IDs.</param>
+    /// <param name="inputSequence">The array of input glyph IDs, beginning with the second glyph.</param>
+    /// <param name="lookaheadSequence">The array of lookahead glyph IDs.</param>
+    /// <param name="seqLookupRecords">The array of sequence lookup records.</param>
     private ChainedSequenceRuleTable(
         ushort[] backtrackSequence,
         ushort[] inputSequence,
@@ -17,10 +29,19 @@ internal sealed class ChainedSequenceRuleTable
         this.SequenceLookupRecords = seqLookupRecords;
     }
 
+    /// <summary>
+    /// Gets the array of backtrack glyph IDs.
+    /// </summary>
     public ushort[] BacktrackSequence { get; }
 
+    /// <summary>
+    /// Gets the array of input glyph IDs, beginning with the second glyph.
+    /// </summary>
     public ushort[] InputSequence { get; }
 
+    /// <summary>
+    /// Gets the array of lookahead glyph IDs.
+    /// </summary>
     public ushort[] LookaheadSequence { get; }
 
     /// <summary>
@@ -31,6 +52,12 @@ internal sealed class ChainedSequenceRuleTable
     /// </summary>
     public SequenceLookupRecord[] SequenceLookupRecords { get; }
 
+    /// <summary>
+    /// Loads the <see cref="ChainedSequenceRuleTable"/> from the binary reader at the specified offset.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Offset from the beginning of the ChainedSequenceRule table.</param>
+    /// <returns>The <see cref="ChainedSequenceRuleTable"/>.</returns>
     public static ChainedSequenceRuleTable Load(BigEndianBinaryReader reader, long offset)
     {
         // ChainedSequenceRule

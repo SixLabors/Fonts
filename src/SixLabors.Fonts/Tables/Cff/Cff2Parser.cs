@@ -22,6 +22,15 @@ internal class Cff2Parser : CffParserBase
     private int? fdSelectOffset;
     private ItemVariationStore? itemVariationStore;
 
+    /// <summary>
+    /// Loads and parses a CFF2 font from the given reader.
+    /// </summary>
+    /// <param name="reader">The binary reader positioned after the CFF2 header.</param>
+    /// <param name="hdrSize">The header size in bytes.</param>
+    /// <param name="topDictLength">The length of the Top DICT data in bytes.</param>
+    /// <param name="fontName">The PostScript font name.</param>
+    /// <param name="offset">The absolute offset of the CFF2 table in the font stream.</param>
+    /// <returns>The parsed <see cref="Cff2Font"/>.</returns>
     public Cff2Font Load(BigEndianBinaryReader reader, byte hdrSize, ushort topDictLength, string fontName, long offset)
     {
         this.offset = offset;
@@ -78,6 +87,11 @@ internal class Cff2Parser : CffParserBase
         return new(fontName, topDictionary, glyphs, this.itemVariationStore);
     }
 
+    /// <summary>
+    /// Reads the CFF2 Top DICT data, extracting offsets for CharStrings, FDArray, FDSelect, and variation store.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="topDictLength">The length in bytes of the Top DICT data.</param>
     private void ReadTopDictData(BigEndianBinaryReader reader, ushort topDictLength)
     {
         long startPosition = reader.BaseStream.Position;
@@ -113,6 +127,11 @@ internal class Cff2Parser : CffParserBase
         }
     }
 
+    /// <summary>
+    /// Reads the CharString INDEX offsets for CFF2.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <returns>An array of <see cref="CffIndexOffset"/> representing each charstring's position and length.</returns>
     private CffIndexOffset[] ReadCharStringIndex(BigEndianBinaryReader reader)
     {
         reader.BaseStream.Position = this.offset + this.charStringIndexOffset;
@@ -124,6 +143,12 @@ internal class Cff2Parser : CffParserBase
         return offsets;
     }
 
+    /// <summary>
+    /// Reads the raw charstring byte buffers for each glyph from the CharString INDEX.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="offsets">The charstring INDEX offsets.</param>
+    /// <returns>An array of byte arrays, each containing a glyph's charstring data.</returns>
     private static byte[][] ReadCharStringBuffers(BigEndianBinaryReader reader, CffIndexOffset[] offsets)
     {
         int glyphCount = offsets.Length;
@@ -137,6 +162,16 @@ internal class Cff2Parser : CffParserBase
         return charStringBuffers;
     }
 
+    /// <summary>
+    /// Creates glyph data objects for all glyphs from the pre-read charstring buffers.
+    /// </summary>
+    /// <param name="topDictionary">The top-level dictionary containing font metadata.</param>
+    /// <param name="globalSubrBuffers">The global subroutine buffers.</param>
+    /// <param name="fontDicts">The Font DICT array for CID fonts.</param>
+    /// <param name="privateDictionary">The private dictionary containing local subroutine references.</param>
+    /// <param name="charStringBuffers">The raw charstring byte buffers for each glyph.</param>
+    /// <param name="glyphCount">The total number of glyphs.</param>
+    /// <returns>An array of <see cref="CffGlyphData"/> for each glyph.</returns>
     private CffGlyphData[] ReadCharStringsIndex(
         CffTopDictionary topDictionary,
         byte[][] globalSubrBuffers,

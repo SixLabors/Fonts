@@ -10,6 +10,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub;
 /// </summary>
 internal static class LookupType3SubTable
 {
+    /// <summary>
+    /// Loads the alternate substitution lookup subtable from the given offset.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the substitution subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
@@ -23,11 +31,30 @@ internal static class LookupType3SubTable
     }
 }
 
+/// <summary>
+/// Implements alternate substitution format 1. Each input glyph can be replaced with any
+/// one of a set of alternate glyphs.
+/// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#31-alternate-substitution-format-1"/>
+/// </summary>
 internal sealed class LookupType3Format1SubTable : LookupSubTable
 {
+    /// <summary>
+    /// The array of alternate set tables, ordered by coverage index.
+    /// </summary>
     private readonly AlternateSetTable[] alternateSetTables;
+
+    /// <summary>
+    /// The coverage table that defines the set of input glyph IDs.
+    /// </summary>
     private readonly CoverageTable coverageTable;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LookupType3Format1SubTable"/> class.
+    /// </summary>
+    /// <param name="alternateSetTables">The array of alternate set tables.</param>
+    /// <param name="coverageTable">The coverage table defining input glyphs.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
     private LookupType3Format1SubTable(AlternateSetTable[] alternateSetTables, CoverageTable coverageTable, LookupFlags lookupFlags, ushort markFilteringSet)
         : base(lookupFlags, markFilteringSet)
     {
@@ -35,6 +62,14 @@ internal sealed class LookupType3Format1SubTable : LookupSubTable
         this.coverageTable = coverageTable;
     }
 
+    /// <summary>
+    /// Loads the alternate substitution format 1 subtable from the given offset.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the substitution subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
+    /// <returns>The loaded <see cref="LookupType3Format1SubTable"/>.</returns>
     public static LookupType3Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         // Alternate Substitution Format 1
@@ -79,6 +114,7 @@ internal sealed class LookupType3Format1SubTable : LookupSubTable
         return new LookupType3Format1SubTable(alternateTables, coverageTable, lookupFlags, markFilteringSet);
     }
 
+    /// <inheritdoc />
     public override bool TrySubstitution(
         FontMetrics fontMetrics,
         GSubTable table,
@@ -107,11 +143,22 @@ internal sealed class LookupType3Format1SubTable : LookupSubTable
         return false;
     }
 
+    /// <summary>
+    /// Represents an alternate set table containing an array of alternate glyph IDs
+    /// for a single input glyph.
+    /// </summary>
     public readonly struct AlternateSetTable
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AlternateSetTable"/> struct.
+        /// </summary>
+        /// <param name="alternateGlyphs">The array of alternate glyph IDs.</param>
         public AlternateSetTable(ushort[] alternateGlyphs)
             => this.AlternateGlyphs = alternateGlyphs;
 
+        /// <summary>
+        /// Gets the array of alternate glyph IDs, in arbitrary order.
+        /// </summary>
         public readonly ushort[] AlternateGlyphs { get; }
     }
 }

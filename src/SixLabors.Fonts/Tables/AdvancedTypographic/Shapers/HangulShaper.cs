@@ -12,42 +12,88 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 /// </summary>
 internal sealed class HangulShaper : DefaultShaper
 {
+    /// <summary>The 'ljmo' (leading Jamo forms) feature tag.</summary>
     private static readonly Tag LjmoTag = Tag.Parse("ljmo");
 
+    /// <summary>The 'vjmo' (vowel Jamo forms) feature tag.</summary>
     private static readonly Tag VjmoTag = Tag.Parse("vjmo");
 
+    /// <summary>The 'tjmo' (trailing Jamo forms) feature tag.</summary>
     private static readonly Tag TjmoTag = Tag.Parse("tjmo");
 
+    /// <summary>The base code point for precomposed Hangul syllables (U+AC00).</summary>
     private const int HangulBase = 0xac00;
+
+    /// <summary>The base code point for leading consonant Jamo (U+1100).</summary>
     private const int LBase = 0x1100; // lead
+
+    /// <summary>The base code point for vowel Jamo (U+1161).</summary>
     private const int VBase = 0x1161; // vowel
+
+    /// <summary>The base code point for trailing consonant Jamo (U+11A7).</summary>
     private const int TBase = 0x11a7; // trail
+
+    /// <summary>The number of leading consonant Jamo.</summary>
     private const int LCount = 19;
+
+    /// <summary>The number of vowel Jamo.</summary>
     private const int VCount = 21;
+
+    /// <summary>The number of trailing consonant Jamo (including no-trail).</summary>
     private const int TCount = 28;
+
+    /// <summary>The last leading consonant Jamo code point.</summary>
     private const int LEnd = LBase + LCount - 1;
+
+    /// <summary>The last vowel Jamo code point.</summary>
     private const int VEnd = VBase + VCount - 1;
+
+    /// <summary>The last trailing consonant Jamo code point.</summary>
     private const int TEnd = TBase + TCount - 1;
+
+    /// <summary>The dotted circle code point (U+25CC) used as a placeholder base.</summary>
     private const int DottedCircle = 0x25cc;
 
-    // Character categories
-    private const byte X = 0; // Other character
-    private const byte L = 1; // Leading consonant
-    private const byte V = 2; // Medial vowel
-    private const byte T = 3; // Trailing consonant
-    private const byte LV = 4; // Composed <LV> syllable
-    private const byte LVT = 5; // Composed <LVT> syllable
-    private const byte M = 6; // Tone mark
+    /// <summary>Other character category.</summary>
+    private const byte X = 0;
 
-    // State machine actions
+    /// <summary>Leading consonant category.</summary>
+    private const byte L = 1;
+
+    /// <summary>Medial vowel category.</summary>
+    private const byte V = 2;
+
+    /// <summary>Trailing consonant category.</summary>
+    private const byte T = 3;
+
+    /// <summary>Composed lead-vowel syllable category.</summary>
+    private const byte LV = 4;
+
+    /// <summary>Composed lead-vowel-trail syllable category.</summary>
+    private const byte LVT = 5;
+
+    /// <summary>Tone mark category.</summary>
+    private const byte M = 6;
+
+    /// <summary>No action.</summary>
     private const byte None = 0;
+
+    /// <summary>Decompose composed syllable action.</summary>
     private const byte Decompose = 1;
+
+    /// <summary>Compose Jamo sequence action.</summary>
     private const byte Compose = 2;
+
+    /// <summary>Reorder tone mark action.</summary>
     private const byte ToneMark = 4;
+
+    /// <summary>Invalid sequence (insert dotted circle) action.</summary>
     private const byte Invalid = 5;
 
-    // Build a state machine that accepts valid syllables, and applies actions along the way.
-    // The logic this is implementing is documented at the top of the file.
+    /// <summary>
+    /// State machine table for Hangul syllable composition/decomposition.
+    /// Each entry is [action, nextState]. Rows are states, columns are character categories.
+    /// </summary>
     private static readonly byte[,][] StateTable =
     {
         // #             X                       L                       V                       T                       LV                           LVT                          M
@@ -64,8 +110,15 @@ internal sealed class HangulShaper : DefaultShaper
         { new byte[] { None, 0 }, new byte[] { None, 1 }, new byte[] { None, 0 }, new byte[] { None, 0 }, new byte[] { Decompose, 2 }, new byte[] { Decompose, 3 }, new byte[] { ToneMark, 0 } },
     };
 
+    /// <summary>The font metrics used for glyph lookups during composition/decomposition.</summary>
     private readonly FontMetrics fontMetrics;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HangulShaper"/> class.
+    /// </summary>
+    /// <param name="script">The script classification.</param>
+    /// <param name="textOptions">The text options.</param>
+    /// <param name="fontMetrics">The font metrics for glyph lookups.</param>
     public HangulShaper(ScriptClass script, TextOptions textOptions, FontMetrics fontMetrics)
         : base(script, MarkZeroingMode.None, textOptions)
         => this.fontMetrics = fontMetrics;
@@ -183,6 +236,11 @@ internal sealed class HangulShaper : DefaultShaper
         }
     }
 
+    /// <summary>
+    /// Gets the Hangul syllable type category for a code point.
+    /// </summary>
+    /// <param name="codePoint">The code point to classify.</param>
+    /// <returns>The syllable type constant (L, V, T, LV, LVT, M, or X).</returns>
     private static int GetSyllableType(CodePoint codePoint)
     {
         GraphemeClusterClass type = CodePoint.GetGraphemeClusterClass(codePoint);
@@ -202,6 +260,11 @@ internal sealed class HangulShaper : DefaultShaper
         };
     }
 
+    /// <summary>
+    /// Gets the number of Jamo components in a syllable for tone mark reordering.
+    /// </summary>
+    /// <param name="codePoint">The code point to measure.</param>
+    /// <returns>The syllable length in Jamo components.</returns>
     private static int GetSyllableLength(CodePoint codePoint)
         => GetSyllableType(codePoint) switch
         {
@@ -211,6 +274,14 @@ internal sealed class HangulShaper : DefaultShaper
             _ => 0,
         };
 
+    /// <summary>
+    /// Decomposes a precomposed Hangul syllable into its constituent Jamo glyphs.
+    /// </summary>
+    /// <param name="collection">The glyph substitution collection.</param>
+    /// <param name="data">The shaping data for the composed syllable.</param>
+    /// <param name="index">The index of the glyph to decompose.</param>
+    /// <param name="compositinoBuffer">A buffer for temporary glyph ID storage.</param>
+    /// <returns>The updated index after decomposition.</returns>
     private int DecomposeGlyph(GlyphSubstitutionCollection collection, GlyphShapingData data, int index, Span<ushort> compositinoBuffer)
     {
         // Decompose the syllable into a sequence of glyphs.
@@ -256,6 +327,14 @@ internal sealed class HangulShaper : DefaultShaper
         return index + 2;
     }
 
+    /// <summary>
+    /// Attempts to compose decomposed Jamo into a precomposed Hangul syllable.
+    /// </summary>
+    /// <param name="collection">The glyph substitution collection.</param>
+    /// <param name="index">The current index in the collection.</param>
+    /// <param name="type">The syllable type of the current glyph.</param>
+    /// <param name="compositionBuffer">A buffer for glyph IDs during composition.</param>
+    /// <returns>The updated index after composition.</returns>
     private int ComposeGlyph(GlyphSubstitutionCollection collection, int index, int type, Span<ushort> compositionBuffer)
     {
         if (index == 0)
@@ -348,6 +427,12 @@ internal sealed class HangulShaper : DefaultShaper
         return index;
     }
 
+    /// <summary>
+    /// Reorders a tone mark to the beginning of the preceding syllable.
+    /// </summary>
+    /// <param name="collection">The glyph substitution collection.</param>
+    /// <param name="data">The shaping data of the tone mark glyph.</param>
+    /// <param name="index">The index of the tone mark in the collection.</param>
     private void ReOrderToneMark(GlyphSubstitutionCollection collection, GlyphShapingData data, int index)
     {
         if (index == 0)
@@ -373,6 +458,14 @@ internal sealed class HangulShaper : DefaultShaper
         collection.MoveGlyph(index, index - len);
     }
 
+    /// <summary>
+    /// Inserts a dotted circle glyph as a placeholder for an invalid tone mark that has no syllable to attach to.
+    /// </summary>
+    /// <param name="collection">The glyph substitution collection.</param>
+    /// <param name="data">The shaping data of the invalid tone mark glyph.</param>
+    /// <param name="index">The index of the tone mark in the collection.</param>
+    /// <param name="compositionBuffer">A buffer for glyph IDs during insertion.</param>
+    /// <returns>The updated index after insertion.</returns>
     private int InsertDottedCircle(GlyphSubstitutionCollection collection, GlyphShapingData data, int index, Span<ushort> compositionBuffer)
     {
         bool after = false;
@@ -410,9 +503,24 @@ internal sealed class HangulShaper : DefaultShaper
         return index;
     }
 
+    /// <summary>
+    /// Determines whether the code point is a combining leading consonant Jamo.
+    /// </summary>
+    /// <param name="code">The code point to test.</param>
+    /// <returns><see langword="true"/> if the code point is in the leading Jamo range.</returns>
     private static bool IsCombiningL(CodePoint code) => UnicodeUtility.IsInRangeInclusive((uint)code.Value, LBase, LEnd);
 
+    /// <summary>
+    /// Determines whether the code point is a combining vowel Jamo.
+    /// </summary>
+    /// <param name="code">The code point to test.</param>
+    /// <returns><see langword="true"/> if the code point is in the vowel Jamo range.</returns>
     private static bool IsCombiningV(CodePoint code) => UnicodeUtility.IsInRangeInclusive((uint)code.Value, VBase, VEnd);
 
+    /// <summary>
+    /// Determines whether the code point is a combining trailing consonant Jamo.
+    /// </summary>
+    /// <param name="code">The code point to test.</param>
+    /// <returns><see langword="true"/> if the code point is in the trailing Jamo range.</returns>
     private static bool IsCombiningT(CodePoint code) => UnicodeUtility.IsInRangeInclusive((uint)code.Value, TBase + 1, TEnd);
 }

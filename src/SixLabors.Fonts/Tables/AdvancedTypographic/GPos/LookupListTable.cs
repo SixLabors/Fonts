@@ -11,16 +11,33 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal sealed class LookupListTable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LookupListTable"/> class.
+    /// </summary>
+    /// <param name="lookupCount">The number of lookups in this table.</param>
+    /// <param name="lookupTables">The array of lookup tables.</param>
     private LookupListTable(ushort lookupCount, LookupTable[] lookupTables)
     {
         this.LookupCount = lookupCount;
         this.LookupTables = lookupTables;
     }
 
+    /// <summary>
+    /// Gets the number of lookups in this table.
+    /// </summary>
     public ushort LookupCount { get; }
 
+    /// <summary>
+    /// Gets the array of lookup tables.
+    /// </summary>
     public LookupTable[] LookupTables { get; }
 
+    /// <summary>
+    /// Loads the <see cref="LookupListTable"/> from the specified reader at the given offset.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the lookup list table.</param>
+    /// <returns>The loaded <see cref="LookupListTable"/>.</returns>
     public static LookupListTable Load(BigEndianBinaryReader reader, long offset)
     {
         // +----------+----------------------------+---------------------------------------------------------------+
@@ -58,6 +75,13 @@ internal sealed class LookupListTable
 /// </summary>
 internal sealed class LookupTable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LookupTable"/> class.
+    /// </summary>
+    /// <param name="lookupType">The lookup type, identifying the kind of positioning operation.</param>
+    /// <param name="lookupFlags">The lookup qualifiers.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
+    /// <param name="lookupSubTables">The array of lookup subtables.</param>
     private LookupTable(
         ushort lookupType,
         LookupFlags lookupFlags,
@@ -70,14 +94,32 @@ internal sealed class LookupTable
         this.LookupSubTables = lookupSubTables;
     }
 
+    /// <summary>
+    /// Gets the lookup type that identifies the kind of positioning operation.
+    /// </summary>
     public ushort LookupType { get; }
 
+    /// <summary>
+    /// Gets the lookup qualifiers.
+    /// </summary>
     public LookupFlags LookupFlags { get; }
 
+    /// <summary>
+    /// Gets the index into the GDEF mark glyph sets structure.
+    /// </summary>
     public ushort MarkFilteringSet { get; }
 
+    /// <summary>
+    /// Gets the array of lookup subtables.
+    /// </summary>
     public LookupSubTable[] LookupSubTables { get; }
 
+    /// <summary>
+    /// Loads the <see cref="LookupTable"/> from the specified reader at the given offset.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the lookup table.</param>
+    /// <returns>The loaded <see cref="LookupTable"/>.</returns>
     public static LookupTable Load(BigEndianBinaryReader reader, long offset)
     {
         // +----------+--------------------------------+-------------------------------------------------------------+
@@ -121,6 +163,15 @@ internal sealed class LookupTable
         return new LookupTable(lookupType, lookupFlags, markFilteringSet, lookupSubTables);
     }
 
+    /// <summary>
+    /// Loads the appropriate lookup subtable based on the lookup type.
+    /// </summary>
+    /// <param name="lookupType">The lookup type identifier.</param>
+    /// <param name="lookupFlags">The lookup qualifiers.</param>
+    /// <param name="markFilteringSet">The mark filtering set index.</param>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the subtable.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     private static LookupSubTable LoadLookupSubTable(ushort lookupType, LookupFlags lookupFlags, ushort markFilteringSet, BigEndianBinaryReader reader, long offset)
         => lookupType switch
         {
@@ -136,6 +187,16 @@ internal sealed class LookupTable
             _ => new NotImplementedSubTable()
         };
 
+    /// <summary>
+    /// Attempts to update the position of glyphs in the collection at the specified index.
+    /// </summary>
+    /// <param name="fontMetrics">The font metrics.</param>
+    /// <param name="table">The GPOS table.</param>
+    /// <param name="collection">The glyph positioning collection.</param>
+    /// <param name="feature">The feature tag.</param>
+    /// <param name="index">The zero-based index of the glyph to position.</param>
+    /// <param name="count">The number of glyphs remaining in the sequence.</param>
+    /// <returns><see langword="true"/> if the position was updated; otherwise, <see langword="false"/>.</returns>
     public bool TryUpdatePosition(
         FontMetrics fontMetrics,
         GPosTable table,
@@ -158,18 +219,42 @@ internal sealed class LookupTable
     }
 }
 
+/// <summary>
+/// Base class for all GPOS lookup subtables. Each subtable implements a specific type of glyph positioning operation.
+/// </summary>
 internal abstract class LookupSubTable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LookupSubTable"/> class.
+    /// </summary>
+    /// <param name="lookupFlags">The lookup qualifiers.</param>
+    /// <param name="markFilteringSet">The mark filtering set index.</param>
     protected LookupSubTable(LookupFlags lookupFlags, ushort markFilteringSet)
     {
         this.LookupFlags = lookupFlags;
         this.MarkFilteringSet = markFilteringSet;
     }
 
+    /// <summary>
+    /// Gets the lookup qualifiers.
+    /// </summary>
     public LookupFlags LookupFlags { get; }
 
+    /// <summary>
+    /// Gets the mark filtering set index.
+    /// </summary>
     public ushort MarkFilteringSet { get; }
 
+    /// <summary>
+    /// Attempts to update the position of glyphs in the collection at the specified index.
+    /// </summary>
+    /// <param name="fontMetrics">The font metrics.</param>
+    /// <param name="table">The GPOS table.</param>
+    /// <param name="collection">The glyph positioning collection.</param>
+    /// <param name="feature">The feature tag.</param>
+    /// <param name="index">The zero-based index of the glyph to position.</param>
+    /// <param name="count">The number of glyphs remaining in the sequence.</param>
+    /// <returns><see langword="true"/> if the position was updated; otherwise, <see langword="false"/>.</returns>
     public abstract bool TryUpdatePosition(
         FontMetrics fontMetrics,
         GPosTable table,

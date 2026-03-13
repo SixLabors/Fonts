@@ -13,6 +13,11 @@ internal sealed class CFFOperator
 {
     private static readonly Lazy<Dictionary<int, CFFOperator>> RegisteredOperators = new(CreateDictionary, true);
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CFFOperator"/> class.
+    /// </summary>
+    /// <param name="name">The operator name.</param>
+    /// <param name="operandKind">The expected operand format.</param>
     private CFFOperator(string name, OperatorOperandKind operandKind)
     {
         this.Name = name;
@@ -41,6 +46,10 @@ internal sealed class CFFOperator
         return found!;
     }
 
+    /// <summary>
+    /// Creates the dictionary of all registered CFF DICT operators, keyed by their byte encoding.
+    /// </summary>
+    /// <returns>The dictionary of registered operators.</returns>
     private static Dictionary<int, CFFOperator> CreateDictionary()
     {
         Dictionary<int, CFFOperator> dictionary = [];
@@ -115,13 +124,29 @@ internal sealed class CFFOperator
         return dictionary;
     }
 
+    /// <summary>
+    /// Registers a two-byte CFF DICT operator.
+    /// </summary>
+    /// <param name="dictionary">The operator dictionary.</param>
+    /// <param name="b0">The first byte of the operator (always 12 for two-byte operators).</param>
+    /// <param name="b1">The second byte of the operator.</param>
+    /// <param name="name">The operator name.</param>
+    /// <param name="operandKind">The expected operand format.</param>
     private static void Register(Dictionary<int, CFFOperator> dictionary, byte b0, byte b1, string name, OperatorOperandKind operandKind)
         => dictionary.Add((b1 << 8) | b0, new CFFOperator(name, operandKind));
 
+    /// <summary>
+    /// Registers a single-byte CFF DICT operator.
+    /// </summary>
+    /// <param name="dictionary">The operator dictionary.</param>
+    /// <param name="b0">The operator byte value.</param>
+    /// <param name="name">The operator name.</param>
+    /// <param name="operandKind">The expected operand format.</param>
     private static void Register(Dictionary<int, CFFOperator> dictionary, byte b0, string name, OperatorOperandKind operandKind)
         => dictionary.Add(b0, new CFFOperator(name, operandKind));
 
 #if DEBUG
+    /// <inheritdoc/>
     public override string ToString() => this.Name;
 #endif
 }

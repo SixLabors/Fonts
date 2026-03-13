@@ -3,8 +3,18 @@
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 
+/// <summary>
+/// Provides shared utility methods for loading GPOS and GSUB lookup subtables.
+/// </summary>
 internal static class TableLoadingUtils
 {
+    /// <summary>
+    /// Loads Sequence Context Format 1 (simple glyph contexts) data.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Offset from the beginning of the subtable.</param>
+    /// <param name="coverageTable">When this method returns, contains the loaded coverage table.</param>
+    /// <returns>The array of sequence rule set tables.</returns>
     internal static SequenceRuleSetTable[] LoadSequenceContextFormat1(BigEndianBinaryReader reader, long offset, out CoverageTable coverageTable)
     {
         // https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#seqctxt1
@@ -40,6 +50,14 @@ internal static class TableLoadingUtils
         return seqRuleSets;
     }
 
+    /// <summary>
+    /// Loads Sequence Context Format 2 (class-based glyph contexts) data.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Offset from the beginning of the subtable.</param>
+    /// <param name="classDefTable">When this method returns, contains the loaded class definition table.</param>
+    /// <param name="classSeqRuleSets">When this method returns, contains the array of class sequence rule set tables.</param>
+    /// <returns>The coverage table.</returns>
     internal static CoverageTable LoadSequenceContextFormat2(BigEndianBinaryReader reader, long offset, out ClassDefinitionTable classDefTable, out ClassSequenceRuleSetTable[] classSeqRuleSets)
     {
         // https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#sequence-context-format-2-class-based-glyph-contexts
@@ -84,6 +102,13 @@ internal static class TableLoadingUtils
         return coverageTable;
     }
 
+    /// <summary>
+    /// Loads Sequence Context Format 3 (coverage-based glyph contexts) data.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Offset from the beginning of the subtable.</param>
+    /// <param name="coverageTables">When this method returns, contains the array of coverage tables for the input sequence.</param>
+    /// <returns>The array of sequence lookup records.</returns>
     internal static SequenceLookupRecord[] LoadSequenceContextFormat3(BigEndianBinaryReader reader, long offset, out CoverageTable[] coverageTables)
     {
         // https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#sequence-context-format-3-coverage-based-glyph-contexts
@@ -117,6 +142,13 @@ internal static class TableLoadingUtils
         return seqLookupRecords;
     }
 
+    /// <summary>
+    /// Loads Chained Sequence Context Format 1 (simple glyph contexts) data.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Offset from the beginning of the subtable.</param>
+    /// <param name="coverageTable">When this method returns, contains the loaded coverage table.</param>
+    /// <returns>The array of chained sequence rule set tables.</returns>
     internal static ChainedSequenceRuleSetTable[] LoadChainedSequenceContextFormat1(BigEndianBinaryReader reader, long offset, out CoverageTable coverageTable)
     {
         // https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#chained-sequence-context-format-1-simple-glyph-contexts
@@ -157,6 +189,16 @@ internal static class TableLoadingUtils
         return seqRuleSets;
     }
 
+    /// <summary>
+    /// Loads Chained Sequence Context Format 2 (class-based glyph contexts) data.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Offset from the beginning of the subtable.</param>
+    /// <param name="coverageTable">When this method returns, contains the loaded coverage table.</param>
+    /// <param name="backtrackClassDefTable">When this method returns, contains the backtrack class definition table.</param>
+    /// <param name="inputClassDefTable">When this method returns, contains the input class definition table.</param>
+    /// <param name="lookaheadClassDefTable">When this method returns, contains the lookahead class definition table.</param>
+    /// <returns>The array of chained class sequence rule set tables.</returns>
     internal static ChainedClassSequenceRuleSetTable[] LoadChainedSequenceContextFormat2(
         BigEndianBinaryReader reader,
         long offset,
@@ -224,6 +266,15 @@ internal static class TableLoadingUtils
         return seqRuleSets;
     }
 
+    /// <summary>
+    /// Loads Chained Sequence Context Format 3 (coverage-based glyph contexts) data.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Offset from the beginning of the subtable.</param>
+    /// <param name="backtrackCoverageTables">When this method returns, contains the array of backtrack coverage tables.</param>
+    /// <param name="inputCoverageTables">When this method returns, contains the array of input coverage tables.</param>
+    /// <param name="lookaheadCoverageTables">When this method returns, contains the array of lookahead coverage tables.</param>
+    /// <returns>The array of sequence lookup records.</returns>
     internal static SequenceLookupRecord[] LoadChainedSequenceContextFormat3(
         BigEndianBinaryReader reader,
         long offset,

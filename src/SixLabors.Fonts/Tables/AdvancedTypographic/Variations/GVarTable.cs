@@ -9,8 +9,18 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 /// </summary>
 internal class GVarTable : Table
 {
+    /// <summary>
+    /// The table name identifier for the gvar table.
+    /// </summary>
     internal const string TableName = "gvar";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GVarTable"/> class.
+    /// </summary>
+    /// <param name="axisCount">The number of variation axes.</param>
+    /// <param name="glyphCount">The number of glyphs in the font.</param>
+    /// <param name="sharedTuples">The shared tuple records array, indexed by tuple index then axis.</param>
+    /// <param name="glyphVariations">The array of per-glyph variation data.</param>
     public GVarTable(ushort axisCount, ushort glyphCount, float[,] sharedTuples, GlyphVariationData[] glyphVariations)
     {
         this.AxisCount = axisCount;
@@ -19,14 +29,31 @@ internal class GVarTable : Table
         this.GlyphVariations = glyphVariations;
     }
 
+    /// <summary>
+    /// Gets the number of variation axes in the font.
+    /// </summary>
     public ushort AxisCount { get; }
 
+    /// <summary>
+    /// Gets the number of glyphs in this font.
+    /// </summary>
     public ushort GlyphCount { get; }
 
+    /// <summary>
+    /// Gets the shared tuple records array. Each row contains normalized coordinates for one shared tuple, one value per axis.
+    /// </summary>
     public float[,] SharedTuples { get; }
 
+    /// <summary>
+    /// Gets the array of per-glyph variation data tables.
+    /// </summary>
     public GlyphVariationData[] GlyphVariations { get; }
 
+    /// <summary>
+    /// Loads the gvar table from the specified font reader.
+    /// </summary>
+    /// <param name="reader">The font reader.</param>
+    /// <returns>The <see cref="GVarTable"/>, or <see langword="null"/> if the table is not present.</returns>
     public static GVarTable? Load(FontReader reader)
     {
         if (!reader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader, out TableHeader? header))
@@ -40,6 +67,12 @@ internal class GVarTable : Table
         }
     }
 
+    /// <summary>
+    /// Loads the gvar table from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader positioned at the start of the gvar table.</param>
+    /// <param name="header">The table header providing the table length.</param>
+    /// <returns>The <see cref="GVarTable"/>.</returns>
     public static GVarTable Load(BigEndianBinaryReader reader, TableHeader header)
     {
         // VariationsTable `gvar`

@@ -3,6 +3,9 @@
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 
+/// <summary>
+/// Represents the resolved entry and exit anchor tables for a glyph used in cursive attachment positioning (GPOS LookupType 3).
+/// </summary>
 internal sealed class EntryExitAnchors
 {
     /// <summary>

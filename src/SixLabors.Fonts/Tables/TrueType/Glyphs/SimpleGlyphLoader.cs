@@ -17,6 +17,13 @@ internal class SimpleGlyphLoader : GlyphLoader
     private readonly Bounds bounds;
     private readonly byte[] instructions;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SimpleGlyphLoader"/> class.
+    /// </summary>
+    /// <param name="controlPoints">The glyph's control points.</param>
+    /// <param name="endPoints">The indices of the last point of each contour.</param>
+    /// <param name="bounds">The glyph bounding box.</param>
+    /// <param name="instructions">The hinting instructions for this glyph.</param>
     public SimpleGlyphLoader(ControlPoint[] controlPoints, ushort[] endPoints, Bounds bounds, byte[] instructions)
     {
         this.controlPoints = controlPoints;
@@ -25,6 +32,11 @@ internal class SimpleGlyphLoader : GlyphLoader
         this.instructions = instructions;
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SimpleGlyphLoader"/> class
+    /// for a glyph with zero contours (bounds only).
+    /// </summary>
+    /// <param name="bounds">The glyph bounding box.</param>
     public SimpleGlyphLoader(Bounds bounds)
     {
         this.controlPoints = Array.Empty<ControlPoint>();
@@ -79,9 +91,17 @@ internal class SimpleGlyphLoader : GlyphLoader
         YSignOrSame = 32
     }
 
+    /// <inheritdoc/>
     public override GlyphVector CreateGlyph(GlyphTable table)
         => new(this.controlPoints, this.endPoints, this.bounds, this.instructions, false);
 
+    /// <summary>
+    /// Reads a simple glyph description from the binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader positioned after the glyph header.</param>
+    /// <param name="count">The number of contours in the glyph.</param>
+    /// <param name="bounds">The glyph bounding box.</param>
+    /// <returns>A <see cref="GlyphLoader"/> containing the simple glyph data.</returns>
     public static GlyphLoader LoadSimpleGlyph(BigEndianBinaryReader reader, short count, in Bounds bounds)
     {
         if (count == 0)
@@ -133,6 +153,12 @@ internal class SimpleGlyphLoader : GlyphLoader
         return new SimpleGlyphLoader(controlPoints, endPoints, bounds, instructions);
     }
 
+    /// <summary>
+    /// Reads the packed flag array for all points in a simple glyph.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="flagCount">The number of flags (points) to read.</param>
+    /// <returns>An array of flags, one per control point.</returns>
     private static Flags[] ReadFlags(BigEndianBinaryReader reader, int flagCount)
     {
         var result = new Flags[flagCount];
@@ -160,6 +186,15 @@ internal class SimpleGlyphLoader : GlyphLoader
         return result;
     }
 
+    /// <summary>
+    /// Reads a coordinate array (x or y) for all points in a simple glyph, applying delta decoding.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="pointCount">The number of points to read.</param>
+    /// <param name="flags">The per-point flags array.</param>
+    /// <param name="isByte">The flag indicating the coordinate is stored as a single byte.</param>
+    /// <param name="signOrSame">The flag indicating sign (if byte) or same-as-previous (if word).</param>
+    /// <returns>An array of absolute coordinate values.</returns>
     private static short[] ReadCoordinates(BigEndianBinaryReader reader, int pointCount, Flags[] flags, Flags isByte, Flags signOrSame)
     {
         short[] xs = new short[pointCount];

@@ -9,8 +9,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 /// </summary>
 internal class FVarTable : Table
 {
+    /// <summary>
+    /// The table name identifier for the fvar table.
+    /// </summary>
     internal const string TableName = "fvar";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FVarTable"/> class.
+    /// </summary>
+    /// <param name="axisCount">The number of variation axes.</param>
+    /// <param name="axes">The array of variation axis records.</param>
+    /// <param name="instances">The array of named instance records.</param>
     public FVarTable(ushort axisCount, VariationAxisRecord[] axes, InstanceRecord[] instances)
     {
         this.AxisCount = axisCount;
@@ -18,12 +27,26 @@ internal class FVarTable : Table
         this.Instances = instances;
     }
 
+    /// <summary>
+    /// Gets the number of variation axes defined in this font.
+    /// </summary>
     public ushort AxisCount { get; }
 
+    /// <summary>
+    /// Gets the array of variation axis records defining each axis (e.g. weight, width).
+    /// </summary>
     public VariationAxisRecord[] Axes { get; }
 
+    /// <summary>
+    /// Gets the array of named instance records defined in this font.
+    /// </summary>
     public InstanceRecord[] Instances { get; }
 
+    /// <summary>
+    /// Loads the fvar table from the specified font reader.
+    /// </summary>
+    /// <param name="reader">The font reader.</param>
+    /// <returns>The <see cref="FVarTable"/>, or <see langword="null"/> if the table is not present.</returns>
     public static FVarTable? Load(FontReader reader)
     {
         if (!reader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
@@ -37,6 +60,11 @@ internal class FVarTable : Table
         }
     }
 
+    /// <summary>
+    /// Loads the fvar table from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader positioned at the start of the fvar table.</param>
+    /// <returns>The <see cref="FVarTable"/>.</returns>
     public static FVarTable Load(BigEndianBinaryReader reader)
     {
         // VariationsTable `fvar`

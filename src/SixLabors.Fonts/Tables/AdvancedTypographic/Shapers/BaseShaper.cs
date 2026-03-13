@@ -5,10 +5,20 @@ using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 
+/// <summary>
+/// Abstract base class for all script shapers. Defines the shaping pipeline
+/// consisting of preprocessing, feature planning, postprocessing, and feature assignment stages.
+/// </summary>
 internal abstract class BaseShaper
 {
+    /// <summary>
+    /// Gets or sets the script classification for this shaper.
+    /// </summary>
     public ScriptClass ScriptClass { get; protected set; }
 
+    /// <summary>
+    /// Gets or sets the mark zeroing mode that determines when mark advances are zeroed.
+    /// </summary>
     public MarkZeroingMode MarkZeroingMode { get; protected set; }
 
     /// <summary>
@@ -68,8 +78,18 @@ internal abstract class BaseShaper
     /// <param name="count">The number of elements to assign.</param>
     protected abstract void AssignFeatures(IGlyphShapingCollection collection, int index, int count);
 
+    /// <summary>
+    /// Gets the ordered collection of shaping stages for this shaper.
+    /// </summary>
+    /// <returns>The shaping stages.</returns>
     public abstract IEnumerable<ShapingStage> GetShapingStages();
 
+    /// <summary>
+    /// Recalculates the count when the collection size changes during shaping.
+    /// </summary>
+    /// <param name="collection">The glyph shaping collection.</param>
+    /// <param name="oldCount">The previous collection count, updated to the current count.</param>
+    /// <param name="count">The element count, adjusted by the size delta.</param>
     private static void RecalculateCount(IGlyphShapingCollection collection, ref int oldCount, ref int count)
     {
         // If the collection has changed size we need to recalculate the count.

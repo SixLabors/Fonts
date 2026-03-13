@@ -10,6 +10,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal static class LookupType4SubTable
 {
+    /// <summary>
+    /// Loads the mark-to-base attachment positioning subtable from the specified reader.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers.</param>
+    /// <param name="markFilteringSet">The mark filtering set index.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
@@ -22,6 +30,10 @@ internal static class LookupType4SubTable
         };
     }
 
+    /// <summary>
+    /// MarkToBase Attachment Positioning Format 1: positions combining mark glyphs relative to base glyphs.
+    /// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/gpos#mark-to-base-attachment-positioning-format-1-mark-to-base-attachment-point"/>
+    /// </summary>
     internal sealed class LookupType4Format1SubTable : LookupSubTable
     {
         private readonly CoverageTable markCoverage;
@@ -29,6 +41,15 @@ internal static class LookupType4SubTable
         private readonly MarkArrayTable markArrayTable;
         private readonly BaseArrayTable baseArrayTable;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LookupType4Format1SubTable"/> class.
+        /// </summary>
+        /// <param name="markCoverage">The mark coverage table.</param>
+        /// <param name="baseCoverage">The base glyph coverage table.</param>
+        /// <param name="markArrayTable">The mark array table.</param>
+        /// <param name="baseArrayTable">The base array table.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
         public LookupType4Format1SubTable(
             CoverageTable markCoverage,
             CoverageTable baseCoverage,
@@ -44,6 +65,14 @@ internal static class LookupType4SubTable
             this.baseArrayTable = baseArrayTable;
         }
 
+        /// <summary>
+        /// Loads the Format 1 mark-to-base attachment positioning subtable.
+        /// </summary>
+        /// <param name="reader">The big endian binary reader.</param>
+        /// <param name="offset">The offset to the beginning of the subtable.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
+        /// <returns>The loaded <see cref="LookupType4Format1SubTable"/>.</returns>
         public static LookupType4Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             // MarkBasePosFormat1 Subtable.
@@ -80,6 +109,7 @@ internal static class LookupType4SubTable
             return new LookupType4Format1SubTable(markCoverage, baseCoverage, markArrayTable, baseArrayTable, lookupFlags, markFilteringSet);
         }
 
+        /// <inheritdoc/>
         public override bool TryUpdatePosition(
             FontMetrics fontMetrics,
             GPosTable table,

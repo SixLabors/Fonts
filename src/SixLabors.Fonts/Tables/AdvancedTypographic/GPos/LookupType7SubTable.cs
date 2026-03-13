@@ -11,6 +11,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal static class LookupType7SubTable
 {
+    /// <summary>
+    /// Loads the contextual positioning subtable from the specified reader.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers.</param>
+    /// <param name="markFilteringSet">The mark filtering set index.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
@@ -25,11 +33,21 @@ internal static class LookupType7SubTable
         };
     }
 
+    /// <summary>
+    /// Context Positioning Format 1: simple glyph contexts using individual glyph indices.
+    /// </summary>
     internal sealed class LookupType7Format1SubTable : LookupSubTable
     {
         private readonly CoverageTable coverageTable;
         private readonly SequenceRuleSetTable[] seqRuleSetTables;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LookupType7Format1SubTable"/> class.
+        /// </summary>
+        /// <param name="coverageTable">The coverage table.</param>
+        /// <param name="seqRuleSetTables">The array of sequence rule set tables.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
         public LookupType7Format1SubTable(
             CoverageTable coverageTable,
             SequenceRuleSetTable[] seqRuleSetTables,
@@ -41,6 +59,14 @@ internal static class LookupType7SubTable
             this.coverageTable = coverageTable;
         }
 
+        /// <summary>
+        /// Loads the Format 1 contextual positioning subtable.
+        /// </summary>
+        /// <param name="reader">The big endian binary reader.</param>
+        /// <param name="offset">The offset to the beginning of the subtable.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
+        /// <returns>The loaded <see cref="LookupType7Format1SubTable"/>.</returns>
         public static LookupType7Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             SequenceRuleSetTable[] seqRuleSets = TableLoadingUtils.LoadSequenceContextFormat1(reader, offset, out CoverageTable coverageTable);
@@ -48,6 +74,7 @@ internal static class LookupType7SubTable
             return new LookupType7Format1SubTable(coverageTable, seqRuleSets, lookupFlags, markFilteringSet);
         }
 
+        /// <inheritdoc/>
         public override bool TryUpdatePosition(
             FontMetrics fontMetrics,
             GPosTable table,
@@ -103,12 +130,23 @@ internal static class LookupType7SubTable
         }
     }
 
+    /// <summary>
+    /// Context Positioning Format 2: class-based glyph contexts.
+    /// </summary>
     internal sealed class LookupType7Format2SubTable : LookupSubTable
     {
         private readonly CoverageTable coverageTable;
         private readonly ClassDefinitionTable classDefinitionTable;
         private readonly ClassSequenceRuleSetTable[] sequenceRuleSetTables;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LookupType7Format2SubTable"/> class.
+        /// </summary>
+        /// <param name="coverageTable">The coverage table.</param>
+        /// <param name="classDefinitionTable">The class definition table.</param>
+        /// <param name="sequenceRuleSetTables">The array of class sequence rule set tables.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
         public LookupType7Format2SubTable(
             CoverageTable coverageTable,
             ClassDefinitionTable classDefinitionTable,
@@ -122,6 +160,14 @@ internal static class LookupType7SubTable
             this.sequenceRuleSetTables = sequenceRuleSetTables;
         }
 
+        /// <summary>
+        /// Loads the Format 2 contextual positioning subtable.
+        /// </summary>
+        /// <param name="reader">The big endian binary reader.</param>
+        /// <param name="offset">The offset to the beginning of the subtable.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
+        /// <returns>The loaded <see cref="LookupType7Format2SubTable"/>.</returns>
         public static LookupType7Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             CoverageTable coverageTable =
@@ -134,6 +180,7 @@ internal static class LookupType7SubTable
             return new LookupType7Format2SubTable(coverageTable, classDefTable, classSeqRuleSets, lookupFlags, markFilteringSet);
         }
 
+        /// <inheritdoc/>
         public override bool TryUpdatePosition(
             FontMetrics fontMetrics,
             GPosTable table,
@@ -192,11 +239,21 @@ internal static class LookupType7SubTable
         }
     }
 
+    /// <summary>
+    /// Context Positioning Format 3: coverage-based glyph contexts.
+    /// </summary>
     internal sealed class LookupType7Format3SubTable : LookupSubTable
     {
         private readonly CoverageTable[] coverageTables;
         private readonly SequenceLookupRecord[] sequenceLookupRecords;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LookupType7Format3SubTable"/> class.
+        /// </summary>
+        /// <param name="coverageTables">The array of coverage tables, one per glyph in the input sequence.</param>
+        /// <param name="sequenceLookupRecords">The array of sequence lookup records.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
         public LookupType7Format3SubTable(
             CoverageTable[] coverageTables,
             SequenceLookupRecord[] sequenceLookupRecords,
@@ -208,6 +265,14 @@ internal static class LookupType7SubTable
             this.sequenceLookupRecords = sequenceLookupRecords;
         }
 
+        /// <summary>
+        /// Loads the Format 3 contextual positioning subtable.
+        /// </summary>
+        /// <param name="reader">The big endian binary reader.</param>
+        /// <param name="offset">The offset to the beginning of the subtable.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
+        /// <returns>The loaded <see cref="LookupType7Format3SubTable"/>.</returns>
         public static LookupType7Format3SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             SequenceLookupRecord[] seqLookupRecords =
@@ -216,6 +281,7 @@ internal static class LookupType7SubTable
             return new LookupType7Format3SubTable(coverageTables, seqLookupRecords, lookupFlags, markFilteringSet);
         }
 
+        /// <inheritdoc/>
         public override bool TryUpdatePosition(
             FontMetrics fontMetrics,
             GPosTable table,
