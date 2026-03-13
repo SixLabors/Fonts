@@ -33,7 +33,9 @@ internal partial class StreamFontMetrics
         NameTable name = reader.GetTable<NameTable>();
         CMapTable cmap = reader.GetTable<CMapTable>();
         PostTable post = reader.GetTable<PostTable>();
-        ICffTable? cff = reader.TryGetTable<Cff1Table>() ?? (ICffTable?)reader.TryGetTable<Cff2Table>();
+        ICffTable? cff =
+            (reader.TryGetTable<Cff1Table>() ?? (ICffTable?)reader.TryGetTable<Cff2Table>())
+            ?? throw new InvalidFontFileException("Missing required CFF table.");
 
         // TODO: VORG
         HorizontalMetricsTable htmx = reader.GetTable<HorizontalMetricsTable>();
@@ -63,18 +65,17 @@ internal partial class StreamFontMetrics
         MVarTable? mVar = reader.TryGetTable<MVarTable>();
 
         GlyphVariationProcessor? glyphVariationProcessor = null;
-        if (cff?.ItemVariationStore != null)
+        if (cff.ItemVariationStore != null)
         {
             if (fVar is null)
             {
                 throw new InvalidFontFileException("missing fvar table required for glyph variations processing");
             }
 
-            // TODO: The docs say that hvar and vvar can be used for CFF fonts so how do we determine when to use them?
             glyphVariationProcessor = new GlyphVariationProcessor(cff.ItemVariationStore, fVar, aVar, gVar, hVar, vVar, mVar);
         }
 
-        CompactFontTables tables = new(cmap, head, hhea, htmx, maxp, name, os2, post, cff!)
+        CompactFontTables tables = new(cmap, head, hhea, htmx, maxp, name, os2, post, cff)
         {
             Kern = kern,
             Vhea = vhea,
