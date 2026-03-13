@@ -41,5 +41,8 @@ internal class LigatureArrayTable
         }
     }
 
+    /// <summary>
+    /// Gets the array of LigatureAttach tables, one per ligature glyph, in the same order as the ligature Coverage index.
+    /// </summary>
     public LigatureAttachTable[] LigatureAttachTables { get; }
 }

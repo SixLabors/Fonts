@@ -3,6 +3,9 @@
 
 namespace SixLabors.Fonts.Tables;
 
+/// <summary>
+/// Specifies the font container format used to store font table data.
+/// </summary>
 internal enum TableFormat
 {
     /// <summary>

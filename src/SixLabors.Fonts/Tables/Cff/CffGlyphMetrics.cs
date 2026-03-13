@@ -14,6 +14,22 @@ internal class CffGlyphMetrics : GlyphMetrics
 {
     private CffGlyphData glyphData;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CffGlyphMetrics"/> class with text attribute parameters.
+    /// </summary>
+    /// <param name="fontMetrics">The font metrics.</param>
+    /// <param name="glyphId">The glyph identifier.</param>
+    /// <param name="codePoint">The Unicode code point.</param>
+    /// <param name="glyphData">The CFF glyph data containing the charstring program.</param>
+    /// <param name="bounds">The glyph bounding box.</param>
+    /// <param name="advanceWidth">The advance width.</param>
+    /// <param name="advanceHeight">The advance height.</param>
+    /// <param name="leftSideBearing">The left side bearing.</param>
+    /// <param name="topSideBearing">The top side bearing.</param>
+    /// <param name="unitsPerEM">The units per em.</param>
+    /// <param name="textAttributes">The text attributes.</param>
+    /// <param name="textDecorations">The text decorations.</param>
+    /// <param name="glyphType">The glyph type.</param>
     internal CffGlyphMetrics(
         StreamFontMetrics fontMetrics,
         ushort glyphId,
@@ -43,6 +59,23 @@ internal class CffGlyphMetrics : GlyphMetrics
               glyphType)
         => this.glyphData = glyphData;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CffGlyphMetrics"/> class with offset, scale, and text run parameters.
+    /// </summary>
+    /// <param name="fontMetrics">The font metrics.</param>
+    /// <param name="glyphId">The glyph identifier.</param>
+    /// <param name="codePoint">The Unicode code point.</param>
+    /// <param name="glyphData">The CFF glyph data containing the charstring program.</param>
+    /// <param name="bounds">The glyph bounding box.</param>
+    /// <param name="advanceWidth">The advance width.</param>
+    /// <param name="advanceHeight">The advance height.</param>
+    /// <param name="leftSideBearing">The left side bearing.</param>
+    /// <param name="topSideBearing">The top side bearing.</param>
+    /// <param name="unitsPerEM">The units per em.</param>
+    /// <param name="offset">The glyph offset.</param>
+    /// <param name="scaleFactor">The scale factor.</param>
+    /// <param name="textRun">The text run for rendering.</param>
+    /// <param name="glyphType">The glyph type.</param>
     internal CffGlyphMetrics(
         StreamFontMetrics fontMetrics,
         ushort glyphId,

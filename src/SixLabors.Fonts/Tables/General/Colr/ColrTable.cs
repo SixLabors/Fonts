@@ -10,26 +10,63 @@ using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 namespace SixLabors.Fonts.Tables.General.Colr;
 
+/// <summary>
+/// Represents the OpenType COLR table, which defines color glyph data for both v0 (layer-based)
+/// and v1 (paint-based) color fonts.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/colr"/>
+/// </summary>
 internal class ColrTable : Table
 {
+    /// <summary>
+    /// The table tag name "COLR".
+    /// </summary>
     internal const string TableName = "COLR";
 
-    // v0
+    /// <summary>
+    /// The COLR v0 base glyph records mapping glyph IDs to layer ranges.
+    /// </summary>
     private readonly BaseGlyphRecord[] glyphRecords;
+
+    /// <summary>
+    /// The COLR v0 layer records defining color layers.
+    /// </summary>
     private readonly LayerRecord[] layers;
 
-    // v1 (nullable if not present)
+    /// <summary>
+    /// The COLR v1 BaseGlyphList, or <see langword="null"/> if not present.
+    /// </summary>
     private readonly BaseGlyphList? baseGlyphList;
+
+    /// <summary>
+    /// The COLR v1 LayerList, or <see langword="null"/> if not present.
+    /// </summary>
     private readonly LayerList? layerList;
+
+    /// <summary>
+    /// The COLR v1 ClipList, or <see langword="null"/> if not present.
+    /// </summary>
     private readonly ClipList? clipList;
 
-    // Variation data (nullable if not present)
+    /// <summary>
+    /// The ItemVariationStore for variable font data, or <see langword="null"/> if not present.
+    /// </summary>
     private readonly ItemVariationStore? itemVariationStore;
+
+    /// <summary>
+    /// The DeltaSetIndexMap array for mapping variation indices, or <see langword="null"/> if not present.
+    /// </summary>
     private readonly DeltaSetIndexMap[]? deltaSetIndexMap;
 
-    // Caches (offset -> resolved object)
+    /// <summary>
+    /// Cache of resolved paint objects keyed by their COLR-relative offset.
+    /// </summary>
     private readonly Dictionary<uint, Paint>? paintCache;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ColrTable"/> class for COLR v0 data only.
+    /// </summary>
+    /// <param name="glyphRecords">The base glyph records.</param>
+    /// <param name="layers">The layer records.</param>
     public ColrTable(
         BaseGlyphRecord[] glyphRecords,
         LayerRecord[] layers)
@@ -37,6 +74,18 @@ internal class ColrTable : Table
     {
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ColrTable"/> class with both v0 and optional v1 data.
+    /// </summary>
+    /// <param name="glyphRecords">The COLR v0 base glyph records.</param>
+    /// <param name="layers">The COLR v0 layer records.</param>
+    /// <param name="baseGlyphList">The COLR v1 base glyph list, or <see langword="null"/>.</param>
+    /// <param name="layerList">The COLR v1 layer list, or <see langword="null"/>.</param>
+    /// <param name="clipList">The COLR v1 clip list, or <see langword="null"/>.</param>
+    /// <param name="itemVariationStore">The ItemVariationStore for variable font data, or <see langword="null"/>.</param>
+    /// <param name="deltaSetIndexMap">The DeltaSetIndexMap array, or <see langword="null"/>.</param>
+    /// <param name="paintCache">The pre-loaded paint cache, or <see langword="null"/>.</param>
+    /// <param name="version">The COLR table version.</param>
     public ColrTable(
         BaseGlyphRecord[] glyphRecords,
         LayerRecord[] layers,
@@ -59,6 +108,9 @@ internal class ColrTable : Table
         this.Version = version;
     }
 
+    /// <summary>
+    /// Gets the COLR table version (0 or 1).
+    /// </summary>
     public int Version { get; }
 
     /// <summary>
@@ -93,6 +145,11 @@ internal class ColrTable : Table
         return processor.Delta(this.itemVariationStore, outer, inner);
     }
 
+    /// <summary>
+    /// Loads the COLR table from the specified font reader.
+    /// </summary>
+    /// <param name="fontReader">The font reader.</param>
+    /// <returns>The loaded <see cref="ColrTable"/>, or <see langword="null"/> if the table is not present.</returns>
     public static ColrTable? Load(FontReader fontReader)
     {
         if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
@@ -106,6 +163,11 @@ internal class ColrTable : Table
         }
     }
 
+    /// <summary>
+    /// Gets the COLR v0 layer records for the specified glyph.
+    /// </summary>
+    /// <param name="glyph">The glyph ID.</param>
+    /// <returns>A span of layer records for the glyph, or an empty span if not found.</returns>
     internal Span<LayerRecord> GetLayers(ushort glyph)
     {
         foreach (BaseGlyphRecord g in this.glyphRecords)
@@ -592,6 +654,12 @@ internal class ColrTable : Table
         return false;
     }
 
+    /// <summary>
+    /// Gets a span of paint offsets from the layer list starting at the specified index.
+    /// </summary>
+    /// <param name="first">The index of the first paint offset.</param>
+    /// <param name="count">The number of paint offsets to retrieve.</param>
+    /// <returns>A read-only span of paint offsets, or an empty span if the layer list is null or the range is invalid.</returns>
     private ReadOnlySpan<uint> GetLayerPaintOffsets(int first, int count)
     {
         if (this.layerList is null || count <= 0)
@@ -609,6 +677,13 @@ internal class ColrTable : Table
         return offsets.Slice(first, len);
     }
 
+    /// <summary>
+    /// Attempts to retrieve the clip box bounds for the specified glyph ID.
+    /// </summary>
+    /// <param name="glyphId">The glyph ID.</param>
+    /// <param name="processor">The glyph variation processor, or <see langword="null"/> for non-variable fonts.</param>
+    /// <param name="bounds">When this method returns, contains the clip bounds if found; otherwise, <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> if a clip box was found; otherwise, <see langword="false"/>.</returns>
     private bool TryGetClipBox(ushort glyphId, GlyphVariationProcessor? processor, out Bounds? bounds)
     {
         if (this.clipList is null)
@@ -620,6 +695,11 @@ internal class ColrTable : Table
         return this.clipList.TryGetClipBox(glyphId, this, processor, out bounds);
     }
 
+    /// <summary>
+    /// Loads the COLR table from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader positioned at the start of the COLR table.</param>
+    /// <returns>The loaded <see cref="ColrTable"/>.</returns>
     public static ColrTable Load(BigEndianBinaryReader reader)
     {
         // HEADER
@@ -720,6 +800,13 @@ internal class ColrTable : Table
         return new ColrTable(glyphs, layerRecs, baseGlyphList, layerList, clipList, itemVariationStore, deltaSetIndexMap, paintCache, 1);
     }
 
+    /// <summary>
+    /// Eagerly loads and caches all paint objects referenced by the BaseGlyphList and LayerList.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="baseGlyphList">The base glyph list, or <see langword="null"/>.</param>
+    /// <param name="layerList">The layer list, or <see langword="null"/>.</param>
+    /// <returns>A dictionary mapping paint offsets to their resolved paint objects.</returns>
     private static Dictionary<uint, Paint> LoadPaintRoots(
         BigEndianBinaryReader reader,
         BaseGlyphList? baseGlyphList,
@@ -754,6 +841,15 @@ internal class ColrTable : Table
         return caches.PaintCache;
     }
 
+    /// <summary>
+    /// Loads a paint object from the specified offset, using the cache to avoid redundant reads.
+    /// Recursively loads child paints as needed.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="paintOffset">The COLR-relative offset of the paint table.</param>
+    /// <param name="layerList">The layer list for resolving PaintColrLayers references, or <see langword="null"/>.</param>
+    /// <param name="caches">The shared caches for deduplicating loaded objects.</param>
+    /// <returns>The loaded paint object.</returns>
     private static Paint LoadPaintAt(
         BigEndianBinaryReader reader,
         uint paintOffset,
@@ -1211,7 +1307,13 @@ internal class ColrTable : Table
         return result;
     }
 
-    // Eager ColorLine loaders (offset-based)
+    /// <summary>
+    /// Loads a <see cref="ColorLine"/> from the specified offset, using the cache to avoid redundant reads.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="offset">The COLR-relative offset of the color line.</param>
+    /// <param name="caches">The shared caches.</param>
+    /// <returns>The loaded color line.</returns>
     private static ColorLine LoadColorLineAt(BigEndianBinaryReader reader, uint offset, PaintCaches caches)
     {
         if (caches.ColorLineCache.TryGetValue(offset, out ColorLine? line))
@@ -1230,6 +1332,13 @@ internal class ColrTable : Table
         return line;
     }
 
+    /// <summary>
+    /// Loads a <see cref="VarColorLine"/> from the specified offset, using the cache to avoid redundant reads.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="offset">The COLR-relative offset of the variable color line.</param>
+    /// <param name="caches">The shared caches.</param>
+    /// <returns>The loaded variable color line.</returns>
     private static VarColorLine LoadVarColorLineAt(BigEndianBinaryReader reader, uint offset, PaintCaches caches)
     {
         if (caches.VarColorLineCache.TryGetValue(offset, out VarColorLine? line))
@@ -1247,7 +1356,14 @@ internal class ColrTable : Table
         return line;
     }
 
-    // Affine readers (Fixed 16.16)
+    /// <summary>
+    /// Reads an <see cref="Affine2x3"/> matrix from the specified offset, using the cache to avoid redundant reads.
+    /// Matrix values are stored as Fixed 16.16 numbers.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="offset">The COLR-relative offset of the affine matrix.</param>
+    /// <param name="caches">The shared caches.</param>
+    /// <returns>The loaded affine matrix.</returns>
     private static Affine2x3 ReadAffine2x3At(BigEndianBinaryReader reader, uint offset, PaintCaches caches)
     {
         if (caches.AffineCache.TryGetValue(offset, out Affine2x3 m))
@@ -1272,6 +1388,14 @@ internal class ColrTable : Table
         return m;
     }
 
+    /// <summary>
+    /// Reads a <see cref="VarAffine2x3"/> matrix from the specified offset, using the cache to avoid redundant reads.
+    /// Matrix values are stored as Fixed 16.16 numbers with an appended variation index base.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="offset">The COLR-relative offset of the variable affine matrix.</param>
+    /// <param name="caches">The shared caches.</param>
+    /// <returns>The loaded variable affine matrix.</returns>
     private static VarAffine2x3 ReadVarAffine2x3At(BigEndianBinaryReader reader, uint offset, PaintCaches caches)
     {
         if (caches.VarAffineCache.TryGetValue(offset, out VarAffine2x3 m))
@@ -1298,24 +1422,55 @@ internal class ColrTable : Table
     }
 }
 
+/// <summary>
+/// Holds per-load caches used during COLR table parsing to deduplicate paint objects,
+/// color lines, and affine matrices that may be referenced from multiple offsets.
+/// </summary>
 internal sealed class PaintCaches
 {
+    /// <summary>
+    /// Gets the cache of paint objects keyed by their COLR-relative offset.
+    /// </summary>
     public Dictionary<uint, Paint> PaintCache { get; } = [];
 
+    /// <summary>
+    /// Gets the cache of color lines keyed by their COLR-relative offset.
+    /// </summary>
     public Dictionary<uint, ColorLine> ColorLineCache { get; } = [];
 
+    /// <summary>
+    /// Gets the cache of variable color lines keyed by their COLR-relative offset.
+    /// </summary>
     public Dictionary<uint, VarColorLine> VarColorLineCache { get; } = [];
 
+    /// <summary>
+    /// Gets the cache of affine matrices keyed by their COLR-relative offset.
+    /// </summary>
     public Dictionary<uint, Affine2x3> AffineCache { get; } = [];
 
+    /// <summary>
+    /// Gets the cache of variable affine matrices keyed by their COLR-relative offset.
+    /// </summary>
     public Dictionary<uint, VarAffine2x3> VarAffineCache { get; } = [];
 }
 
+/// <summary>
+/// Represents a resolved COLR v1 glyph layer produced by flattening the paint DAG.
+/// Associates a glyph ID with its paint node, accumulated transform, composite mode, and optional clip box.
+/// </summary>
 #pragma warning disable SA1201 // Elements should appear in the correct order
 [DebuggerDisplay("Id: {GlyphId}")]
 internal readonly struct ResolvedGlyphLayer
 #pragma warning restore SA1201 // Elements should appear in the correct order
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ResolvedGlyphLayer"/> struct.
+    /// </summary>
+    /// <param name="id">The glyph ID whose outline this layer paints.</param>
+    /// <param name="paint">The leaf paint node for this layer.</param>
+    /// <param name="transform">The accumulated affine transform.</param>
+    /// <param name="mode">The composite mode to apply.</param>
+    /// <param name="clipBox">The optional clip box bounds, or <see langword="null"/>.</param>
     public ResolvedGlyphLayer(ushort id, Paint paint, Matrix3x2 transform, CompositeMode mode, Bounds? clipBox)
     {
         this.GlyphId = id;
@@ -1325,13 +1480,28 @@ internal readonly struct ResolvedGlyphLayer
         this.ClipBox = clipBox;
     }
 
+    /// <summary>
+    /// Gets the glyph ID whose outline this layer paints.
+    /// </summary>
     public ushort GlyphId { get; }
 
+    /// <summary>
+    /// Gets the leaf paint node for this layer.
+    /// </summary>
     public Paint Paint { get; }
 
+    /// <summary>
+    /// Gets the accumulated affine transform from the paint DAG traversal.
+    /// </summary>
     public Matrix3x2 Transform { get; }
 
+    /// <summary>
+    /// Gets the composite mode to apply when rendering this layer.
+    /// </summary>
     public CompositeMode CompositeMode { get; }
 
+    /// <summary>
+    /// Gets the optional clip box bounds for this layer, or <see langword="null"/> if no clip applies.
+    /// </summary>
     public Bounds? ClipBox { get; }
 }

@@ -9,16 +9,34 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 /// </summary>
 internal class ItemVariationStore
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ItemVariationStore"/> class.
+    /// </summary>
+    /// <param name="variationRegionList">The variation region list defining regions in the design space.</param>
+    /// <param name="itemVariations">The array of item variation data subtables.</param>
     public ItemVariationStore(VariationRegionList variationRegionList, ItemVariationData[] itemVariations)
     {
         this.VariationRegionList = variationRegionList;
         this.ItemVariations = itemVariations;
     }
 
+    /// <summary>
+    /// Gets the variation region list defining regions in the font's variation space.
+    /// </summary>
     public VariationRegionList VariationRegionList { get; }
 
+    /// <summary>
+    /// Gets the array of item variation data subtables.
+    /// </summary>
     public ItemVariationData[] ItemVariations { get; }
 
+    /// <summary>
+    /// Loads the item variation store from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The byte offset from the start of the stream to this store.</param>
+    /// <param name="length">The optional total length of the parent table for bounds validation.</param>
+    /// <returns>The <see cref="ItemVariationStore"/>.</returns>
     public static ItemVariationStore Load(BigEndianBinaryReader reader, long offset, long? length = null)
     {
         // ItemVariationStore

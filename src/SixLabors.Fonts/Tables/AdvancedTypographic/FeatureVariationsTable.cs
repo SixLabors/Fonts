@@ -11,9 +11,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 /// </summary>
 internal sealed class FeatureVariationsTable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FeatureVariationsTable"/> class.
+    /// </summary>
+    /// <param name="records">The array of feature variation records.</param>
     private FeatureVariationsTable(FeatureVariationRecord[] records)
         => this.Records = records;
 
+    /// <summary>
+    /// Gets the array of feature variation records.
+    /// </summary>
     public FeatureVariationRecord[] Records { get; }
 
     /// <summary>
@@ -96,6 +103,13 @@ internal sealed class FeatureVariationsTable
         return null;
     }
 
+    /// <summary>
+    /// Loads the FeatureTableSubstitution records from the binary reader at the specified offset.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Absolute offset to the FeatureTableSubstitution table.</param>
+    /// <param name="featureList">The FeatureListTable, used to resolve feature tags for substitutions.</param>
+    /// <returns>The array of feature table substitution records.</returns>
     private static FeatureTableSubstitutionRecord[] LoadFeatureTableSubstitution(
         BigEndianBinaryReader reader,
         long offset,
@@ -155,11 +169,24 @@ internal sealed class FeatureVariationsTable
 /// </summary>
 internal sealed class ConditionSetTable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConditionSetTable"/> class.
+    /// </summary>
+    /// <param name="conditions">The array of condition tables.</param>
     private ConditionSetTable(ConditionTable[] conditions)
         => this.Conditions = conditions;
 
+    /// <summary>
+    /// Gets the array of condition tables that must all be satisfied.
+    /// </summary>
     public ConditionTable[] Conditions { get; }
 
+    /// <summary>
+    /// Loads the <see cref="ConditionSetTable"/> from the binary reader at the specified offset.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Absolute offset to the beginning of the ConditionSet table.</param>
+    /// <returns>The <see cref="ConditionSetTable"/>.</returns>
     public static ConditionSetTable Load(BigEndianBinaryReader reader, long offset)
     {
         // ConditionSet table
@@ -217,14 +244,25 @@ internal sealed class ConditionSetTable
 /// </summary>
 internal readonly struct FeatureVariationRecord
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FeatureVariationRecord"/> struct.
+    /// </summary>
+    /// <param name="conditionSet">The condition set that must be satisfied.</param>
+    /// <param name="substitutions">The feature table substitutions to apply when conditions are met.</param>
     public FeatureVariationRecord(ConditionSetTable conditionSet, FeatureTableSubstitutionRecord[] substitutions)
     {
         this.ConditionSet = conditionSet;
         this.Substitutions = substitutions;
     }
 
+    /// <summary>
+    /// Gets the condition set that must be satisfied for this record to apply.
+    /// </summary>
     public ConditionSetTable ConditionSet { get; }
 
+    /// <summary>
+    /// Gets the array of feature table substitution records to apply when conditions are met.
+    /// </summary>
     public FeatureTableSubstitutionRecord[] Substitutions { get; }
 }
 
@@ -233,6 +271,11 @@ internal readonly struct FeatureVariationRecord
 /// </summary>
 internal readonly struct FeatureTableSubstitutionRecord
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FeatureTableSubstitutionRecord"/> struct.
+    /// </summary>
+    /// <param name="featureIndex">The index into the FeatureList of the feature being substituted.</param>
+    /// <param name="alternateFeatureTable">The alternate Feature table to use.</param>
     public FeatureTableSubstitutionRecord(ushort featureIndex, FeatureTable alternateFeatureTable)
     {
         this.FeatureIndex = featureIndex;
@@ -256,6 +299,12 @@ internal readonly struct FeatureTableSubstitutionRecord
 /// </summary>
 internal readonly struct ConditionTable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConditionTable"/> struct.
+    /// </summary>
+    /// <param name="axisIndex">The index of the variation axis.</param>
+    /// <param name="filterRangeMinValue">The minimum normalized coordinate value.</param>
+    /// <param name="filterRangeMaxValue">The maximum normalized coordinate value.</param>
     public ConditionTable(ushort axisIndex, float filterRangeMinValue, float filterRangeMaxValue)
     {
         this.AxisIndex = axisIndex;
@@ -278,6 +327,12 @@ internal readonly struct ConditionTable
     /// </summary>
     public float FilterRangeMaxValue { get; }
 
+    /// <summary>
+    /// Loads the <see cref="ConditionTable"/> from the binary reader at the specified offset.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Absolute offset to the beginning of the Condition table.</param>
+    /// <returns>The <see cref="ConditionTable"/>.</returns>
     public static ConditionTable Load(BigEndianBinaryReader reader, long offset)
     {
         // Condition table, Format 1 (ConditionAxisRange)

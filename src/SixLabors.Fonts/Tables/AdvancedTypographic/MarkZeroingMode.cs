@@ -8,9 +8,18 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 /// </summary>
 internal enum MarkZeroingMode
 {
+    /// <summary>
+    /// Zero mark advances before GPOS processing.
+    /// </summary>
     PreGPos,
 
+    /// <summary>
+    /// Zero mark advances after GPOS processing.
+    /// </summary>
     PostGpos,
 
+    /// <summary>
+    /// Do not zero mark advances.
+    /// </summary>
     None
 }

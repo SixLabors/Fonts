@@ -23,15 +23,33 @@ public readonly struct Tag : IEquatable<Tag>
     /// </summary>
     public uint Value { get; }
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+    /// <summary>
+    /// Implicitly converts a <see cref="uint"/> to a <see cref="Tag"/>.
+    /// </summary>
+    /// <param name="value">The unsigned integer value.</param>
     public static implicit operator Tag(uint value) => new(value);
 
+    /// <summary>
+    /// Implicitly converts a <see cref="FeatureTags"/> to a <see cref="Tag"/>.
+    /// </summary>
+    /// <param name="value">The feature tag enum value.</param>
     public static implicit operator Tag(FeatureTags value) => new((uint)value);
 
+    /// <summary>
+    /// Determines whether two <see cref="Tag"/> instances are equal.
+    /// </summary>
+    /// <param name="left">The left tag.</param>
+    /// <param name="right">The right tag.</param>
+    /// <returns><see langword="true"/> if the tags are equal; otherwise, <see langword="false"/>.</returns>
     public static bool operator ==(Tag left, Tag right) => left.Equals(right);
 
+    /// <summary>
+    /// Determines whether two <see cref="Tag"/> instances are not equal.
+    /// </summary>
+    /// <param name="left">The left tag.</param>
+    /// <param name="right">The right tag.</param>
+    /// <returns><see langword="true"/> if the tags are not equal; otherwise, <see langword="false"/>.</returns>
     public static bool operator !=(Tag left, Tag right) => !(left == right);
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
     /// <summary>
     /// Converts the string representation of a number to its Tag equivalent.
@@ -54,6 +72,11 @@ public readonly struct Tag : IEquatable<Tag>
         return (uint)((b0 << 24) | (b1 << 16) | (b2 << 8) | b3);
     }
 
+    /// <summary>
+    /// Converts a character to a byte, returning 0 if the character is outside the byte range.
+    /// </summary>
+    /// <param name="c">The character to convert.</param>
+    /// <returns>The byte value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static byte GetByte(char c)
     {

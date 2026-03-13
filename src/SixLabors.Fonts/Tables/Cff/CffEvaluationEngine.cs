@@ -38,6 +38,18 @@ internal ref struct CffEvaluationEngine
     private readonly GlyphVariationProcessor? glyphVariationProcessor;
     private int vsIndex;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CffEvaluationEngine"/> struct.
+    /// </summary>
+    /// <param name="charStrings">The raw charstring byte data for the glyph.</param>
+    /// <param name="globalSubrBuffers">The global subroutine buffers.</param>
+    /// <param name="localSubrBuffers">The local subroutine buffers.</param>
+    /// <param name="nominalWidthX">The nominal width used as a bias for charstring width values.</param>
+    /// <param name="version">The CFF version (1 or 2).</param>
+    /// <param name="itemVariationStore">The optional item variation store for CFF2 blend operations.</param>
+    /// <param name="fVar">The optional font variations table.</param>
+    /// <param name="aVar">The optional axis variations table.</param>
+    /// <param name="vsIndex">The variation store index for blend operations.</param>
     public CffEvaluationEngine(
         ReadOnlySpan<byte> charStrings,
         ReadOnlySpan<byte[]> globalSubrBuffers,
@@ -81,6 +93,10 @@ internal ref struct CffEvaluationEngine
         this.vsIndex = vsIndex;
     }
 
+    /// <summary>
+    /// Computes the bounding box of the glyph by evaluating the charstring program.
+    /// </summary>
+    /// <returns>The <see cref="Bounds"/> of the glyph.</returns>
     public Bounds GetBounds()
     {
         this.Reset();
@@ -103,6 +119,14 @@ internal ref struct CffEvaluationEngine
         return finder.GetBounds();
     }
 
+    /// <summary>
+    /// Evaluates the charstring program and renders the glyph outline to the specified renderer.
+    /// </summary>
+    /// <param name="renderer">The glyph renderer to output path operations to.</param>
+    /// <param name="origin">The origin point for rendering.</param>
+    /// <param name="scale">The scale factor to apply.</param>
+    /// <param name="offset">The offset to apply.</param>
+    /// <param name="transform">The transformation matrix to apply.</param>
     public void RenderTo(IGlyphRenderer renderer, Vector2 origin, Vector2 scale, Vector2 offset, Matrix3x2 transform)
     {
         this.Reset();
@@ -119,6 +143,10 @@ internal ref struct CffEvaluationEngine
         }
     }
 
+    /// <summary>
+    /// Parses and interprets a Type 2 charstring byte buffer, executing operators and accumulating operands.
+    /// </summary>
+    /// <param name="buffer">The charstring byte data to parse.</param>
     private void Parse(ReadOnlySpan<byte> buffer)
     {
         SimpleBinaryReader reader = new(buffer);
@@ -759,6 +787,9 @@ internal ref struct CffEvaluationEngine
         }
     }
 
+    /// <summary>
+    /// Releases the resources used by the evaluation engine stack.
+    /// </summary>
     public void Dispose()
     {
         if (this.isDisposed)
@@ -770,6 +801,11 @@ internal ref struct CffEvaluationEngine
         this.isDisposed = true;
     }
 
+    /// <summary>
+    /// Calculates the subroutine bias based on the number of subroutines, as specified in the Type 2 charstring format.
+    /// </summary>
+    /// <param name="count">The number of subroutines in the INDEX.</param>
+    /// <returns>The bias value to add to subroutine indices.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static int CalculateBias(int count)
     {
@@ -781,6 +817,9 @@ internal ref struct CffEvaluationEngine
         return (count < 1240) ? 107 : (count < 33900) ? 1131 : 32768;
     }
 
+    /// <summary>
+    /// Parses stem hint operators, consuming width if present and counting hint pairs.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ParseStems()
     {
@@ -793,10 +832,16 @@ internal ref struct CffEvaluationEngine
         this.stack.Clear();
     }
 
+    /// <summary>
+    /// Checks whether a glyph width value is present at the bottom of the stack and consumes it.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void CheckWidth()
         => this.width ??= this.stack.Shift() + this.nominalWidthX;
 
+    /// <summary>
+    /// Resets the evaluation engine state for a new rendering pass.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Reset()
     {
@@ -808,6 +853,10 @@ internal ref struct CffEvaluationEngine
         this.trans.Clear();
     }
 
+    /// <summary>
+    /// Throws an <see cref="InvalidFontFileException"/> for an unrecognized charstring operator.
+    /// </summary>
+    /// <param name="operator">The unrecognized operator byte value.</param>
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowInvalidOperator(byte @operator)
         => throw new InvalidFontFileException($"Unknown operator:{@operator}");

@@ -12,6 +12,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal static class LookupType6SubTable
 {
+    /// <summary>
+    /// Loads the mark-to-mark attachment positioning subtable from the specified reader.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers.</param>
+    /// <param name="markFilteringSet">The mark filtering set index.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
@@ -24,6 +32,10 @@ internal static class LookupType6SubTable
         };
     }
 
+    /// <summary>
+    /// MarkToMark Attachment Positioning Format 1: positions one mark relative to another mark.
+    /// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/gpos#mark-to-mark-attachment-positioning-format-1-mark-to-mark-attachment"/>
+    /// </summary>
     internal sealed class LookupType6Format1SubTable : LookupSubTable
     {
         private readonly CoverageTable mark1Coverage;
@@ -31,6 +43,15 @@ internal static class LookupType6SubTable
         private readonly MarkArrayTable mark1ArrayTable;
         private readonly Mark2ArrayTable mark2ArrayTable;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LookupType6Format1SubTable"/> class.
+        /// </summary>
+        /// <param name="mark1Coverage">The combining mark (mark1) coverage table.</param>
+        /// <param name="mark2Coverage">The base mark (mark2) coverage table.</param>
+        /// <param name="mark1ArrayTable">The mark1 array table.</param>
+        /// <param name="mark2ArrayTable">The mark2 array table.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
         public LookupType6Format1SubTable(
             CoverageTable mark1Coverage,
             CoverageTable mark2Coverage,
@@ -46,6 +67,14 @@ internal static class LookupType6SubTable
             this.mark2ArrayTable = mark2ArrayTable;
         }
 
+        /// <summary>
+        /// Loads the Format 1 mark-to-mark attachment positioning subtable.
+        /// </summary>
+        /// <param name="reader">The big endian binary reader.</param>
+        /// <param name="offset">The offset to the beginning of the subtable.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
+        /// <returns>The loaded <see cref="LookupType6Format1SubTable"/>.</returns>
         public static LookupType6Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             // MarkMarkPosFormat1 Subtable.
@@ -82,6 +111,7 @@ internal static class LookupType6SubTable
             return new LookupType6Format1SubTable(mark1Coverage, mark2Coverage, mark1ArrayTable, mark2ArrayTable, lookupFlags, markFilteringSet);
         }
 
+        /// <inheritdoc/>
         public override bool TryUpdatePosition(
             FontMetrics fontMetrics,
             GPosTable table,

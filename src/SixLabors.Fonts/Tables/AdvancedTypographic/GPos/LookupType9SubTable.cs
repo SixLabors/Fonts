@@ -11,6 +11,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal static class LookupType9SubTable
 {
+    /// <summary>
+    /// Loads the extension positioning subtable from the specified reader.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers.</param>
+    /// <param name="markFilteringSet">The mark filtering set index.</param>
+    /// <param name="subTableLoader">The delegate used to load the referenced extension subtable.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     public static LookupSubTable Load(
         BigEndianBinaryReader reader,
         long offset,
@@ -29,8 +38,21 @@ internal static class LookupType9SubTable
     }
 }
 
+/// <summary>
+/// Extension Positioning Format 1: provides a 32-bit offset to a subtable of any other GPOS lookup type.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/gpos#extension-positioning-subtable-format-1"/>
+/// </summary>
 internal static class LookupType9Format1SubTable
 {
+    /// <summary>
+    /// Loads the Format 1 extension positioning subtable, which resolves to another lookup type via a 32-bit offset.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the extension subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers.</param>
+    /// <param name="markFilteringSet">The mark filtering set index.</param>
+    /// <param name="subTableLoader">The delegate used to load the referenced extension subtable.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     public static LookupSubTable Load(
         BigEndianBinaryReader reader,
         long offset,

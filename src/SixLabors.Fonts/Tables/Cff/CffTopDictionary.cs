@@ -9,6 +9,9 @@ namespace SixLabors.Fonts.Tables.Cff;
 /// </summary>
 internal class CffTopDictionary
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CffTopDictionary"/> class.
+    /// </summary>
     public CffTopDictionary() => this.CidFontInfo = new();
 
     /// <summary>

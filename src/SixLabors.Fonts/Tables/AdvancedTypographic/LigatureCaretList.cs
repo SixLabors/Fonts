@@ -3,12 +3,29 @@
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 
+/// <summary>
+/// The Ligature Caret List table (LigCaretList) provides caret positioning data for ligature glyphs,
+/// enabling text processing clients to correctly position carets within ligatures for selection and cursor movement.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/gdef#ligature-caret-list-table"/>
+/// </summary>
 internal sealed class LigatureCaretList
 {
+    /// <summary>
+    /// Gets or sets the array of ligature glyph tables, one per covered glyph, in Coverage Index order.
+    /// </summary>
     public LigatureGlyph[]? LigatureGlyphs { get; internal set; }
 
+    /// <summary>
+    /// Gets or sets the coverage table that defines which glyphs have ligature caret data.
+    /// </summary>
     public CoverageTable? CoverageTable { get; internal set; }
 
+    /// <summary>
+    /// Loads the <see cref="LigatureCaretList"/> from the binary reader at the specified offset.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Offset from the beginning of the GDEF table to the LigCaretList table.</param>
+    /// <returns>The <see cref="LigatureCaretList"/>.</returns>
     public static LigatureCaretList Load(BigEndianBinaryReader reader, long offset)
     {
         // Ligature Caret list

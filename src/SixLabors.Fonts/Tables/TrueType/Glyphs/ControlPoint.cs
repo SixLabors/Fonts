@@ -31,9 +31,21 @@ internal struct ControlPoint : IEquatable<ControlPoint>
         this.OnCurve = onCurve;
     }
 
+    /// <summary>
+    /// Compares two <see cref="ControlPoint"/> instances for equality.
+    /// </summary>
+    /// <param name="left">The left operand.</param>
+    /// <param name="right">The right operand.</param>
+    /// <returns><see langword="true"/> if the two instances are equal; otherwise, <see langword="false"/>.</returns>
     public static bool operator ==(ControlPoint left, ControlPoint right)
         => left.Equals(right);
 
+    /// <summary>
+    /// Compares two <see cref="ControlPoint"/> instances for inequality.
+    /// </summary>
+    /// <param name="left">The left operand.</param>
+    /// <param name="right">The right operand.</param>
+    /// <returns><see langword="true"/> if the two instances are not equal; otherwise, <see langword="false"/>.</returns>
     public static bool operator !=(ControlPoint left, ControlPoint right)
         => !(left == right);
 

@@ -41,12 +41,44 @@ internal enum ValueFormat : ushort
     // +--------+--------------------+---------------------------------------------+
     // | 0xFF00 | Reserved           | For future use (set to zero)                |
     // +--------+--------------------+---------------------------------------------+
+
+    /// <summary>
+    /// Includes horizontal adjustment for placement.
+    /// </summary>
     XPlacement = 1,
+
+    /// <summary>
+    /// Includes vertical adjustment for placement.
+    /// </summary>
     YPlacement = 1 << 1,
+
+    /// <summary>
+    /// Includes horizontal adjustment for advance.
+    /// </summary>
     XAdvance = 1 << 2,
+
+    /// <summary>
+    /// Includes vertical adjustment for advance.
+    /// </summary>
     YAdvance = 1 << 3,
+
+    /// <summary>
+    /// Includes Device table (non-variable font) or VariationIndex table (variable font) for horizontal placement.
+    /// </summary>
     XPlacementDevice = 1 << 4,
+
+    /// <summary>
+    /// Includes Device table (non-variable font) or VariationIndex table (variable font) for vertical placement.
+    /// </summary>
     YPlacementDevice = 1 << 5,
+
+    /// <summary>
+    /// Includes Device table (non-variable font) or VariationIndex table (variable font) for horizontal advance.
+    /// </summary>
     XAdvanceDevice = 1 << 6,
+
+    /// <summary>
+    /// Includes Device table (non-variable font) or VariationIndex table (variable font) for vertical advance.
+    /// </summary>
     YAdvanceDevice = 1 << 7,
 }

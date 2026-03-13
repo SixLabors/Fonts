@@ -11,7 +11,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 /// </summary>
 internal sealed class UnicodeScriptTagMap : Dictionary<ScriptClass, Tag[]>
 {
-    private static readonly Lazy<UnicodeScriptTagMap> Lazy = new(CreateMap, true);
+    /// <summary>
+    /// The lazily-initialized singleton instance.
+    /// </summary>
+    private static readonly Lazy<UnicodeScriptTagMap> Lazy = new(CreateMap, isThreadSafe: true);
 
     /// <summary>
     /// Prevents a default instance of the <see cref="UnicodeScriptTagMap"/> class from being created.
@@ -20,8 +23,15 @@ internal sealed class UnicodeScriptTagMap : Dictionary<ScriptClass, Tag[]>
     {
     }
 
+    /// <summary>
+    /// Gets the singleton instance of the <see cref="UnicodeScriptTagMap"/>.
+    /// </summary>
     public static UnicodeScriptTagMap Instance => Lazy.Value;
 
+    /// <summary>
+    /// Creates the Unicode script to OpenType tag map.
+    /// </summary>
+    /// <returns>The populated <see cref="UnicodeScriptTagMap"/>.</returns>
     // TODO: This map will likely require updating to add aliases for old fonts.
     // Use HarfBuzz as a reference.
     private static UnicodeScriptTagMap CreateMap()

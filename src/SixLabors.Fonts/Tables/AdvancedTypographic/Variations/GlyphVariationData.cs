@@ -46,6 +46,10 @@ internal class GlyphVariationData
     /// </summary>
     private const int PointRunCountMask = 0x7F;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GlyphVariationData"/> class.
+    /// </summary>
+    /// <param name="tupleHeaders">The decoded tuple variation headers with their point indices and deltas.</param>
     public GlyphVariationData(TupleVariationHeader[] tupleHeaders)
         => this.TupleHeaders = tupleHeaders;
 
@@ -59,6 +63,13 @@ internal class GlyphVariationData
     /// </summary>
     public bool HasData => this.TupleHeaders.Length > 0;
 
+    /// <summary>
+    /// Loads glyph variation data from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The byte offset from the start of the gvar table to this glyph's variation data.</param>
+    /// <param name="axisCount">The number of variation axes.</param>
+    /// <returns>The <see cref="GlyphVariationData"/>.</returns>
     public static GlyphVariationData Load(BigEndianBinaryReader reader, long offset, int axisCount)
     {
         // GlyphVariationData
@@ -257,6 +268,14 @@ internal class GlyphVariationData
 /// </summary>
 internal class TupleVariationHeader
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TupleVariationHeader"/> class.
+    /// </summary>
+    /// <param name="tupleVariation">The tuple variation header containing peak coordinates and flags.</param>
+    /// <param name="pointNumbers">The point indices this tuple applies to, or null/empty for all points.</param>
+    /// <param name="deltasX">The X coordinate deltas, or null if deferred.</param>
+    /// <param name="deltasY">The Y coordinate deltas, or null if deferred.</param>
+    /// <param name="rawDeltaData">The raw serialized delta data for deferred decoding, or null if already decoded.</param>
     public TupleVariationHeader(
         TupleVariation tupleVariation,
         ushort[]? pointNumbers,

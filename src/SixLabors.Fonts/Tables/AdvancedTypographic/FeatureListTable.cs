@@ -15,11 +15,24 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 /// </summary>
 internal class FeatureListTable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FeatureListTable"/> class.
+    /// </summary>
+    /// <param name="featureTables">The array of feature tables.</param>
     private FeatureListTable(FeatureTable[] featureTables)
         => this.FeatureTables = featureTables;
 
+    /// <summary>
+    /// Gets the array of feature tables.
+    /// </summary>
     public FeatureTable[] FeatureTables { get; }
 
+    /// <summary>
+    /// Loads the <see cref="FeatureListTable"/> from the binary reader at the specified offset.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Offset from the beginning of the GPOS or GSUB table to the FeatureList table.</param>
+    /// <returns>The <see cref="FeatureListTable"/>.</returns>
     public static FeatureListTable Load(BigEndianBinaryReader reader, long offset)
     {
         // FeatureList
@@ -61,34 +74,70 @@ internal class FeatureListTable
         return new FeatureListTable(featureTables);
     }
 
+    /// <summary>
+    /// A FeatureRecord contains a feature tag and its offset to the Feature table.
+    /// </summary>
     [DebuggerDisplay("FeatureTag: {FeatureTag}, Offset: {FeatureOffset}")]
     private readonly struct FeatureRecord
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FeatureRecord"/> struct.
+        /// </summary>
+        /// <param name="featureTag">The 4-byte feature identification tag.</param>
+        /// <param name="featureOffset">The offset to the Feature table from the beginning of the FeatureList.</param>
         public FeatureRecord(uint featureTag, ushort featureOffset)
         {
             this.FeatureTag = new Tag(featureTag);
             this.FeatureOffset = featureOffset;
         }
 
+        /// <summary>
+        /// Gets the 4-byte feature identification tag.
+        /// </summary>
         public Tag FeatureTag { get; }
 
+        /// <summary>
+        /// Gets the offset to the Feature table from the beginning of the FeatureList.
+        /// </summary>
         public ushort FeatureOffset { get; }
     }
 }
 
+/// <summary>
+/// A Feature table defines a feature with a set of lookup list indices that implement the feature.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/chapter2#feature-table"/>
+/// </summary>
 [DebuggerDisplay("Tag: {FeatureTag}")]
 internal sealed class FeatureTable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FeatureTable"/> class.
+    /// </summary>
+    /// <param name="featureTag">The feature identification tag.</param>
+    /// <param name="lookupListIndices">The array of indices into the LookupList.</param>
     private FeatureTable(Tag featureTag, ushort[] lookupListIndices)
     {
         this.FeatureTag = featureTag;
         this.LookupListIndices = lookupListIndices;
     }
 
+    /// <summary>
+    /// Gets the feature identification tag.
+    /// </summary>
     public Tag FeatureTag { get; }
 
+    /// <summary>
+    /// Gets the array of indices into the LookupList for this feature.
+    /// </summary>
     public ushort[] LookupListIndices { get; }
 
+    /// <summary>
+    /// Loads the <see cref="FeatureTable"/> from the binary reader at the specified offset.
+    /// </summary>
+    /// <param name="featureTag">The feature identification tag.</param>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Offset from the beginning of the Feature table.</param>
+    /// <returns>The <see cref="FeatureTable"/>.</returns>
     public static FeatureTable Load(Tag featureTag, BigEndianBinaryReader reader, long offset)
     {
         // FeatureListTable

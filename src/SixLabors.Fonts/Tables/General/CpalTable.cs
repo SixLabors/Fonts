@@ -3,21 +3,53 @@
 
 namespace SixLabors.Fonts.Tables.General;
 
+/// <summary>
+/// Represents the color palette table, which contains one or more palettes of colors
+/// used by color fonts (e.g., COLR table).
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/cpal"/>
+/// </summary>
 internal class CpalTable : Table
 {
+    /// <summary>
+    /// The table name identifier.
+    /// </summary>
     internal const string TableName = "CPAL";
+
+    /// <summary>
+    /// The offsets into the palette entries array for each palette.
+    /// </summary>
     private readonly ushort[] paletteOffsets;
+
+    /// <summary>
+    /// The combined array of color records for all palettes.
+    /// </summary>
     private readonly GlyphColor[] paletteEntries;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CpalTable"/> class.
+    /// </summary>
+    /// <param name="paletteOffsets">The index of each palette's first color record.</param>
+    /// <param name="paletteEntries">The combined color records for all palettes.</param>
     public CpalTable(ushort[] paletteOffsets, GlyphColor[] paletteEntries)
     {
         this.paletteEntries = paletteEntries;
         this.paletteOffsets = paletteOffsets;
     }
 
+    /// <summary>
+    /// Gets the glyph color at the specified palette and entry indices.
+    /// </summary>
+    /// <param name="paletteIndex">The zero-based palette index.</param>
+    /// <param name="paletteEntryIndex">The zero-based entry index within the palette.</param>
+    /// <returns>The <see cref="GlyphColor"/>.</returns>
     public GlyphColor GetGlyphColor(int paletteIndex, int paletteEntryIndex)
         => this.paletteEntries[this.paletteOffsets[paletteIndex] + paletteEntryIndex];
 
+    /// <summary>
+    /// Loads the <see cref="CpalTable"/> from the specified font reader.
+    /// </summary>
+    /// <param name="fontReader">The font reader.</param>
+    /// <returns>The <see cref="CpalTable"/>, or <see langword="null"/> if the table is not present.</returns>
     public static CpalTable? Load(FontReader fontReader)
     {
         if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
@@ -31,6 +63,11 @@ internal class CpalTable : Table
         }
     }
 
+    /// <summary>
+    /// Loads the <see cref="CpalTable"/> from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <returns>The <see cref="CpalTable"/>.</returns>
     public static CpalTable Load(BigEndianBinaryReader reader)
     {
         // FORMAT 0

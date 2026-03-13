@@ -13,6 +13,11 @@ namespace SixLabors.Fonts.Tables.Cff;
 /// </summary>
 internal readonly struct CffOperand
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CffOperand"/> struct.
+    /// </summary>
+    /// <param name="number">The numeric value.</param>
+    /// <param name="kind">The operand kind (integer or real).</param>
     public CffOperand(double number, OperandKind kind)
     {
         this.Kind = kind;
@@ -30,6 +35,7 @@ internal readonly struct CffOperand
     public readonly double RealNumValue { get; }
 
 #if DEBUG
+    /// <inheritdoc/>
     public override string ToString()
         => this.Kind switch
         {

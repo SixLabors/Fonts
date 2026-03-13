@@ -5,15 +5,35 @@ using SixLabors.Fonts.Tables.General;
 
 namespace SixLabors.Fonts.Tables.TrueType;
 
+/// <summary>
+/// Represents the 'loca' (Index to Location) table which maps glyph IDs to byte offsets
+/// within the 'glyf' table, enabling random access to individual glyph outlines.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/loca"/>
+/// </summary>
 internal sealed class IndexLocationTable : Table
 {
+    /// <summary>
+    /// The table tag name.
+    /// </summary>
     internal const string TableName = "loca";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IndexLocationTable"/> class.
+    /// </summary>
+    /// <param name="convertedData">The array of glyph byte offsets into the 'glyf' table.</param>
     public IndexLocationTable(uint[] convertedData)
         => this.GlyphOffsets = convertedData;
 
+    /// <summary>
+    /// Gets the array of byte offsets into the 'glyf' table, one per glyph plus a trailing entry.
+    /// </summary>
     public uint[] GlyphOffsets { get; }
 
+    /// <summary>
+    /// Loads the 'loca' table from the specified font reader.
+    /// </summary>
+    /// <param name="fontReader">The font reader.</param>
+    /// <returns>The <see cref="IndexLocationTable"/>, or <see langword="null"/> if the table is not present.</returns>
     public static IndexLocationTable? Load(FontReader fontReader)
     {
         HeadTable head = fontReader.GetTable<HeadTable>();
@@ -32,6 +52,13 @@ internal sealed class IndexLocationTable : Table
         }
     }
 
+    /// <summary>
+    /// Loads the 'loca' table from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader positioned at the start of the table.</param>
+    /// <param name="glyphCount">The number of glyphs in the font.</param>
+    /// <param name="format">The index location format (short or long offsets) from the 'head' table.</param>
+    /// <returns>The <see cref="IndexLocationTable"/>.</returns>
     public static IndexLocationTable Load(BigEndianBinaryReader reader, int glyphCount, HeadTable.IndexLocationFormats format)
     {
         int entryCount = glyphCount + 1;

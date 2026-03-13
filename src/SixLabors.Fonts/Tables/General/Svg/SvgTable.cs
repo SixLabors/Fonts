@@ -6,14 +6,44 @@ using System.Runtime.CompilerServices;
 
 namespace SixLabors.Fonts.Tables.General.Svg;
 
+/// <summary>
+/// Represents the SVG table which contains SVG documents for glyph rendering.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/svg"/>
+/// </summary>
 internal class SvgTable : Table
 {
+    /// <summary>
+    /// The table name identifier for the SVG table.
+    /// </summary>
     internal const string TableName = "SVG ";
+
+    /// <summary>
+    /// The raw byte data containing the SVG document payloads.
+    /// </summary>
     private readonly byte[] tableData;
+
+    /// <summary>
+    /// The offset from the beginning of the SVG table to the SVG Document Index.
+    /// </summary>
     private readonly uint svgDocIndexOffset;
+
+    /// <summary>
+    /// The absolute offset of the start of the table data buffer within the font stream.
+    /// </summary>
     private readonly uint tableBaseOffset;
+
+    /// <summary>
+    /// The array of SVG Document Index entries, sorted by start glyph ID.
+    /// </summary>
     private readonly SvgDocumentIndexEntry[] entries;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SvgTable"/> class.
+    /// </summary>
+    /// <param name="tableData">The raw byte data containing the SVG document payloads.</param>
+    /// <param name="svgDocIndexOffset">The offset from the beginning of the SVG table to the SVG Document Index.</param>
+    /// <param name="tableBaseOffset">The absolute offset of the start of the table data buffer within the font stream.</param>
+    /// <param name="entries">The array of SVG Document Index entries.</param>
     private SvgTable(byte[] tableData, uint svgDocIndexOffset, uint tableBaseOffset, SvgDocumentIndexEntry[] entries)
     {
         this.tableData = tableData;
@@ -22,6 +52,11 @@ internal class SvgTable : Table
         this.entries = entries;
     }
 
+    /// <summary>
+    /// Loads the SVG table from the specified font reader.
+    /// </summary>
+    /// <param name="fontReader">The font reader to read the table from.</param>
+    /// <returns>The <see cref="SvgTable"/>, or <see langword="null"/> if the table is not present in the font.</returns>
     public static SvgTable? Load(FontReader fontReader)
     {
         if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
@@ -35,6 +70,11 @@ internal class SvgTable : Table
         }
     }
 
+    /// <summary>
+    /// Loads the SVG table from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The binary reader positioned at the start of the SVG table.</param>
+    /// <returns>The <see cref="SvgTable"/>.</returns>
     public static SvgTable Load(BigEndianBinaryReader reader)
     {
         // HEADER
@@ -111,13 +151,19 @@ internal class SvgTable : Table
     /// <summary>
     /// Returns true if the SVG Document Index contains a document for <paramref name="glyphId"/>.
     /// </summary>
+    /// <param name="glyphId">The glyph identifier to look up.</param>
+    /// <returns><see langword="true"/> if a document exists for the glyph; otherwise, <see langword="false"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool ContainsGlyph(ushort glyphId)
         => this.TryFindEntry(glyphId, out _);
 
     /// <summary>
-    /// Get the encoded document slice for a glyph without opening a stream.
+    /// Gets the encoded document slice for a glyph without opening a stream.
     /// </summary>
+    /// <param name="glyphId">The glyph identifier to look up.</param>
+    /// <param name="start">When this method returns, contains the start offset within the table data buffer.</param>
+    /// <param name="length">When this method returns, contains the length of the SVG document in bytes.</param>
+    /// <returns><see langword="true"/> if a document was found for the glyph; otherwise, <see langword="false"/>.</returns>
     public bool TryGetDocumentSpan(ushort glyphId, out int start, out int length)
     {
         if (this.TryFindEntry(glyphId, out SvgDocumentIndexEntry e))
@@ -133,9 +179,13 @@ internal class SvgTable : Table
     }
 
     /// <summary>
-    /// Open a decoding stream. If the payload is gzip (RFC1952), wraps a GZipStream,
-    /// otherwise returns the raw memory stream. Caller owns the returned stream.
+    /// Opens a decoding stream for the SVG document associated with the specified glyph.
+    /// If the payload is gzip-compressed (RFC 1952), wraps it in a <see cref="GZipStream"/>;
+    /// otherwise returns the raw memory stream. The caller owns the returned stream.
     /// </summary>
+    /// <param name="glyphId">The glyph identifier to look up.</param>
+    /// <param name="stream">When this method returns, contains the decoded SVG document stream, or <see cref="Stream.Null"/> if not found.</param>
+    /// <returns><see langword="true"/> if a document was found and a stream was opened; otherwise, <see langword="false"/>.</returns>
     public bool TryOpenDecodedDocumentStream(ushort glyphId, out Stream stream)
     {
         if (!this.TryOpenEncodedDocumentStream(glyphId, out Stream encoded))
@@ -163,6 +213,13 @@ internal class SvgTable : Table
         return true;
     }
 
+    /// <summary>
+    /// Attempts to open a raw (potentially gzip-compressed) memory stream for the SVG document
+    /// associated with the specified glyph.
+    /// </summary>
+    /// <param name="glyphId">The glyph identifier to look up.</param>
+    /// <param name="stream">When this method returns, contains the encoded SVG document stream, or <see cref="Stream.Null"/> if not found.</param>
+    /// <returns><see langword="true"/> if a document was found and a stream was opened; otherwise, <see langword="false"/>.</returns>
     private bool TryOpenEncodedDocumentStream(ushort glyphId, out Stream stream)
     {
         if (this.TryFindEntry(glyphId, out SvgDocumentIndexEntry e))
@@ -177,6 +234,13 @@ internal class SvgTable : Table
         return false;
     }
 
+    /// <summary>
+    /// Performs a binary search on the SVG Document Index entries to find the entry
+    /// whose glyph ID range contains the specified glyph.
+    /// </summary>
+    /// <param name="glyphId">The glyph identifier to search for.</param>
+    /// <param name="entry">When this method returns, contains the matching index entry, or the default value if not found.</param>
+    /// <returns><see langword="true"/> if a matching entry was found; otherwise, <see langword="false"/>.</returns>
     private bool TryFindEntry(ushort glyphId, out SvgDocumentIndexEntry entry)
     {
         int lo = 0;

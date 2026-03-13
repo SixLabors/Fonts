@@ -11,16 +11,33 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub;
 /// </summary>
 internal sealed class LookupListTable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LookupListTable"/> class.
+    /// </summary>
+    /// <param name="lookupCount">The number of lookups in this table.</param>
+    /// <param name="lookupTables">The array of lookup tables.</param>
     private LookupListTable(ushort lookupCount, LookupTable[] lookupTables)
     {
         this.LookupCount = lookupCount;
         this.LookupTables = lookupTables;
     }
 
+    /// <summary>
+    /// Gets the number of lookups in this table.
+    /// </summary>
     public ushort LookupCount { get; }
 
+    /// <summary>
+    /// Gets the array of lookup tables.
+    /// </summary>
     public LookupTable[] LookupTables { get; }
 
+    /// <summary>
+    /// Loads the <see cref="LookupListTable"/> from the binary reader at the given offset.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the lookup list table.</param>
+    /// <returns>The loaded <see cref="LookupListTable"/>.</returns>
     public static LookupListTable Load(BigEndianBinaryReader reader, long offset)
     {
         // +----------+----------------------------+---------------------------------------------------------------+
@@ -58,6 +75,13 @@ internal sealed class LookupListTable
 /// </summary>
 internal sealed class LookupTable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LookupTable"/> class.
+    /// </summary>
+    /// <param name="lookupType">The lookup type identifying the kind of substitution.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
+    /// <param name="lookupSubTables">The array of lookup subtables.</param>
     private LookupTable(
         ushort lookupType,
         LookupFlags lookupFlags,
@@ -70,14 +94,33 @@ internal sealed class LookupTable
         this.LookupSubTables = lookupSubTables;
     }
 
+    /// <summary>
+    /// Gets the lookup type, which determines the kind of substitution performed.
+    /// </summary>
     public ushort LookupType { get; }
 
+    /// <summary>
+    /// Gets the lookup qualifiers flags that control filtering of glyphs during lookup.
+    /// </summary>
     public LookupFlags LookupFlags { get; }
 
+    /// <summary>
+    /// Gets the index (base 0) into the GDEF mark glyph sets structure, used when the
+    /// <see cref="AdvancedTypographic.LookupFlags.UseMarkFilteringSet"/> flag is set.
+    /// </summary>
     public ushort MarkFilteringSet { get; }
 
+    /// <summary>
+    /// Gets the array of lookup subtables for this lookup.
+    /// </summary>
     public LookupSubTable[] LookupSubTables { get; }
 
+    /// <summary>
+    /// Loads the <see cref="LookupTable"/> from the binary reader at the given offset.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the lookup table.</param>
+    /// <returns>The loaded <see cref="LookupTable"/>.</returns>
     public static LookupTable Load(BigEndianBinaryReader reader, long offset)
     {
         // +----------+--------------------------------+-------------------------------------------------------------+
@@ -121,6 +164,16 @@ internal sealed class LookupTable
         return new LookupTable(lookupType, lookupFlags, markFilteringSet, lookupSubTables);
     }
 
+    /// <summary>
+    /// Attempts to perform a glyph substitution at the specified index in the collection.
+    /// </summary>
+    /// <param name="fontMetrics">The font metrics.</param>
+    /// <param name="table">The GSUB table.</param>
+    /// <param name="collection">The glyph substitution collection.</param>
+    /// <param name="feature">The feature tag to apply.</param>
+    /// <param name="index">The index in the collection at which to attempt substitution.</param>
+    /// <param name="count">The number of glyphs in the input sequence to consider.</param>
+    /// <returns><see langword="true"/> if a substitution was performed; otherwise, <see langword="false"/>.</returns>
     public bool TrySubstitution(
         FontMetrics fontMetrics,
         GSubTable table,
@@ -142,6 +195,15 @@ internal sealed class LookupTable
         return false;
     }
 
+    /// <summary>
+    /// Loads a lookup subtable based on the lookup type.
+    /// </summary>
+    /// <param name="lookupType">The lookup type identifying the kind of substitution.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the subtable.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     private static LookupSubTable LoadLookupSubTable(
         ushort lookupType,
         LookupFlags lookupFlags,
@@ -162,18 +224,44 @@ internal sealed class LookupTable
         };
 }
 
+/// <summary>
+/// Base class for all GSUB lookup subtables. Each subtable implements a specific
+/// type of glyph substitution logic.
+/// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub"/>
+/// </summary>
 internal abstract class LookupSubTable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LookupSubTable"/> class.
+    /// </summary>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
     protected LookupSubTable(LookupFlags lookupFlags, ushort markFilteringSet)
     {
         this.LookupFlags = lookupFlags;
         this.MarkFilteringSet = markFilteringSet;
     }
 
+    /// <summary>
+    /// Gets the lookup qualifiers flags that control filtering of glyphs during lookup.
+    /// </summary>
     public LookupFlags LookupFlags { get; }
 
+    /// <summary>
+    /// Gets the index (base 0) into the GDEF mark glyph sets structure.
+    /// </summary>
     public ushort MarkFilteringSet { get; }
 
+    /// <summary>
+    /// Attempts to perform a glyph substitution at the specified index in the collection.
+    /// </summary>
+    /// <param name="fontMetrics">The font metrics.</param>
+    /// <param name="table">The GSUB table.</param>
+    /// <param name="collection">The glyph substitution collection.</param>
+    /// <param name="feature">The feature tag to apply.</param>
+    /// <param name="index">The index in the collection at which to attempt substitution.</param>
+    /// <param name="count">The number of glyphs in the input sequence to consider.</param>
+    /// <returns><see langword="true"/> if a substitution was performed; otherwise, <see langword="false"/>.</returns>
     public abstract bool TrySubstitution(
         FontMetrics fontMetrics,
         GSubTable table,

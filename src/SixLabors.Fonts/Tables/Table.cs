@@ -3,6 +3,9 @@
 
 namespace SixLabors.Fonts.Tables;
 
+/// <summary>
+/// The base class for all OpenType font tables.
+/// </summary>
 internal abstract class Table
 {
 }

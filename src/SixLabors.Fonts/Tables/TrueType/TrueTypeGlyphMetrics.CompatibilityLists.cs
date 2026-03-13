@@ -87,6 +87,11 @@ public partial class TrueTypeGlyphMetrics
         return mode;
     }
 
+    /// <summary>
+    /// Strips a PDF font subset randomization prefix (6 uppercase letters followed by '+') from the font name, if present.
+    /// </summary>
+    /// <param name="name">The font name to process.</param>
+    /// <returns>The font name with the prefix removed, or the original name if no prefix was found.</returns>
     private static ReadOnlySpan<char> SkipPdfFontRandomTag(string name)
     {
         // Fonts embedded in PDFs are sometimes made unique by prepending a randomization prefix to their names.

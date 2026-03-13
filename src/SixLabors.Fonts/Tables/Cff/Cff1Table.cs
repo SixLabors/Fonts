@@ -15,15 +15,27 @@ internal sealed class Cff1Table : Table, ICffTable
 
     private readonly CffGlyphData[] glyphs;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Cff1Table"/> class.
+    /// </summary>
+    /// <param name="cff1Font">The parsed CFF1 font.</param>
     public Cff1Table(CffFont cff1Font) => this.glyphs = cff1Font.Glyphs;
 
+    /// <inheritdoc/>
     public int GlyphCount => this.glyphs.Length;
 
+    /// <inheritdoc/>
     public ItemVariationStore? ItemVariationStore => null;
 
+    /// <inheritdoc/>
     public CffGlyphData GetGlyph(int index)
         => this.glyphs[index];
 
+    /// <summary>
+    /// Loads the CFF1 table from the specified font reader.
+    /// </summary>
+    /// <param name="fontReader">The font reader.</param>
+    /// <returns>The <see cref="Cff1Table"/>, or <see langword="null"/> if the table is not present.</returns>
     public static Cff1Table? Load(FontReader fontReader)
     {
         if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
@@ -37,6 +49,11 @@ internal sealed class Cff1Table : Table, ICffTable
         }
     }
 
+    /// <summary>
+    /// Loads the CFF1 table from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader positioned at the CFF1 table header.</param>
+    /// <returns>The <see cref="Cff1Table"/>.</returns>
     public static Cff1Table Load(BigEndianBinaryReader reader)
     {
         // +------+---------------+----------------------------------------+

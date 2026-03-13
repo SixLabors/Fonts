@@ -23,6 +23,12 @@ internal class Cff1Parser : CffParserBase
     private int privateDICTOffset;
     private int privateDICTLength;
 
+    /// <summary>
+    /// Loads and parses a CFF1 font from the given reader at the specified offset.
+    /// </summary>
+    /// <param name="reader">The binary reader positioned at the CFF1 data.</param>
+    /// <param name="offset">The absolute offset of the CFF1 table in the font stream.</param>
+    /// <returns>The parsed <see cref="CffFont"/>.</returns>
     public CffFont Load(BigEndianBinaryReader reader, long offset)
     {
         this.offset = offset;
@@ -48,6 +54,11 @@ internal class Cff1Parser : CffParserBase
         return new(fontName, topDictionary, glyphs);
     }
 
+    /// <summary>
+    /// Reads the Name INDEX, which contains the PostScript name of the font.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <returns>The font name string.</returns>
     private static string ReadNameIndex(BigEndianBinaryReader reader)
     {
         if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
@@ -61,6 +72,11 @@ internal class Cff1Parser : CffParserBase
         return reader.ReadString(offset.Length, Iso88591);
     }
 
+    /// <summary>
+    /// Reads the Top DICT INDEX, which contains top-level dictionary entries for the font.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <returns>A list of parsed DICT entries.</returns>
     private List<CffDataDicEntry> ReadTopDictIndex(BigEndianBinaryReader reader)
     {
         // 8. Top DICT INDEX
@@ -88,6 +104,11 @@ internal class Cff1Parser : CffParserBase
         return this.ReadDictData(reader, offsets[0].Length);
     }
 
+    /// <summary>
+    /// Reads the String INDEX containing font-specific strings referenced by SID.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <returns>An array of strings from the String INDEX.</returns>
     private static string[] ReadStringIndex(BigEndianBinaryReader reader)
     {
         if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
@@ -124,6 +145,13 @@ internal class Cff1Parser : CffParserBase
         return stringIndex;
     }
 
+    /// <summary>
+    /// Resolves a string identifier (SID) to its string value using the standard strings
+    /// table and the font-specific String INDEX.
+    /// </summary>
+    /// <param name="index">The SID to resolve.</param>
+    /// <param name="stringIndex">The font-specific String INDEX.</param>
+    /// <returns>The resolved string name.</returns>
     private static string GetSid(int index, string[] stringIndex)
     {
         if (index >= 0 && index <= CffStandardStrings.Count - 1)
@@ -141,6 +169,12 @@ internal class Cff1Parser : CffParserBase
         return "SID" + index;
     }
 
+    /// <summary>
+    /// Resolves the Top DICT entries into a <see cref="CffTopDictionary"/> by interpreting operator-operand pairs.
+    /// </summary>
+    /// <param name="entries">The parsed DICT entries.</param>
+    /// <param name="stringIndex">The font-specific String INDEX for SID resolution.</param>
+    /// <returns>The populated <see cref="CffTopDictionary"/>.</returns>
     private CffTopDictionary ResolveTopDictInfo(List<CffDataDicEntry> entries, string[] stringIndex)
     {
         // TODO: Is CID mandatory?
@@ -234,6 +268,11 @@ internal class Cff1Parser : CffParserBase
         return metrics;
     }
 
+    /// <summary>
+    /// Reads the Global Subrs INDEX, which contains shared subroutine charstring programs.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <returns>An array of byte arrays, each containing a global subroutine charstring.</returns>
     private static byte[][] ReadGlobalSubrIndex(BigEndianBinaryReader reader)
 
        // 16. Local / Global Subrs INDEXes
@@ -265,8 +304,17 @@ internal class Cff1Parser : CffParserBase
        // by an empty Global Subrs INDEX.
        => ReadSubrBuffer(reader);
 
+    /// <summary>
+    /// Reads the Local Subrs INDEX, which contains font-private subroutine charstring programs.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <returns>An array of byte arrays, each containing a local subroutine charstring.</returns>
     private static byte[][] ReadLocalSubrs(BigEndianBinaryReader reader) => ReadSubrBuffer(reader);
 
+    /// <summary>
+    /// Reads the encoding data for the font if an encoding offset is specified.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
     // TODO: We don't actually need this right now. Will be important though if we ever introduce subsetting.
     private void ReadEncodings(BigEndianBinaryReader reader)
     {
@@ -302,6 +350,12 @@ internal class Cff1Parser : CffParserBase
         }
     }
 
+    /// <summary>
+    /// Reads the charset data, which maps glyph indices to glyph names.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="stringIndex">The font-specific String INDEX for SID resolution.</param>
+    /// <param name="glyphs">The glyph data array to populate with glyph names.</param>
     private void ReadCharsets(BigEndianBinaryReader reader, string[] stringIndex, CffGlyphData[] glyphs)
     {
         // Charset data is located via the offset operand to the
@@ -328,6 +382,12 @@ internal class Cff1Parser : CffParserBase
         }
     }
 
+    /// <summary>
+    /// Reads charset data in format 0, where each glyph has an individual SID entry.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="stringIndex">The font-specific String INDEX for SID resolution.</param>
+    /// <param name="glyphs">The glyph data array to populate with glyph names.</param>
     private static void ReadCharsetsFormat0(BigEndianBinaryReader reader, string[] stringIndex, CffGlyphData[] glyphs)
     {
         // Table 17: Format 0
@@ -349,6 +409,12 @@ internal class Cff1Parser : CffParserBase
         }
     }
 
+    /// <summary>
+    /// Reads charset data in format 1, using Range1 structures with 1-byte nLeft counts.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="stringIndex">The font-specific String INDEX for SID resolution.</param>
+    /// <param name="glyphs">The glyph data array to populate with glyph names.</param>
     private static void ReadCharsetsFormat1(BigEndianBinaryReader reader, string[] stringIndex, CffGlyphData[] glyphs)
     {
         // Table 18 Format 1
@@ -383,6 +449,12 @@ internal class Cff1Parser : CffParserBase
         }
     }
 
+    /// <summary>
+    /// Reads charset data in format 2, using Range2 structures with 2-byte nLeft counts for large charsets.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="stringIndex">The font-specific String INDEX for SID resolution.</param>
+    /// <param name="glyphs">The glyph data array to populate with glyph names.</param>
     private static void ReadCharsetsFormat2(BigEndianBinaryReader reader, string[] stringIndex, CffGlyphData[] glyphs)
     {
         // note:eg, Adobe's source-code-pro font
@@ -418,6 +490,15 @@ internal class Cff1Parser : CffParserBase
         }
     }
 
+    /// <summary>
+    /// Reads the CharStrings INDEX and creates glyph data objects for all glyphs in the font.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <param name="topDictionary">The top-level dictionary containing font metadata.</param>
+    /// <param name="globalSubrBuffers">The global subroutine buffers.</param>
+    /// <param name="fontDicts">The Font DICT array for CID fonts.</param>
+    /// <param name="privateDictionary">The private dictionary containing local subroutine references.</param>
+    /// <returns>An array of <see cref="CffGlyphData"/> for each glyph.</returns>
     private CffGlyphData[] ReadCharStringsIndex(
         BigEndianBinaryReader reader,
         CffTopDictionary topDictionary,
@@ -494,6 +575,10 @@ internal class Cff1Parser : CffParserBase
         return glyphs;
     }
 
+    /// <summary>
+    /// Reads format 0 encoding data where each glyph has an individual code assignment.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
     private static void ReadFormat0Encoding(BigEndianBinaryReader reader)
     {
         // Table 11: Format 0
@@ -514,6 +599,10 @@ internal class Cff1Parser : CffParserBase
         // TODO: Implement based on PDFPig
     }
 
+    /// <summary>
+    /// Reads format 1 encoding data using Range1 structures for sequential code groups.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
     private static void ReadFormat1Encoding(BigEndianBinaryReader reader)
     {
         // Table 12 Format 1
@@ -553,6 +642,11 @@ internal class Cff1Parser : CffParserBase
         // SID       glyph       Name
     }
 
+    /// <summary>
+    /// Reads the Private DICT data containing font-level hinting values and local subroutine references.
+    /// </summary>
+    /// <param name="reader">The binary reader.</param>
+    /// <returns>The parsed <see cref="CffPrivateDictionary"/>, or <see langword="null"/> if no Private DICT is present.</returns>
     private CffPrivateDictionary? ReadPrivateDict(BigEndianBinaryReader reader)
     {
         // per-font

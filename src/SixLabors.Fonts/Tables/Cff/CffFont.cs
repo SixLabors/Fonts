@@ -8,6 +8,12 @@ namespace SixLabors.Fonts.Tables.Cff;
 /// </summary>
 internal class CffFont
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CffFont"/> class.
+    /// </summary>
+    /// <param name="name">The PostScript font name.</param>
+    /// <param name="metrics">The Top DICT data containing font-wide properties.</param>
+    /// <param name="glyphs">The parsed glyph data array.</param>
     public CffFont(string name, CffTopDictionary metrics, CffGlyphData[] glyphs)
     {
         this.FontName = name;

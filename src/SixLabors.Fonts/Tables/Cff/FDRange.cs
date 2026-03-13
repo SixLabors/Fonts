@@ -8,12 +8,22 @@ namespace SixLabors.Fonts.Tables.Cff;
 /// </summary>
 internal readonly struct FDRange
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FDRange"/> struct for FDSelect format 3.
+    /// </summary>
+    /// <param name="first">The first glyph index in the range.</param>
+    /// <param name="fontDictionary">The font dictionary index for glyphs in this range.</param>
     public FDRange(ushort first, byte fontDictionary)
     {
         this.First = first;
         this.FontDictionary = fontDictionary;
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FDRange"/> struct for FDSelect format 4.
+    /// </summary>
+    /// <param name="first">The first glyph index in the range.</param>
+    /// <param name="fontDictionary">The font dictionary index for glyphs in this range.</param>
     public FDRange(uint first, ushort fontDictionary)
     {
         this.First = first;
@@ -30,5 +40,6 @@ internal readonly struct FDRange
     /// </summary>
     public ushort FontDictionary { get; }
 
+    /// <inheritdoc/>
     public override string ToString() => $"First {this.First}, Dictionary {this.FontDictionary}.";
 }

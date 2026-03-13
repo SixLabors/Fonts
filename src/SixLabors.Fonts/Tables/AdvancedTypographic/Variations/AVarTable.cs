@@ -9,18 +9,37 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 /// </summary>
 internal class AVarTable : Table
 {
+    /// <summary>
+    /// The table name identifier for the avar table.
+    /// </summary>
     internal const string TableName = "avar";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AVarTable"/> class.
+    /// </summary>
+    /// <param name="axisCount">The number of variation axes.</param>
+    /// <param name="segmentMaps">The segment maps array, one per axis.</param>
     public AVarTable(uint axisCount, SegmentMapRecord[] segmentMaps)
     {
         this.AxisCount = axisCount;
         this.SegmentMaps = segmentMaps;
     }
 
+    /// <summary>
+    /// Gets the number of variation axes for the font.
+    /// </summary>
     public uint AxisCount { get; }
 
+    /// <summary>
+    /// Gets the segment maps array, one segment map for each axis, in the order of axes specified in the fvar table.
+    /// </summary>
     public SegmentMapRecord[] SegmentMaps { get; }
 
+    /// <summary>
+    /// Loads the avar table from the specified font reader.
+    /// </summary>
+    /// <param name="reader">The font reader.</param>
+    /// <returns>The <see cref="AVarTable"/>, or <see langword="null"/> if the table is not present.</returns>
     public static AVarTable? Load(FontReader reader)
     {
         if (!reader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
@@ -34,6 +53,11 @@ internal class AVarTable : Table
         }
     }
 
+    /// <summary>
+    /// Loads the avar table from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader positioned at the start of the avar table.</param>
+    /// <returns>The <see cref="AVarTable"/>.</returns>
     public static AVarTable Load(BigEndianBinaryReader reader)
     {
         // VariationsTable `avar`

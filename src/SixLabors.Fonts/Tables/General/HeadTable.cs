@@ -5,10 +5,28 @@ using System;
 
 namespace SixLabors.Fonts.Tables.General;
 
+/// <summary>
+/// Represents the font header table, which contains global information about the font.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/head"/>
+/// </summary>
 internal class HeadTable : Table
 {
+    /// <summary>
+    /// The table name identifier.
+    /// </summary>
     internal const string TableName = "head";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HeadTable"/> class.
+    /// </summary>
+    /// <param name="flags">The font header flags.</param>
+    /// <param name="macStyle">The Mac style flags.</param>
+    /// <param name="unitsPerEm">The number of font design units per em.</param>
+    /// <param name="created">The date the font was created.</param>
+    /// <param name="modified">The date the font was last modified.</param>
+    /// <param name="bounds">The bounding box for all glyphs in the font.</param>
+    /// <param name="lowestRecPPEM">The smallest readable size in pixels.</param>
+    /// <param name="indexToLocFormat">The format of the index-to-location table.</param>
     public HeadTable(
         HeadFlags flags,
         HeadMacStyle macStyle,
@@ -29,12 +47,25 @@ internal class HeadTable : Table
         this.IndexLocationFormat = indexToLocFormat;
     }
 
+    /// <summary>
+    /// Specifies the format of the index-to-location ('loca') table offsets.
+    /// </summary>
     internal enum IndexLocationFormats : short
     {
+        /// <summary>
+        /// Short offsets (Offset16).
+        /// </summary>
         Offset16 = 0,
+
+        /// <summary>
+        /// Long offsets (Offset32).
+        /// </summary>
         Offset32 = 1,
     }
 
+    /// <summary>
+    /// Font header flags indicating various font characteristics.
+    /// </summary>
     [Flags]
     internal enum HeadFlags : ushort
     {
@@ -50,58 +81,153 @@ internal class HeadTable : Table
         // Bit 13: Font optimized for ClearType™. Note, fonts that rely on embedded bitmaps (EBDT) for rendering should not be considered optimized for ClearType, and therefore should keep this bit cleared.
         // Bit 14: Last Resort font.If set, indicates that the glyphs encoded in the cmap subtables are simply generic symbolic representations of code point ranges and don’t truly represent support for those code points.If unset, indicates that the glyphs encoded in the cmap subtables represent proper support for those code points.
         // Bit 15: Reserved, set to 0
+
+        /// <summary>
+        /// No flags set.
+        /// </summary>
         None = 0,
+
+        /// <summary>
+        /// Baseline for font at y = 0.
+        /// </summary>
         BaselineY0 = 1 << 0,
+
+        /// <summary>
+        /// Left sidebearing point at x = 0 (relevant only for TrueType rasterizers).
+        /// </summary>
         LeftSidebearingPointAtX0 = 1 << 1,
+
+        /// <summary>
+        /// Instructions may depend on point size.
+        /// </summary>
         InstructionDependOnPointSize = 1 << 2,
+
+        /// <summary>
+        /// Force ppem to integer values for all internal scaler math.
+        /// </summary>
         ForcePPEMToInt = 1 << 3,
+
+        /// <summary>
+        /// Instructions may alter advance width (the advance widths might not scale linearly).
+        /// </summary>
         InstructionAlterAdvancedWidth = 1 << 4,
 
         // 1<<5 not used
         // 1<<6 - 1<<10 not used
+
+        /// <summary>
+        /// Font data is lossless as a result of having been compressed or optimized.
+        /// </summary>
         FontDataLossLess = 1 << 11,
+
+        /// <summary>
+        /// Font converted (produce compatible metrics).
+        /// </summary>
         FontConverted = 1 << 12,
+
+        /// <summary>
+        /// Font optimized for ClearType.
+        /// </summary>
         OptimizedForClearType = 1 << 13,
+
+        /// <summary>
+        /// Last Resort font. Glyphs are generic symbolic representations of code point ranges.
+        /// </summary>
         LastResortFont = 1 << 14,
     }
 
+    /// <summary>
+    /// Macintosh style flags for the font.
+    /// </summary>
     [Flags]
     internal enum HeadMacStyle : ushort
     {
-        // Bit 0: Bold (if set to 1);
-        // Bit 1: Italic(if set to 1)
-        // Bit 2: Underline(if set to 1)
-        // Bit 3: Outline(if set to 1)
-        // Bit 4: Shadow(if set to 1)
-        // Bit 5: Condensed(if set to 1)
-        // Bit 6: Extended(if set to 1)
-        // Bits 7–15: Reserved(set to 0).
+        /// <summary>
+        /// No style flags set.
+        /// </summary>
         None = 0,
+
+        /// <summary>
+        /// Bold style.
+        /// </summary>
         Bold = 1 << 0,
+
+        /// <summary>
+        /// Italic style.
+        /// </summary>
         Italic = 1 << 1,
+
+        /// <summary>
+        /// Underline style.
+        /// </summary>
         Underline = 1 << 2,
+
+        /// <summary>
+        /// Outline (hollow) style.
+        /// </summary>
         Outline = 1 << 3,
+
+        /// <summary>
+        /// Shadow style.
+        /// </summary>
         Shadow = 1 << 4,
+
+        /// <summary>
+        /// Condensed style.
+        /// </summary>
         Condensed = 1 << 5,
+
+        /// <summary>
+        /// Extended style.
+        /// </summary>
         Extended = 1 << 6,
     }
 
+    /// <summary>
+    /// Gets the date the font was created.
+    /// </summary>
     public DateTime Created { get; }
 
+    /// <summary>
+    /// Gets the font header flags.
+    /// </summary>
     public HeadFlags Flags { get; }
 
+    /// <summary>
+    /// Gets the format of the index-to-location table.
+    /// </summary>
     public IndexLocationFormats IndexLocationFormat { get; }
 
+    /// <summary>
+    /// Gets the smallest readable size in pixels.
+    /// </summary>
     public ushort LowestRecPPEM { get; }
 
+    /// <summary>
+    /// Gets the Mac style flags.
+    /// </summary>
     public HeadMacStyle MacStyle { get; }
 
+    /// <summary>
+    /// Gets the date the font was last modified.
+    /// </summary>
     public DateTime Modified { get; }
 
+    /// <summary>
+    /// Gets the bounding box for all glyphs in the font.
+    /// </summary>
     public Bounds Bounds { get; }
 
+    /// <summary>
+    /// Gets the number of font design units per em.
+    /// </summary>
     public ushort UnitsPerEm { get; }
 
+    /// <summary>
+    /// Loads the <see cref="HeadTable"/> from the specified font reader.
+    /// </summary>
+    /// <param name="fontReader">The font reader.</param>
+    /// <returns>The <see cref="HeadTable"/>, or <see langword="null"/> if the table is not present.</returns>
     public static HeadTable? Load(FontReader fontReader)
     {
         if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
@@ -115,6 +241,11 @@ internal class HeadTable : Table
         }
     }
 
+    /// <summary>
+    /// Loads the <see cref="HeadTable"/> from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <returns>The <see cref="HeadTable"/>.</returns>
     public static HeadTable Load(BigEndianBinaryReader reader)
     {
         // Type         | Name               | Description

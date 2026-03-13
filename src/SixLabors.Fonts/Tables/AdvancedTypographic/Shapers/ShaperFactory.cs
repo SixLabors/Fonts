@@ -5,8 +5,12 @@ using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 
+/// <summary>
+/// Factory for creating the appropriate script shaper based on a given script classification.
+/// </summary>
 internal static class ShaperFactory
 {
+    /// <summary>The 'mym2' (Myanmar v2) script tag used to distinguish Myanmar shaper versions.</summary>
     private static readonly Tag Mym2Tag = Tag.Parse("mym2");
 
     /// <summary>

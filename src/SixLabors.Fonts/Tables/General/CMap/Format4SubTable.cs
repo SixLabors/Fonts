@@ -6,8 +6,20 @@ using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Tables.General.CMap;
 
+/// <summary>
+/// Format 4 is a segment mapping to delta values subtable used for character codes in the BMP (U+0000 to U+FFFF).
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/cmap#format-4-segment-mapping-to-delta-values"/>
+/// </summary>
 internal sealed class Format4SubTable : CMapSubTable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Format4SubTable"/> class.
+    /// </summary>
+    /// <param name="language">The language code for Macintosh platform subtables.</param>
+    /// <param name="platform">The platform identifier.</param>
+    /// <param name="encoding">The platform-specific encoding identifier.</param>
+    /// <param name="segments">The array of character code segments.</param>
+    /// <param name="glyphIds">The glyph index array used for offset-based lookups.</param>
     public Format4SubTable(ushort language, PlatformIDs platform, ushort encoding, Segment[] segments, ushort[] glyphIds)
         : base(platform, encoding, 4)
     {
@@ -16,12 +28,22 @@ internal sealed class Format4SubTable : CMapSubTable
         this.GlyphIds = glyphIds;
     }
 
+    /// <summary>
+    /// Gets the array of character code segments.
+    /// </summary>
     public Segment[] Segments { get; }
 
+    /// <summary>
+    /// Gets the glyph index array used for offset-based lookups.
+    /// </summary>
     public ushort[] GlyphIds { get; }
 
+    /// <summary>
+    /// Gets the language code for Macintosh platform subtables.
+    /// </summary>
     public ushort Language { get; }
 
+    /// <inheritdoc/>
     public override bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
     {
         int charAsInt = codePoint.Value;
@@ -39,8 +61,15 @@ internal sealed class Format4SubTable : CMapSubTable
                 }
 
                 long offset = (seg.Offset / 2) + (charAsInt - seg.Start);
-                glyphId = this.GlyphIds[offset - this.Segments.Length + seg.Index];
+                long idx = offset - this.Segments.Length + seg.Index;
 
+                if (idx < 0 || idx >= this.GlyphIds.Length)
+                {
+                    glyphId = 0;
+                    return false;
+                }
+
+                glyphId = this.GlyphIds[idx];
                 return true;
             }
         }
@@ -49,6 +78,7 @@ internal sealed class Format4SubTable : CMapSubTable
         return false;
     }
 
+    /// <inheritdoc/>
     public override bool TryGetCodePoint(ushort glyphId, out CodePoint codePoint)
     {
         for (int i = 0; i < this.Segments.Length; i++)
@@ -79,7 +109,15 @@ internal sealed class Format4SubTable : CMapSubTable
                 for (long j = 0; j <= (seg.End - seg.Start); j++)
                 {
                     long offset = (seg.Offset / 2) + j;
-                    if (this.GlyphIds[offset - this.Segments.Length + seg.Index] == glyphId)
+                    long idx = offset - this.Segments.Length + seg.Index;
+
+                    if (idx < 0 || idx >= this.GlyphIds.Length)
+                    {
+                        codePoint = default;
+                        return false;
+                    }
+
+                    if (this.GlyphIds[idx] == glyphId)
                     {
                         codePoint = new CodePoint((int)(seg.Start + j));
                         return true;
@@ -92,9 +130,16 @@ internal sealed class Format4SubTable : CMapSubTable
         return false;
     }
 
+    /// <inheritdoc/>
     public override IEnumerable<int> GetAvailableCodePoints()
         => this.Segments.SelectMany(segment => Enumerable.Range(segment.Start, segment.End - segment.Start + 1));
 
+    /// <summary>
+    /// Loads one or more <see cref="Format4SubTable"/> instances from the specified encoding records and reader.
+    /// </summary>
+    /// <param name="encodings">The encoding records that share this subtable.</param>
+    /// <param name="reader">The binary reader positioned after the format field.</param>
+    /// <returns>An enumerable of <see cref="Format4SubTable"/> instances, one per encoding record.</returns>
     public static IEnumerable<Format4SubTable> Load(IEnumerable<EncodingRecord> encodings, BigEndianBinaryReader reader)
     {
         // 'cmap' Subtable Format 4:
@@ -148,7 +193,7 @@ internal sealed class Format4SubTable : CMapSubTable
 
         Segment[] segments = Segment.Create(endCounts, startCounts, idDelta, idRangeOffset);
 
-        List<Format4SubTable> table = new();
+        List<Format4SubTable> table = [];
         foreach (EncodingRecord encoding in encodings)
         {
             table.Add(new Format4SubTable(language, encoding.PlatformID, encoding.EncodingID, segments, glyphIds));
@@ -157,8 +202,20 @@ internal sealed class Format4SubTable : CMapSubTable
         return table;
     }
 
+    /// <summary>
+    /// Represents a single segment in a Format 4 subtable, defining a contiguous range of character codes
+    /// and their mapping to glyph indices via delta or offset.
+    /// </summary>
     internal readonly struct Segment
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Segment"/> struct.
+        /// </summary>
+        /// <param name="index">The zero-based index of this segment in the segment array.</param>
+        /// <param name="end">The end character code for this segment.</param>
+        /// <param name="start">The start character code for this segment.</param>
+        /// <param name="delta">The delta value to apply to character codes in this segment.</param>
+        /// <param name="offset">The offset into the glyph index array, or 0 if delta-based mapping is used.</param>
         public Segment(ushort index, ushort end, ushort start, short delta, ushort offset)
         {
             this.Index = index;
@@ -168,20 +225,43 @@ internal sealed class Format4SubTable : CMapSubTable
             this.Offset = offset;
         }
 
+        /// <summary>
+        /// Gets the zero-based index of this segment in the segment array.
+        /// </summary>
         public ushort Index { get; }
 
+        /// <summary>
+        /// Gets the delta value added to character codes to produce glyph indices.
+        /// </summary>
         public short Delta { get; }
 
+        /// <summary>
+        /// Gets the end character code for this segment (inclusive).
+        /// </summary>
         public ushort End { get; }
 
+        /// <summary>
+        /// Gets the offset into the glyph index array, or 0 if delta-based mapping is used.
+        /// </summary>
         public ushort Offset { get; }
 
+        /// <summary>
+        /// Gets the start character code for this segment.
+        /// </summary>
         public ushort Start { get; }
 
+        /// <summary>
+        /// Creates an array of <see cref="Segment"/> instances from the parallel arrays read from the subtable.
+        /// </summary>
+        /// <param name="endCounts">The end character codes for each segment.</param>
+        /// <param name="startCode">The start character codes for each segment.</param>
+        /// <param name="idDelta">The delta values for each segment.</param>
+        /// <param name="idRangeOffset">The range offset values for each segment.</param>
+        /// <returns>An array of <see cref="Segment"/> instances.</returns>
         public static Segment[] Create(ReadOnlySpan<ushort> endCounts, ReadOnlySpan<ushort> startCode, ReadOnlySpan<short> idDelta, ReadOnlySpan<ushort> idRangeOffset)
         {
             int count = endCounts.Length;
-            var segments = new Segment[count];
+            Segment[] segments = new Segment[count];
             for (ushort i = 0; i < count; i++)
             {
                 ushort start = startCode[i];

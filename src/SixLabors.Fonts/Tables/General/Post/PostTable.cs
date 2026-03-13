@@ -5,9 +5,21 @@ using System.Text;
 
 namespace SixLabors.Fonts.Tables.General.Post;
 
+/// <summary>
+/// Represents the OpenType 'post' table, which contains information needed
+/// to use a font on a PostScript printer, including glyph names.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/post"/>
+/// </summary>
 internal class PostTable : Table
 {
+    /// <summary>
+    /// The table tag name identifying the 'post' table.
+    /// </summary>
     internal const string TableName = "post";
+
+    /// <summary>
+    /// The standard Macintosh glyph name ordering for the first 258 glyph indices.
+    /// </summary>
     private static readonly string[] AppleGlyphNameMap
         = new[]
     {
@@ -29,6 +41,20 @@ internal class PostTable : Table
         "threesuperior", "onehalf", "onequarter", "threequarters", "franc", "Gbreve", "gbreve", "Idotaccent", "Scedilla", "scedilla", "Cacute", "cacute", "Ccaron", "ccaron", "dcroat"
     };
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PostTable"/> class.
+    /// </summary>
+    /// <param name="formatMajor">The major version of the post table format.</param>
+    /// <param name="formatMinor">The minor version of the post table format.</param>
+    /// <param name="underlinePosition">The suggested distance of the top of the underline from the baseline.</param>
+    /// <param name="underlineThickness">The suggested underline thickness.</param>
+    /// <param name="italicAngle">The italic angle in counter-clockwise degrees from the vertical.</param>
+    /// <param name="isFixedPitch">Non-zero if the font is monospaced; zero if proportionally spaced.</param>
+    /// <param name="minMemType42">The minimum memory usage when downloaded as a Type 42 font.</param>
+    /// <param name="maxMemType42">The maximum memory usage when downloaded as a Type 42 font.</param>
+    /// <param name="minMemType1">The minimum memory usage when downloaded as a Type 1 font.</param>
+    /// <param name="maxMemType1">The maximum memory usage when downloaded as a Type 1 font.</param>
+    /// <param name="postRecords">The array of post name records for glyph name mapping.</param>
     public PostTable(
         ushort formatMajor,
         ushort formatMinor,
@@ -55,28 +81,69 @@ internal class PostTable : Table
         this.PostRecords = postRecords;
     }
 
+    /// <summary>
+    /// Gets the array of post name records mapping glyph indices to PostScript names.
+    /// </summary>
     public PostNameRecord[] PostRecords { get; }
 
+    /// <summary>
+    /// Gets the major version number of the post table format.
+    /// </summary>
     public ushort FormatMajor { get; }
 
+    /// <summary>
+    /// Gets the minor version number of the post table format.
+    /// </summary>
     public ushort FormatMinor { get; }
 
+    /// <summary>
+    /// Gets the suggested distance of the top of the underline from the baseline, in font design units.
+    /// Negative values indicate below baseline.
+    /// </summary>
     public short UnderlinePosition { get; }
 
+    /// <summary>
+    /// Gets the suggested underline thickness, in font design units.
+    /// </summary>
     public short UnderlineThickness { get; }
 
+    /// <summary>
+    /// Gets the italic angle in counter-clockwise degrees from the vertical.
+    /// Zero for upright text, negative for text that leans to the right.
+    /// </summary>
     public float ItalicAngle { get; }
 
+    /// <summary>
+    /// Gets a value indicating whether the font is monospaced.
+    /// Non-zero if the font is not proportionally spaced (i.e., monospaced).
+    /// </summary>
     public uint IsFixedPitch { get; }
 
+    /// <summary>
+    /// Gets the minimum memory usage when an OpenType font is downloaded as a Type 42 font.
+    /// </summary>
     public uint MinMemType42 { get; }
 
+    /// <summary>
+    /// Gets the maximum memory usage when an OpenType font is downloaded as a Type 42 font.
+    /// </summary>
     public uint MaxMemType42 { get; }
 
+    /// <summary>
+    /// Gets the minimum memory usage when an OpenType font is downloaded as a Type 1 font.
+    /// </summary>
     public uint MinMemType1 { get; }
 
+    /// <summary>
+    /// Gets the maximum memory usage when an OpenType font is downloaded as a Type 1 font.
+    /// </summary>
     public uint MaxMemType1 { get; }
 
+    /// <summary>
+    /// Loads the <see cref="PostTable"/> from the specified font reader.
+    /// </summary>
+    /// <param name="fontReader">The font reader to read the table from.</param>
+    /// <returns>The loaded <see cref="PostTable"/>, or <see langword="null"/> if the table is not present.</returns>
     public static PostTable? Load(FontReader fontReader)
     {
         if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
@@ -90,6 +157,12 @@ internal class PostTable : Table
         }
     }
 
+    /// <summary>
+    /// Loads the <see cref="PostTable"/> from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The binary reader positioned at the start of the post table data.</param>
+    /// <returns>The loaded <see cref="PostTable"/>.</returns>
+    /// <exception cref="NotSupportedException">Thrown when the table format version is not supported.</exception>
     public static PostTable Load(BigEndianBinaryReader reader)
     {
         // HEADER
@@ -174,6 +247,11 @@ internal class PostTable : Table
             records);
     }
 
+    /// <summary>
+    /// Gets the PostScript name for the glyph at the specified name index.
+    /// </summary>
+    /// <param name="nameIndex">The name index to look up.</param>
+    /// <returns>The PostScript glyph name, or <see langword="null"/> if not found.</returns>
     public string? GetPostScriptName(int nameIndex)
     {
         if (this.PostRecords is not null)

@@ -3,11 +3,23 @@
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 
+/// <summary>
+/// A ClassSequenceRuleSet table contains an array of ClassSequenceRule tables that define
+/// context rules for class-based glyph contexts in Sequence Context Format 2.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/chapter2#sequence-context-format-2-class-based-glyph-contexts"/>
+/// </summary>
 internal sealed class ClassSequenceRuleSetTable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ClassSequenceRuleSetTable"/> class.
+    /// </summary>
+    /// <param name="sequenceRuleTables">The array of class sequence rule tables.</param>
     private ClassSequenceRuleSetTable(ClassSequenceRuleTable[] sequenceRuleTables)
         => this.SequenceRuleTables = sequenceRuleTables;
 
+    /// <summary>
+    /// Gets the array of class sequence rule tables.
+    /// </summary>
     public ClassSequenceRuleTable[] SequenceRuleTables { get; }
 
     /// <summary>

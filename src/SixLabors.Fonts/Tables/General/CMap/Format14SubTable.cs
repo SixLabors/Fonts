@@ -10,15 +10,32 @@ namespace SixLabors.Fonts.Tables.General.CMap;
 /// Subtable format 14 specifies the Unicode Variation Sequences (UVSes) supported by the font.
 /// A Variation Sequence, according to the Unicode Standard, comprises a base character followed
 /// by a variation selector. For example, &lt;U+82A6, U+E0101&gt;.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/cmap#format-14-unicode-variation-sequences"/>
 /// </summary>
 internal sealed class Format14SubTable : CMapSubTable
 {
+    /// <summary>
+    /// The dictionary mapping variation selector code points to their associated variation selector records.
+    /// </summary>
     private readonly Dictionary<uint, VariationSelector> variationSelectors;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Format14SubTable"/> class.
+    /// </summary>
+    /// <param name="variationSelectors">The dictionary of variation selector records keyed by selector code point.</param>
+    /// <param name="platform">The platform identifier.</param>
+    /// <param name="encoding">The platform-specific encoding identifier.</param>
     private Format14SubTable(Dictionary<uint, VariationSelector> variationSelectors, PlatformIDs platform, ushort encoding)
         : base(platform, encoding, 5)
         => this.variationSelectors = variationSelectors;
 
+    /// <summary>
+    /// Loads one or more <see cref="Format14SubTable"/> instances from the specified encoding records and reader.
+    /// </summary>
+    /// <param name="encodings">The encoding records that share this subtable.</param>
+    /// <param name="reader">The binary reader positioned after the format field.</param>
+    /// <param name="offset">The byte offset to the start of this format 14 subtable.</param>
+    /// <returns>An enumerable of <see cref="Format14SubTable"/> instances, one per encoding record.</returns>
     public static IEnumerable<Format14SubTable> Load(
         IEnumerable<EncodingRecord> encodings,
         BigEndianBinaryReader reader,
@@ -130,21 +147,31 @@ internal sealed class Format14SubTable : CMapSubTable
         }
     }
 
+    /// <inheritdoc/>
     public override bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
     {
         glyphId = 0;
         return false;
     }
 
+    /// <inheritdoc/>
     public override bool TryGetCodePoint(ushort glyphId, out CodePoint codePoint)
     {
         codePoint = default;
         return false;
     }
 
+    /// <inheritdoc/>
     public override IEnumerable<int> GetAvailableCodePoints()
         => Array.Empty<int>();
 
+    /// <summary>
+    /// Resolves a glyph identifier for a base character and variation selector pair using Unicode Variation Sequences.
+    /// </summary>
+    /// <param name="codePoint">The base character code point.</param>
+    /// <param name="defaultGlyphIndex">The default glyph index for the base character.</param>
+    /// <param name="nextCodePoint">The variation selector code point.</param>
+    /// <returns>The resolved glyph identifier, or 0 if the next code point is not a variation selector.</returns>
     public ushort CharacterPairToGlyphId(CodePoint codePoint, ushort defaultGlyphIndex, CodePoint nextCodePoint)
     {
         // Only check codepoint if nextCodepoint is a variation selector
@@ -176,12 +203,24 @@ internal sealed class Format14SubTable : CMapSubTable
         return 0;
     }
 
+    /// <summary>
+    /// Represents a variation selector record containing default UVS ranges and non-default UVS mappings.
+    /// </summary>
     private class VariationSelector
     {
+        /// <summary>
+        /// Gets the list of start code points for default UVS ranges.
+        /// </summary>
         public List<uint> DefaultStartCodes { get; } = [];
 
+        /// <summary>
+        /// Gets the list of end code points (exclusive) for default UVS ranges.
+        /// </summary>
         public List<uint> DefaultEndCodes { get; } = [];
 
+        /// <summary>
+        /// Gets the dictionary mapping base character code points to glyph indices for non-default UVS mappings.
+        /// </summary>
         public Dictionary<uint, ushort> UVSMappings { get; } = [];
     }
 }

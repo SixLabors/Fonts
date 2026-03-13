@@ -12,6 +12,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub;
 /// </summary>
 internal static class LookupType7SubTable
 {
+    /// <summary>
+    /// Loads the extension substitution lookup subtable from the given offset.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the substitution subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
+    /// <param name="subTableLoader">The delegate used to load the referenced extension subtable.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     public static LookupSubTable Load(
         BigEndianBinaryReader reader,
         long offset,
@@ -30,8 +39,23 @@ internal static class LookupType7SubTable
     }
 }
 
+/// <summary>
+/// Implements extension substitution format 1. This format provides a 32-bit offset to an
+/// extension subtable of any other lookup type, enabling subtables that exceed the 16-bit
+/// offset limit.
+/// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#71-extension-substitution-subtable-format-1"/>
+/// </summary>
 internal static class LookupType7Format1SubTable
 {
+    /// <summary>
+    /// Loads the extension substitution format 1 subtable and resolves the referenced extension subtable.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the extension substitution subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
+    /// <param name="subTableLoader">The delegate used to load the referenced extension subtable.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     public static LookupSubTable Load(
         BigEndianBinaryReader reader,
         long offset,

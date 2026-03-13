@@ -3,10 +3,32 @@
 
 namespace SixLabors.Fonts.Tables.General;
 
+/// <summary>
+/// Represents the vertical header table, which contains information needed to lay out fonts
+/// whose characters are written vertically.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/vhea"/>
+/// </summary>
 internal sealed class VerticalHeadTable : Table
 {
+    /// <summary>
+    /// The table name identifier.
+    /// </summary>
     internal const string TableName = "vhea";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="VerticalHeadTable"/> class.
+    /// </summary>
+    /// <param name="ascender">The vertical typographic ascender.</param>
+    /// <param name="descender">The vertical typographic descender.</param>
+    /// <param name="lineGap">The vertical typographic line gap.</param>
+    /// <param name="advanceHeightMax">The maximum advance height.</param>
+    /// <param name="minTopSideBearing">The minimum top side bearing.</param>
+    /// <param name="minBottomSideBearing">The minimum bottom side bearing.</param>
+    /// <param name="yMaxExtent">The maximum y extent.</param>
+    /// <param name="caretSlopeRise">The caret slope rise.</param>
+    /// <param name="caretSlopeRun">The caret slope run.</param>
+    /// <param name="caretOffset">The caret offset for slanted fonts.</param>
+    /// <param name="numberOfVMetrics">The number of vertical metrics in the 'vmtx' table.</param>
     public VerticalHeadTable(
         short ascender,
         short descender,
@@ -33,28 +55,66 @@ internal sealed class VerticalHeadTable : Table
         this.NumberOfVMetrics = numberOfVMetrics;
     }
 
+    /// <summary>
+    /// Gets the vertical typographic ascender.
+    /// </summary>
     public short Ascender { get; }
 
+    /// <summary>
+    /// Gets the vertical typographic descender.
+    /// </summary>
     public short Descender { get; }
 
+    /// <summary>
+    /// Gets the vertical typographic line gap.
+    /// </summary>
     public short LineGap { get; }
 
+    /// <summary>
+    /// Gets the maximum advance height in font design units.
+    /// </summary>
     public short AdvanceHeightMax { get; }
 
+    /// <summary>
+    /// Gets the minimum top side bearing in font design units.
+    /// </summary>
     public short MinTopSideBearing { get; }
 
+    /// <summary>
+    /// Gets the minimum bottom side bearing in font design units.
+    /// </summary>
     public short MinBottomSideBearing { get; }
 
+    /// <summary>
+    /// Gets the maximum y extent: minTopSideBearing + (yMin - yMax).
+    /// </summary>
     public short YMaxExtent { get; }
 
+    /// <summary>
+    /// Gets the caret slope rise. A value of 0 for rise and 1 for run specifies a horizontal caret.
+    /// </summary>
     public short CaretSlopeRise { get; }
 
+    /// <summary>
+    /// Gets the caret slope run. A value of 0 for non-slanted fonts.
+    /// </summary>
     public short CaretSlopeRun { get; }
 
+    /// <summary>
+    /// Gets the caret offset for slanted fonts. Set to 0 for non-slanted fonts.
+    /// </summary>
     public short CaretOffset { get; }
 
+    /// <summary>
+    /// Gets the number of vertical metrics in the 'vmtx' table.
+    /// </summary>
     public ushort NumberOfVMetrics { get; }
 
+    /// <summary>
+    /// Loads the <see cref="VerticalHeadTable"/> from the specified font reader.
+    /// </summary>
+    /// <param name="fontReader">The font reader.</param>
+    /// <returns>The <see cref="VerticalHeadTable"/>, or <see langword="null"/> if the table is not present.</returns>
     public static VerticalHeadTable? Load(FontReader fontReader)
     {
         if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
@@ -68,6 +128,11 @@ internal sealed class VerticalHeadTable : Table
         }
     }
 
+    /// <summary>
+    /// Loads the <see cref="VerticalHeadTable"/> from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <returns>The <see cref="VerticalHeadTable"/>.</returns>
     public static VerticalHeadTable Load(BigEndianBinaryReader reader)
     {
         // +---------+----------------------+----------------------------------------------------------------------+

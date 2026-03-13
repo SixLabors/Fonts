@@ -85,19 +85,19 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         => this.TryGetByCulture(name, CultureInfo.InvariantCulture, out family);
 
     /// <inheritdoc/>
-    public FontFamily Add(string path, CultureInfo culture)
+    public FontFamily AddWithCulture(string path, CultureInfo culture)
         => this.AddImpl(path, culture, out _);
 
     /// <inheritdoc/>
-    public FontFamily Add(string path, CultureInfo culture, out FontDescription description)
+    public FontFamily AddWithCulture(string path, CultureInfo culture, out FontDescription description)
         => this.AddImpl(path, culture, out description);
 
     /// <inheritdoc/>
-    public FontFamily Add(Stream stream, CultureInfo culture)
+    public FontFamily AddWithCulture(Stream stream, CultureInfo culture)
         => this.AddImpl(stream, culture, out _);
 
     /// <inheritdoc/>
-    public FontFamily Add(Stream stream, CultureInfo culture, out FontDescription description)
+    public FontFamily AddWithCulture(Stream stream, CultureInfo culture, out FontDescription description)
         => this.AddImpl(stream, culture, out description);
 
     /// <inheritdoc/>

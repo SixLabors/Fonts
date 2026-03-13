@@ -18,6 +18,11 @@ internal readonly struct CffIndexOffset
     /// </summary>
     public readonly int Length;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CffIndexOffset"/> struct.
+    /// </summary>
+    /// <param name="start">The starting offset of the element.</param>
+    /// <param name="len">The length in bytes of the element.</param>
     public CffIndexOffset(int start, int len)
     {
         this.Start = start;
@@ -25,6 +30,7 @@ internal readonly struct CffIndexOffset
     }
 
 #if DEBUG
+    /// <inheritdoc/>
     public override string ToString() => "Start:" + this.Start + ",Length:" + this.Length;
 #endif
 }

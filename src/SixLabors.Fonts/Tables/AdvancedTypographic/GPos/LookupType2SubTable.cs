@@ -16,6 +16,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal static class LookupType2SubTable
 {
+    /// <summary>
+    /// Loads the pair adjustment positioning subtable from the specified reader.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers.</param>
+    /// <param name="markFilteringSet">The mark filtering set index.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
@@ -29,11 +37,22 @@ internal static class LookupType2SubTable
         };
     }
 
+    /// <summary>
+    /// Pair Adjustment Positioning Format 1: adjustments for glyph pairs identified individually by glyph index.
+    /// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/gpos#pair-adjustment-positioning-format-1-adjustments-for-glyph-pairs"/>
+    /// </summary>
     internal sealed class LookupType2Format1SubTable : LookupSubTable
     {
         private readonly CoverageTable coverageTable;
         private readonly PairSetTable[] pairSets;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LookupType2Format1SubTable"/> class.
+        /// </summary>
+        /// <param name="coverageTable">The coverage table.</param>
+        /// <param name="pairSets">The array of pair set tables.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
         public LookupType2Format1SubTable(CoverageTable coverageTable, PairSetTable[] pairSets, LookupFlags lookupFlags, ushort markFilteringSet)
             : base(lookupFlags, markFilteringSet)
         {
@@ -41,6 +60,14 @@ internal static class LookupType2SubTable
             this.pairSets = pairSets;
         }
 
+        /// <summary>
+        /// Loads the Format 1 pair adjustment positioning subtable.
+        /// </summary>
+        /// <param name="reader">The big endian binary reader.</param>
+        /// <param name="offset">The offset to the beginning of the subtable.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
+        /// <returns>The loaded <see cref="LookupType2Format1SubTable"/>.</returns>
         public static LookupType2Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             // Pair Adjustment Positioning Subtable format 1.
@@ -86,6 +113,7 @@ internal static class LookupType2SubTable
             return new LookupType2Format1SubTable(coverageTable, pairSets, lookupFlags, markFilteringSet);
         }
 
+        /// <inheritdoc/>
         public override bool TryUpdatePosition(
             FontMetrics fontMetrics,
             GPosTable table,
@@ -130,13 +158,28 @@ internal static class LookupType2SubTable
             return false;
         }
 
+        /// <summary>
+        /// Represents a PairSet table containing an array of PairValueRecords, ordered by the glyph ID of the second glyph.
+        /// </summary>
         internal sealed class PairSetTable
         {
             private readonly PairValueRecord[] pairValueRecords;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="PairSetTable"/> class.
+            /// </summary>
+            /// <param name="pairValueRecords">The array of pair value records.</param>
             private PairSetTable(PairValueRecord[] pairValueRecords)
                 => this.pairValueRecords = pairValueRecords;
 
+            /// <summary>
+            /// Loads the pair set table from the specified reader.
+            /// </summary>
+            /// <param name="reader">The big endian binary reader.</param>
+            /// <param name="offset">The offset to the beginning of the pair set table.</param>
+            /// <param name="valueFormat1">The value format for the first glyph.</param>
+            /// <param name="valueFormat2">The value format for the second glyph.</param>
+            /// <returns>The loaded <see cref="PairSetTable"/>.</returns>
             public static PairSetTable Load(BigEndianBinaryReader reader, long offset, ValueFormat valueFormat1, ValueFormat valueFormat2)
             {
                 // +-----------------+----------------------------------+---------------------------------------+
@@ -158,6 +201,12 @@ internal static class LookupType2SubTable
                 return new PairSetTable(pairValueRecords);
             }
 
+            /// <summary>
+            /// Tries to find a <see cref="PairValueRecord"/> for the specified second glyph ID using binary search.
+            /// </summary>
+            /// <param name="glyphId">The glyph ID of the second glyph in the pair.</param>
+            /// <param name="pairValueRecord">When this method returns, contains the matching pair value record if found.</param>
+            /// <returns><see langword="true"/> if a matching record was found; otherwise, <see langword="false"/>.</returns>
             public bool TryGetPairValueRecord(ushort glyphId, [NotNullWhen(true)] out PairValueRecord pairValueRecord)
             {
                 // Records are ordered by SecondGlyph, so use binary search.
@@ -189,6 +238,10 @@ internal static class LookupType2SubTable
         }
     }
 
+    /// <summary>
+    /// Pair Adjustment Positioning Format 2: adjustments for glyph pairs identified by glyph class.
+    /// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/gpos#pair-adjustment-positioning-format-2-class-pair-adjustment"/>
+    /// </summary>
     internal sealed class LookupType2Format2SubTable : LookupSubTable
     {
         private readonly CoverageTable coverageTable;
@@ -196,6 +249,15 @@ internal static class LookupType2SubTable
         private readonly ClassDefinitionTable classDefinitionTable1;
         private readonly ClassDefinitionTable classDefinitionTable2;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LookupType2Format2SubTable"/> class.
+        /// </summary>
+        /// <param name="coverageTable">The coverage table.</param>
+        /// <param name="class1Records">The array of Class1 records.</param>
+        /// <param name="classDefinitionTable1">The class definition table for the first glyph.</param>
+        /// <param name="classDefinitionTable2">The class definition table for the second glyph.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
         public LookupType2Format2SubTable(
             CoverageTable coverageTable,
             Class1Record[] class1Records,
@@ -211,6 +273,14 @@ internal static class LookupType2SubTable
             this.classDefinitionTable2 = classDefinitionTable2;
         }
 
+        /// <summary>
+        /// Loads the Format 2 pair adjustment positioning subtable.
+        /// </summary>
+        /// <param name="reader">The big endian binary reader.</param>
+        /// <param name="offset">The offset to the beginning of the subtable.</param>
+        /// <param name="lookupFlags">The lookup qualifiers.</param>
+        /// <param name="markFilteringSet">The mark filtering set index.</param>
+        /// <returns>The loaded <see cref="LookupType2Format2SubTable"/>.</returns>
         public static LookupType2Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             // Pair Adjustment Positioning Subtable format 2.
@@ -266,6 +336,7 @@ internal static class LookupType2SubTable
             return new LookupType2Format2SubTable(coverageTable, class1Records, classDefTable1, classDefTable2, lookupFlags, markFilteringSet);
         }
 
+        /// <inheritdoc/>
         public override bool TryUpdatePosition(
             FontMetrics fontMetrics,
             GPosTable table,

@@ -364,6 +364,10 @@ internal partial class TrueTypeInterpreter
         }
     }
 
+    /// <summary>
+    /// Resets all twilight zone points to the origin and clears their touch state,
+    /// preventing stale data from leaking between glyph programs.
+    /// </summary>
     private void ResetTwilightZone()
     {
         // In FreeType, twilight points are defined to have original coordinates at (0,0).
@@ -2985,59 +2989,155 @@ internal partial class TrueTypeInterpreter
 #endif
 
 #pragma warning disable SA1201 // Elements should appear in the correct order
+    /// <summary>
+    /// Specifies the rounding mode used by the TrueType interpreter.
+    /// </summary>
     private enum RoundMode
 #pragma warning restore SA1201 // Elements should appear in the correct order
     {
+        /// <summary>
+        /// Round to the nearest half-grid line.
+        /// </summary>
         ToHalfGrid,
+
+        /// <summary>
+        /// Round to the nearest grid line.
+        /// </summary>
         ToGrid,
+
+        /// <summary>
+        /// Round to the nearest double-grid line.
+        /// </summary>
         ToDoubleGrid,
+
+        /// <summary>
+        /// Round down to the nearest grid line.
+        /// </summary>
         DownToGrid,
+
+        /// <summary>
+        /// Round up to the nearest grid line.
+        /// </summary>
         UpToGrid,
+
+        /// <summary>
+        /// No rounding.
+        /// </summary>
         Off,
+
+        /// <summary>
+        /// Super-rounding with a period of 1.0.
+        /// </summary>
         Super,
+
+        /// <summary>
+        /// Super-rounding with a period of sqrt(2)/2.
+        /// </summary>
         Super45
     }
 
+    /// <summary>
+    /// Flags controlling instruction execution behavior, set by the INSTCTRL instruction.
+    /// </summary>
     [Flags]
     private enum InstructionControlFlags
     {
+        /// <summary>
+        /// No special instruction control.
+        /// </summary>
         None,
+
+        /// <summary>
+        /// Inhibit grid fitting (disables hinting).
+        /// </summary>
         InhibitGridFitting = 0x1,
+
+        /// <summary>
+        /// Use the default graphics state instead of the state saved by the prep program.
+        /// </summary>
         UseDefaultGraphicsState = 0x2,
+
+        /// <summary>
+        /// Native ClearType mode is active.
+        /// </summary>
         NativeClearType = 0x4
     }
 
+    /// <summary>
+    /// Tracks which axes a point has been touched (moved) along by hinting instructions.
+    /// Used by IUP (Interpolate Untouched Points) to determine which points need interpolation.
+    /// </summary>
     [Flags]
     private enum TouchState
     {
+        /// <summary>
+        /// The point has not been touched.
+        /// </summary>
         None = 0,
+
+        /// <summary>
+        /// The point has been touched along the X axis.
+        /// </summary>
         X = 0x1,
+
+        /// <summary>
+        /// The point has been touched along the Y axis.
+        /// </summary>
         Y = 0x2,
+
+        /// <summary>
+        /// The point has been touched along both axes.
+        /// </summary>
         Both = X | Y
     }
 
+    /// <summary>
+    /// An immutable snapshot of an instruction stream position, used to store function
+    /// and instruction definitions (FDEF/IDEF) for later execution via CALL/LOOPCALL.
+    /// </summary>
     private readonly struct InstructionStream
     {
         private readonly ReadOnlyMemory<byte> instructions;
         private readonly int ip;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="InstructionStream"/> struct.
+        /// </summary>
+        /// <param name="instructions">The instruction bytecode buffer.</param>
+        /// <param name="offset">The byte offset into the buffer.</param>
         public InstructionStream(ReadOnlyMemory<byte> instructions, int offset)
         {
             this.instructions = instructions;
             this.ip = offset;
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this stream references a valid instruction buffer.
+        /// </summary>
         public bool IsValid => !this.instructions.IsEmpty;
 
+        /// <summary>
+        /// Creates a mutable <see cref="StackInstructionStream"/> positioned at this stream's offset.
+        /// </summary>
+        /// <returns>A new <see cref="StackInstructionStream"/>.</returns>
         public StackInstructionStream ToStack() => new(this.instructions, this.ip);
     }
 
+    /// <summary>
+    /// A mutable, stack-allocated instruction stream that reads TrueType bytecode
+    /// sequentially and supports forward/backward jumps.
+    /// </summary>
     private ref struct StackInstructionStream
     {
         private readonly ReadOnlyMemory<byte> origin;
         private readonly ReadOnlySpan<byte> instructions;
         private int ip;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StackInstructionStream"/> struct.
+        /// </summary>
+        /// <param name="instructions">The instruction bytecode buffer.</param>
+        /// <param name="offset">The byte offset to start reading from.</param>
         public StackInstructionStream(ReadOnlyMemory<byte> instructions, int offset)
         {
             this.origin = instructions;
@@ -3045,10 +3145,20 @@ internal partial class TrueTypeInterpreter
             this.ip = offset;
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this stream references a valid instruction buffer.
+        /// </summary>
         public readonly bool IsValid => !this.instructions.IsEmpty;
 
+        /// <summary>
+        /// Gets a value indicating whether the instruction pointer has reached the end of the buffer.
+        /// </summary>
         public readonly bool Done => this.ip >= this.instructions.Length;
 
+        /// <summary>
+        /// Reads the next byte from the stream and advances the instruction pointer.
+        /// </summary>
+        /// <returns>The byte value.</returns>
         public int NextByte()
         {
             ReadOnlySpan<byte> span = this.instructions;
@@ -3063,6 +3173,10 @@ internal partial class TrueTypeInterpreter
             return b;
         }
 
+        /// <summary>
+        /// Skips the specified number of bytes in the stream.
+        /// </summary>
+        /// <param name="count">The number of bytes to skip.</param>
         public void Skip(int count)
         {
             this.ip += count;
@@ -3072,38 +3186,96 @@ internal partial class TrueTypeInterpreter
             }
         }
 
+        /// <summary>
+        /// Reads the next byte as an <see cref="OpCode"/>.
+        /// </summary>
+        /// <returns>The opcode.</returns>
         public OpCode NextOpCode() => (OpCode)this.NextByte();
 
+        /// <summary>
+        /// Reads the next two bytes as a signed 16-bit word (big-endian).
+        /// </summary>
+        /// <returns>The signed word value.</returns>
         public int NextWord() => (short)(ushort)((this.NextByte() << 8) | this.NextByte());
 
+        /// <summary>
+        /// Skips the specified number of 16-bit words in the stream.
+        /// </summary>
+        /// <param name="count">The number of words to skip.</param>
         public void SkipWord(int count) => this.Skip(count * 2);
 
+        /// <summary>
+        /// Moves the instruction pointer by the specified byte offset (can be negative for backward jumps).
+        /// </summary>
+        /// <param name="offset">The byte offset to jump.</param>
         public void Jump(int offset) => this.ip += offset;
 
+        /// <summary>
+        /// Creates an immutable <see cref="InstructionStream"/> snapshot at the current position.
+        /// </summary>
+        /// <returns>A new <see cref="InstructionStream"/>.</returns>
         public readonly InstructionStream ToMemory() => new(this.origin, this.ip);
 
         private static void ThrowEndOfInstructions() => throw new FontException("no more instructions");
     }
 
+    /// <summary>
+    /// Holds the TrueType graphics state registers used during instruction execution.
+    /// This includes vector directions, rounding settings, reference points, and control flags.
+    /// </summary>
     private struct GraphicsState
     {
+        /// <summary>The freedom vector direction.</summary>
         public Vector2 Freedom;
+
+        /// <summary>The dual projection vector, used for original outline measurements.</summary>
         public Vector2 DualProjection;
+
+        /// <summary>The projection vector direction.</summary>
         public Vector2 Projection;
+
+        /// <summary>The instruction control flags set by the INSTCTRL instruction.</summary>
         public InstructionControlFlags InstructionControl;
+
+        /// <summary>The current rounding mode.</summary>
         public RoundMode RoundState;
+
+        /// <summary>The minimum distance value (in pixels, F26Dot6).</summary>
         public float MinDistance;
+
+        /// <summary>The control value cut-in threshold.</summary>
         public float ControlValueCutIn;
+
+        /// <summary>The single width cut-in threshold.</summary>
         public float SingleWidthCutIn;
+
+        /// <summary>The single width value.</summary>
         public float SingleWidthValue;
+
+        /// <summary>The delta base value for DELTAP/DELTAC instructions.</summary>
         public int DeltaBase;
+
+        /// <summary>The delta shift value for DELTAP/DELTAC instructions.</summary>
         public int DeltaShift;
+
+        /// <summary>The loop variable controlling repeated instruction execution.</summary>
         public int Loop;
+
+        /// <summary>Reference point 0.</summary>
         public int Rp0;
+
+        /// <summary>Reference point 1.</summary>
         public int Rp1;
+
+        /// <summary>Reference point 2.</summary>
         public int Rp2;
+
+        /// <summary>Whether auto-flip is enabled for MIAP and MIRP instructions.</summary>
         public bool AutoFlip;
 
+        /// <summary>
+        /// Resets all graphics state fields to their default values.
+        /// </summary>
         public void Reset()
         {
             this.Freedom = Vector2.UnitX;
@@ -3123,13 +3295,30 @@ internal partial class TrueTypeInterpreter
         }
     }
 
+    /// <summary>
+    /// Represents a point zone in the TrueType interpreter. There are two zones:
+    /// the glyph zone (containing the glyph's outline points) and the twilight zone
+    /// (containing points created by instructions for reference purposes).
+    /// </summary>
     private struct Zone
     {
+        /// <summary>The current (hinted) control points.</summary>
         public ControlPoint[] Current;
+
+        /// <summary>The original (unhinted) control points.</summary>
         public ControlPoint[] Original;
+
+        /// <summary>Per-point touch state tracking for IUP interpolation.</summary>
         public TouchState[] TouchState;
+
+        /// <summary>Whether this is the twilight zone.</summary>
         public bool IsTwilight;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Zone"/> struct for the twilight zone.
+        /// </summary>
+        /// <param name="maxTwilightPoints">The maximum number of twilight points.</param>
+        /// <param name="isTwilight">Whether this is the twilight zone.</param>
         public Zone(int maxTwilightPoints, bool isTwilight)
         {
             this.IsTwilight = isTwilight;
@@ -3138,6 +3327,12 @@ internal partial class TrueTypeInterpreter
             this.TouchState = new TouchState[maxTwilightPoints];
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Zone"/> struct for the glyph zone,
+        /// copying the control points to create an original (unhinted) backup.
+        /// </summary>
+        /// <param name="controlPoints">The glyph's control points (used as current points; copied for originals).</param>
+        /// <param name="isTwilight">Whether this is the twilight zone.</param>
         public Zone(ControlPoint[] controlPoints, bool isTwilight)
         {
             this.IsTwilight = isTwilight;
@@ -3149,45 +3344,116 @@ internal partial class TrueTypeInterpreter
             this.TouchState = new TouchState[controlPoints.Length];
         }
 
+        /// <summary>
+        /// Gets the current (hinted) position of the point at the specified index.
+        /// </summary>
+        /// <param name="index">The point index.</param>
+        /// <returns>The current position.</returns>
         public readonly Vector2 GetCurrent(int index) => this.Current[index].Point;
 
+        /// <summary>
+        /// Gets the original (unhinted) position of the point at the specified index.
+        /// </summary>
+        /// <param name="index">The point index.</param>
+        /// <returns>The original position.</returns>
         public readonly Vector2 GetOriginal(int index) => this.Original[index].Point;
     }
 
+    /// <summary>
+    /// A fixed-capacity integer stack used by the TrueType bytecode interpreter.
+    /// Values are stored as 32-bit integers; F26Dot6 and F2Dot14 conversions are handled at push/pop time.
+    /// </summary>
     private class ExecutionStack
     {
         private readonly int[] s;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExecutionStack"/> class.
+        /// </summary>
+        /// <param name="maxStack">The maximum stack depth.</param>
         public ExecutionStack(int maxStack) => this.s = new int[maxStack];
 
+        /// <summary>
+        /// Gets the current number of elements on the stack.
+        /// </summary>
         public int Count { get; private set; }
 
+        /// <summary>
+        /// Gets the maximum capacity of the stack.
+        /// </summary>
         public int Capacity => this.s.Length;
 
+        /// <summary>
+        /// Peeks at the top element without removing it.
+        /// </summary>
+        /// <returns>The top element value.</returns>
         public int Peek() => this.Peek(0);
 
+        /// <summary>
+        /// Pops the top element and returns it as a boolean (non-zero is <see langword="true"/>).
+        /// </summary>
+        /// <returns>The boolean value.</returns>
         public bool PopBool() => this.Pop() != 0;
 
+        /// <summary>
+        /// Pops the top element and converts it from F26Dot6 to a float.
+        /// </summary>
+        /// <returns>The float value.</returns>
         public float PopFloat() => F26Dot6ToFloat(this.Pop());
 
+        /// <summary>
+        /// Pushes a boolean value onto the stack (1 for <see langword="true"/>, 0 for <see langword="false"/>).
+        /// </summary>
+        /// <param name="value">The boolean value to push.</param>
         public void Push(bool value) => this.Push(value ? 1 : 0);
 
+        /// <summary>
+        /// Pushes a float value onto the stack, converting it to F26Dot6 format.
+        /// </summary>
+        /// <param name="value">The float value to push.</param>
         public void Push(float value) => this.Push(FloatToF26Dot6(value));
 
+        /// <summary>
+        /// Clears all elements from the stack.
+        /// </summary>
         public void Clear() => this.Count = 0;
 
+        /// <summary>
+        /// Pushes the current stack depth onto the stack.
+        /// </summary>
         public void Depth() => this.Push(this.Count);
 
+        /// <summary>
+        /// Duplicates the top element on the stack.
+        /// </summary>
         public void Duplicate() => this.Push(this.Peek());
 
+        /// <summary>
+        /// Copies the element at the index specified by the top stack value.
+        /// </summary>
         public void Copy() => this.Copy(this.Pop() - 1);
 
+        /// <summary>
+        /// Copies the element at the specified index (from top) and pushes it.
+        /// </summary>
+        /// <param name="index">The zero-based index from the top of the stack.</param>
         public void Copy(int index) => this.Push(this.Peek(index));
 
+        /// <summary>
+        /// Moves the element at the index specified by the top stack value to the top.
+        /// </summary>
         public void Move() => this.Move(this.Pop() - 1);
 
+        /// <summary>
+        /// Rolls the top three elements (equivalent to Move(2)).
+        /// </summary>
         public void Roll() => this.Move(2);
 
+        /// <summary>
+        /// Moves the element at the specified index to the top of the stack,
+        /// shifting elements above it down by one position.
+        /// </summary>
+        /// <param name="index">The zero-based index from the top of the stack.</param>
         public void Move(int index)
         {
             int c = this.Count;
@@ -3201,6 +3467,9 @@ internal partial class TrueTypeInterpreter
             a[c - 1] = val;
         }
 
+        /// <summary>
+        /// Swaps the top two elements on the stack.
+        /// </summary>
         public void Swap()
         {
             int c = this.Count;
@@ -3213,6 +3482,10 @@ internal partial class TrueTypeInterpreter
             (a[c - 2], a[c - 1]) = (a[c - 1], a[c - 2]);
         }
 
+        /// <summary>
+        /// Pushes an integer value onto the stack.
+        /// </summary>
+        /// <param name="value">The integer value to push.</param>
         public void Push(int value)
         {
             if (this.Count == this.s.Length)
@@ -3223,6 +3496,10 @@ internal partial class TrueTypeInterpreter
             this.s[this.Count++] = value;
         }
 
+        /// <summary>
+        /// Pops and returns the top element from the stack.
+        /// </summary>
+        /// <returns>The popped integer value.</returns>
         public int Pop()
         {
             if (this.Count == 0)
@@ -3233,6 +3510,11 @@ internal partial class TrueTypeInterpreter
             return this.s[--this.Count];
         }
 
+        /// <summary>
+        /// Peeks at the element at the specified index from the top of the stack without removing it.
+        /// </summary>
+        /// <param name="index">The zero-based index from the top of the stack.</param>
+        /// <returns>The integer value at the specified position.</returns>
         public int Peek(int index)
         {
             if (index < 0 || index >= this.Count)

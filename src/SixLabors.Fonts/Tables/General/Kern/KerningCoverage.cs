@@ -1,10 +1,23 @@
-﻿// Copyright (c) Six Labors.
+// Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
 namespace SixLabors.Fonts.Tables.General.Kern;
 
+/// <summary>
+/// Represents the coverage field of a kerning subtable, describing the format
+/// and properties of the kerning data.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/kern"/>
+/// </summary>
 internal readonly struct KerningCoverage
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="KerningCoverage"/> struct.
+    /// </summary>
+    /// <param name="horizontal">Whether the table contains horizontal kerning data.</param>
+    /// <param name="hasMinimum">Whether the table contains minimum values instead of kerning values.</param>
+    /// <param name="crossStream">Whether kerning is perpendicular to the flow of text.</param>
+    /// <param name="overrideAccumulator">Whether the kerning value should replace the currently accumulated value.</param>
+    /// <param name="format">The subtable format number.</param>
     private KerningCoverage(bool horizontal, bool hasMinimum, bool crossStream, bool overrideAccumulator, byte format)
     {
         this.Horizontal = horizontal;
@@ -14,16 +27,39 @@ internal readonly struct KerningCoverage
         this.Format = format;
     }
 
+    /// <summary>
+    /// Gets a value indicating whether the table contains horizontal kerning data.
+    /// If <see langword="false"/>, the table contains vertical kerning data.
+    /// </summary>
     public bool Horizontal { get; }
 
+    /// <summary>
+    /// Gets a value indicating whether the table contains minimum values.
+    /// If <see langword="false"/>, the table contains kerning values.
+    /// </summary>
     public bool HasMinimum { get; }
 
+    /// <summary>
+    /// Gets a value indicating whether kerning is perpendicular to the flow of text.
+    /// </summary>
     public bool CrossStream { get; }
 
+    /// <summary>
+    /// Gets a value indicating whether the value in this table should replace
+    /// the value currently being accumulated.
+    /// </summary>
     public bool OverrideAccumulator { get; }
 
+    /// <summary>
+    /// Gets the format of the subtable. Only formats 0 and 2 have been defined.
+    /// </summary>
     public byte Format { get; }
 
+    /// <summary>
+    /// Reads a <see cref="KerningCoverage"/> from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The binary reader positioned at the coverage field.</param>
+    /// <returns>The parsed <see cref="KerningCoverage"/>.</returns>
     public static KerningCoverage Read(BigEndianBinaryReader reader)
     {
         // The coverage field is divided into the following sub-fields, with sizes given in bits:

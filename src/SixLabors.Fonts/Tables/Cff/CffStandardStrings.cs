@@ -10,6 +10,9 @@ namespace SixLabors.Fonts.Tables.Cff;
 /// </summary>
 internal static class CffStandardStrings
 {
+    /// <summary>
+    /// The lookup table mapping standard SID values to their string names.
+    /// </summary>
     private static readonly string[] StringIdentifierToString =
     {
         ".notdef",
@@ -405,8 +408,16 @@ internal static class CffStandardStrings
         "Semibold"
     };
 
+    /// <summary>
+    /// Gets the number of standard strings defined in the CFF specification.
+    /// </summary>
     public static int Count { get; } = StringIdentifierToString.Length;
 
+    /// <summary>
+    /// Gets the standard string name for the given SID (String Identifier).
+    /// </summary>
+    /// <param name="sid">The standard string identifier index.</param>
+    /// <returns>The standard string name.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string GetName(int sid) => StringIdentifierToString[sid];
 }

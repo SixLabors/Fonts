@@ -305,6 +305,9 @@ internal partial class TrueTypeInterpreter
     ];
 
 #pragma warning disable SA1201 // Elements should appear in the correct order
+    /// <summary>
+    /// TrueType instruction opcodes used by the bytecode interpreter.
+    /// </summary>
     private enum OpCode : byte
 #pragma warning restore SA1201 // Elements should appear in the correct order
     {

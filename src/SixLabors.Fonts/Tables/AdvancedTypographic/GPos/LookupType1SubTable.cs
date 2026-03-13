@@ -12,6 +12,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal static class LookupType1SubTable
 {
+    /// <summary>
+    /// Loads the single adjustment positioning subtable from the specified reader.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers.</param>
+    /// <param name="markFilteringSet">The mark filtering set index.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
@@ -26,11 +34,22 @@ internal static class LookupType1SubTable
     }
 }
 
+/// <summary>
+/// Single Adjustment Positioning Format 1: applies the same positioning value to all glyphs in the Coverage table.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/gpos#single-adjustment-positioning-format-1-single-positioning-value"/>
+/// </summary>
 internal sealed class LookupType1Format1SubTable : LookupSubTable
 {
     private readonly ValueRecord valueRecord;
     private readonly CoverageTable coverageTable;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LookupType1Format1SubTable"/> class.
+    /// </summary>
+    /// <param name="valueRecord">The positioning value record applied to all covered glyphs.</param>
+    /// <param name="coverageTable">The coverage table.</param>
+    /// <param name="lookupFlags">The lookup qualifiers.</param>
+    /// <param name="markFilteringSet">The mark filtering set index.</param>
     private LookupType1Format1SubTable(ValueRecord valueRecord, CoverageTable coverageTable, LookupFlags lookupFlags, ushort markFilteringSet)
         : base(lookupFlags, markFilteringSet)
     {
@@ -38,6 +57,14 @@ internal sealed class LookupType1Format1SubTable : LookupSubTable
         this.coverageTable = coverageTable;
     }
 
+    /// <summary>
+    /// Loads the Format 1 single adjustment positioning subtable.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers.</param>
+    /// <param name="markFilteringSet">The mark filtering set index.</param>
+    /// <returns>The loaded <see cref="LookupType1Format1SubTable"/>.</returns>
     public static LookupType1Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         // SinglePosFormat1
@@ -63,6 +90,7 @@ internal sealed class LookupType1Format1SubTable : LookupSubTable
         return new LookupType1Format1SubTable(valueRecord, coverageTable, lookupFlags, markFilteringSet);
     }
 
+    /// <inheritdoc/>
     public override bool TryUpdatePosition(
         FontMetrics fontMetrics,
         GPosTable table,
@@ -90,11 +118,22 @@ internal sealed class LookupType1Format1SubTable : LookupSubTable
     }
 }
 
+/// <summary>
+/// Single Adjustment Positioning Format 2: applies a unique positioning value to each glyph in the Coverage table.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/gpos#single-adjustment-positioning-format-2-array-of-positioning-values"/>
+/// </summary>
 internal sealed class LookupType1Format2SubTable : LookupSubTable
 {
     private readonly CoverageTable coverageTable;
     private readonly ValueRecord[] valueRecords;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LookupType1Format2SubTable"/> class.
+    /// </summary>
+    /// <param name="valueRecords">The array of positioning value records, one per covered glyph.</param>
+    /// <param name="coverageTable">The coverage table.</param>
+    /// <param name="lookupFlags">The lookup qualifiers.</param>
+    /// <param name="markFilteringSet">The mark filtering set index.</param>
     private LookupType1Format2SubTable(ValueRecord[] valueRecords, CoverageTable coverageTable, LookupFlags lookupFlags, ushort markFilteringSet)
         : base(lookupFlags, markFilteringSet)
     {
@@ -102,6 +141,14 @@ internal sealed class LookupType1Format2SubTable : LookupSubTable
         this.coverageTable = coverageTable;
     }
 
+    /// <summary>
+    /// Loads the Format 2 single adjustment positioning subtable.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers.</param>
+    /// <param name="markFilteringSet">The mark filtering set index.</param>
+    /// <returns>The loaded <see cref="LookupType1Format2SubTable"/>.</returns>
     public static LookupType1Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         // SinglePosFormat2
@@ -134,6 +181,7 @@ internal sealed class LookupType1Format2SubTable : LookupSubTable
         return new LookupType1Format2SubTable(valueRecords, coverageTable, lookupFlags, markFilteringSet);
     }
 
+    /// <inheritdoc/>
     public override bool TryUpdatePosition(
         FontMetrics fontMetrics,
         GPosTable table,

@@ -12,7 +12,7 @@ namespace DrawWithImageSharp;
 /// <summary>
 /// A custom glyph builder used to render character and text bounds.
 /// </summary>
-internal class CustomGlyphBuilder : GlyphBuilder
+internal sealed class CustomGlyphBuilder : GlyphBuilder
 {
     private readonly List<FontRectangle> glyphBounds = [];
 

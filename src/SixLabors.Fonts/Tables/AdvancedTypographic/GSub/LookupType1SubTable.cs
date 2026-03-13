@@ -12,6 +12,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub;
 /// </summary>
 internal static class LookupType1SubTable
 {
+    /// <summary>
+    /// Loads the single substitution lookup subtable from the given offset.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the substitution subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
+    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
     public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
@@ -26,11 +34,30 @@ internal static class LookupType1SubTable
     }
 }
 
+/// <summary>
+/// Implements single substitution format 1. The substitute glyph ID is calculated by adding
+/// a delta value to the original glyph ID.
+/// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#11-single-substitution-format-1"/>
+/// </summary>
 internal sealed class LookupType1Format1SubTable : LookupSubTable
 {
+    /// <summary>
+    /// The delta value to add to the original glyph ID to produce the substitute glyph ID.
+    /// </summary>
     private readonly ushort deltaGlyphId;
+
+    /// <summary>
+    /// The coverage table that defines the set of input glyph IDs.
+    /// </summary>
     private readonly CoverageTable coverageTable;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LookupType1Format1SubTable"/> class.
+    /// </summary>
+    /// <param name="deltaGlyphId">The delta value to add to the original glyph ID.</param>
+    /// <param name="coverageTable">The coverage table defining input glyphs.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
     private LookupType1Format1SubTable(ushort deltaGlyphId, CoverageTable coverageTable, LookupFlags lookupFlags, ushort markFilteringSet)
         : base(lookupFlags, markFilteringSet)
     {
@@ -38,6 +65,14 @@ internal sealed class LookupType1Format1SubTable : LookupSubTable
         this.coverageTable = coverageTable;
     }
 
+    /// <summary>
+    /// Loads the single substitution format 1 subtable from the given offset.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the substitution subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
+    /// <returns>The loaded <see cref="LookupType1Format1SubTable"/>.</returns>
     public static LookupType1Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         // SingleSubstFormat1
@@ -58,6 +93,7 @@ internal sealed class LookupType1Format1SubTable : LookupSubTable
         return new LookupType1Format1SubTable(deltaGlyphId, coverageTable, lookupFlags, markFilteringSet);
     }
 
+    /// <inheritdoc />
     public override bool TrySubstitution(
         FontMetrics fontMetrics,
         GSubTable table,
@@ -82,11 +118,30 @@ internal sealed class LookupType1Format1SubTable : LookupSubTable
     }
 }
 
+/// <summary>
+/// Implements single substitution format 2. Each input glyph is mapped to a specific
+/// substitute glyph via an array ordered by coverage index.
+/// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#12-single-substitution-format-2"/>
+/// </summary>
 internal sealed class LookupType1Format2SubTable : LookupSubTable
 {
+    /// <summary>
+    /// The coverage table that defines the set of input glyph IDs.
+    /// </summary>
     private readonly CoverageTable coverageTable;
+
+    /// <summary>
+    /// The array of substitute glyph IDs, ordered by coverage index.
+    /// </summary>
     private readonly ushort[] substituteGlyphs;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LookupType1Format2SubTable"/> class.
+    /// </summary>
+    /// <param name="substituteGlyphs">The array of substitute glyph IDs.</param>
+    /// <param name="coverageTable">The coverage table defining input glyphs.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
     private LookupType1Format2SubTable(ushort[] substituteGlyphs, CoverageTable coverageTable, LookupFlags lookupFlags, ushort markFilteringSet)
         : base(lookupFlags, markFilteringSet)
     {
@@ -94,6 +149,14 @@ internal sealed class LookupType1Format2SubTable : LookupSubTable
         this.coverageTable = coverageTable;
     }
 
+    /// <summary>
+    /// Loads the single substitution format 2 subtable from the given offset.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader.</param>
+    /// <param name="offset">The offset to the beginning of the substitution subtable.</param>
+    /// <param name="lookupFlags">The lookup qualifiers flags.</param>
+    /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
+    /// <returns>The loaded <see cref="LookupType1Format2SubTable"/>.</returns>
     public static LookupType1Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         // SingleSubstFormat2
@@ -117,6 +180,7 @@ internal sealed class LookupType1Format2SubTable : LookupSubTable
         return new LookupType1Format2SubTable(substituteGlyphIds, coverageTable, lookupFlags, markFilteringSet);
     }
 
+    /// <inheritdoc />
     public override bool TrySubstitution(
         FontMetrics fontMetrics,
         GSubTable table,

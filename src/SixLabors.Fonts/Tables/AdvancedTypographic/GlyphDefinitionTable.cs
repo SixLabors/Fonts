@@ -15,20 +15,46 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 /// </summary>
 internal sealed class GlyphDefinitionTable : Table
 {
+    /// <summary>
+    /// The OpenType table tag for the GDEF table.
+    /// </summary>
     internal const string TableName = "GDEF";
 
+    /// <summary>
+    /// Gets the class definition table for glyph types (base, ligature, mark, component).
+    /// </summary>
     public ClassDefinitionTable? GlyphClassDefinition { get; private set; }
 
+    /// <summary>
+    /// Gets the attachment point list table for identifying glyph attachment points.
+    /// </summary>
     public AttachmentListTable? AttachmentListTable { get; private set; }
 
+    /// <summary>
+    /// Gets the ligature caret list table for positioning carets within ligatures.
+    /// </summary>
     public LigatureCaretList? LigatureCaretList { get; private set; }
 
+    /// <summary>
+    /// Gets the class definition table for mark attachment types.
+    /// </summary>
     public ClassDefinitionTable? MarkAttachmentClassDef { get; private set; }
 
+    /// <summary>
+    /// Gets the mark glyph sets table for filtering marks during lookup processing.
+    /// </summary>
     public MarkGlyphSetsTable? MarkGlyphSetsTable { get; private set; }
 
+    /// <summary>
+    /// Gets the item variation store table for variable font GDEF variations.
+    /// </summary>
     public ItemVariationStore? ItemVariationStore { get; private set; }
 
+    /// <summary>
+    /// Loads the <see cref="GlyphDefinitionTable"/> from the font reader.
+    /// </summary>
+    /// <param name="reader">The font reader.</param>
+    /// <returns>The <see cref="GlyphDefinitionTable"/>, or <see langword="null"/> if not present.</returns>
     public static GlyphDefinitionTable? Load(FontReader reader)
     {
         if (!reader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
@@ -42,6 +68,12 @@ internal sealed class GlyphDefinitionTable : Table
         }
     }
 
+    /// <summary>
+    /// Tries to get the glyph class for the specified glyph.
+    /// </summary>
+    /// <param name="glyphId">The glyph identifier.</param>
+    /// <param name="glyphClass">When this method returns, contains the glyph class if found.</param>
+    /// <returns><see langword="true"/> if the glyph class was found; otherwise, <see langword="false"/>.</returns>
     public bool TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass)
     {
         glyphClass = null;
@@ -55,6 +87,12 @@ internal sealed class GlyphDefinitionTable : Table
         return true;
     }
 
+    /// <summary>
+    /// Tries to get the mark attachment class for the specified glyph.
+    /// </summary>
+    /// <param name="glyphId">The glyph identifier.</param>
+    /// <param name="markAttachmentClass">When this method returns, contains the mark attachment class if found.</param>
+    /// <returns><see langword="true"/> if the mark attachment class was found; otherwise, <see langword="false"/>.</returns>
     public bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass)
     {
         markAttachmentClass = null;
@@ -68,9 +106,20 @@ internal sealed class GlyphDefinitionTable : Table
         return true;
     }
 
+    /// <summary>
+    /// Determines whether the specified glyph belongs to the given mark glyph set.
+    /// </summary>
+    /// <param name="markGlyphSetIndex">The index of the mark glyph set.</param>
+    /// <param name="glyphId">The glyph identifier.</param>
+    /// <returns><see langword="true"/> if the glyph is in the set; otherwise, <see langword="false"/>.</returns>
     public bool IsInMarkGlyphSet(ushort markGlyphSetIndex, ushort glyphId)
         => this.MarkGlyphSetsTable?.Contains(markGlyphSetIndex, glyphId) == true;
 
+    /// <summary>
+    /// Loads the <see cref="GlyphDefinitionTable"/> from a big endian binary reader.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <returns>The <see cref="GlyphDefinitionTable"/>.</returns>
     public static GlyphDefinitionTable Load(BigEndianBinaryReader reader)
     {
         // Header version 1.0

@@ -13,8 +13,18 @@ internal sealed class ScriptList : Dictionary<Tag, ScriptListTable>
 {
     private readonly Tag scriptTag;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ScriptList"/> class.
+    /// </summary>
+    /// <param name="scriptTag">The tag of the first (default) script in the list.</param>
     private ScriptList(Tag scriptTag) => this.scriptTag = scriptTag;
 
+    /// <summary>
+    /// Loads the <see cref="ScriptList"/> from the binary reader at the specified offset.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Offset from the beginning of the GPOS or GSUB table to the ScriptList table.</param>
+    /// <returns>The <see cref="ScriptList"/>, or <see langword="null"/> if the script count is zero.</returns>
     public static ScriptList? Load(BigEndianBinaryReader reader, long offset)
     {
         // ScriptListTable
@@ -56,12 +66,27 @@ internal sealed class ScriptList : Dictionary<Tag, ScriptListTable>
         return scriptList;
     }
 
-    // Dictionaries are unordered.
+    /// <summary>
+    /// Gets the default script table (the first script in the list).
+    /// Dictionaries are unordered, so this uses the stored first script tag.
+    /// </summary>
+    /// <returns>The default <see cref="ScriptListTable"/>.</returns>
     public ScriptListTable Default() => this[this.scriptTag];
 }
 
+/// <summary>
+/// A Script table identifies the language systems supported by a script and contains a default
+/// language system table and an array of language system tables.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/chapter2#script-table-and-language-system-record"/>
+/// </summary>
 internal sealed class ScriptListTable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ScriptListTable"/> class.
+    /// </summary>
+    /// <param name="langSysTables">The array of language system tables.</param>
+    /// <param name="defaultLang">The default language system table, or <see langword="null"/> if none.</param>
+    /// <param name="scriptTag">The 4-byte script identification tag.</param>
     private ScriptListTable(LangSysTable[] langSysTables, LangSysTable? defaultLang, Tag scriptTag)
     {
         this.LangSysTables = langSysTables;
@@ -69,12 +94,28 @@ internal sealed class ScriptListTable
         this.ScriptTag = scriptTag;
     }
 
+    /// <summary>
+    /// Gets the 4-byte script identification tag.
+    /// </summary>
     public Tag ScriptTag { get; }
 
+    /// <summary>
+    /// Gets the default language system table, or <see langword="null"/> if none is defined.
+    /// </summary>
     public LangSysTable? DefaultLangSysTable { get; }
 
+    /// <summary>
+    /// Gets the array of language system tables for this script.
+    /// </summary>
     public LangSysTable[] LangSysTables { get; }
 
+    /// <summary>
+    /// Loads the <see cref="ScriptListTable"/> from the binary reader at the specified offset.
+    /// </summary>
+    /// <param name="scriptTag">The 4-byte script identification tag.</param>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Offset from the beginning of the Script table.</param>
+    /// <returns>The <see cref="ScriptListTable"/>.</returns>
     public static ScriptListTable Load(Tag scriptTag, BigEndianBinaryReader reader, long offset)
     {
         // ScriptListTable
@@ -127,22 +168,46 @@ internal sealed class ScriptListTable
         return new ScriptListTable(langSysTables, defaultLangSysTable, scriptTag);
     }
 
+    /// <summary>
+    /// A LangSysRecord contains a language system tag and its offset to the LangSys table.
+    /// </summary>
     private readonly struct LangSysRecord
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LangSysRecord"/> struct.
+        /// </summary>
+        /// <param name="langSysTag">The 4-byte language system tag identifier.</param>
+        /// <param name="langSysOffset">The offset to the LangSys table from the beginning of the Script table.</param>
         public LangSysRecord(uint langSysTag, ushort langSysOffset)
         {
             this.LangSysTag = langSysTag;
             this.LangSysOffset = langSysOffset;
         }
 
+        /// <summary>
+        /// Gets the 4-byte language system tag identifier.
+        /// </summary>
         public uint LangSysTag { get; }
 
+        /// <summary>
+        /// Gets the offset to the LangSys table from the beginning of the Script table.
+        /// </summary>
         public ushort LangSysOffset { get; }
     }
 }
 
+/// <summary>
+/// The Language System table (LangSys) identifies language-system features for a script.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/chapter2#language-system-table"/>
+/// </summary>
 internal sealed class LangSysTable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LangSysTable"/> class.
+    /// </summary>
+    /// <param name="langSysTag">The 4-byte language system tag identifier.</param>
+    /// <param name="requiredFeatureIndex">The index of a required feature; 0xFFFF if none.</param>
+    /// <param name="featureIndices">The array of indices into the FeatureList.</param>
     private LangSysTable(uint langSysTag, ushort requiredFeatureIndex, ushort[] featureIndices)
     {
         this.LangSysTag = langSysTag;
@@ -150,12 +215,28 @@ internal sealed class LangSysTable
         this.FeatureIndices = featureIndices;
     }
 
+    /// <summary>
+    /// Gets the 4-byte language system tag identifier.
+    /// </summary>
     public uint LangSysTag { get; }
 
+    /// <summary>
+    /// Gets the index of a feature required for this language system; 0xFFFF if no required features.
+    /// </summary>
     public ushort RequiredFeatureIndex { get; }
 
+    /// <summary>
+    /// Gets the array of indices into the FeatureList, in arbitrary order.
+    /// </summary>
     public ushort[] FeatureIndices { get; } = Array.Empty<ushort>();
 
+    /// <summary>
+    /// Loads the <see cref="LangSysTable"/> from the binary reader at the specified offset.
+    /// </summary>
+    /// <param name="langSysTag">The 4-byte language system tag identifier.</param>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <param name="offset">Offset from the beginning of the LangSys table.</param>
+    /// <returns>The <see cref="LangSysTable"/>.</returns>
     public static LangSysTable Load(uint langSysTag, BigEndianBinaryReader reader, long offset)
     {
         // +----------+-----------------------------------+-----------------------------------------------------------------------------------------+

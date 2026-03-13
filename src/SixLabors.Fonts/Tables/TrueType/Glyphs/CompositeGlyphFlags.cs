@@ -22,20 +22,78 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs;
 | 0x1000 | UNSCALED_COMPONENT_OFFSET| Bit 12: The composite is designed not to have the component offset scaled.
 | 0xE010 | Reserved                 | Bits 4, 13, 14 and 15 are reserved: set to 0.
  */
+
+/// <summary>
+/// Flags used in composite glyph descriptions within the ‘glyf’ table.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/glyf"/>
+/// </summary>
 [Flags]
 internal enum CompositeGlyphFlags : ushort
 {
-    Args1And2AreWords = 1,    // If this is set, the arguments are words; otherwise, they are bytes.
-    ArgsAreXYValues = 2, // If this is set, the arguments are xy values; otherwise, they are points.
-    RoundXYToGrid = 4,   // For the xy values if the preceding is true.
-    WeHaveAScale = 8,    // This indicates that there is a simple scale for the component. Otherwise, scale = 1.0.
-    Reserved = 16,       // This bit is reserved. Set it to 0.
-    MoreComponents = 32, // Indicates at least one more glyph after this one.
-    WeHaveXAndYScale = 64, // The x direction will use a different scale from the y direction.
-    WeHaveATwoByTwo = 128, // There is a 2 by 2 transformation that will be used to scale the component.
-    WeHaveInstructions = 256, // Following the last component are instructions for the composite character.
-    UseMyMetrics = 512,  // If set, this forces the aw and lsb (and rsb) for the composite to be equal to those from this original glyph. This works for hinted and unhinted characters.
-    OverlapCompound = 1024,  // If set, the components of the compound glyph overlap. Use of this flag is not required in OpenType — that is, it is valid to have components overlap without having this flag set. It may affect behaviors in some platforms, however. (See Apple’s specification for details regarding behavior in Apple platforms.)
-    ScaledComponentOffset = 2048, // The composite is designed to have the component offset scaled.
-    UnscaledComponentOffset = 4096 // The composite is designed not to have the component offset scaled.
+    /// <summary>
+    /// If set, the arguments are 16-bit (uint16 or int16); otherwise, they are bytes (uint8 or int8).
+    /// </summary>
+    Args1And2AreWords = 1,
+
+    /// <summary>
+    /// If set, the arguments are signed xy values; otherwise, they are unsigned point numbers.
+    /// </summary>
+    ArgsAreXYValues = 2,
+
+    /// <summary>
+    /// If set, round the xy values to the nearest grid line.
+    /// </summary>
+    RoundXYToGrid = 4,
+
+    /// <summary>
+    /// Indicates that there is a simple scale for the component. Otherwise, scale = 1.0.
+    /// </summary>
+    WeHaveAScale = 8,
+
+    /// <summary>
+    /// This bit is reserved. Set it to 0.
+    /// </summary>
+    Reserved = 16,
+
+    /// <summary>
+    /// Indicates at least one more glyph after this one.
+    /// </summary>
+    MoreComponents = 32,
+
+    /// <summary>
+    /// The x direction will use a different scale from the y direction.
+    /// </summary>
+    WeHaveXAndYScale = 64,
+
+    /// <summary>
+    /// There is a 2 by 2 transformation that will be used to scale the component.
+    /// </summary>
+    WeHaveATwoByTwo = 128,
+
+    /// <summary>
+    /// Following the last component are instructions for the composite character.
+    /// </summary>
+    WeHaveInstructions = 256,
+
+    /// <summary>
+    /// If set, forces the advance width and side bearings for the composite to be equal
+    /// to those from this component glyph. Works for hinted and unhinted characters.
+    /// </summary>
+    UseMyMetrics = 512,
+
+    /// <summary>
+    /// If set, the components of the compound glyph overlap. Use of this flag is not
+    /// required in OpenType — it is valid to have components overlap without this flag set.
+    /// </summary>
+    OverlapCompound = 1024,
+
+    /// <summary>
+    /// The composite is designed to have the component offset scaled.
+    /// </summary>
+    ScaledComponentOffset = 2048,
+
+    /// <summary>
+    /// The composite is designed not to have the component offset scaled.
+    /// </summary>
+    UnscaledComponentOffset = 4096
 }

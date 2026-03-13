@@ -12,8 +12,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 /// </summary>
 internal class CVarTable : Table
 {
+    /// <summary>
+    /// The table name identifier for the cvar table.
+    /// </summary>
     internal const string TableName = "cvar";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CVarTable"/> class.
+    /// </summary>
+    /// <param name="tupleVariations">The array of tuple variations containing CVT deltas.</param>
     public CVarTable(CVarTupleVariation[] tupleVariations)
         => this.TupleVariations = tupleVariations;
 
@@ -42,6 +49,12 @@ internal class CVarTable : Table
         }
     }
 
+    /// <summary>
+    /// Loads the cvar table from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader positioned at the start of the cvar table.</param>
+    /// <param name="axisCount">The number of variation axes from fvar.</param>
+    /// <returns>The <see cref="CVarTable"/>.</returns>
     public static CVarTable Load(BigEndianBinaryReader reader, int axisCount)
     {
         // cvar — CVT Variations Table
@@ -152,6 +165,13 @@ internal class CVarTable : Table
 /// </summary>
 internal class CVarTupleVariation
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CVarTupleVariation"/> class.
+    /// </summary>
+    /// <param name="tupleVariation">The tuple variation header containing peak coordinates and flags.</param>
+    /// <param name="pointNumbers">The CVT indices this tuple applies to, or null/empty for all CVT entries.</param>
+    /// <param name="deltas">The CVT deltas, or null if deferred.</param>
+    /// <param name="rawDeltaData">The raw serialized delta data for deferred decoding, or null if already decoded.</param>
     public CVarTupleVariation(
         TupleVariation tupleVariation,
         ushort[]? pointNumbers,

@@ -3,6 +3,11 @@
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 
+/// <summary>
+/// Represents the BaseArray table used in MarkToBase attachment positioning (GPOS LookupType 4).
+/// The BaseArray table contains an array of BaseRecords, one for each base glyph, ordered by the base Coverage index.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/gpos#mark-to-base-attachment-positioning-format-1-mark-to-base-attachment-point"/>
+/// </summary>
 internal class BaseArrayTable
 {
     /// <summary>

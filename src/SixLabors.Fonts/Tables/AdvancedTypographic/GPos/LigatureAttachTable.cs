@@ -35,5 +35,8 @@ internal class LigatureAttachTable
         }
     }
 
+    /// <summary>
+    /// Gets the array of component records for this ligature, ordered in writing direction.
+    /// </summary>
     public ComponentRecord[] ComponentRecords { get; }
 }

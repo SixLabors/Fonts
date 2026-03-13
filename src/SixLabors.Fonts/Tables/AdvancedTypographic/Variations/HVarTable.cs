@@ -11,8 +11,18 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 /// </summary>
 internal class HVarTable : Table
 {
+    /// <summary>
+    /// The table name identifier for the HVAR table.
+    /// </summary>
     internal const string TableName = "HVAR";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HVarTable"/> class.
+    /// </summary>
+    /// <param name="itemVariationStore">The item variation store containing delta data.</param>
+    /// <param name="advanceWidthMapping">The optional delta-set index mapping for advance widths.</param>
+    /// <param name="lsbMapping">The optional delta-set index mapping for left side bearings.</param>
+    /// <param name="rsbMapping">The optional delta-set index mapping for right side bearings.</param>
     public HVarTable(
         ItemVariationStore itemVariationStore,
         DeltaSetIndexMap[]? advanceWidthMapping,
@@ -25,14 +35,31 @@ internal class HVarTable : Table
         this.RsbMapping = rsbMapping;
     }
 
+    /// <summary>
+    /// Gets the item variation store containing the variation delta data.
+    /// </summary>
     public ItemVariationStore ItemVariationStore { get; }
 
+    /// <summary>
+    /// Gets the optional delta-set index mapping for advance widths.
+    /// </summary>
     public DeltaSetIndexMap[]? AdvanceWidthMapping { get; }
 
+    /// <summary>
+    /// Gets the optional delta-set index mapping for left side bearings.
+    /// </summary>
     public DeltaSetIndexMap[]? LsbMapping { get; }
 
+    /// <summary>
+    /// Gets the optional delta-set index mapping for right side bearings.
+    /// </summary>
     public DeltaSetIndexMap[]? RsbMapping { get; }
 
+    /// <summary>
+    /// Loads the HVAR table from the specified font reader.
+    /// </summary>
+    /// <param name="reader">The font reader.</param>
+    /// <returns>The <see cref="HVarTable"/>, or <see langword="null"/> if the table is not present.</returns>
     public static HVarTable? Load(FontReader reader)
     {
         if (!reader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
@@ -46,6 +73,11 @@ internal class HVarTable : Table
         }
     }
 
+    /// <summary>
+    /// Loads the HVAR table from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader positioned at the start of the HVAR table.</param>
+    /// <returns>The <see cref="HVarTable"/>.</returns>
     public static HVarTable Load(BigEndianBinaryReader reader)
     {
         // Horizontal metrics variations table

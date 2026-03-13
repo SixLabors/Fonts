@@ -15,12 +15,28 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 /// </summary>
 internal class GPosTable : Table
 {
+    /// <summary>
+    /// The tag for the horizontal kerning feature ('kern').
+    /// </summary>
     private static readonly Tag KernTag = Tag.Parse("kern");
 
+    /// <summary>
+    /// The tag for the vertical kerning feature ('vkrn').
+    /// </summary>
     private static readonly Tag VKernTag = Tag.Parse("vkrn");
 
+    /// <summary>
+    /// The OpenType table tag for the GPOS table.
+    /// </summary>
     internal const string TableName = "GPOS";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GPosTable"/> class.
+    /// </summary>
+    /// <param name="scriptList">The script list table, or <see langword="null"/> if not present.</param>
+    /// <param name="featureList">The feature list table.</param>
+    /// <param name="lookupList">The lookup list table.</param>
+    /// <param name="featureVariations">The feature variations table for variable fonts, or <see langword="null"/>.</param>
     public GPosTable(ScriptList? scriptList, FeatureListTable featureList, LookupListTable lookupList, FeatureVariationsTable? featureVariations = null)
     {
         this.ScriptList = scriptList;
@@ -29,14 +45,31 @@ internal class GPosTable : Table
         this.FeatureVariations = featureVariations;
     }
 
+    /// <summary>
+    /// Gets the script list table, or <see langword="null"/> if not present.
+    /// </summary>
     public ScriptList? ScriptList { get; }
 
+    /// <summary>
+    /// Gets the feature list table.
+    /// </summary>
     public FeatureListTable FeatureList { get; }
 
+    /// <summary>
+    /// Gets the lookup list table containing all positioning lookups.
+    /// </summary>
     public LookupListTable LookupList { get; }
 
+    /// <summary>
+    /// Gets the feature variations table for variable fonts, or <see langword="null"/> if not present.
+    /// </summary>
     public FeatureVariationsTable? FeatureVariations { get; }
 
+    /// <summary>
+    /// Loads the <see cref="GPosTable"/> from the font reader.
+    /// </summary>
+    /// <param name="fontReader">The font reader.</param>
+    /// <returns>The <see cref="GPosTable"/>, or <see langword="null"/> if not present.</returns>
     public static GPosTable? Load(FontReader fontReader)
     {
         if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
@@ -50,6 +83,11 @@ internal class GPosTable : Table
         }
     }
 
+    /// <summary>
+    /// Loads the <see cref="GPosTable"/> from a big endian binary reader.
+    /// </summary>
+    /// <param name="reader">The big endian binary reader.</param>
+    /// <returns>The <see cref="GPosTable"/>.</returns>
     internal static GPosTable Load(BigEndianBinaryReader reader)
     {
         // GPOS Header, Version 1.0
@@ -105,6 +143,13 @@ internal class GPosTable : Table
         return new GPosTable(scriptList, featureList, lookupList, featureVariations);
     }
 
+    /// <summary>
+    /// Tries to update the positions of glyphs in the collection using GPOS lookup rules.
+    /// </summary>
+    /// <param name="fontMetrics">The font metrics.</param>
+    /// <param name="collection">The glyph positioning collection.</param>
+    /// <param name="kerned">When this method returns, indicates whether kerning was applied.</param>
+    /// <returns><see langword="true"/> if any positioning was updated; otherwise, <see langword="false"/>.</returns>
     public bool TryUpdatePositions(FontMetrics fontMetrics, GlyphPositioningCollection collection, out bool kerned)
     {
         // Set max constraints to prevent OutOfMemoryException or infinite loops from attacks.
@@ -230,6 +275,14 @@ internal class GPosTable : Table
         return updated;
     }
 
+    /// <summary>
+    /// Tries to get the feature lookups for the given stage feature and script.
+    /// </summary>
+    /// <param name="fontMetrics">The font metrics.</param>
+    /// <param name="stageFeature">The feature tag for the current shaping stage.</param>
+    /// <param name="script">The script class.</param>
+    /// <param name="value">When this method returns, contains the list of feature lookups if found.</param>
+    /// <returns><see langword="true"/> if lookups were found; otherwise, <see langword="false"/>.</returns>
     private bool TryGetFeatureLookups(
         FontMetrics fontMetrics,
         in Tag stageFeature,
@@ -268,6 +321,11 @@ internal class GPosTable : Table
         return value.Count > 0;
     }
 
+    /// <summary>
+    /// Gets the OpenType script tag for the given script class, checking against the font's ScriptList.
+    /// </summary>
+    /// <param name="script">The script class.</param>
+    /// <returns>The matching script tag, or default if not found.</returns>
     private Tag GetUnicodeScriptTag(ScriptClass script)
     {
         if (this.ScriptList is null)
@@ -287,6 +345,13 @@ internal class GPosTable : Table
         return default;
     }
 
+    /// <summary>
+    /// Gets the feature lookups for the given stage feature from the specified language system tables.
+    /// </summary>
+    /// <param name="stageFeature">The feature tag for the current shaping stage.</param>
+    /// <param name="substitutions">Optional feature table substitutions from FeatureVariations.</param>
+    /// <param name="langSysTables">The language system tables to search.</param>
+    /// <returns>A sorted list of feature lookups.</returns>
     private List<(Tag Feature, ushort Index, LookupTable LookupTable)> GetFeatureLookups(
         in Tag stageFeature,
         FeatureTableSubstitutionRecord[]? substitutions,
@@ -321,6 +386,13 @@ internal class GPosTable : Table
         return lookups;
     }
 
+    /// <summary>
+    /// Resolves the feature table for the given index, checking for substitutions from FeatureVariations first.
+    /// </summary>
+    /// <param name="featureList">The feature list table.</param>
+    /// <param name="featureIndex">The feature index.</param>
+    /// <param name="substitutions">Optional feature table substitutions from FeatureVariations.</param>
+    /// <returns>The resolved feature table.</returns>
     private static FeatureTable ResolveFeatureTable(
         FeatureListTable featureList,
         ushort featureIndex,
@@ -340,6 +412,12 @@ internal class GPosTable : Table
         return featureList.FeatureTables[featureIndex];
     }
 
+    /// <summary>
+    /// Maps a script class to an effective script class, checking whether the font supports it.
+    /// Falls back to <see cref="ScriptClass.Default"/> if the script is not present in the font.
+    /// </summary>
+    /// <param name="current">The script class to check.</param>
+    /// <returns>The effective script class.</returns>
     private ScriptClass GetScriptClass(ScriptClass current)
     {
         if (current is ScriptClass.Common or ScriptClass.Unknown or ScriptClass.Inherited)
@@ -366,6 +444,12 @@ internal class GPosTable : Table
         return ScriptClass.Default;
     }
 
+    /// <summary>
+    /// Fixes cursive attachment positioning by propagating Y (or X for vertical) offsets.
+    /// </summary>
+    /// <param name="collection">The glyph positioning collection.</param>
+    /// <param name="index">The starting index.</param>
+    /// <param name="count">The number of glyphs to process.</param>
     private static void FixCursiveAttachment(GlyphPositioningCollection collection, int index, int count)
     {
         LayoutMode layoutMode = collection.TextOptions.LayoutMode;
@@ -394,6 +478,12 @@ internal class GPosTable : Table
         }
     }
 
+    /// <summary>
+    /// Fixes mark attachment positioning by propagating offsets from base glyphs.
+    /// </summary>
+    /// <param name="collection">The glyph positioning collection.</param>
+    /// <param name="index">The starting index.</param>
+    /// <param name="count">The number of glyphs to process.</param>
     private static void FixMarkAttachment(GlyphPositioningCollection collection, int index, int count)
     {
         for (int i = 0; i < count; i++)
@@ -429,6 +519,13 @@ internal class GPosTable : Table
         }
     }
 
+    /// <summary>
+    /// Zeros the advance widths and heights for mark glyphs within the specified range.
+    /// </summary>
+    /// <param name="fontMetrics">The font metrics.</param>
+    /// <param name="collection">The glyph positioning collection.</param>
+    /// <param name="index">The starting index.</param>
+    /// <param name="count">The number of glyphs to process.</param>
     private static void ZeroMarkAdvances(FontMetrics fontMetrics, GlyphPositioningCollection collection, int index, int count)
     {
         for (int i = 0; i < count; i++)
@@ -443,6 +540,13 @@ internal class GPosTable : Table
         }
     }
 
+    /// <summary>
+    /// Updates glyph positions in the collection for the specified range.
+    /// </summary>
+    /// <param name="fontMetrics">The font metrics.</param>
+    /// <param name="collection">The glyph positioning collection.</param>
+    /// <param name="index">The starting index.</param>
+    /// <param name="count">The number of glyphs to process.</param>
     private static void UpdatePositions(FontMetrics fontMetrics, GlyphPositioningCollection collection, int index, int count)
     {
         for (int i = 0; i < count; i++)

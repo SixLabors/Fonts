@@ -11,14 +11,25 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 /// </summary>
 internal class MVarTable : Table
 {
+    /// <summary>
+    /// The table name identifier for the MVAR table.
+    /// </summary>
     internal const string TableName = "MVAR";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MVarTable"/> class.
+    /// </summary>
+    /// <param name="itemVariationStore">The item variation store containing delta data.</param>
+    /// <param name="valueRecords">The array of metric value records.</param>
     public MVarTable(ItemVariationStore itemVariationStore, MetricValueRecord[] valueRecords)
     {
         this.ItemVariationStore = itemVariationStore;
         this.ValueRecords = valueRecords;
     }
 
+    /// <summary>
+    /// Gets the item variation store containing the variation delta data.
+    /// </summary>
     public ItemVariationStore ItemVariationStore { get; }
 
     /// <summary>
@@ -26,6 +37,11 @@ internal class MVarTable : Table
     /// </summary>
     public MetricValueRecord[] ValueRecords { get; }
 
+    /// <summary>
+    /// Loads the MVAR table from the specified font reader.
+    /// </summary>
+    /// <param name="reader">The font reader.</param>
+    /// <returns>The <see cref="MVarTable"/>, or <see langword="null"/> if the table is not present.</returns>
     public static MVarTable? Load(FontReader reader)
     {
         if (!reader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
@@ -39,6 +55,11 @@ internal class MVarTable : Table
         }
     }
 
+    /// <summary>
+    /// Loads the MVAR table from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader positioned at the start of the MVAR table.</param>
+    /// <returns>The <see cref="MVarTable"/>.</returns>
     public static MVarTable Load(BigEndianBinaryReader reader)
     {
         // MVAR — Metrics Variations Table
