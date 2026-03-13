@@ -61,8 +61,15 @@ internal sealed class Format4SubTable : CMapSubTable
                 }
 
                 long offset = (seg.Offset / 2) + (charAsInt - seg.Start);
-                glyphId = this.GlyphIds[offset - this.Segments.Length + seg.Index];
+                long idx = offset - this.Segments.Length + seg.Index;
 
+                if (idx < 0 || idx >= this.GlyphIds.Length)
+                {
+                    glyphId = 0;
+                    return false;
+                }
+
+                glyphId = this.GlyphIds[idx];
                 return true;
             }
         }
@@ -102,7 +109,15 @@ internal sealed class Format4SubTable : CMapSubTable
                 for (long j = 0; j <= (seg.End - seg.Start); j++)
                 {
                     long offset = (seg.Offset / 2) + j;
-                    if (this.GlyphIds[offset - this.Segments.Length + seg.Index] == glyphId)
+                    long idx = offset - this.Segments.Length + seg.Index;
+
+                    if (idx < 0 || idx >= this.GlyphIds.Length)
+                    {
+                        codePoint = default;
+                        return false;
+                    }
+
+                    if (this.GlyphIds[idx] == glyphId)
                     {
                         codePoint = new CodePoint((int)(seg.Start + j));
                         return true;

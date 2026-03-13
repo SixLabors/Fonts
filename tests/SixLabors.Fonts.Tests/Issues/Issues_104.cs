@@ -12,16 +12,17 @@ public class Issues_104
     [Fact]
     public void Format4SubTableWithSegmentsHasOffByOneWhenOverflowing()
     {
-        Segment[] segments = new[]
-        {
+        Segment[] segments =
+        [
             new Segment(
                 0,
                 ushort.MaxValue, // end
                 ushort.MinValue, // start of range
                 short.MaxValue, // delta
                 0) // zero to force correctly tested codepath
-        };
-        var tbl = new Format4SubTable(
+        ];
+
+        Format4SubTable tbl = new(
             0,
             WellKnownIds.PlatformIDs.Windows,
             0,
