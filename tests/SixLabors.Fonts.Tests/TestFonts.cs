@@ -411,6 +411,8 @@ public static class TestFonts
         public static string Issue97File => GetFullPath("Issues/Issue97.fuzz");
 
         public static string Issue298File => GetFullPath("Issues/StyleScript.ttf");
+
+        public static string Issue512_CreateCffGlyphMetrics => GetFullPath("Issues/StreamFontMetri.CreateCffGlyphMetrics.otf");
     }
 
     private static Stream OpenStream(string path) =>
