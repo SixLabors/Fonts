@@ -379,18 +379,19 @@ internal sealed class IndicShaper : DefaultShaper
 
                         GlyphShapingData current = substitutionCollection[i];
                         IndicShapingEngineInfo currentInfo = current.IndicShapingEngineInfo!;
-                        glyphs[0] = current.GlyphId;
-                        glyphs[1] = circleId;
+                        glyphs[0] = circleId;
+                        glyphs[1] = current.GlyphId;
 
                         substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
 
-                        // Update shaping info for newly inserted data.
-                        GlyphShapingData dotted = substitutionCollection[i + 1];
+                        // The dotted circle is now at position i (inherits original shaping info).
+                        // Update it to be a dotted circle base.
+                        GlyphShapingData dotted = substitutionCollection[i];
                         dotted.IndicShapingEngineInfo!.Category = Categories.Dotted_Circle;
                         dotted.IndicShapingEngineInfo.Position = Positions.End;
-                        dotted.IndicShapingEngineInfo.SyllableType = currentInfo.SyllableType;
-                        dotted.IndicShapingEngineInfo.Syllable = currentInfo.Syllable;
 
+                        // The original mark glyph is now at position i + 1 (copy of original info).
+                        // Its shaping info is already correct from the copy.
                         end++;
                         max++;
                     }
@@ -705,6 +706,15 @@ internal sealed class IndicShaper : DefaultShaper
                     }
                     else if (info.Position != Positions.SMVD)
                     {
+                        // If an MPst follows an SM, update the SM's position to match
+                        // so they move together during reordering.
+                        if (info.Category == Categories.MPst
+                            && i > start
+                            && substitutionCollection[i - 1].IndicShapingEngineInfo?.Category == Categories.SM)
+                        {
+                            substitutionCollection[i - 1].IndicShapingEngineInfo!.Position = info.Position;
+                        }
+
                         lastPosition = info.Position;
                     }
                 }
@@ -732,7 +742,7 @@ internal sealed class IndicShaper : DefaultShaper
 
                         last = i;
                     }
-                    else if ((FlagUnsafe(info.Category) & Flag(Categories.M)) != 0)
+                    else if ((FlagUnsafe(info.Category) & (Flag(Categories.M) | Flag(Categories.MPst))) != 0)
                     {
                         last = i;
                     }

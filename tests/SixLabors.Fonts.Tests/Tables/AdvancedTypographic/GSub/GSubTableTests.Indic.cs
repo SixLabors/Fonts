@@ -2,6 +2,9 @@
 // Licensed under the Six Labors Split License.
 
 using SixLabors.Fonts.Rendering;
+using SixLabors.Fonts.Unicode;
+using SixLabors.Fonts.Unicode.Resources;
+using Categories = SixLabors.Fonts.Unicode.Resources.IndicShapingData.Categories;
 
 namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub;
 
@@ -445,6 +448,61 @@ public partial class GSubTableTests
         {
             Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
         }
+    }
+
+    // https://github.com/SixLabors/Fonts/issues/XXX
+    [Fact]
+    public void CanShapeGurmukhiText_WithConjuncts()
+    {
+        // "ਤੇਜ਼ ਭੂਰੀ ਲੂੰਬੜੀ ਆਲਸੀ ਕੁੱਤੇ ਉੱਤੇ ਛਾਲ ਮਾਰਦੀ ਹੈ। ਸੰਯੁਕਤ: ੱਕ ੱਤ"
+        // The diacritic at ੱਕ (addak + kakka) is not offset correctly.
+        const string input =
+            "\u0a24\u0a47\u0a1c\u0a3c \u0a2d\u0a42\u0a30\u0a40 \u0a32\u0a42\u0a70\u0a2c\u0a5c\u0a40 " +
+            "\u0a06\u0a32\u0a38\u0a40 \u0a15\u0a41\u0a71\u0a24\u0a47 \u0a09\u0a71\u0a24\u0a47 " +
+            "\u0a1b\u0a3e\u0a32 \u0a2e\u0a3e\u0a30\u0a26\u0a40 \u0a39\u0a48\u0964 " +
+            "\u0a38\u0a70\u0a2f\u0a41\u0a15\u0a24: \u0a71\u0a15 \u0a71\u0a24";
+
+        int[] expectedGlyphIndices =
+        [
+            32, 56, 64, 3,          // ਤੇਜ਼ (space)
+            40, 55, 43, 53, 3,      // ਭੂਰੀ (space)
+            44, 55, 77, 39, 65, 53, 3, // ਲੂੰਬੜੀ (space)
+            8, 44, 48, 53, 3,       // ਆਲਸੀ (space)
+            17, 54, 78, 32, 56, 3,  // ਕੁੱਤੇ (space)
+            275, 32, 56, 3,         // ਉੱਤੇ (space)
+            23, 51, 44, 3,          // ਛਾਲ (space)
+            41, 51, 43, 34, 53, 3,  // ਮਾਰਦੀ (space)
+            49, 57, 267, 3,         // ਹੈ। (space)
+            48, 77, 42, 54, 17, 32, 240, 3, // ਸੰਯੁਕਤ: (space)
+            272, 78, 17, 3,         // ੱਕ (space) — dotted circle base before addak mark
+            272, 78, 32             // ੱਤ — dotted circle base before addak mark
+        ];
+
+        ColorGlyphRenderer renderer = new();
+        TextRenderer.RenderTextTo(renderer, input, new TextOptions(GurmukhiNotoSansTTF));
+
+        Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+        for (int i = 0; i < expectedGlyphIndices.Length; i++)
+        {
+            Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
+        }
+    }
+
+    // Verifies that the generated Indic shaping trie assigns the correct
+    // HarfBuzz-compatible categories to codepoints whose mappings were
+    // previously incorrect.
+    [Theory]
+    [InlineData(0x0CF1, (int)Categories.CS)]   // KANNADA SIGN JIHVAMULIYA
+    [InlineData(0x0CF2, (int)Categories.CS)]   // KANNADA SIGN UPADHMANIYA
+    [InlineData(0x17CC, (int)Categories.CM)]   // KHMER SIGN ROBAT
+    [InlineData(0x09FE, (int)Categories.SM)]   // BENGALI SANDHI MARK
+    [InlineData(0x0A71, (int)Categories.SM)]   // GURMUKHI ADDAK
+    [InlineData(0x0A40, (int)Categories.MPst)] // GURMUKHI VOWEL SIGN II
+    public void IndicShapingCategoryIsCorrect(int codePoint, int expectedCategory)
+    {
+        int properties = UnicodeData.GetIndicShapingProperties((uint)codePoint);
+        int actual = properties >> 8;
+        Assert.Equal(expectedCategory, actual);
     }
 
     [Theory]

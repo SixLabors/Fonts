@@ -1,26 +1,28 @@
 c = C | Ra;               # is_consonant
 n = (ZWNJ? RS)? (N N?)?;  # is_consonant_modifier
 z = ZWJ | ZWNJ;           # is_joiner
-h = H | Coeng;            # is_halant_or_coeng
+h = H | Coeng;            # is_halant_or_coeng (Coeng for Khmer)
 reph = Ra H | Repha;      # possible reph
+sm = SM | SMPst;
 
 cn = c ZWJ? n?;
 forced_rakar = ZWJ H ZWJ Ra;
 symbol = Symbol N?;
-matra_group = z{0,3} M N? (H | forced_rakar)?;
-# syllable_tail = (z? SM SM? ZWNJ?)? A{0,3} VD{0,2};
-syllable_tail = (z? SM SM? ZWNJ?)? A{0,3};
+matra_group = z* (M | sm? MPst) N? (H | forced_rakar)?;
+syllable_tail = (z? sm sm? ZWNJ?)? A*;
 place_holder = Placeholder | Dotted_Circle;
 halant_group = z? h (ZWJ N?)?;
 final_halant_group = halant_group | h ZWNJ;
 medial_group = CM?;
-halant_or_matra_group = (final_halant_group | (h ZWJ)? matra_group{0,4}) (Coeng (cn | V))?;
+halant_or_matra_group = (final_halant_group | matra_group*) (Coeng (cn | V))?;
 
-consonant_syllable = Repha? (cn halant_group){0,4} cn medial_group halant_or_matra_group syllable_tail;
-vowel_syllable = reph? V n? (ZWJ | (halant_group cn){0,4} medial_group halant_or_matra_group syllable_tail);
-standalone_cluster = (Repha? Placeholder | reph? Dotted_Circle) n? (halant_group cn){0,4} medial_group halant_or_matra_group syllable_tail;
+complex_syllable_tail = (halant_group cn)* medial_group halant_or_matra_group syllable_tail;
+
+consonant_syllable = (Repha | CS)? cn complex_syllable_tail;
+vowel_syllable = reph? V n? (ZWJ | complex_syllable_tail);
+standalone_cluster = ((Repha | CS)? Placeholder | reph? Dotted_Circle) n? complex_syllable_tail;
 symbol_cluster = symbol syllable_tail;
-broken_cluster = reph? n? (halant_group cn){0,4} medial_group halant_or_matra_group syllable_tail;
+broken_cluster = reph? n? complex_syllable_tail;
 
 Main =
     consonant_syllable:consonant_syllable
