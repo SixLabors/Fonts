@@ -131,7 +131,7 @@ internal static class LookupType3SubTable
             }
 
             int coverageNext = this.coverageTable.CoverageIndexOf(nextGlyphId);
-            if (coverageNext < 0)
+            if (coverageNext < 0 || coverageNext >= this.entryExitAnchors.Length)
             {
                 return false;
             }
@@ -144,7 +144,7 @@ internal static class LookupType3SubTable
             }
 
             int coverage = this.coverageTable.CoverageIndexOf(glyphId);
-            if (coverage < 0)
+            if (coverage < 0 || coverage >= this.entryExitAnchors.Length)
             {
                 return false;
             }

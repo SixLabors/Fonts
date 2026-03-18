@@ -130,7 +130,7 @@ internal static class LookupType5SubTable
             }
 
             int markIndex = this.markCoverage.CoverageIndexOf(glyphId);
-            if (markIndex < 0)
+            if (markIndex < 0 || markIndex >= this.markArrayTable.MarkRecords.Length)
             {
                 return false;
             }
@@ -153,7 +153,7 @@ internal static class LookupType5SubTable
 
             ushort baseGlyphId = collection[baseGlyphIndex].GlyphId;
             int ligatureIndex = this.ligatureCoverage.CoverageIndexOf(baseGlyphId);
-            if (ligatureIndex < 0)
+            if (ligatureIndex < 0 || ligatureIndex >= this.ligatureArrayTable.LigatureAttachTables.Length)
             {
                 return false;
             }

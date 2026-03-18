@@ -161,7 +161,7 @@ internal sealed class LookupType4Format1SubTable : LookupSubTable
         }
 
         int offset = this.coverageTable.CoverageIndexOf(glyphId);
-        if (offset <= -1)
+        if (offset < 0 || offset >= this.ligatureSetTables.Length)
         {
             return false;
         }

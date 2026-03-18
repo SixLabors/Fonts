@@ -7,5 +7,5 @@ public class Issues_97
 {
     [Fact]
     public void ShouldNotThrowNullReferenceExceptionWhenReaderCannotBeCreatedForTable()
-        => Assert.Throws<InvalidFontTableException>(() => FontDescription.LoadDescription(TestFonts.Issues.Issue97File));
+        => Assert.Throws<InvalidFontTableException>(() => FontDescription.LoadDescription(TestFonts.Issues.Issue97));
 }

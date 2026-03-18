@@ -197,7 +197,7 @@ internal sealed class LookupType1Format2SubTable : LookupSubTable
 
         int offset = this.coverageTable.CoverageIndexOf(glyphId);
 
-        if (offset > -1)
+        if (offset > -1 && offset < this.substituteGlyphs.Length)
         {
             collection.Replace(index, this.substituteGlyphs[offset], feature);
             return true;

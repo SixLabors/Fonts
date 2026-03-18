@@ -197,7 +197,7 @@ internal sealed class LookupType1Format2SubTable : LookupSubTable
         }
 
         int coverage = this.coverageTable.CoverageIndexOf(glyphId);
-        if (coverage > -1)
+        if (coverage > -1 && coverage < this.valueRecords.Length)
         {
             ValueRecord record = this.valueRecords[coverage];
             AdvancedTypographicUtils.ApplyPosition(fontMetrics, collection, index, record, feature);

@@ -129,7 +129,7 @@ internal static class LookupType6SubTable
             }
 
             int mark1Index = this.mark1Coverage.CoverageIndexOf(glyphId);
-            if (mark1Index < 0)
+            if (mark1Index < 0 || mark1Index >= this.mark1ArrayTable.MarkRecords.Length)
             {
                 return false;
             }
@@ -186,7 +186,7 @@ internal static class LookupType6SubTable
             }
 
             int mark2Index = this.mark2Coverage.CoverageIndexOf(prevGlyph.GlyphId);
-            if (mark2Index < 0)
+            if (mark2Index < 0 || mark2Index >= this.mark2ArrayTable.Mark2Records.Length)
             {
                 return false;
             }
