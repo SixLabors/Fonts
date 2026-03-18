@@ -7,5 +7,5 @@ public class Issues_96
 {
     [Fact]
     public void ShouldNotThrowArgumentExceptionWhenFontContainsDuplicateTables()
-        => Assert.Throws<EndOfStreamException>(() => FontDescription.LoadDescription(TestFonts.Issues.Issue96File));
+        => Assert.Throws<EndOfStreamException>(() => FontDescription.LoadDescription(TestFonts.Issues.Issue96));
 }

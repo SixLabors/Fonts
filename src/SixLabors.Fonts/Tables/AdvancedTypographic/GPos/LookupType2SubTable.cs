@@ -134,7 +134,7 @@ internal static class LookupType2SubTable
             }
 
             int coverage = this.coverageTable.CoverageIndexOf(glyphId);
-            if (coverage > -1)
+            if (coverage > -1 && coverage < this.pairSets.Length)
             {
                 PairSetTable pairSet = this.pairSets[coverage];
                 ushort glyphId2 = collection[index + 1].GlyphId;

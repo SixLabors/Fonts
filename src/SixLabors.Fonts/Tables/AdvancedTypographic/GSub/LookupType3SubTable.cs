@@ -131,7 +131,7 @@ internal sealed class LookupType3Format1SubTable : LookupSubTable
 
         int offset = this.coverageTable.CoverageIndexOf(glyphId);
 
-        if (offset > -1)
+        if (offset > -1 && offset < this.alternateSetTables.Length)
         {
             // TODO: We're just choosing the first alternative here.
             // It looks like the choice is arbitrary and should be determined by

@@ -127,7 +127,7 @@ internal static class LookupType4SubTable
             }
 
             int markIndex = this.markCoverage.CoverageIndexOf(glyphId);
-            if (markIndex == -1)
+            if (markIndex < 0 || markIndex >= this.markArrayTable.MarkRecords.Length)
             {
                 return false;
             }
@@ -150,7 +150,7 @@ internal static class LookupType4SubTable
 
             ushort baseGlyphId = collection[baseGlyphIndex].GlyphId;
             int baseIndex = this.baseCoverage.CoverageIndexOf(baseGlyphId);
-            if (baseIndex < 0)
+            if (baseIndex < 0 || baseIndex >= this.baseArrayTable.BaseRecords.Length)
             {
                 return false;
             }

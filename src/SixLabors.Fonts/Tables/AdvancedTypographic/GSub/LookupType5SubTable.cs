@@ -95,7 +95,7 @@ internal sealed class LookupType5Format1SubTable : LookupSubTable
         }
 
         int offset = this.coverageTable.CoverageIndexOf(glyphId);
-        if (offset <= -1)
+        if (offset < 0 || offset >= this.seqRuleSetTables.Length)
         {
             return false;
         }

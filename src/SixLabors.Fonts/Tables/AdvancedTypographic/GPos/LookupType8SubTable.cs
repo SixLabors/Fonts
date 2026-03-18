@@ -95,7 +95,7 @@ internal static class LookupType8SubTable
 
             // Search for the current glyph in the Coverage table.
             int offset = this.coverageTable.CoverageIndexOf(glyphId);
-            if (offset <= -1)
+            if (offset < 0 || offset >= this.seqRuleSetTables?.Length)
             {
                 return false;
             }
@@ -226,14 +226,17 @@ internal static class LookupType8SubTable
 
             // Search for the current glyph in the Coverage table.
             int offset = this.coverageTable.CoverageIndexOf(glyphId);
-            if (offset <= -1)
+            if (offset < 0)
             {
                 return false;
             }
 
             // Search in the class definition table to find the class value assigned to the currently glyph.
             int classId = this.inputClassDefinitionTable.ClassIndexOf(glyphId);
-            ChainedClassSequenceRuleTable[]? rules = classId >= 0 && classId < this.sequenceRuleSetTables.Length ? this.sequenceRuleSetTables[classId].SubRules : null;
+            ChainedClassSequenceRuleTable[]? rules = classId >= 0 && classId < this.sequenceRuleSetTables.Length
+                ? this.sequenceRuleSetTables[classId].SubRules
+                : null;
+
             if (rules is null)
             {
                 return false;

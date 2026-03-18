@@ -405,13 +405,15 @@ public static class TestFonts
 
     public static class Issues
     {
-        public static string Issue96File => GetFullPath("Issues/Issue96.ttf");
+        public static string Issue96 => GetFullPath("Issues/Issue96.ttf");
 
-        public static string Issue97File => GetFullPath("Issues/Issue97.ttf");
+        public static string Issue97 => GetFullPath("Issues/Issue97.ttf");
 
-        public static string Issue298File => GetFullPath("Issues/StyleScript.ttf");
+        public static string Issue298 => GetFullPath("Issues/StyleScript.ttf");
 
-        public static string Issue512_CreateCffGlyphMetrics => GetFullPath("Issues/StreamFontMetri.CreateCffGlyphMetrics.otf");
+        public static string Issue512 => GetFullPath("Issues/Issue512.otf");
+
+        public static string Issue514 => GetFullPath("Issues/Issue514.ttf");
     }
 
     /// <summary>

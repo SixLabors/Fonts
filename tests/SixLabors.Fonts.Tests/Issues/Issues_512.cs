@@ -10,7 +10,7 @@ public class Issues_512
     {
         const string text = "Hello";
 
-        FontFamily family = TestFonts.GetFontFamily(TestFonts.Issues.Issue512_CreateCffGlyphMetrics);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.Issues.Issue512);
 
         Font font = family.CreateFont(12);
 

@@ -90,7 +90,7 @@ internal static class LookupType7SubTable
             }
 
             int offset = this.coverageTable.CoverageIndexOf(glyphId);
-            if (offset <= -1)
+            if (offset < 0 || offset >= this.seqRuleSetTables.Length)
             {
                 return false;
             }
@@ -201,7 +201,7 @@ internal static class LookupType7SubTable
             }
 
             int offset = this.classDefinitionTable.ClassIndexOf(glyphId);
-            if (offset < 0)
+            if (offset < 0 || offset >= this.sequenceRuleSetTables.Length)
             {
                 return false;
             }
