@@ -10,7 +10,7 @@ public class HeadTableTests
     [Fact]
     public void LoadHead()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
 
         writer.WriteHeadTable(new HeadTable(
             HeadTable.HeadFlags.None,
@@ -22,7 +22,7 @@ public class HeadTableTests
             0,
             HeadTable.IndexLocationFormats.Offset16));
 
-        var head = HeadTable.Load(writer.GetReader());
+        HeadTable head = HeadTable.Load(writer.GetReader());
 
         Assert.Equal(HeadTable.HeadFlags.None, head.Flags);
         Assert.Equal(HeadTable.HeadMacStyle.Italic | HeadTable.HeadMacStyle.Bold, head.MacStyle);

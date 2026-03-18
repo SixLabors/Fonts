@@ -74,7 +74,7 @@ public static class TestImageExtensions
 
     private static string FormatTestDetails(params object[] properties)
     {
-        if (properties?.Any() != true)
+        if (properties is null || properties.Length == 0)
         {
             return "-";
         }

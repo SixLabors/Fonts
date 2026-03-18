@@ -5,7 +5,7 @@ namespace SixLabors.Fonts.Tests;
 
 public class FontFamilyTests
 {
-    private readonly FontFamily[] families = SystemFonts.Families.ToArray();
+    private readonly FontFamily[] families = [.. SystemFonts.Families];
 
     [Fact]
     public void EqualNullTests()

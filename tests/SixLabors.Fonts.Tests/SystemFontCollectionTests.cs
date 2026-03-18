@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Collections;
 using System.Runtime.InteropServices;
 
 namespace SixLabors.Fonts.Tests;
@@ -84,7 +85,7 @@ public class SystemFontCollectionTests
     [Fact]
     public void CanEnumerateNonGenericSystemFontMetrics()
     {
-        System.Collections.IEnumerator enumerator = ((IReadOnlyFontMetricsCollection)SysFontCollection).GetEnumerator();
+        IEnumerator enumerator = ((IReadOnlyFontMetricsCollection)SysFontCollection).GetEnumerator();
 
         int count = 0;
         while (enumerator.MoveNext())
@@ -99,7 +100,7 @@ public class SystemFontCollectionTests
     [Fact]
     public void CanGetAllMetricsByCulture()
     {
-        var collection = (IReadOnlyFontMetricsCollection)SysFontCollection;
+        IReadOnlyFontMetricsCollection collection = SysFontCollection;
         FontFamily family = SysFontCollection.Families.First();
         IEnumerable<FontMetrics> metrics = collection.GetAllMetrics(family.Name, family.Culture);
 
@@ -140,22 +141,22 @@ public class SystemFontCollectionTests
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             Assert.Contains(@"Windows\Fonts", exception.Message, StringComparison.OrdinalIgnoreCase);
-            Assert.Contains(exception.SearchDirectories, e => e.IndexOf(@"Windows\Fonts", StringComparison.OrdinalIgnoreCase) != -1);
+            Assert.Contains(exception.SearchDirectories, e => e.Contains(@"Windows\Fonts", StringComparison.OrdinalIgnoreCase));
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             Assert.Contains(@"/share/fonts/", exception.Message, StringComparison.OrdinalIgnoreCase);
-            Assert.Contains(exception.SearchDirectories, e => e.IndexOf("share/fonts", StringComparison.OrdinalIgnoreCase) != -1);
+            Assert.Contains(exception.SearchDirectories, e => e.Contains("share/fonts", StringComparison.OrdinalIgnoreCase));
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             Assert.Contains(@"/Library/Fonts/", exception.Message, StringComparison.OrdinalIgnoreCase);
-            Assert.Contains(exception.SearchDirectories, e => e.IndexOf("Library/Fonts", StringComparison.OrdinalIgnoreCase) != -1);
+            Assert.Contains(exception.SearchDirectories, e => e.Contains("Library/Fonts", StringComparison.OrdinalIgnoreCase));
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Create("Android")))
         {
             Assert.Contains(@"/system/fonts/", exception.Message, StringComparison.OrdinalIgnoreCase);
-            Assert.Contains(exception.SearchDirectories, e => e.IndexOf("/system/fonts/", StringComparison.OrdinalIgnoreCase) != -1);
+            Assert.Contains(exception.SearchDirectories, e => e.Contains("/system/fonts/", StringComparison.OrdinalIgnoreCase));
         }
     }
 

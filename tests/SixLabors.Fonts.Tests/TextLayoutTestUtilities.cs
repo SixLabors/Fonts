@@ -17,6 +17,22 @@ namespace SixLabors.Fonts.Tests;
 
 internal static class TextLayoutTestUtilities
 {
+#if SUPPORTS_DRAWING
+    public static void TestImage(
+        int imageWidth,
+        int imageHeight,
+        Action<Image<Rgba32>> renderAction,
+        float percentageTolerance = 0.05F,
+        [CallerMemberName] string test = "",
+        params object[] properties)
+    {
+        using Image<Rgba32> image = new(Configuration.Default, imageWidth, imageHeight, Color.White.ToPixel<Rgba32>());
+        renderAction(image);
+        image.DebugSave("png", test, properties: properties);
+        image.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: properties);
+    }
+#endif
+
     public static void TestLayout(
         string text,
         TextOptions options,

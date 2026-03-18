@@ -33,9 +33,9 @@ internal class FakeFontInstance : StreamFontMetrics
         NameTable name = GenerateNameTable(fontName);
         MaximumProfileTable maxp = GenerateMaxpTable(glyphs);
         CMapTable cmap = GenerateCMapTable(glyphs);
-        var glyf = new FakeGlyphTable(glyphs);
+        FakeGlyphTable glyf = new(glyphs);
         PostTable post = GeneratePostTable();
-        var kern = new KerningTable(Array.Empty<KerningSubTable>());
+        KerningTable kern = new(Array.Empty<KerningSubTable>());
         OS2Table os2 = GenerateOS2TableWithVaryingVerticalFontMetrics();
         HorizontalMetricsTable htmx = GenerateHorizontalMetricsTable(glyphs);
         VerticalHeadTable vhea = GenerateVerticalHeadTable();
@@ -60,9 +60,9 @@ internal class FakeFontInstance : StreamFontMetrics
         NameTable name = GenerateNameTable(fontName);
         MaximumProfileTable maxp = GenerateMaxpTable(glyphs);
         CMapTable cmap = GenerateCMapTable(glyphs);
-        var glyf = new FakeGlyphTable(glyphs);
+        FakeGlyphTable glyf = new(glyphs);
         PostTable post = GeneratePostTable();
-        var kern = new KerningTable(Array.Empty<KerningSubTable>());
+        KerningTable kern = new(Array.Empty<KerningSubTable>());
         OS2Table os2 = GenerateOS2Table();
         HorizontalMetricsTable htmx = GenerateHorizontalMetricsTable(glyphs);
         VerticalHeadTable vhea = GenerateVerticalHeadTable();
@@ -79,29 +79,23 @@ internal class FakeFontInstance : StreamFontMetrics
 
     private static List<FakeGlyphSource> GetGlyphs(string text)
     {
-        HashSet<CodePoint> codePoints = new()
-        {
+        HashSet<CodePoint> codePoints =
+        [
             // Regardless of the encoding scheme, character codes that do
             // not correspond to any glyph in the font should be mapped to glyph index 0.
             // The glyph at this location must be a special glyph representing a missing character, commonly known as .notdef.
-            default // Add default at position 0;
-        };
+            default, .. text.AsSpan().EnumerateCodePoints() // Add default at position 0;
+        ];
 
-        foreach (CodePoint codePoint in text.AsSpan().EnumerateCodePoints())
-        {
-            codePoints.Add(codePoint);
-        }
-
-        return codePoints.Select((x, i) => new FakeGlyphSource(x, (ushort)i)).ToList();
+        return [.. codePoints.Select((x, i) => new FakeGlyphSource(x, (ushort)i))];
     }
 
     private static NameTable GenerateNameTable(string name)
         => new(
-            new[]
-            {
+            [
                 new NameRecord(WellKnownIds.PlatformIDs.Windows, 0, WellKnownIds.KnownNameIds.FullFontName, name),
                 new NameRecord(WellKnownIds.PlatformIDs.Windows, 0, WellKnownIds.KnownNameIds.FontFamilyName, name)
-            },
+            ],
             Array.Empty<string>());
 
     private static CMapTable GenerateCMapTable(List<FakeGlyphSource> glyphs)
@@ -123,10 +117,10 @@ internal class FakeFontInstance : StreamFontMetrics
         => new(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, Array.Empty<byte>(), 1, 1, 1, 1, string.Empty, OS2Table.FontStyleSelection.USE_TYPO_METRICS, 1, 1, 35, 8, 12, 33, 11);
 
     private static HorizontalMetricsTable GenerateHorizontalMetricsTable(List<FakeGlyphSource> glyphs)
-        => new(glyphs.Select(_ => (ushort)30).ToArray(), glyphs.Select(_ => (short)10).ToArray());
+        => new([.. glyphs.Select(_ => (ushort)30)], [.. glyphs.Select(_ => (short)10)]);
 
     private static VerticalMetricsTable GenerateVerticalMetricsTable(List<FakeGlyphSource> glyphs)
-        => new(glyphs.Select(_ => (ushort)30).ToArray(), glyphs.Select(_ => (short)10).ToArray());
+        => new([.. glyphs.Select(_ => (ushort)30)], [.. glyphs.Select(_ => (short)10)]);
 
     private static IndexLocationTable GenerateIndexLocationTable(List<FakeGlyphSource> glyphs)
         => new(new uint[glyphs.Count + 1]);

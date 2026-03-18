@@ -30,12 +30,12 @@ public class VariationFontTests
 
     [Fact]
     public void FontVariation_NullTag_ThrowsArgumentException()
-        => Assert.ThrowsAny<ArgumentException>(() => new FontVariation(null!, 700));
+        => Assert.ThrowsAny<ArgumentException>(() => new FontVariation(null, 700));
 
     [Fact]
     public void CanCreateFontWithVariations()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.RobotoFlex);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.RobotoFlex);
         Font baseFont = family.CreateFont(12);
 
         Font variedFont = new(baseFont, new FontVariation("wght", 700));
@@ -48,7 +48,7 @@ public class VariationFontTests
     [Fact]
     public void CanCreateFontWithVariationsViaFontFamily()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.RobotoFlex);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.RobotoFlex);
         Font variedFont = family.CreateFont(12, new FontVariation("wght", 700));
 
         Assert.Single(variedFont.Variations.ToArray());
@@ -57,7 +57,7 @@ public class VariationFontTests
     [Fact]
     public void BaseFontHasEmptyVariations()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.RobotoFlex);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.RobotoFlex);
         Font baseFont = family.CreateFont(12);
 
         Assert.True(baseFont.Variations.IsEmpty);
@@ -67,7 +67,7 @@ public class VariationFontTests
     public void VariationsDoNotAffectNonVariableFont()
     {
         // OpenSans is not a variable font; variations should be silently ignored.
-        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.OpenSansFile);
         Font baseFont = family.CreateFont(12);
         Font variedFont = new(baseFont, new FontVariation("wght", 700));
 
@@ -78,11 +78,11 @@ public class VariationFontTests
     [Fact]
     public void CanLoadVariationAxes_RobotoFlex()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.RobotoFlex);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.RobotoFlex);
         Font font = family.CreateFont(12);
 
-        Assert.True(font.FontMetrics.TryGetVariationAxes(out VariationAxis[]? axes));
-        Assert.Equal(13, axes!.Length);
+        Assert.True(font.FontMetrics.TryGetVariationAxes(out VariationAxis[] axes));
+        Assert.Equal(13, axes.Length);
 
         Assert.Equal("wght", axes[0].Tag);
         Assert.Equal(100, axes[0].Min);
@@ -93,11 +93,11 @@ public class VariationFontTests
     [Fact]
     public void CanLoadVariationAxes_AdobeVFPrototype()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototype);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.AdobeVFPrototype);
         Font font = family.CreateFont(12);
 
-        Assert.True(font.FontMetrics.TryGetVariationAxes(out VariationAxis[]? axes));
-        Assert.Equal(2, axes!.Length);
+        Assert.True(font.FontMetrics.TryGetVariationAxes(out VariationAxis[] axes));
+        Assert.Equal(2, axes.Length);
 
         Assert.Equal("wght", axes[0].Tag);
         Assert.Equal(200, axes[0].Min);
@@ -110,7 +110,7 @@ public class VariationFontTests
     public void GVar_VariedGlyphDiffersFromDefault()
     {
         // Verify that applying a weight variation actually changes glyph outlines.
-        FontFamily family = new FontCollection().Add(TestFonts.TestGVAROne);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.TestGVAROne);
         Font defaultFont = family.CreateFont(12);
         Font variedFont = family.CreateFont(12, new FontVariation("wght", 300));
 
@@ -142,7 +142,7 @@ public class VariationFontTests
             _ => throw new ArgumentException(fontName)
         };
 
-        FontFamily family = new FontCollection().Add(fontPath);
+        FontFamily family = TestFonts.GetFontFamily(fontPath);
         Font variedFont = family.CreateFont(12, new FontVariation("wght", 300));
 
         CodePoint cp = new('彌');
@@ -157,9 +157,9 @@ public class VariationFontTests
     {
         // All three TestGVAR fonts encode the same variation data differently.
         // They should produce identical glyph bounds at the same axis value.
-        Font font1 = new FontCollection().Add(TestFonts.TestGVAROne).CreateFont(12, new FontVariation("wght", 300));
-        Font font2 = new FontCollection().Add(TestFonts.TestGVARTwo).CreateFont(12, new FontVariation("wght", 300));
-        Font font3 = new FontCollection().Add(TestFonts.TestGVARThree).CreateFont(12, new FontVariation("wght", 300));
+        Font font1 = TestFonts.GetFontFamily(TestFonts.TestGVAROne).CreateFont(12, new FontVariation("wght", 300));
+        Font font2 = TestFonts.GetFontFamily(TestFonts.TestGVARTwo).CreateFont(12, new FontVariation("wght", 300));
+        Font font3 = TestFonts.GetFontFamily(TestFonts.TestGVARThree).CreateFont(12, new FontVariation("wght", 300));
 
         CodePoint cp = new('彌');
         font1.TryGetGlyphs(cp, out Glyph? g1);
@@ -177,7 +177,7 @@ public class VariationFontTests
     public void HVAR_AdvanceWidthVariesWithWeight()
     {
         // fontkit: TestGVARFour at wght=150, glyph 'O' should have advanceWidth=706
-        FontFamily family = new FontCollection().Add(TestFonts.TestGVARFour);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.TestGVARFour);
         Font variedFont = family.CreateFont(12, new FontVariation("wght", 150));
 
         CodePoint cp = new('O');
@@ -190,7 +190,7 @@ public class VariationFontTests
     public void HVAR_FallsBackToLastEntry()
     {
         // fontkit: TestHVARTwo at wght=400, glyph 'A' should have advanceWidth=584
-        FontFamily family = new FontCollection().Add(TestFonts.TestHVARTwo);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.TestHVARTwo);
         Font variedFont = family.CreateFont(12, new FontVariation("wght", 400));
 
         CodePoint cp = new('A');
@@ -204,11 +204,11 @@ public class VariationFontTests
     {
         // fontkit: TestGVARFour at default wght (1000), glyph 'O' advanceWidth=700
         // At default axis value the HVAR delta should be zero.
-        FontFamily family = new FontCollection().Add(TestFonts.TestGVARFour);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.TestGVARFour);
         Font defaultFont = family.CreateFont(12);
 
-        Assert.True(defaultFont.FontMetrics.TryGetVariationAxes(out VariationAxis[]? axes));
-        VariationAxis wghtAxis = Assert.Single(axes!, a => a.Tag == "wght");
+        Assert.True(defaultFont.FontMetrics.TryGetVariationAxes(out VariationAxis[] axes));
+        VariationAxis wghtAxis = Assert.Single(axes, a => a.Tag == "wght");
 
         Font variedFont = family.CreateFont(12, new FontVariation("wght", wghtAxis.Default));
 
@@ -223,7 +223,7 @@ public class VariationFontTests
     public void HVAR_AdvanceWidthAtSpecificWeight()
     {
         // fontkit: TestGVARFour at wght=150, glyph 'O' should have advanceWidth=706
-        FontFamily family = new FontCollection().Add(TestFonts.TestGVARFour);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.TestGVARFour);
         Font variedFont = family.CreateFont(12, new FontVariation("wght", 150));
 
         CodePoint cp = new('O');
@@ -235,7 +235,7 @@ public class VariationFontTests
     [Fact]
     public void GVar_AdobeVFPrototype_VariedGlyphDiffersFromDefault()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototype);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.AdobeVFPrototype);
         Font defaultFont = family.CreateFont(12);
         Font lightFont = family.CreateFont(12, new FontVariation("wght", 200));
         Font boldFont = family.CreateFont(12, new FontVariation("wght", 900));
@@ -252,7 +252,7 @@ public class VariationFontTests
     [Fact]
     public void GVar_AdobeVFPrototype_DifferentWeightsProduceDifferentBounds()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototype);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.AdobeVFPrototype);
         Font font200 = family.CreateFont(12, new FontVariation("wght", 200));
         Font font900 = family.CreateFont(12, new FontVariation("wght", 900));
 
@@ -270,7 +270,7 @@ public class VariationFontTests
         // fontkit: AdobeVFPrototype at wght=900, '$' substitutes to 'dollar.nostroke' (glyphId 2).
         // GSUB FeatureVariations activate alternate glyphs based on axis values.
         // Must use TextRenderer to trigger GSUB.
-        FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototype);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.AdobeVFPrototype);
         Font defaultFont = family.CreateFont(12);
         Font heavyFont = family.CreateFont(12, new FontVariation("wght", 900));
 
@@ -289,7 +289,7 @@ public class VariationFontTests
     {
         // AdobeVFPrototype-Subset.otf is the only CFF2 font in the test suite.
         // It contains 3 glyphs: .notdef, '$' (glyph 1), and 'dollar.nostroke' (glyph 2).
-        FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototypeSubset);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.AdobeVFPrototypeSubset);
         Font font = family.CreateFont(12);
 
         Assert.NotNull(font.FontMetrics);
@@ -298,18 +298,18 @@ public class VariationFontTests
     [Fact]
     public void CFF2_CanLoadVariationAxes()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototypeSubset);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.AdobeVFPrototypeSubset);
         Font font = family.CreateFont(12);
 
-        Assert.True(font.FontMetrics.TryGetVariationAxes(out VariationAxis[]? axes));
-        Assert.Equal(2, axes!.Length);
+        Assert.True(font.FontMetrics.TryGetVariationAxes(out VariationAxis[] axes));
+        Assert.Equal(2, axes.Length);
         Assert.Equal("wght", axes[0].Tag);
     }
 
     [Fact]
     public void CFF2_CanCreateFontWithVariation()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototypeSubset);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.AdobeVFPrototypeSubset);
         Font variedFont = family.CreateFont(12, new FontVariation("wght", 900));
 
         Assert.Single(variedFont.Variations.ToArray());
@@ -318,7 +318,7 @@ public class VariationFontTests
     [Fact]
     public void CFF2_RendersGlyphAtDefaultWeight()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototypeSubset);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.AdobeVFPrototypeSubset);
         Font font = family.CreateFont(48);
 
         GlyphRenderer renderer = new();
@@ -331,7 +331,7 @@ public class VariationFontTests
     [Fact]
     public void CFF2_RendersGlyphAtVariedWeight()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototypeSubset);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.AdobeVFPrototypeSubset);
         Font font = family.CreateFont(48, new FontVariation("wght", 900));
 
         GlyphRenderer renderer = new();
@@ -345,7 +345,7 @@ public class VariationFontTests
     public void CFF2_MultipleWeightsRenderSuccessfully()
     {
         // Verify the CFF2 parser handles charstrings at multiple weight values.
-        FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototypeSubset);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.AdobeVFPrototypeSubset);
         Font lightFont = family.CreateFont(48, new FontVariation("wght", 0));
         Font heavyFont = family.CreateFont(48, new FontVariation("wght", 900));
 
@@ -363,7 +363,7 @@ public class VariationFontTests
     public void MVAR_MetricsVaryWithAxisValues()
     {
         // RobotoFlex has MVAR table. Global metrics should change with weight.
-        FontFamily family = new FontCollection().Add(TestFonts.RobotoFlex);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.RobotoFlex);
         Font defaultFont = family.CreateFont(12);
         Font heavyFont = family.CreateFont(12, new FontVariation("wght", 1000));
 
@@ -381,7 +381,7 @@ public class VariationFontTests
     {
         // fontkit: Mada-VF at wght=900, layout 'ف', positions[0] xOffset≈639, yOffset≈542.
         // The mark positioning should differ between default and heavy weights.
-        FontFamily family = new FontCollection().Add(TestFonts.MadaVF);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.MadaVF);
         Font defaultFont = family.CreateFont(72);
         Font heavyFont = family.CreateFont(72, new FontVariation("wght", 900));
 
@@ -403,7 +403,7 @@ public class VariationFontTests
     {
         // Create two different variation instances from the same base font.
         // They should produce different results without corrupting each other.
-        FontFamily family = new FontCollection().Add(TestFonts.TestGVARFour);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.TestGVARFour);
         Font lightFont = family.CreateFont(12, new FontVariation("wght", 150));
         Font heavyFont = family.CreateFont(12, new FontVariation("wght", 900));
 
@@ -427,7 +427,7 @@ public class VariationFontTests
         // Get a glyph from the default font, then create a variation,
         // then get the same glyph from the default font again.
         // The default font should not be affected.
-        FontFamily family = new FontCollection().Add(TestFonts.TestGVARFour);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.TestGVARFour);
         Font defaultFont = family.CreateFont(12);
 
         CodePoint cp = new('O');
@@ -446,7 +446,7 @@ public class VariationFontTests
     [Fact]
     public void TextMeasurer_AdvanceChangesWithVariation()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.RobotoFlex);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.RobotoFlex);
         Font thinFont = family.CreateFont(72, new FontVariation("wght", 100));
         Font heavyFont = family.CreateFont(72, new FontVariation("wght", 1000));
 
@@ -465,7 +465,7 @@ public class VariationFontTests
     [Fact]
     public void TextMeasurer_MultipleAxesWork()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.RobotoFlex);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.RobotoFlex);
         Font font = family.CreateFont(
             72,
             new FontVariation("wght", 700),
@@ -482,7 +482,7 @@ public class VariationFontTests
     [Fact]
     public void Renderer_VariedFontProducesGlyphs()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.TestGVAROne);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.TestGVAROne);
         Font variedFont = family.CreateFont(12, new FontVariation("wght", 300));
 
         GlyphRenderer renderer = new();
@@ -495,7 +495,7 @@ public class VariationFontTests
     [Fact]
     public void Renderer_DifferentVariationsProduceDifferentControlPoints()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.TestGVAROne);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.TestGVAROne);
         Font defaultFont = family.CreateFont(72);
         Font variedFont = family.CreateFont(72, new FontVariation("wght", 300));
 
@@ -527,7 +527,7 @@ public class VariationFontTests
     [Fact]
     public void Renderer_GVar_AdobeVFPrototype_VariedFontProducesGlyphs()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototype);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.AdobeVFPrototype);
         Font variedFont = family.CreateFont(12, new FontVariation("wght", 900));
 
         GlyphRenderer renderer = new();
@@ -539,7 +539,7 @@ public class VariationFontTests
     [Fact]
     public void NotoSansHK_VariableWeight_LoadsSuccessfully()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.NotoSansHKVariableFontWght);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.NotoSansHKVariableFontWght);
         Font thinFont = family.CreateFont(12, new FontVariation("wght", 100));
         Font boldFont = family.CreateFont(12, new FontVariation("wght", 900));
 
@@ -554,7 +554,7 @@ public class VariationFontTests
         // Advance width stays constant at 2600 across weights, but glyph outlines change.
         // Verified against fontkit: star U+2B50 glyphId=184, advance=2600 at all weights,
         // light bbox={233,-320,2367,1720}, bold bbox={203,-350,2397,1750}.
-        FontFamily family = new FontCollection().Add(TestFonts.NotoEmojiVariableFont);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.NotoEmojiVariableFont);
         Font lightFont = family.CreateFont(12, new FontVariation("wght", 300));
         Font boldFont = family.CreateFont(12, new FontVariation("wght", 700));
 
@@ -596,7 +596,7 @@ public class VariationFontTests
     [InlineData(700, "Bold")]
     public void VisualTest_NotoEmoji_WeightVariations(float weight, string label)
     {
-        FontFamily family = new FontCollection().Add(TestFonts.NotoEmojiVariableFont);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.NotoEmojiVariableFont);
         Font font = family.CreateFont(48, new FontVariation("wght", weight));
 
         TextOptions options = new(font);
@@ -614,7 +614,7 @@ public class VariationFontTests
     [InlineData(1000, "Heavy")]
     public void VisualTest_RobotoFlex_WeightVariations(float weight, string label)
     {
-        FontFamily family = new FontCollection().Add(TestFonts.RobotoFlex);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.RobotoFlex);
         Font font = family.CreateFont(36, new FontVariation("wght", weight));
 
         TextOptions options = new(font);
@@ -630,7 +630,7 @@ public class VariationFontTests
     [InlineData(900, "Black")]
     public void VisualTest_AdobeVFPrototype_GVar_WeightVariations(float weight, string label)
     {
-        FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototype);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.AdobeVFPrototype);
         Font font = family.CreateFont(48, new FontVariation("wght", weight));
 
         TextOptions options = new(font);
@@ -644,7 +644,7 @@ public class VariationFontTests
     [Fact]
     public void VisualTest_RobotoFlex_MultipleAxes()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.RobotoFlex);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.RobotoFlex);
         Font font = family.CreateFont(
             36,
             new FontVariation("wght", 700),
@@ -662,12 +662,12 @@ public class VariationFontTests
     {
         // VotoSerif has cvar, cvt, fpgm, prep, fvar, gvar tables.
         // Axes: wght (28–194, default 94), wdth (70–100), opsz (12–72).
-        FontFamily family = new FontCollection().Add(TestFonts.VotoSerifCvar);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.VotoSerifCvar);
         Font font = family.CreateFont(12);
 
         Assert.NotNull(font.FontMetrics);
-        Assert.True(font.FontMetrics.TryGetVariationAxes(out VariationAxis[]? axes));
-        Assert.Equal(3, axes!.Length);
+        Assert.True(font.FontMetrics.TryGetVariationAxes(out VariationAxis[] axes));
+        Assert.Equal(3, axes.Length);
         Assert.Equal("wght", axes[0].Tag);
         Assert.Equal("wdth", axes[1].Tag);
         Assert.Equal("opsz", axes[2].Tag);
@@ -677,12 +677,12 @@ public class VariationFontTests
     public void CVar_NoShared_CanLoadFontWithCvarTable()
     {
         // Same font but cvar uses no shared point numbers.
-        FontFamily family = new FontCollection().Add(TestFonts.VotoSerifCvarNoShared);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.VotoSerifCvarNoShared);
         Font font = family.CreateFont(12);
 
         Assert.NotNull(font.FontMetrics);
-        Assert.True(font.FontMetrics.TryGetVariationAxes(out VariationAxis[]? axes));
-        Assert.Equal(3, axes!.Length);
+        Assert.True(font.FontMetrics.TryGetVariationAxes(out VariationAxis[] axes));
+        Assert.Equal(3, axes.Length);
     }
 
     [Fact]
@@ -690,7 +690,7 @@ public class VariationFontTests
     {
         // Exercise the cvar code path: hinting enabled + variation applied.
         // cvar deltas modify CVT values before TrueType hinting instructions run.
-        FontFamily family = new FontCollection().Add(TestFonts.VotoSerifCvar);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.VotoSerifCvar);
         Font defaultFont = family.CreateFont(48);
         Font variedFont = family.CreateFont(48, new FontVariation("wght", 194));
 
@@ -711,7 +711,7 @@ public class VariationFontTests
     public void CVar_NoShared_HintedRenderingWithVariation()
     {
         // Same test with the no-shared-points variant of the cvar font.
-        FontFamily family = new FontCollection().Add(TestFonts.VotoSerifCvarNoShared);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.VotoSerifCvarNoShared);
         Font variedFont = family.CreateFont(48, new FontVariation("wght", 194));
 
         TextOptions options = new(variedFont) { HintingMode = HintingMode.Standard };
@@ -727,7 +727,7 @@ public class VariationFontTests
     {
         // At small sizes, TrueType hinting with cvar-adjusted CVT values
         // has a greater effect on grid-fitting. Verify both paths render successfully.
-        FontFamily family = new FontCollection().Add(TestFonts.VotoSerifCvar);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.VotoSerifCvar);
         Font font = family.CreateFont(12, new FontVariation("wght", 28));
 
         TextOptions hintedOptions = new(font) { HintingMode = HintingMode.Standard };
@@ -752,7 +752,7 @@ public class VariationFontTests
     [InlineData(194, "Heavy", HintingMode.Standard)]
     public void VisualTest_VotoSerif_CVar_WeightVariations(float weight, string label, HintingMode hintingMode)
     {
-        FontFamily family = new FontCollection().Add(TestFonts.VotoSerifCvar);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.VotoSerifCvar);
         Font font = family.CreateFont(48, new FontVariation("wght", weight));
 
         TextOptions options = new(font) { HintingMode = hintingMode };

@@ -18,17 +18,15 @@ public class Issues_468
         string text = stringBuilder.ToString();
         FontCollection fontCollection = new();
 
-        string consola = fontCollection.Add(TestFonts.Consola).Name;
-        string arabic = fontCollection.Add(TestFonts.NotoSansArabicRegular).Name;
-
-        FontFamily mainFontFamily = fontCollection.Get(consola);
-        Font mainFont = mainFontFamily.CreateFont(50, FontStyle.Regular);
+        FontFamily consola = TestFonts.GetFontFamily(fontCollection, TestFonts.Consola);
+        FontFamily arabic = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansArabicRegular);
+        Font mainFont = consola.CreateFont(50, FontStyle.Regular);
 
         TextOptions options = new(mainFont)
         {
             FallbackFontFamilies =
             [
-                fontCollection.Get(arabic),
+                arabic,
             ],
         };
 

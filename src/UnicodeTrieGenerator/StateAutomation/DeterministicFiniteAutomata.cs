@@ -24,7 +24,7 @@ internal static class DeterministicFiniteAutomata
         State failState = new(new HashSet<INode>(), numSymbols);
         State initialState = new(root.FirstPos, numSymbols);
 
-        List<State> dstates = new() { failState, initialState };
+        List<State> dstates = [failState, initialState];
 
         // While there is an unmarked state S in dstates
         while (true)
@@ -53,7 +53,7 @@ internal static class DeterministicFiniteAutomata
             {
                 // let U be the union of followpos(p) for all
                 //  p in S that correspond to a
-                HashSet<INode> u = new();
+                HashSet<INode> u = [];
                 foreach (INode p in s.Positions)
                 {
                     if (p is Literal l && l.Value == a)

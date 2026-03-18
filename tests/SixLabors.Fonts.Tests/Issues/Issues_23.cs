@@ -11,7 +11,7 @@ public class Issues_23
     public void BleedingFonts()
     {
         // wendy one returns wrong points for 'o'
-        Font font = new FontCollection().Add(TestFonts.WendyOneFile).CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.WendyOneFile, 12);
 
         GlyphRenderer r = new();
 

@@ -11,11 +11,7 @@ public class Issues_484
 
     private static void Test_Issue_484_Core()
     {
-        FontCollection fontCollection = new();
-        string arial = fontCollection.Add(TestFonts.Arial).Name;
-
-        FontFamily arialFamily = fontCollection.Get(arial);
-        Font arialFont = arialFamily.CreateFont(12, FontStyle.Regular);
+        Font arialFont = TestFonts.GetFont(TestFonts.Arial, 12);
 
         TextOptions textOptions = new(arialFont)
         {
@@ -29,11 +25,7 @@ public class Issues_484
     [Fact]
     public void Test_Issue_484_B()
     {
-        FontCollection fontCollection = new();
-        string arial = fontCollection.Add(TestFonts.Arial).Name;
-
-        FontFamily arialFamily = fontCollection.Get(arial);
-        Font arialFont = arialFamily.CreateFont(12, FontStyle.Regular);
+        Font arialFont = TestFonts.GetFont(TestFonts.Arial, 12);
 
         Parallel.For(0, 10, _ => Test_Issue_484_Core_B(arialFont));
     }

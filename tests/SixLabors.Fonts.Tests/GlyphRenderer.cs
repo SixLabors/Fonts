@@ -8,16 +8,17 @@ namespace SixLabors.Fonts.Tests;
 
 public class GlyphRenderer : IGlyphRenderer
 {
-    private int figuresCount;
     private GlyphRendererParameters parameters;
 
-    public List<Vector2> ControlPoints { get; } = new();
+    public List<Vector2> ControlPoints { get; } = [];
 
-    public List<Vector2> ControlPointsOnCurve { get; } = new();
+    public List<Vector2> ControlPointsOnCurve { get; } = [];
 
-    public List<FontRectangle> GlyphRects { get; } = new();
+    public List<FontRectangle> GlyphRects { get; } = [];
 
-    public List<GlyphRendererParameters> GlyphKeys { get; } = new();
+    public List<GlyphRendererParameters> GlyphKeys { get; } = [];
+
+    public int FiguresCount { get; set; }
 
     public bool BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters)
     {
@@ -26,7 +27,7 @@ public class GlyphRenderer : IGlyphRenderer
         return true;
     }
 
-    public void BeginFigure() => this.figuresCount++;
+    public void BeginFigure() => this.FiguresCount++;
 
     public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)
     {

@@ -13,9 +13,7 @@ public class FontMetricsTests
     {
         // Compared to EveryFonts TTFDump metrics
         // https://everythingfonts.com/ttfdump
-        FontCollection collection = new();
-        FontFamily family = collection.Add(TestFonts.OpenSansFile);
-        Font font = family.CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFile, 12);
 
         Assert.Equal(2048, font.FontMetrics.UnitsPerEm);
         Assert.Equal(2189, font.FontMetrics.HorizontalMetrics.Ascender);
@@ -52,9 +50,7 @@ public class FontMetricsTests
     {
         // Compared to EveryFonts TTFDump metrics
         // https://everythingfonts.com/ttfdump
-        FontCollection collection = new();
-        FontFamily family = collection.Add(TestFonts.NotoSansSCThinBad);
-        Font font = family.CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.NotoSansSCThinBad, 12);
 
         Assert.Equal(1000, font.FontMetrics.UnitsPerEm);
 
@@ -99,9 +95,7 @@ public class FontMetricsTests
     {
         // Compared to OpenTypeJS Font Inspector metrics
         // https://opentype.js.org/font-inspector.html
-        FontCollection collection = new();
-        FontFamily family = collection.Add(TestFonts.NotoSansKRRegular);
-        Font font = family.CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.NotoSansKRRegular, 12);
 
         Assert.Equal(1000, font.FontMetrics.UnitsPerEm);
 
@@ -146,9 +140,7 @@ public class FontMetricsTests
     {
         // Compared to EveryFonts TTFDump metrics
         // https://everythingfonts.com/ttfdump
-        FontCollection collection = new();
-        FontFamily family = collection.Add(TestFonts.OpenSansFile);
-        Font font = family.CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFile, 12);
 
         CodePoint codePoint = new('A');
 
@@ -177,9 +169,7 @@ public class FontMetricsTests
     {
         // Compared to EveryFonts TTFDump metrics
         // https://everythingfonts.com/ttfdump
-        FontCollection collection = new();
-        FontFamily family = collection.Add(TestFonts.OpenSansFileWoff1);
-        Font font = family.CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFileWoff1, 12);
 
         CodePoint codePoint = new('A');
 
@@ -208,9 +198,7 @@ public class FontMetricsTests
     {
         // Compared to EveryFonts TTFDump metrics
         // https://everythingfonts.com/ttfdump
-        FontCollection collection = new();
-        FontFamily family = collection.Add(TestFonts.OpenSansFileWoff2);
-        Font font = family.CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFileWoff2, 12);
 
         CodePoint codePoint = new('A');
 
@@ -239,9 +227,7 @@ public class FontMetricsTests
     {
         // Compared to EveryFonts TTFDump metrics
         // https://everythingfonts.com/ttfdump
-        FontCollection collection = new();
-        FontFamily family = collection.Add(TestFonts.NotoSansSCThinBad);
-        Font font = family.CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.NotoSansSCThinBad, 12);
 
         CodePoint codePoint = new('A');
 

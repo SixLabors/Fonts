@@ -10,7 +10,7 @@ public class Issues_334
     [Fact]
     public void DoesNotSkewCompositeGlyph()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.SumanaRegularFile);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.SumanaRegularFile);
         family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
 
         Font font = family.CreateFont(metrics.UnitsPerEm);

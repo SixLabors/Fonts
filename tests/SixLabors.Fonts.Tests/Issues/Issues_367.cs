@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 namespace SixLabors.Fonts.Tests.Issues;
+
 public class Issues_367
 {
     private static readonly ApproximateFloatComparer Comparer = new(.1F);
@@ -9,7 +10,7 @@ public class Issues_367
     [Fact]
     public void ShouldMatchBrowserBreak()
     {
-        Font font = new FontCollection().Add(TestFonts.CourierPrimeFile).CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.CourierPrimeFile, 12);
 
         TextOptions options = new(font)
         {

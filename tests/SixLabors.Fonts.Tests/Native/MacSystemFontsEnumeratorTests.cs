@@ -16,12 +16,12 @@ public class MacSystemFontsEnumeratorTests
             return;
         }
 
-        using var enumerator = new MacSystemFontsEnumerator();
-        var fonts1 = new HashSet<string>(enumerator);
+        using MacSystemFontsEnumerator enumerator = new();
+        HashSet<string> fonts1 = new(enumerator);
         Assert.NotEmpty(fonts1);
 
         enumerator.Reset();
-        var fonts2 = new HashSet<string>(enumerator);
+        HashSet<string> fonts2 = new(enumerator);
         Assert.Empty(fonts1.Except(fonts2));
     }
 }

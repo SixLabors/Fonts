@@ -198,21 +198,13 @@ public class TextLayoutTests
     }
 
     [Fact]
-    public unsafe void MeasureTextWithSpan()
+    public void MeasureTextWithSpan()
     {
-        Font font = CreateFont("hello");
-
-        Span<char> text = stackalloc char[]
-        {
-            'h',
-            'e',
-            'l',
-            'l',
-            'o'
-        };
+        string text = "hello";
+        Font font = CreateFont(text);
 
         // 72 * emSize means 1pt = 1px
-        FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+        FontRectangle size = TextMeasurer.MeasureBounds(text.AsSpan(), new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
 
         Assert.Equal(10, size.Height, 4F);
         Assert.Equal(130, size.Width, 4F);
@@ -240,12 +232,12 @@ public class TextLayoutTests
     {
         const string text = "a b\nc";
         GlyphBounds[] expectedGlyphMetrics =
-        {
+        [
             new(new CodePoint('a'), new FontRectangle(10, 0, 10, 10), 0, 0),
             new(new CodePoint(' '), new FontRectangle(40, 0, 30, 10), 1, 1),
             new(new CodePoint('b'), new FontRectangle(70, 0, 10, 10), 2, 2),
             new(new CodePoint('c'), new FontRectangle(10, 30, 10, 10), 3, 3),
-        };
+        ];
         Font font = CreateFont(text);
 
         Assert.True(TextMeasurer.TryMeasureCharacterBounds(
@@ -464,8 +456,7 @@ public class TextLayoutTests
     [InlineData("AB", 465, 654, true)]
     public void MeasureTextWithKerning(string text, float height, float width, bool applyKerning)
     {
-        var c = new FontCollection();
-        Font font = c.Add(TestFonts.SimpleFontFileData()).CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.SimpleFontFile, 12);
         FontRectangle size = TextMeasurer.MeasureBounds(
             text,
             new TextOptions(new Font(font, 1))
@@ -482,11 +473,10 @@ public class TextLayoutTests
     [InlineData("a", 100, 100, 125, 396)]
     public void LayoutWithLocation(string text, float x, float y, float expectedX, float expectedY)
     {
-        var c = new FontCollection();
-        Font font = c.Add(TestFonts.SimpleFontFileData()).CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.SimpleFontFile, 12);
 
-        var glyphRenderer = new GlyphRenderer();
-        var renderer = new TextRenderer(glyphRenderer);
+        GlyphRenderer glyphRenderer = new();
+        TextRenderer renderer = new(glyphRenderer);
         renderer.RenderText(
             text,
             new TextOptions(new Font(font, 1))
@@ -503,8 +493,7 @@ public class TextLayoutTests
     [Fact]
     public void MeasureTextLeadingFraction()
     {
-        FontCollection c = new();
-        Font font = c.Add(TestFonts.SimpleFontFileData()).CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.SimpleFontFile, 12);
         TextOptions textOptions = new(font);
         FontRectangle measurement = TextMeasurer.MeasureSize("/ This will fail", textOptions);
 
@@ -528,8 +517,8 @@ public class TextLayoutTests
     {
         Font font = CreateFont("hello\n!");
 
-        Span<char> text = stackalloc char[]
-        {
+        Span<char> text =
+        [
             'h',
             'e',
             'l',
@@ -537,7 +526,7 @@ public class TextLayoutTests
             'o',
             '\n',
             '!'
-        };
+        ];
         int count = TextMeasurer.CountLines(text, new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
 
         Assert.Equal(2, count);
@@ -571,7 +560,7 @@ public class TextLayoutTests
 
         IReadOnlyList<TextRun> runs = TextLayout.BuildTextRuns(text.AsSpan(), options);
 
-        Assert.True(runs.Count == 1);
+        Assert.Single(runs);
         Assert.Equal(font, runs[0].Font);
         Assert.Equal(0, runs[0].Start);
         Assert.Equal(CodePoint.GetCodePointCount(text.AsSpan()), runs[0].End);
@@ -587,15 +576,15 @@ public class TextLayoutTests
         {
             TextRuns = new List<TextRun>()
             {
-                new TextRun() { Start = 9, End = 23, Font = font2 },
-                new TextRun() { Start = 35, End = 54, Font = font2 },
-                new TextRun() { Start = 68, End = 70, Font = font2 },
+                new() { Start = 9, End = 23, Font = font2 },
+                new() { Start = 35, End = 54, Font = font2 },
+                new() { Start = 68, End = 70, Font = font2 },
             }
         };
 
         IReadOnlyList<TextRun> runs = TextLayout.BuildTextRuns(text.AsSpan(), options);
 
-        Assert.True(runs.Count == 7);
+        Assert.Equal(7, runs.Count);
 
         Assert.Equal(0, runs[0].Start);
         Assert.Equal(9, runs[0].End);
@@ -642,8 +631,8 @@ public class TextLayoutTests
         {
             TextRuns = new List<TextRun>()
             {
-                new TextRun() { Start = 0, End = 23 },
-                new TextRun() { Start = 1, End = 76 },
+                new() { Start = 0, End = 23 },
+                new() { Start = 1, End = 76 },
             }
         };
 
@@ -845,7 +834,7 @@ public class TextLayoutTests
         }
     }
 
-    public static TheoryData<char, FontRectangle> OpenSans_Data
+    public static TheoryData<char, FontRectangle> OpenSans_Data { get; }
         = new()
         {
             { '!', new(0F, 0F, 1.1621094F, 7.2753906F) },
@@ -967,7 +956,7 @@ public class TextLayoutTests
         Assert.Equal(expected, actual, Comparer);
     }
 
-    public static TheoryData<string, float, float, float[]> FontTrackingHorizontalData
+    public static TheoryData<string, float, float, float[]> FontTrackingHorizontalData { get; }
         = new()
         {
             { "aaaa", 0.0f, 134.0f, [2.9f, 38.5f, 74.0f, 109.6f] },
@@ -982,7 +971,7 @@ public class TextLayoutTests
     [MemberData(nameof(FontTrackingHorizontalData))]
     public void FontTracking_SpaceCharacters_WithHorizontalLayout(string text, float tracking, float width, float[] characterPosition)
     {
-        Font font = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(64);
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFile, 64);
         TextOptions options = new(font)
         {
             Tracking = tracking,
@@ -995,7 +984,7 @@ public class TextLayoutTests
         Assert.Equal(characterPosition, bounds.ToArray().Select(x => x.Bounds.X), Comparer);
     }
 
-    public static TheoryData<string, float, float, float[]> FontTrackingVerticalData
+    public static TheoryData<string, float, float, float[]> FontTrackingVerticalData { get; }
         = new()
         {
             { "aaaa", 0.0f, 296.9f, [33.5f, 120.7f, 207.9f, 295.0f] },
@@ -1010,7 +999,7 @@ public class TextLayoutTests
     [MemberData(nameof(FontTrackingVerticalData))]
     public void FontTracking_SpaceCharacters_WithVerticalLayout(string text, float tracking, float width, float[] characterPosition)
     {
-        Font font = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(64);
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFile, 64);
         TextOptions options = new(font)
         {
             Tracking = tracking,
@@ -1029,7 +1018,7 @@ public class TextLayoutTests
     [InlineData("\u1B3C\u1B3C", 1, 83.8)]
     public void FontTracking_DoNotAddSpacingAfterCharacterThatDidNotAdvance(string text, float tracking, float width)
     {
-        Font font = new FontCollection().Add(TestFonts.NotoSansBalineseRegular).CreateFont(64);
+        Font font = TestFonts.GetFont(TestFonts.NotoSansBalineseRegular, 64);
         TextOptions options = new(font)
         {
             Tracking = tracking,
@@ -1046,7 +1035,7 @@ public class TextLayoutTests
     [InlineData("\u093fa", 1, 145.5f)]
     public void FontTracking_CorrectlyAddSpacingForComposedCharacter(string text, float tracking, float width)
     {
-        Font font = new FontCollection().Add(TestFonts.NotoSansDevanagariRegular).CreateFont(64);
+        Font font = TestFonts.GetFont(TestFonts.NotoSansDevanagariRegular, 64);
         TextOptions options = new(font)
         {
             Tracking = tracking,
@@ -1063,11 +1052,7 @@ public class TextLayoutTests
     [InlineData("\u093fa", 1)]
     public void FontTracking_CorrectlyAddSpacingForComposedCharacterHRef(string text, float tracking)
     {
-        FontCollection fontCollection = new();
-        string name = fontCollection.Add(TestFonts.NotoSansDevanagariRegular).Name;
-
-        FontFamily mainFontFamily = fontCollection.Get(name);
-        Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
+        Font mainFont = TestFonts.GetFont(TestFonts.NotoSansDevanagariRegular, 30);
 
         TextOptions options = new(mainFont)
         {
@@ -1084,11 +1069,7 @@ public class TextLayoutTests
     [InlineData("\u093fa", 1)]
     public void FontTracking_CorrectlyAddSpacingForComposedCharacterVRef(string text, float tracking)
     {
-        FontCollection fontCollection = new();
-        string name = fontCollection.Add(TestFonts.NotoSansDevanagariRegular).Name;
-
-        FontFamily mainFontFamily = fontCollection.Get(name);
-        Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
+        Font mainFont = TestFonts.GetFont(TestFonts.NotoSansDevanagariRegular, 30);
 
         TextOptions options = new(mainFont)
         {
@@ -1106,11 +1087,7 @@ public class TextLayoutTests
     [InlineData("\u093fa", 1)]
     public void FontTracking_CorrectlyAddSpacingForComposedCharacterVMRef(string text, float tracking)
     {
-        FontCollection fontCollection = new();
-        string name = fontCollection.Add(TestFonts.NotoSansDevanagariRegular).Name;
-
-        FontFamily mainFontFamily = fontCollection.Get(name);
-        Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
+        Font mainFont = TestFonts.GetFont(TestFonts.NotoSansDevanagariRegular, 30);
 
         TextOptions options = new(mainFont)
         {
@@ -1124,7 +1101,7 @@ public class TextLayoutTests
     [Fact]
     public void CanMeasureTextAdvance()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.OpenSansFile);
         family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
 
         TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))
@@ -1145,7 +1122,7 @@ public class TextLayoutTests
     [Fact]
     public void CanMeasureCharacterLayouts()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.OpenSansFile);
         family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
 
         TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))
@@ -1181,7 +1158,7 @@ public class TextLayoutTests
     [Fact]
     public void CanMeasureMultilineCharacterLayouts()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.OpenSansFile);
         family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
 
         TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))
@@ -1220,7 +1197,7 @@ public class TextLayoutTests
     [Fact]
     public void DoesMeasureCharacterLayoutIncludeStringIndex()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.OpenSansFile);
         family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
 
         TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))
@@ -1253,7 +1230,7 @@ public class TextLayoutTests
 
             if (bound.Codepoint == new CodePoint("k"[0]))
             {
-                stringIndex = text.IndexOf("k", StringComparison.InvariantCulture);
+                stringIndex = text.IndexOf('k');
                 Assert.Equal(stringIndex, bound.StringIndex);
                 Assert.Equal(stringIndex, bound.GraphemeIndex);
             }
@@ -1261,7 +1238,7 @@ public class TextLayoutTests
             // after emoji
             if (bound.Codepoint == new CodePoint("b"[0]))
             {
-                stringIndex = text.IndexOf("b", StringComparison.InvariantCulture);
+                stringIndex = text.IndexOf('b');
                 Assert.NotEqual(bound.StringIndex, bound.GraphemeIndex);
                 Assert.Equal(stringIndex, bound.StringIndex);
                 Assert.Equal(11, bound.GraphemeIndex);
@@ -1287,7 +1264,7 @@ public class TextLayoutTests
     [Fact]
     public void DoesMeasureCharacterBoundsExtendForAdvanceMultipliers()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.OpenSansFile);
         family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
 
         TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))
@@ -1297,17 +1274,17 @@ public class TextLayoutTests
 
         const string text = "H\tH";
 
-        IReadOnlyList<FontRectangle> glyphsToRender = CaptureGlyphBoundBuilder.GenerateGlyphsBoxes(text, options);
+        List<FontRectangle> glyphs = CaptureGlyphBoundBuilder.GenerateGlyphsBoxes(text, options);
         TextMeasurer.TryMeasureCharacterBounds(text, options, out ReadOnlySpan<GlyphBounds> bounds);
 
         IReadOnlyList<GlyphLayout> glyphLayouts = TextLayout.GenerateLayout(text, options);
 
-        Assert.Equal(glyphsToRender.Count, bounds.Length);
-        Assert.Equal(glyphsToRender.Count, glyphsToRender.Count);
+        Assert.Equal(glyphs.Count, bounds.Length);
+        Assert.Equal(glyphs.Count, glyphs.Count);
 
-        for (int glyphIndex = 0; glyphIndex < glyphsToRender.Count; glyphIndex++)
+        for (int glyphIndex = 0; glyphIndex < glyphs.Count; glyphIndex++)
         {
-            FontRectangle renderGlyph = glyphsToRender[glyphIndex];
+            FontRectangle renderGlyph = glyphs[glyphIndex];
             FontRectangle measureGlyph = bounds[glyphIndex].Bounds;
             GlyphLayout glyphLayout = glyphLayouts[glyphIndex];
 
@@ -1328,7 +1305,7 @@ public class TextLayoutTests
     [Fact]
     public void IsMeasureCharacterBoundsSameAsRenderBounds()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.OpenSansFile);
         family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
 
         TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))
@@ -1337,14 +1314,14 @@ public class TextLayoutTests
 
         const string text = "Hello WorLLd";
 
-        IReadOnlyList<FontRectangle> glyphsToRender = CaptureGlyphBoundBuilder.GenerateGlyphsBoxes(text, options);
+        List<FontRectangle> glyphs = CaptureGlyphBoundBuilder.GenerateGlyphsBoxes(text, options);
         TextMeasurer.TryMeasureCharacterBounds(text, options, out ReadOnlySpan<GlyphBounds> bounds);
 
-        Assert.Equal(glyphsToRender.Count, bounds.Length);
+        Assert.Equal(glyphs.Count, bounds.Length);
 
-        for (int glyphIndex = 0; glyphIndex < glyphsToRender.Count; glyphIndex++)
+        for (int glyphIndex = 0; glyphIndex < glyphs.Count; glyphIndex++)
         {
-            FontRectangle renderGlyph = glyphsToRender[glyphIndex];
+            FontRectangle renderGlyph = glyphs[glyphIndex];
             FontRectangle measureGlyph = bounds[glyphIndex].Bounds;
 
             Assert.Equal(renderGlyph.X, measureGlyph.X);
@@ -1384,7 +1361,7 @@ public class TextLayoutTests
             return glyphBuilder.GlyphBounds;
         }
 
-        public readonly List<FontRectangle> GlyphBounds = new();
+        public readonly List<FontRectangle> GlyphBounds = [];
 
         public CaptureGlyphBoundBuilder()
         {
@@ -1451,11 +1428,11 @@ public class TextLayoutTests
         }
     }
 
-    private static readonly Font OpenSansTTF = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(10);
-    private static readonly Font OpenSansWoff = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(10);
+    private static readonly Font OpenSansTTF = TestFonts.GetFont(TestFonts.OpenSansFile, 10);
+    private static readonly Font OpenSansWoff = TestFonts.GetFont(TestFonts.OpenSansFile, 10);
 
 #if OS_WINDOWS
-    public static TheoryData<char, FontRectangle> SegoeUi_Data
+    public static TheoryData<char, FontRectangle> SegoeUi_Data { get; }
         = new()
         {
             { '!', new(0F, 0F, 1.0839844F, 7.0898438F) },
@@ -1551,8 +1528,7 @@ public class TextLayoutTests
             { '{', new(0F, 0F, 2.2607422F, 8.59375F) },
             { '|', new(0F, 0F, 0.72265625F, 10F) },
             { '}', new(0F, 0F, 2.2558594F, 8.59375F) },
-            { '~', new(0F, 0F, 4.8095703F, 1.5136719F) },
-
+            { '~', new(0F, 0F, 4.8095703F, 1.5136719F) }
         };
 
     [Theory]
@@ -1573,12 +1549,12 @@ public class TextLayoutTests
     private static readonly Font SegoeUi = SystemFonts.CreateFont("Segoe Ui", 10);
 #endif
 
-    private static IReadOnlyList<GlyphLayout> CollectFirstLine(IReadOnlyList<GlyphLayout> glyphs)
+    private static List<GlyphLayout> CollectFirstLine(IReadOnlyList<GlyphLayout> glyphs)
     {
-        List<GlyphLayout> line = new()
-        {
+        List<GlyphLayout> line =
+        [
             glyphs[0]
-        };
+        ];
 
         for (int i = 1; i < glyphs.Count; i++)
         {
@@ -1595,28 +1571,28 @@ public class TextLayoutTests
 
 #if OS_WINDOWS
     [Fact]
-    public FontRectangle BenchmarkTest()
+    public void BenchmarkTest()
     {
         Font font = Arial;
-        return TextMeasurer.MeasureSize("The quick brown fox jumped over the lazy dog", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+        _ = TextMeasurer.MeasureSize("The quick brown fox jumped over the lazy dog", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
     }
 
     private static readonly Font Arial = SystemFonts.CreateFont("Arial", 12);
 #endif
 
     public static Font CreateRenderingFont(float pointSize = 12)
-        => new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(pointSize);
+        => TestFonts.GetFont(TestFonts.OpenSansFile, pointSize);
 
     public static Font CreateFont(string text)
     {
-        var fc = (IFontMetricsCollection)new FontCollection();
+        IFontMetricsCollection fc = new FontCollection();
         Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
         return new Font(d, 1F);
     }
 
     public static Font CreateFont(string text, float pointSize)
     {
-        var fc = (IFontMetricsCollection)new FontCollection();
+        IFontMetricsCollection fc = new FontCollection();
         Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
         return new Font(d, pointSize);
     }

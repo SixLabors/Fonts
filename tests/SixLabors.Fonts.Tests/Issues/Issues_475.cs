@@ -13,17 +13,15 @@ public class Issues_475
         const string text = "වේගවත් දුඹුරු හිවලා කම්මැලි බල්ලා උඩින් පනී";
 
         FontCollection fontCollection = new();
-        string noto = fontCollection.Add(TestFonts.NotoSansRegular).Name;
-        string sc = fontCollection.Add(TestFonts.NotoSansSCRegular).Name;
-
-        FontFamily mainFontFamily = fontCollection.Get(noto);
-        Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
+        FontFamily noto = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansRegular);
+        FontFamily sc = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansSCRegular);
+        Font mainFont = noto.CreateFont(30, FontStyle.Regular);
 
         TextOptions options = new(mainFont)
         {
             FallbackFontFamilies =
             [
-                fontCollection.Get(sc),
+                sc,
             ],
         };
 

@@ -10,11 +10,11 @@ public class HorizontalHeadTableTests
     [Fact]
     public void LoadHorizontalHeadTable()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
 
         writer.WriteHorizontalHeadTable(new HorizontalHeadTable(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11));
 
-        var tbl = HorizontalHeadTable.Load(writer.GetReader());
+        HorizontalHeadTable tbl = HorizontalHeadTable.Load(writer.GetReader());
 
         Assert.Equal(1, tbl.Ascender);
         Assert.Equal(2, tbl.Descender);
@@ -32,12 +32,12 @@ public class HorizontalHeadTableTests
     [Fact]
     public void ShouldReturnNullWhenTableCouldNotBeFound()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteTrueTypeFileHeader();
 
         using (MemoryStream stream = writer.GetStream())
         {
-            using var reader = new FontReader(stream);
+            using FontReader reader = new(stream);
             Assert.Null(HorizontalHeadTable.Load(reader));
         }
     }

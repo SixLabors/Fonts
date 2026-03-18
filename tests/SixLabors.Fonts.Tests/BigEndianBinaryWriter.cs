@@ -62,7 +62,7 @@ internal class BigEndianBinaryWriter
         this.BaseStream.Flush();
     }
 
-    public BigEndianBinaryReader GetReader() => new BigEndianBinaryReader(this.GetStream(), true);
+    public BigEndianBinaryReader GetReader() => new(this.GetStream(), true);
 
     public MemoryStream GetStream()
     {
@@ -70,7 +70,7 @@ internal class BigEndianBinaryWriter
         long p = this.BaseStream.Position;
         this.BaseStream.Position = 0;
 
-        var ms = new MemoryStream();
+        MemoryStream ms = new();
         this.BaseStream.CopyTo(ms);
         ms.Position = 0;
         this.BaseStream.Position = 0;

@@ -15,8 +15,8 @@ public class CompactFontFormatTests
     public void FDSelectFormat0_Works(string testStr, int expectedGlyphIndex)
     {
         // arrange
-        Font font = new FontCollection().Add(TestFonts.FDArrayTest257File).CreateFont(8);
-        var renderer = new ColorGlyphRenderer();
+        Font font = TestFonts.GetFont(TestFonts.FDArrayTest257File, 8);
+        ColorGlyphRenderer renderer = new();
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));

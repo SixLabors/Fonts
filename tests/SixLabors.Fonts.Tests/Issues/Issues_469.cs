@@ -25,31 +25,30 @@ public class Issues_469
         string text = stringBuilder.ToString();
 
         FontCollection fontCollection = new();
-        string arial = fontCollection.Add(TestFonts.Arial).Name;
-        string cousine = fontCollection.Add(TestFonts.CousineRegular).Name;
-        string hind = fontCollection.Add(TestFonts.HindRegular).Name;
-        string nanumGothicCoding = fontCollection.Add(TestFonts.NanumGothicCodingRegular).Name;
-        string inconsolata = fontCollection.Add(TestFonts.InconsolataRegular).Name;
-        string notoNaskhArabic = fontCollection.Add(TestFonts.NotoNaskhArabicRegular).Name;
-        string notoSansJpThin = fontCollection.Add(TestFonts.NotoSansJPRegular).Name;
-        string notoSansScThin = fontCollection.Add(TestFonts.NotoSansSCThin).Name;
-        string sarabun = fontCollection.Add(TestFonts.SarabunRegular).Name;
+        FontFamily arial = TestFonts.GetFontFamily(fontCollection, TestFonts.Arial);
+        FontFamily cousine = TestFonts.GetFontFamily(fontCollection, TestFonts.CousineRegular);
+        FontFamily hind = TestFonts.GetFontFamily(fontCollection, TestFonts.HindRegular);
+        FontFamily nanumGothicCoding = TestFonts.GetFontFamily(fontCollection, TestFonts.NanumGothicCodingRegular);
+        FontFamily inconsolata = TestFonts.GetFontFamily(fontCollection, TestFonts.InconsolataRegular);
+        FontFamily notoNaskhArabic = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoNaskhArabicRegular);
+        FontFamily notoSansJpThin = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansJPRegular);
+        FontFamily notoSansScThin = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansSCThin);
+        FontFamily sarabun = TestFonts.GetFontFamily(fontCollection, TestFonts.SarabunRegular);
 
-        FontFamily mainFontFamily = fontCollection.Get(arial);
-        Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
+        Font mainFont = arial.CreateFont(30, FontStyle.Regular);
 
         TextOptions options = new(mainFont)
         {
             FallbackFontFamilies =
             [
-                fontCollection.Get(inconsolata),
-                fontCollection.Get(nanumGothicCoding),
-                fontCollection.Get(cousine),
-                fontCollection.Get(notoSansScThin),
-                fontCollection.Get(notoSansJpThin),
-                fontCollection.Get(notoNaskhArabic),
-                fontCollection.Get(sarabun),
-                fontCollection.Get(hind),
+                inconsolata,
+                nanumGothicCoding,
+                cousine,
+                notoSansScThin,
+                notoSansJpThin,
+                notoNaskhArabic,
+                sarabun,
+                hind,
             ],
         };
 

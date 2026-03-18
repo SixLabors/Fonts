@@ -11,7 +11,7 @@ public class Issues_335
     [InlineData(TextAlignment.End)]
     public void HorizontalAlignmentWorksForSingleLineText(TextAlignment alignment)
     {
-        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.OpenSansFile);
         family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
 
         TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))
@@ -38,7 +38,7 @@ public class Issues_335
     [InlineData(TextAlignment.End)]
     public void VerticalAlignmentWorksForSingleLineText(TextAlignment alignment)
     {
-        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.OpenSansFile);
         family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
 
         TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))

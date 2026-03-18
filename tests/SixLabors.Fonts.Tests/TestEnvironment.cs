@@ -18,6 +18,8 @@ internal static class TestEnvironment
 
     private const string UnicodeTestDataRelativePath = @"tests\UnicodeTestData\";
 
+    private const string FontTestDataRelativePath = @"tests\Fonts\";
+
     private static readonly Lazy<string> SolutionDirectoryFullPathLazy = new(GetSolutionDirectoryFullPathImpl);
 
     internal static string SolutionDirectoryFullPath => SolutionDirectoryFullPathLazy.Value;
@@ -37,6 +39,11 @@ internal static class TestEnvironment
     /// </summary>
     internal static string ReferenceOutputDirectoryFullPath => GetFullPath(ReferenceOutputDirectoryRelativePath);
 
+    /// <summary>
+    /// Gets the absolute file path to the font test data used for internal testing purposes.
+    /// </summary>
+    internal static string FontTestDataFullPath => GetFullPath(FontTestDataRelativePath);
+
     internal static bool IsLinux => RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
     internal static bool IsMacOS => RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
@@ -48,7 +55,6 @@ internal static class TestEnvironment
     internal static Architecture OSArchitecture => RuntimeInformation.OSArchitecture;
 
     internal static Architecture ProcessArchitecture => RuntimeInformation.ProcessArchitecture;
-
 
     /// <summary>
     /// Gets a value indicating whether test execution runs on CI.

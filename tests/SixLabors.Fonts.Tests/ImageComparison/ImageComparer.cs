@@ -56,7 +56,7 @@ public static class ImageComparerExtensions
         where TPixelA : unmanaged, IPixel<TPixelA>
         where TPixelB : unmanaged, IPixel<TPixelB>
     {
-        List<ImageSimilarityReport<TPixelA, TPixelB>> result = new();
+        List<ImageSimilarityReport<TPixelA, TPixelB>> result = [];
 
         int expectedFrameCount = actual.Frames.Count;
         if (predicate != null)
@@ -127,7 +127,7 @@ public static class ImageComparerExtensions
         IEnumerable<ImageSimilarityReport> reports = comparer.CompareImages(expected, actual, predicate);
         if (reports.Any())
         {
-            throw new ImageDifferenceIsOverThresholdException(reports.ToArray());
+            throw new ImageDifferenceIsOverThresholdException([.. reports]);
         }
     }
 

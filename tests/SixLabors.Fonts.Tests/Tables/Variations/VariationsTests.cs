@@ -12,10 +12,7 @@ public class VariationsTests
     private static readonly Font AdobeVFPrototype = CreateFont(TestFonts.AdobeVFPrototype);
 
     private static Font CreateFont(string testFont)
-    {
-        FontFamily family = TestFontCollection.Add(testFont);
-        return family.CreateFont(12);
-    }
+        => TestFonts.GetFont(TestFontCollection, testFont, 12);
 
     [Fact]
     public void CanLoadVariationTables_RobotoFlex()

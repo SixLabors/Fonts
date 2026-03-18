@@ -31,7 +31,7 @@ public class FakeFont
 
     internal static Font CreateFontWithInstance(string text, string name, out FakeFontInstance instance)
     {
-        var fc = (IFontMetricsCollection)new FontCollection();
+        IFontMetricsCollection fc = (IFontMetricsCollection)new FontCollection();
         instance = FakeFontInstance.CreateFontWithVaryingVerticalFontMetrics(text, name);
         Font d = fc.AddMetrics(instance, CultureInfo.InvariantCulture).CreateFont(12);
         return new Font(d, 1F);

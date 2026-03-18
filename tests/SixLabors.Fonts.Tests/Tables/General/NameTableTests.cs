@@ -12,7 +12,7 @@ public class NameTableTests
     [Fact]
     public void LoadFormat0()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
 
         writer.WriteNameTable(
             new Dictionary<KnownNameIds, string>
@@ -26,7 +26,7 @@ public class NameTableTests
                 { (KnownNameIds)91, "other2" }
             });
 
-        var table = NameTable.Load(writer.GetReader());
+        NameTable table = NameTable.Load(writer.GetReader());
 
         Assert.Equal("fullname", table.FontName(CultureInfo.InvariantCulture));
         Assert.Equal("family", table.FontFamilyName(CultureInfo.InvariantCulture));
@@ -40,7 +40,7 @@ public class NameTableTests
     [Fact]
     public void LoadFormat1()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
 
         writer.WriteNameTable(
             new Dictionary<KnownNameIds, string>
@@ -53,13 +53,12 @@ public class NameTableTests
                 { (KnownNameIds)90, "other1" },
                 { (KnownNameIds)91, "other2" }
             },
-            new List<string>
-            {
+            [
                 "lang1",
                 "lang2"
-            });
+            ]);
 
-        var table = NameTable.Load(writer.GetReader());
+        NameTable table = NameTable.Load(writer.GetReader());
 
         Assert.Equal("fullname", table.FontName(CultureInfo.InvariantCulture));
         Assert.Equal("family", table.FontFamilyName(CultureInfo.InvariantCulture));
@@ -73,14 +72,14 @@ public class NameTableTests
     [Fact]
     public void ShouldThrowExceptionWhenTableCouldNotBeFound()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteTrueTypeFileHeader();
 
         using (MemoryStream stream = writer.GetStream())
         {
             InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(() =>
             {
-                using var reader = new FontReader(stream);
+                using FontReader reader = new(stream);
                 NameTable.Load(reader);
             });
 

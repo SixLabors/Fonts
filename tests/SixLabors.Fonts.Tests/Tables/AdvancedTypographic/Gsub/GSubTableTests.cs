@@ -41,8 +41,8 @@ public partial class GSubTableTests
     public void RenderArabicCharacters_WithIsolatedForm_Works(string testStr, int expectedGlyphIndex)
     {
         // arrange
-        Font arabicFont = new FontCollection().Add(TestFonts.ArabicFontFile).CreateFont(8);
-        var renderer = new ColorGlyphRenderer();
+        Font arabicFont = TestFonts.GetFont(TestFonts.ArabicFontFile, 8);
+        ColorGlyphRenderer renderer = new();
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
@@ -58,8 +58,8 @@ public partial class GSubTableTests
     public void SingleSubstitution_Works()
     {
         // arrange
-        Font font = new FontCollection().Add(TestFonts.GSubTestFontFile1).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        Font font = TestFonts.GetFont(TestFonts.GSubTestFontFile1, 12);
+        ColorGlyphRenderer renderer = new();
         string testStr = "A";
         int expectedGlyphIndex = 38; // we expect A to be mapped to B.
 
@@ -75,10 +75,10 @@ public partial class GSubTableTests
     public void ContextualFractions_WithFractionSlash_Works()
     {
         // arrange
-        Font font = new FontCollection().Add(TestFonts.RobotoRegular).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        Font font = TestFonts.GetFont(TestFonts.RobotoRegular, 12);
+        ColorGlyphRenderer renderer = new();
         string testStr = "9⁄2";
-        int[] expectedGlyphIndices = { 580, 404, 453 };
+        int[] expectedGlyphIndices = [580, 404, 453];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font) { FeatureTags = new Tag[] { FeatureTags.Numerators, FeatureTags.Denominators } });
@@ -95,10 +95,10 @@ public partial class GSubTableTests
     public void ContextualFractions_WithSlash_Works()
     {
         // arrange
-        Font font = new FontCollection().Add(TestFonts.RobotoRegular).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        Font font = TestFonts.GetFont(TestFonts.RobotoRegular, 12);
+        ColorGlyphRenderer renderer = new();
         string testStr = "9/2";
-        int[] expectedGlyphIndices = { 580, 404, 453 };
+        int[] expectedGlyphIndices = [580, 404, 453];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font) { FeatureTags = new Tag[] { FeatureTags.Fractions } });
@@ -117,8 +117,8 @@ public partial class GSubTableTests
     public void MultipleSubstitution_Works()
     {
         // arrange
-        Font font = new FontCollection().Add(TestFonts.GSubTestFontFile1).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        Font font = TestFonts.GetFont(TestFonts.GSubTestFontFile1, 12);
+        ColorGlyphRenderer renderer = new();
         string testStr = "C";
         int expectedGlyphIndex = 40; // we expect C to be mapped to D.
 
@@ -136,8 +136,8 @@ public partial class GSubTableTests
     public void AlternateSubstitution_Works()
     {
         // arrange
-        Font font = new FontCollection().Add(TestFonts.GSubTestFontFile1).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        Font font = TestFonts.GetFont(TestFonts.GSubTestFontFile1, 12);
+        ColorGlyphRenderer renderer = new();
         string testStr = "E";
         int expectedGlyphIndex = 42; // we expect E to be mapped to F.
 
@@ -155,8 +155,8 @@ public partial class GSubTableTests
     public void LigatureSubstitution_Works()
     {
         // arrange
-        Font font = new FontCollection().Add(TestFonts.GSubTestFontFile1).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        Font font = TestFonts.GetFont(TestFonts.GSubTestFontFile1, 12);
+        ColorGlyphRenderer renderer = new();
         string testStr = "ffi";
         int expectedGlyphIndex = 229;
 
@@ -174,10 +174,10 @@ public partial class GSubTableTests
     public void ContextualSubstitution_Format1_Works()
     {
         // arrange
-        Font font = new FontCollection().Add(TestFonts.GSubLookupType5Format1).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        Font font = TestFonts.GetFont(TestFonts.GSubLookupType5Format1, 12);
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0041\u0042"; // "6566" (\u0041\u0042) -> "6576"
-        int[] expectedGlyphIndices = { 3, 7 };
+        int[] expectedGlyphIndices = [3, 7];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
@@ -196,10 +196,10 @@ public partial class GSubTableTests
     public void ContextualSubstitution_Format2_Works()
     {
         // arrange
-        Font font = new FontCollection().Add(TestFonts.GSubLookupType5Format2).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        Font font = TestFonts.GetFont(TestFonts.GSubLookupType5Format2, 12);
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0041\u0042"; // "6566" (\u0041\u0042) -> "6576"
-        int[] expectedGlyphIndices = { 3, 7 };
+        int[] expectedGlyphIndices = [3, 7];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
@@ -218,10 +218,10 @@ public partial class GSubTableTests
     public void ContextualSubstitution_Format3_Works()
     {
         // arrange
-        Font font = new FontCollection().Add(TestFonts.GSubLookupType5Format3).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        Font font = TestFonts.GetFont(TestFonts.GSubLookupType5Format3, 12);
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0041\u0042\u0043\u0044"; // "65666768" -> "657678"
-        int[] expectedGlyphIndices = { 67, 78, 80 };
+        int[] expectedGlyphIndices = [67, 78, 80];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
@@ -240,10 +240,10 @@ public partial class GSubTableTests
     public void ChainedContextsSubstitution_Format1_Works()
     {
         // arrange
-        Font font = new FontCollection().Add(TestFonts.GSubLookupType6Format1).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        Font font = TestFonts.GetFont(TestFonts.GSubLookupType6Format1, 12);
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0014\u0015\u0016\u0017"; // "20212223" -> "20636423"
-        int[] expectedGlyphIndices = { 22, 63, 64, 25 };
+        int[] expectedGlyphIndices = [22, 63, 64, 25];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
@@ -262,10 +262,10 @@ public partial class GSubTableTests
     public void ChainedContextsSubstitution_Format2_Works()
     {
         // arrange
-        Font font = new FontCollection().Add(TestFonts.GSubLookupType6Format2).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        Font font = TestFonts.GetFont(TestFonts.GSubLookupType6Format2, 12);
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0014\u0015\u0016\u0017"; // "20212223" -> "20216423"
-        int[] expectedGlyphIndices = { 22, 23, 64, 25 };
+        int[] expectedGlyphIndices = [22, 23, 64, 25];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
@@ -284,10 +284,10 @@ public partial class GSubTableTests
     public void ChainedContextsSubstitution_Format3_Works()
     {
         // arrange
-        Font font = new FontCollection().Add(TestFonts.GSubTestFontFile2).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        Font font = TestFonts.GetFont(TestFonts.GSubTestFontFile2, 12);
+        ColorGlyphRenderer renderer = new();
         string testStr = "x=y"; // This should be replaced with "x>y".
-        int[] expectedGlyphIndices = { 89, 31, 90 };
+        int[] expectedGlyphIndices = [89, 31, 90];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
@@ -306,10 +306,10 @@ public partial class GSubTableTests
     public void ChainedContextsSubstitution_Format3_WithCursiveScript_Works()
     {
         // arrange
-        Font font = new FontCollection().Add(TestFonts.FormalScript).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        Font font = TestFonts.GetFont(TestFonts.FormalScript, 12);
+        ColorGlyphRenderer renderer = new();
         string testStr = "ba"; // Characters following b should have a special form and should be replaced.
-        int[] expectedGlyphIndices = { 69, 102 };
+        int[] expectedGlyphIndices = [69, 102];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
@@ -328,10 +328,10 @@ public partial class GSubTableTests
     public void ReverseChainingContextualSingleSubstitution_Works()
     {
         // arrange
-        Font font = new FontCollection().Add(TestFonts.GSubTestFontFile2).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        Font font = TestFonts.GetFont(TestFonts.GSubTestFontFile2, 12);
+        ColorGlyphRenderer renderer = new();
         string testStr = "X89"; // X89 -> XYZ
-        int[] expectedGlyphIndices = { 57, 58, 59 };
+        int[] expectedGlyphIndices = [57, 58, 59];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
@@ -349,10 +349,10 @@ public partial class GSubTableTests
     public void OldStyleFiguresFeature_Works()
     {
         // arrange
-        Font font = new FontCollection().Add(TestFonts.EbGaramond).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        Font font = TestFonts.GetFont(TestFonts.EbGaramond, 12);
+        ColorGlyphRenderer renderer = new();
         string testStr = "123456";
-        int[] expectedGlyphIndices = { 2242, 2243, 2244, 2245, 2246, 2247 };
+        int[] expectedGlyphIndices = [2242, 2243, 2244, 2245, 2246, 2247];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font)
@@ -372,7 +372,7 @@ public partial class GSubTableTests
     public void BillionLaughsAttackDoesNotThrowException()
     {
         // Arrange
-        Font font = new FontCollection().Add(TestFonts.GSubLookupType2BillionLaughs).CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.GSubLookupType2BillionLaughs, 12);
 
         // Act
         TextMeasurer.MeasureSize("lol", new TextOptions(font));
