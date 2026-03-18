@@ -34,8 +34,9 @@ public static partial class Generator
         { ISC.ConsonantPrecedingRepha, Categories.Repha },
         { ISC.ConsonantPrefixed, Categories.X },
         { ISC.ConsonantSubjoined, Categories.CM },
-        { ISC.ConsonantSucceedingRepha, Categories.N },
-        { ISC.ConsonantWithStacker, Categories.Repha },
+        { ISC.ConsonantInitialPostfixed, Categories.C },
+        { ISC.ConsonantSucceedingRepha, Categories.CM },
+        { ISC.ConsonantWithStacker, Categories.CS },
         { ISC.GeminationMark, Categories.SM }, // https://github.com/harfbuzz/harfbuzz/issues/552
         { ISC.InvisibleStacker, Categories.Coeng }, // TODO: Use H once we add explicit Khmer shaper
         { ISC.Joiner, Categories.ZWJ },
@@ -46,7 +47,7 @@ public static partial class Generator
         { ISC.NumberJoiner, Categories.Placeholder },
         { ISC.PureKiller, Categories.M },
         { ISC.RegisterShifter, Categories.RS },
-        { ISC.SyllableModifier, Categories.M },
+        { ISC.SyllableModifier, Categories.SM },
         { ISC.ToneLetter, Categories.X },
         { ISC.ToneMark, Categories.N },
         { ISC.Virama, Categories.H },
@@ -338,11 +339,11 @@ public static partial class Generator
         {
             position = Positions.Base_C;
         }
-        else if (category is Categories.M)
+        else if (category is Categories.M or Categories.MPst)
         {
             position = MatraPosition(codepoint, position);
         }
-        else if (category is Categories.SM or Categories.A or Categories.Symbol)
+        else if (category is Categories.SM or Categories.SMPst or Categories.A or Categories.Symbol)
         {
             position = Positions.SMVD;
         }
@@ -367,11 +368,21 @@ public static partial class Generator
         for (int i = 0; i < codePoints.Length; i++)
         {
             Codepoint codePoint = codePoints[i];
-            Categories rawCategory = IndicShapingOverrides.GetValueOrDefault(
-                codePoint.Code,
-                CategoryMap.GetValueOrDefault(codePoint.IndicSyllabicCategory, Categories.X));
 
-            // Apply HarfBuzz-style matra normalization for Khmer/Myanmar blocks.
+            // Step 1: Map from IndicSyllabicCategory to shaping category.
+            Categories baseCategory = CategoryMap.GetValueOrDefault(codePoint.IndicSyllabicCategory, Categories.X);
+
+            // Step 2: SM with no positional category becomes SMPst.
+            // https://github.com/harfbuzz/harfbuzz/blob/main/src/gen-indic-table.py
+            if (baseCategory == Categories.SM && codePoint.IndicPositionalCategory == IPC.NA)
+            {
+                baseCategory = Categories.SMPst;
+            }
+
+            // Step 3: Apply per-codepoint overrides.
+            Categories rawCategory = IndicShapingOverrides.GetValueOrDefault(codePoint.Code, baseCategory);
+
+            // Step 4: Apply HarfBuzz-style matra normalization for Khmer/Myanmar blocks.
             Categories category = NormalizeCategoryForBlock(codePoint, rawCategory);
 
             int position = GetPosition(codePoint, category);
