@@ -2,6 +2,9 @@
 // Licensed under the Six Labors Split License.
 
 using SixLabors.Fonts.Rendering;
+using SixLabors.Fonts.Unicode;
+using SixLabors.Fonts.Unicode.Resources;
+using Categories = SixLabors.Fonts.Unicode.Resources.IndicShapingData.Categories;
 
 namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub;
 
@@ -483,6 +486,23 @@ public partial class GSubTableTests
         {
             Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
         }
+    }
+
+    // Verifies that the generated Indic shaping trie assigns the correct
+    // HarfBuzz-compatible categories to codepoints whose mappings were
+    // previously incorrect.
+    [Theory]
+    [InlineData(0x0CF1, (int)Categories.CS)]   // KANNADA SIGN JIHVAMULIYA
+    [InlineData(0x0CF2, (int)Categories.CS)]   // KANNADA SIGN UPADHMANIYA
+    [InlineData(0x17CC, (int)Categories.CM)]   // KHMER SIGN ROBAT
+    [InlineData(0x09FE, (int)Categories.SM)]   // BENGALI SANDHI MARK
+    [InlineData(0x0A71, (int)Categories.SM)]   // GURMUKHI ADDAK
+    [InlineData(0x0A40, (int)Categories.MPst)] // GURMUKHI VOWEL SIGN II
+    public void IndicShapingCategoryIsCorrect(int codePoint, int expectedCategory)
+    {
+        int properties = UnicodeData.GetIndicShapingProperties((uint)codePoint);
+        int actual = properties >> 8;
+        Assert.Equal(expectedCategory, actual);
     }
 
     [Theory]
