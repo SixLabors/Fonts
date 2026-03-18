@@ -12,14 +12,14 @@ public class IndexLocationTableTests
     [Fact]
     public void ShouldThrowExceptionWhenHeadTableCouldNotBeFound()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteTrueTypeFileHeader();
 
         using (MemoryStream stream = writer.GetStream())
         {
             MissingFontTableException exception = Assert.Throws<MissingFontTableException>(() =>
             {
-                using var reader = new FontReader(stream);
+                using FontReader reader = new(stream);
                 IndexLocationTable.Load(reader);
             });
 
@@ -30,7 +30,7 @@ public class IndexLocationTableTests
     [Fact]
     public void ShouldThrowExceptionWhenMaximumProfileTableCouldNotBeFound()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteTrueTypeFileHeader(new TableHeader("head", 0, 0, 0));
 
         writer.WriteHeadTable(new HeadTable(
@@ -47,7 +47,7 @@ public class IndexLocationTableTests
         {
             InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(() =>
             {
-                using var reader = new FontReader(stream);
+                using FontReader reader = new(stream);
                 IndexLocationTable.Load(reader);
             });
 
@@ -58,7 +58,7 @@ public class IndexLocationTableTests
     [Fact]
     public void ShouldReturnNullWhenTableCouldNotBeFound()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteTrueTypeFileHeader(new TableHeader("head", 0, 0, 0), new TableHeader("maxp", 0, 0, 0));
 
         writer.WriteHeadTable(new HeadTable(
@@ -73,7 +73,7 @@ public class IndexLocationTableTests
 
         using (MemoryStream stream = writer.GetStream())
         {
-            using var reader = new FontReader(stream);
+            using FontReader reader = new(stream);
             Assert.Null(IndexLocationTable.Load(reader));
         }
     }

@@ -11,8 +11,8 @@ public partial class CodePointTests
     [MemberData(nameof(GeneralTestData_BmpCodePoints_NoSurrogates))]
     public static void Ctor_Cast_Char_Valid(GeneralTestData testData)
     {
-        var codePoint = new CodePoint(checked((char)testData.ScalarValue));
-        var codePointFromCast = (CodePoint)(char)testData.ScalarValue;
+        CodePoint codePoint = new(checked((char)testData.ScalarValue));
+        CodePoint codePointFromCast = (CodePoint)(char)testData.ScalarValue;
 
         Assert.Equal(codePoint, codePointFromCast);
         Assert.Equal(testData.ScalarValue, codePoint.Value);
@@ -34,8 +34,8 @@ public partial class CodePointTests
     [MemberData(nameof(GeneralTestData_SupplementaryCodePoints_ValidOnly))]
     public static void Ctor_Cast_Int32_Valid(GeneralTestData testData)
     {
-        var codePoint = new CodePoint(testData.ScalarValue);
-        var codePointFromCast = (CodePoint)testData.ScalarValue;
+        CodePoint codePoint = new(testData.ScalarValue);
+        CodePoint codePointFromCast = (CodePoint)testData.ScalarValue;
 
         Assert.Equal(codePoint, codePointFromCast);
         Assert.Equal(testData.ScalarValue, codePoint.Value);
@@ -57,8 +57,8 @@ public partial class CodePointTests
     [MemberData(nameof(GeneralTestData_SupplementaryCodePoints_ValidOnly))]
     public static void Ctor_Cast_UInt32_Valid(GeneralTestData testData)
     {
-        var codePoint = new CodePoint((uint)testData.ScalarValue);
-        var codePointFromCast = (CodePoint)(uint)testData.ScalarValue;
+        CodePoint codePoint = new((uint)testData.ScalarValue);
+        CodePoint codePointFromCast = (CodePoint)(uint)testData.ScalarValue;
 
         Assert.Equal(codePoint, codePointFromCast);
         Assert.Equal(testData.ScalarValue, codePoint.Value);
@@ -168,7 +168,7 @@ public partial class CodePointTests
     [MemberData(nameof(GeneralTestData_SupplementaryCodePoints_ValidOnly))]
     public static void Utf16SequenceLengthIsCorrect(GeneralTestData testData)
     {
-        var codePoint = new CodePoint(testData.ScalarValue);
+        CodePoint codePoint = new(testData.ScalarValue);
         Assert.Equal(testData.Utf16Sequence.Length, codePoint.Utf16SequenceLength);
     }
 
@@ -177,7 +177,7 @@ public partial class CodePointTests
     [MemberData(nameof(GeneralTestData_SupplementaryCodePoints_ValidOnly))]
     public static void Utf8SequenceLengthIsCorrect(GeneralTestData testData)
     {
-        var codePoint = new CodePoint(testData.ScalarValue);
+        CodePoint codePoint = new(testData.ScalarValue);
         Assert.Equal(testData.Utf8Sequence.Length, codePoint.Utf8SequenceLength);
     }
 
@@ -251,7 +251,7 @@ public partial class CodePointTests
     {
         for (uint i = 0; i <= 0x10FFFFu; i++)
         {
-            var cp = new CodePoint(i);
+            CodePoint cp = new(i);
             if (cp.IsBmp)
             {
                 Assert.Equal(CodePoint.IsControl(new CodePoint(i)), char.IsControl((char)i));
@@ -301,8 +301,8 @@ public partial class CodePointTests
     [InlineData(0x100, 0x80)]
     public static void Operators_And_CompareTo(uint scalarValueLeft, uint scalarValueRight)
     {
-        var left = new CodePoint(scalarValueLeft);
-        var right = new CodePoint(scalarValueRight);
+        CodePoint left = new(scalarValueLeft);
+        CodePoint right = new(scalarValueRight);
 
         Assert.Equal(scalarValueLeft == scalarValueRight, left == right);
         Assert.Equal(scalarValueLeft != scalarValueRight, left != right);

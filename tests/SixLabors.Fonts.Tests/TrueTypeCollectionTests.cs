@@ -10,7 +10,7 @@ public class TrueTypeCollectionTests
     [Fact]
     public void AddViaPathReturnsDescription()
     {
-        var suit = new FontCollection();
+        FontCollection suit = new();
         IEnumerable<FontFamily> collectionFromPath = suit.AddCollection(TestFonts.SimpleTrueTypeCollection, out IEnumerable<FontDescription> descriptions);
 
         Assert.Equal(2, descriptions.Count());
@@ -25,7 +25,7 @@ public class TrueTypeCollectionTests
     [Fact]
     public void AddViaPathAddFontFileInstances()
     {
-        var sut = new FontCollection();
+        FontCollection sut = new();
         IEnumerable<FontFamily> collectionFromPath = sut.AddCollection(TestFonts.SimpleTrueTypeCollection, out IEnumerable<FontDescription> descriptions);
 
         IEnumerable<FontMetrics> allInstances = sut.Families.SelectMany(x => ((IReadOnlyFontMetricsCollection)sut).GetAllMetrics(x.Name, CultureInfo.InvariantCulture));
@@ -39,7 +39,7 @@ public class TrueTypeCollectionTests
     [Fact]
     public void AddViaStreamReturnsDescription()
     {
-        var suit = new FontCollection();
+        FontCollection suit = new();
         IEnumerable<FontFamily> collectionFromPath = suit.AddCollection(TestFonts.SSimpleTrueTypeCollectionData(), out IEnumerable<FontDescription> descriptions);
 
         Assert.Equal(2, collectionFromPath.Count());

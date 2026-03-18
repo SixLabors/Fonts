@@ -10,7 +10,7 @@ public class Issues_417
     [Fact]
     public void DoesNotThrow_InvalidAnchor()
     {
-        FontFamily family = new FontCollection().Add(TestFonts.NotoSansRegular);
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.NotoSansRegular);
         family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
 
         Font font = family.CreateFont(metrics?.UnitsPerEm ?? 1000);
@@ -30,7 +30,7 @@ public class Issues_417
         GlyphRenderer renderer = new();
         TextRenderer.RenderTextTo(renderer, "Text", new TextOptions(font));
 
-        int[] expectedGlyphIndices = { 55, 72, 91, 87 };
+        int[] expectedGlyphIndices = [55, 72, 91, 87];
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
         for (int i = 0; i < expectedGlyphIndices.Length; i++)
         {

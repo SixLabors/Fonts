@@ -10,11 +10,7 @@ public class Issues_298
     {
         const string content = "Please enter the text";
 
-        FontCollection fontFamilies = new();
-
-        FontFamily fontFamily = fontFamilies.Add(TestFonts.Issues.Issue298File);
-
-        Font font = fontFamily.CreateFont(16, FontStyle.Regular);
+        Font font = TestFonts.GetFont(TestFonts.Issues.Issue298File, 16);
 
         TextOptions renderOptions = new(font)
         {

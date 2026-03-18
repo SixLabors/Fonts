@@ -17,7 +17,7 @@ public class LineBreakEnumeratorTests
     [Fact]
     public void BasicLatinTest()
     {
-        var lineBreaker = new LineBreakEnumerator("Hello World\r\nThis is a test.".AsSpan());
+        LineBreakEnumerator lineBreaker = new("Hello World\r\nThis is a test.".AsSpan());
 
         Assert.True(lineBreaker.MoveNext());
         Assert.Equal(6, lineBreaker.Current.PositionWrap);
@@ -51,12 +51,7 @@ public class LineBreakEnumeratorTests
     {
         const string text1 = "Super Smash Bros (1999)";
         const string text2 = "Super, Smash Bros (1999)";
-        List<LineBreak> breaks1 = new();
-
-        foreach (LineBreak lineBreak in new LineBreakEnumerator(text1.AsSpan()))
-        {
-            breaks1.Add(lineBreak);
-        }
+        List<LineBreak> breaks1 = [.. new LineBreakEnumerator(text1.AsSpan())];
 
         Assert.Equal(5, breaks1[0].PositionMeasure);
         Assert.Equal(6, breaks1[0].PositionWrap);
@@ -67,11 +62,7 @@ public class LineBreakEnumeratorTests
         Assert.Equal(23, breaks1[3].PositionMeasure);
         Assert.Equal(23, breaks1[3].PositionWrap);
 
-        List<LineBreak> breaks2 = new();
-        foreach (LineBreak lineBreak in new LineBreakEnumerator(text2.AsSpan()))
-        {
-            breaks2.Add(lineBreak);
-        }
+        List<LineBreak> breaks2 = [.. new LineBreakEnumerator(text2.AsSpan())];
 
         Assert.Equal(6, breaks2[0].PositionMeasure);
         Assert.Equal(7, breaks2[0].PositionWrap);
@@ -87,7 +78,7 @@ public class LineBreakEnumeratorTests
     public void ForwardTextWithOuterWhitespace()
     {
         string text = " Apples Pears Bananas   ";
-        var breaks = new List<LineBreak>();
+        List<LineBreak> breaks = new();
 
         foreach (LineBreak lineBreak in new LineBreakEnumerator(text.AsSpan()))
         {
@@ -108,7 +99,7 @@ public class LineBreakEnumeratorTests
     public void ForwardTest()
     {
         string text = "Apples Pears Bananas";
-        var breaks = new List<LineBreak>();
+        List<LineBreak> breaks = new();
 
         foreach (LineBreak lineBreak in new LineBreakEnumerator(text.AsSpan()))
         {
@@ -137,7 +128,7 @@ public class LineBreakEnumeratorTests
         string[] lines = File.ReadAllLines(Path.Combine(TestEnvironment.UnicodeTestDataFullPath, "LineBreakTest.txt"));
 
         // Process each line
-        var tests = new List<Test>();
+        List<Test> tests = new();
         for (int lineNumber = 1; lineNumber < lines.Length + 1; lineNumber++)
         {
             // Get the line, remove comments
@@ -149,8 +140,8 @@ public class LineBreakEnumeratorTests
                 continue;
             }
 
-            var codePoints = new List<uint>();
-            var breakPoints = new List<int>();
+            List<uint> codePoints = new();
+            List<int> breakPoints = new();
 
             // Parse the test
             int p = 0;
@@ -182,17 +173,17 @@ public class LineBreakEnumeratorTests
                     p++;
                 }
 
-                string codePointStr = line.Substring(codePointPos, p - codePointPos);
+                string codePointStr = line[codePointPos..p];
                 uint codePoint = Convert.ToUInt32(codePointStr, 16);
                 codePoints.Add(codePoint);
             }
 
             // Create test
-            var test = new Test(lineNumber, codePoints.ToArray(), breakPoints.ToArray());
+            Test test = new(lineNumber, [.. codePoints], [.. breakPoints]);
             tests.Add(test);
         }
 
-        var foundBreaks = new List<int>();
+        List<int> foundBreaks = new();
 
         for (int testNumber = 0; testNumber < tests.Count; testNumber++)
         {
@@ -203,7 +194,7 @@ public class LineBreakEnumeratorTests
             // Run the line breaker and build a list of break points
             string text = Encoding.UTF32.GetString(MemoryMarshal.Cast<uint, byte>(t.CodePoints).ToArray());
 
-            var enumerator = new LineBreakEnumerator(text.AsSpan());
+            LineBreakEnumerator enumerator = new(text.AsSpan());
             while (enumerator.MoveNext())
             {
                 foundBreaks.Add(enumerator.Current.PositionWrap);
@@ -228,7 +219,7 @@ public class LineBreakEnumeratorTests
 
             if (!pass)
             {
-                LineBreakClass[] classes = t.CodePoints.Select(x => UnicodeData.GetLineBreakClass(x)).ToArray();
+                LineBreakClass[] classes = [.. t.CodePoints.Select(x => UnicodeData.GetLineBreakClass(x))];
 
                 this.output.WriteLine($"Failed test on line {t.LineNumber}");
                 this.output.WriteLine($"    Code Points: {string.Join(" ", t.CodePoints)}");

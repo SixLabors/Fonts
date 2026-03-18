@@ -10,7 +10,7 @@ public class Issues_337
     [Fact]
     public void CanShapeCompositeGlyphs()
     {
-        Font font = new FontCollection().Add(TestFonts.DFKaiSBFile).CreateFont(1024);
+        Font font = TestFonts.GetFont(TestFonts.DFKaiSBFile, 1024);
         ColorGlyphRenderer renderer = new();
         TextOptions options = new(font)
         {

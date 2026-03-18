@@ -7,7 +7,7 @@ namespace SixLabors.Fonts.Tests.Issues;
 
 public class Issues_444
 {
-    private readonly FontFamily charisSIL = new FontCollection().Add(TestFonts.CharisSILRegular);
+    private readonly FontFamily charisSIL = TestFonts.GetFontFamily(TestFonts.CharisSILRegular);
 
     [Fact]
     public void Issue_444_A()

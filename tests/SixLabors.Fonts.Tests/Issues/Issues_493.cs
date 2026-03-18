@@ -14,11 +14,7 @@ public class Issues_493
             ᚛ᚐᚅᚋᚐᚇᚐᚅᚈᚐ᚜
             """;
 
-        FontCollection fontCollection = new();
-        string name = fontCollection.Add(TestFonts.NotoSansOghamRegular).Name;
-
-        FontFamily mainFontFamily = fontCollection.Get(name);
-        Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
+        Font mainFont = TestFonts.GetFont(TestFonts.NotoSansOghamRegular, 30);
 
         TextOptions options = new(mainFont) { HintingMode = HintingMode.Standard };
 
@@ -34,11 +30,7 @@ public class Issues_493
             ᚦᛖᚱᛅᛈᛁᛑᛒᚱᚢᚾᚠᛅᚢᛋ
             """;
 
-        FontCollection fontCollection = new();
-        string name = fontCollection.Add(TestFonts.NotoSansRunicRegular).Name;
-
-        FontFamily mainFontFamily = fontCollection.Get(name);
-        Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
+        Font mainFont = TestFonts.GetFont(TestFonts.NotoSansRunicRegular, 30);
 
         TextOptions options = new(mainFont) { HintingMode = HintingMode.Standard };
 
@@ -50,11 +42,7 @@ public class Issues_493
     {
         const string text = "the quick brown fox jumps over the lazy dog";
 
-        FontCollection fontCollection = new();
-        string name = fontCollection.Add(TestFonts.MgOpenCanonicRegular).Name;
-
-        FontFamily mainFontFamily = fontCollection.Get(name);
-        Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
+        Font mainFont = TestFonts.GetFont(TestFonts.MgOpenCanonicRegular, 30);
 
         TextOptions hintOptions = new(mainFont) { HintingMode = HintingMode.Standard };
 

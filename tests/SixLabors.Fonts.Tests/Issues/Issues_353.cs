@@ -13,10 +13,7 @@ public class Issues_353
     [Fact]
     public void Test_Issue_353()
     {
-        FontCollection fontCollection = new();
-        string name = fontCollection.Add(TestFonts.EbGaramond).Name;
-        FontFamily family = fontCollection.Get(name);
-        Font font = family.CreateFont(30, FontStyle.Regular);
+        Font font = TestFonts.GetFont(TestFonts.EbGaramond, 30);
 
         string text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus. Sed sit amet ipsum mauris.";
         TextOptions options = new(font)

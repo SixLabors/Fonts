@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Globalization;
 using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Unicode;
 using Xunit.Abstractions;
@@ -17,14 +18,14 @@ public class BidiAlgorithmTests
     public void RendersKurdishTextCorrect()
     {
         // arrange
-        Font arabicFont = new FontCollection().Add(TestFonts.ArabicFontFile).CreateFont(8);
+        Font arabicFont = TestFonts.GetFont(TestFonts.ArabicFontFile, 8);
         ColorGlyphRenderer renderer = new();
         const string testStr = "نەما خانی هەتا چیڕۆکی عیشقی ئێمە داڕێژێ";
         int[] expectedGlyphIndices =
-        {
+        [
             0, 214, 0, 0, 139, 197, 3, 0, 289, 0, 333, 3, 336, 266, 221, 337, 242, 3, 336, 276, 0, 0, 337,
             188, 3, 140, 170, 0, 301, 3, 336, 294, 140, 196, 3, 140, 290, 0, 294
-        };
+        ];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
@@ -41,14 +42,14 @@ public class BidiAlgorithmTests
     public void RendersFarsiTextCorrect()
     {
         // arrange
-        Font arabicFont = new FontCollection().Add(TestFonts.ArabicFontFile).CreateFont(8);
-        var renderer = new ColorGlyphRenderer();
+        Font arabicFont = TestFonts.GetFont(TestFonts.ArabicFontFile, 8);
+        ColorGlyphRenderer renderer = new();
         const string testStr = "زناب فارسی را تک کمی سخت است";
         int[] expectedGlyphIndices =
-        {
+        [
             168, 218, 139, 3, 168, 195, 218, 3, 336, 289, 276, 3, 274, 170, 3, 139,
             203, 3, 336, 218, 203, 140, 250, 3, 157, 140, 294, 207
-        };
+        ];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
@@ -65,15 +66,15 @@ public class BidiAlgorithmTests
     public void RendersArabicTextWithPunctuationCorrectly()
     {
         // arrange
-        Font arabicFont = new FontCollection().Add(TestFonts.TimesNewRomanFile).CreateFont(12);
+        Font arabicFont = TestFonts.GetFont(TestFonts.TimesNewRomanFile, 12);
         ColorGlyphRenderer renderer = new();
         const string testStr = "زۆرمان باس کرد؛ باسی ئاو، کەش، هەوای کوردستان.";
         int[] expectedGlyphIndices =
-        {
+        [
             17, 997, 910, 920, 947, 937, 941, 1006, 815, 3, 821, 909, 1005, 1002, 1003, 3, 748,
             949, 1002, 815, 3, 748, 1005, 910, 907, 3, 822, 947, 910, 913, 3, 749, 937, 942, 815,
             3, 945, 910, 913, 3, 997, 910, 995, 941, 1574, 943
-        };
+        ];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
@@ -90,10 +91,10 @@ public class BidiAlgorithmTests
     public void RendersArabicNumbersFromLeftToRight()
     {
         // arrange
-        Font arabicFont = new FontCollection().Add(TestFonts.ArabicFontFile).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        Font arabicFont = TestFonts.GetFont(TestFonts.ArabicFontFile, 12);
+        ColorGlyphRenderer renderer = new();
         string testStr = "٠١٢٣٤٥٦٧٨٩";
-        int[] expectedGlyphIndices = { 403, 405, 407, 409, 411, 413, 415, 417, 419, 421 };
+        int[] expectedGlyphIndices = [403, 405, 407, 409, 411, 413, 415, 417, 419, 421];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
@@ -110,10 +111,10 @@ public class BidiAlgorithmTests
     public void MixingArabicWordsWithNumbers_Works()
     {
         // arrange
-        Font arabicFont = new FontCollection().Add(TestFonts.SegeouiFontFile).CreateFont(12);
+        Font arabicFont = TestFonts.GetFont(TestFonts.SegeouiFontFile, 12);
         ColorGlyphRenderer renderer = new();
         const string testStr = "لە ساڵی ١٢٣٤ ڕوویدا";
-        int[] expectedGlyphIndices = { 2317, 3631, 2380, 2345, 2345, 2485, 3, 2264, 2265, 2266, 2267, 3, 2379, 2540, 2247, 2260, 3, 2842, 2286 };
+        int[] expectedGlyphIndices = [2317, 3631, 2380, 2345, 2345, 2485, 3, 2264, 2265, 2266, 2267, 3, 2379, 2540, 2247, 2260, 3, 2842, 2286];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
@@ -130,10 +131,10 @@ public class BidiAlgorithmTests
     public void MathematicalFormulasWithArabicText_Works()
     {
         // arrange
-        Font arabicFont = new FontCollection().Add(TestFonts.SegeouiFontFile).CreateFont(12);
+        Font arabicFont = TestFonts.GetFont(TestFonts.SegeouiFontFile, 12);
         ColorGlyphRenderer renderer = new();
         const string testStr = "١١س + ٨ج = ٨٥١";
-        int[] expectedGlyphIndices = { 2271, 2268, 2264, 3, 32, 3, 2322, 2271, 3, 14, 3, 2329, 2264, 2264 };
+        int[] expectedGlyphIndices = [2271, 2268, 2264, 3, 32, 3, 2322, 2271, 3, 14, 3, 2329, 2264, 2264];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
@@ -157,9 +158,9 @@ public class BidiAlgorithmTests
         // Read the test file
         string[] lines = File.ReadAllLines(Path.Combine(TestEnvironment.UnicodeTestDataFullPath, "BidiTest.txt"));
 
-        var bidi = new BidiAlgorithm();
+        BidiAlgorithm bidi = new();
 
-        var tests = new List<Test>();
+        List<Test> tests = [];
 
         // Process each line
         int[] levels = null;
@@ -175,11 +176,11 @@ public class BidiAlgorithmTests
             }
 
             // Directive?
-            if (line.StartsWith("@"))
+            if (line.StartsWith('@'))
             {
-                if (line.StartsWith("@Levels:"))
+                if (line.StartsWith("@Levels:", StringComparison.InvariantCulture))
                 {
-                    levels = line.Substring(8).Trim().Split(' ').Where(x => x.Length > 0).Select(x =>
+                    levels = [.. line[8..].Trim().Split(' ').Where(x => x.Length > 0).Select(x =>
                     {
                         if (x == "x")
                         {
@@ -187,9 +188,9 @@ public class BidiAlgorithmTests
                         }
                         else
                         {
-                            return int.Parse(x);
+                            return int.Parse(x, CultureInfo.InvariantCulture);
                         }
-                    }).ToArray();
+                    })];
                 }
 
                 continue;
@@ -199,17 +200,17 @@ public class BidiAlgorithmTests
             string[] parts = line.Split(';');
 
             // Get the directions
-            BidiCharacterType[] directions = parts[0].Split(' ').Select(x =>
+            BidiCharacterType[] directions = [.. parts[0].Split(' ').Select(x =>
             {
                 UnicodeTypeMaps.BidiCharacterTypeMap.TryGetValue(x, out BidiCharacterType cls);
                 return cls;
-            }).ToArray();
+            })];
 
             // Get the bit set
             int bitset = Convert.ToInt32(parts[1].Trim(), 16);
 
-            BidiPairedBracketType[] pairTypes = Enumerable.Repeat(BidiPairedBracketType.None, directions.Length).ToArray();
-            int[] pairValues = Enumerable.Repeat(0, directions.Length).ToArray();
+            BidiPairedBracketType[] pairTypes = [.. Enumerable.Repeat(BidiPairedBracketType.None, directions.Length)];
+            int[] pairValues = [.. Enumerable.Repeat(0, directions.Length)];
 
             for (int bit = 1; bit < 8; bit <<= 1)
             {
@@ -218,25 +219,13 @@ public class BidiAlgorithmTests
                     continue;
                 }
 
-                sbyte paragraphEmbeddingLevel;
-                switch (bit)
+                sbyte paragraphEmbeddingLevel = bit switch
                 {
-                    case 1:
-                        paragraphEmbeddingLevel = 2;        // Auto
-                        break;
-
-                    case 2:
-                        paragraphEmbeddingLevel = 0;        // LTR
-                        break;
-
-                    case 4:
-                        paragraphEmbeddingLevel = 1;        // RTL
-                        break;
-
-                    default:
-                        throw new NotSupportedException();
-                }
-
+                    1 => 2, // Auto
+                    2 => 0, // LTR
+                    4 => 1, // RTL
+                    _ => throw new NotSupportedException(),
+                };
                 tests.Add(new Test(directions, paragraphEmbeddingLevel, levels, lineNumber));
             }
         }

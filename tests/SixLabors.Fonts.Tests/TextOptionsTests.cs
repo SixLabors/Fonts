@@ -216,7 +216,7 @@ public class TextOptionsTests
             ColorFontSupport = ColorFontSupport.None
         };
 
-        ReadOnlySpan<char> text = new[] { character };
+        ReadOnlySpan<char> text = [character];
         GlyphRenderer renderer = new();
         TextRenderer.RenderTextTo(renderer, text, options);
         GlyphRendererParameters glyph = Assert.Single(renderer.GlyphKeys);

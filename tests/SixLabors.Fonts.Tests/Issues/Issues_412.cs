@@ -8,9 +8,7 @@ public class Issues_412
     [Fact]
     public void ShouldCreateCorrectTextRunCount()
     {
-        FontCollection collection = new();
-        FontFamily family = collection.Add(TestFonts.OpenSansFile);
-        Font font = family.CreateFont(24);
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFile, 24);
 
         TextOptions options = new(font)
         {

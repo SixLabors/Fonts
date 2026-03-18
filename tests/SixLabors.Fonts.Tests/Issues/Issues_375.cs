@@ -2,12 +2,13 @@
 // Licensed under the Six Labors Split License.
 
 namespace SixLabors.Fonts.Tests.Issues;
+
 public class Issues_375
 {
     [Fact]
     public void DiacriticsAreMeasuredCorrectly()
     {
-        Font font = new FontCollection().Add(TestFonts.PermanentMarkerRegularFile).CreateFont(142);
+        Font font = TestFonts.GetFont(TestFonts.PermanentMarkerRegularFile, 142);
 
         TextOptions options = new(font);
 
@@ -15,7 +16,7 @@ public class Issues_375
         FontRectangle size = TextMeasurer.MeasureSize("È", options);
         FontRectangle advance = TextMeasurer.MeasureAdvance("È", options);
 
-        Font fontWoff = new FontCollection().Add(TestFonts.PermanentMarkerRegularWoff2File).CreateFont(142);
+        Font fontWoff = TestFonts.GetFont(TestFonts.PermanentMarkerRegularWoff2File, 142);
 
         TextOptions optionsWoff = new(fontWoff);
 

@@ -21,7 +21,7 @@ public class GlyphTests
     public void RenderToPointAndSingleDPI()
     {
         const string text = "A";
-        CodePoint codePoint = this.AsCodePoint(text);
+        CodePoint codePoint = AsCodePoint(text);
         Font font = CreateFont(text, 10);
         TextRun textRun = new() { Start = 0, End = 1, Font = font };
 
@@ -99,7 +99,7 @@ public class GlyphTests
     [Fact]
     public void LoadGlyph()
     {
-        Font font = new FontCollection().Add(TestFonts.SimpleFontFileData()).CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.SimpleFontFile, 12);
 
         // Get letter A
         Assert.True(font.TryGetGlyphs(new CodePoint(41), ColorFontSupport.None, out Glyph? glyph));
@@ -111,7 +111,7 @@ public class GlyphTests
     [Fact]
     public void RenderColrGlyphTextRenderer()
     {
-        Font font = new FontCollection().Add(TestFonts.TwemojiMozillaData()).CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.TwemojiMozillaFile, 12);
 
         ColorGlyphRenderer renderer = new();
         TextRenderer.RenderTextTo(renderer, "😀", new TextOptions(font)
@@ -125,7 +125,7 @@ public class GlyphTests
     [Fact]
     public void RenderColrGlyphWithVariationSelector()
     {
-        Font font = new FontCollection().Add(TestFonts.TwemojiMozillaData()).CreateFont(72);
+        Font font = TestFonts.GetFont(TestFonts.TwemojiMozillaFile, 72);
 
         const string text = "\u263A\uFE0F"; // Fully-qualified sequence for emoji 'smiling face'
 
@@ -144,7 +144,7 @@ public class GlyphTests
     [Fact]
     public void EmojiWidthIsComputedCorrectlyWithSubstitutionOnZwj()
     {
-        Font font = new FontCollection().Add(TestFonts.SegoeuiEmojiData()).CreateFont(72);
+        Font font = TestFonts.GetFont(TestFonts.SegoeuiEmojiFile, 72);
 
         const string text = "\U0001F469\U0001F3FB\u200D\U0001F91D\u200D\U0001F469\U0001F3FC"; // women holding hands: light skin tone, medium-light skin tone
         const string text2 = "\U0001F46D\U0001F3FB"; // women holding hands: light skin tone
@@ -163,8 +163,8 @@ public class GlyphTests
     [InlineData(true, true, 1238)]
     public void RenderWoffGlyphs_IsEqualToTtfGlyphs(bool applyKerning, bool applyHinting, int expectedControlPoint)
     {
-        Font fontTtf = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
-        Font fontWoff = new FontCollection().Add(TestFonts.OpenSansFileWoff1).CreateFont(12);
+        Font fontTtf = TestFonts.GetFont(TestFonts.OpenSansFile, 12);
+        Font fontWoff = TestFonts.GetFont(TestFonts.OpenSansFileWoff1, 12);
         string testStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
         ColorGlyphRenderer rendererTtf = new();
@@ -194,8 +194,8 @@ public class GlyphTests
     [InlineData("\uFB04")]
     public void RenderWoff_CompositeGlyphs_IsEqualToTtfGlyphs(string testStr)
     {
-        Font fontTtf = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
-        Font fontWoff = new FontCollection().Add(TestFonts.OpenSansFileWoff1).CreateFont(12);
+        Font fontTtf = TestFonts.GetFont(TestFonts.OpenSansFile, 12);
+        Font fontWoff = TestFonts.GetFont(TestFonts.OpenSansFileWoff1, 12);
 
         ColorGlyphRenderer rendererTtf = new();
         TextRenderer.RenderTextTo(rendererTtf, testStr, new TextOptions(fontTtf)
@@ -221,8 +221,8 @@ public class GlyphTests
     [InlineData(true, true, 1238)]
     public void RenderWoff2Glyphs_IsEqualToTtfGlyphs(bool applyKerning, bool applyHinting, int expectedControlPoints)
     {
-        Font fontTtf = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
-        Font fontWoff2 = new FontCollection().Add(TestFonts.OpenSansFileWoff2).CreateFont(12);
+        Font fontTtf = TestFonts.GetFont(TestFonts.OpenSansFile, 12);
+        Font fontWoff2 = TestFonts.GetFont(TestFonts.OpenSansFileWoff2, 12);
         string testStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
         ColorGlyphRenderer rendererTtf = new();
@@ -252,8 +252,8 @@ public class GlyphTests
     [InlineData("\uFB04")]
     public void RenderWoff2_CompositeGlyphs_IsEqualToTtfGlyphs(string testStr)
     {
-        Font fontTtf = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
-        Font fontWoff2 = new FontCollection().Add(TestFonts.OpenSansFileWoff2).CreateFont(12);
+        Font fontTtf = TestFonts.GetFont(TestFonts.OpenSansFile, 12);
+        Font fontWoff2 = TestFonts.GetFont(TestFonts.OpenSansFileWoff2, 12);
 
         ColorGlyphRenderer rendererTtf = new();
         TextRenderer.RenderTextTo(rendererTtf, testStr, new TextOptions(fontTtf)
@@ -294,5 +294,5 @@ public class GlyphTests
     }
 
 #endif
-    private CodePoint AsCodePoint(string text) => CodePoint.DecodeFromUtf16At(text.AsSpan(), 0);
+    private static CodePoint AsCodePoint(string text) => CodePoint.DecodeFromUtf16At(text.AsSpan(), 0);
 }

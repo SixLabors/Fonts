@@ -10,7 +10,7 @@ public class FontCollectionTests
     [Fact]
     public void AddViaPathReturnsDescription()
     {
-        var sut = new FontCollection();
+        FontCollection sut = new();
         sut.Add(TestFonts.CarterOneFile, out FontDescription description);
 
         Assert.NotNull(description);
@@ -22,7 +22,7 @@ public class FontCollectionTests
     [Fact]
     public void AddViaPathAddFontFileInstances()
     {
-        var sut = new FontCollection();
+        FontCollection sut = new();
         FontFamily family = sut.Add(TestFonts.CarterOneFile, out FontDescription descriptions);
 
         IEnumerable<FontMetrics> allInstances = ((IReadOnlyFontMetricsCollection)sut).GetAllMetrics(family.Name, CultureInfo.InvariantCulture);
@@ -36,7 +36,7 @@ public class FontCollectionTests
     [Fact]
     public void AddViaStreamReturnsDescription()
     {
-        var sut = new FontCollection();
+        FontCollection sut = new();
         using Stream s = TestFonts.CarterOneFileData();
         FontFamily family = sut.Add(s, out FontDescription description);
         Assert.NotNull(description);
@@ -59,7 +59,7 @@ public class FontCollectionTests
     [Fact]
     public void CanAddSystemFonts()
     {
-        var collection = new FontCollection();
+        FontCollection collection = new();
 
         Assert.False(collection.Families.Any());
 
@@ -72,7 +72,7 @@ public class FontCollectionTests
     [Fact]
     public void CanAddSystemFontsWithFilter()
     {
-        var collection = new FontCollection();
+        FontCollection collection = new();
         collection.AddSystemFonts(_ => false);
 
         Assert.False(collection.Families.Any());

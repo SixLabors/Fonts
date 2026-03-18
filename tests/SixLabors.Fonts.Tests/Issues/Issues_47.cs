@@ -14,7 +14,7 @@ public class Issues_47
     {
         Font font = CreateFont("\t x");
 
-        var r = new GlyphRenderer();
+        GlyphRenderer r = new();
 
         IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
         {
@@ -42,7 +42,7 @@ public class Issues_47
     {
         Font font = CreateFont("\t x");
 
-        var r = new GlyphRenderer();
+        GlyphRenderer r = new();
 
         IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
         {
@@ -69,7 +69,7 @@ public class Issues_47
         Font font = CreateFont("\t x");
         string text = "   hello world hello world hello world";
 
-        var r = new GlyphRenderer();
+        GlyphRenderer r = new();
 
         IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
         {
@@ -87,7 +87,7 @@ public class Issues_47
         Font font = CreateFont("\t x");
         string text = "hello world hello world hello world   ";
 
-        var r = new GlyphRenderer();
+        GlyphRenderer r = new();
 
         IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
         {
@@ -101,7 +101,7 @@ public class Issues_47
 
     public static Font CreateFont(string text)
     {
-        var fc = (IFontMetricsCollection)new FontCollection();
+        IFontMetricsCollection fc = (IFontMetricsCollection)new FontCollection();
         Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
         return new Font(d, 1F);
     }

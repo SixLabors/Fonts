@@ -10,12 +10,12 @@ public class OS2TableTests
     [Fact]
     public void ShouldReturnNullWhenTableCouldNotBeFound()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteTrueTypeFileHeader();
 
         using (MemoryStream stream = writer.GetStream())
         {
-            using var reader = new FontReader(stream);
+            using FontReader reader = new(stream);
             Assert.Null(OS2Table.Load(reader));
         }
     }

@@ -11,7 +11,7 @@ public class FontLoaderTests
     [Fact]
     public void Issue21_LoopDetectedLoadingGlyphs()
     {
-        Font font = new FontCollection().Add(TestFonts.CarterOneFileData()).CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.CarterOneFile, 12);
 
         Assert.True(font.FontMetrics.TryGetGlyphMetrics(
             new CodePoint('\0'),
@@ -43,7 +43,7 @@ public class FontLoaderTests
     [Fact]
     public void LoadFont_WithTtfFormat()
     {
-        Font font = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFile, 12);
 
         Assert.True(font.TryGetGlyphs(new CodePoint('A'), ColorFontSupport.None, out Glyph? glyph));
 
@@ -58,7 +58,7 @@ public class FontLoaderTests
     [Fact]
     public void LoadFont_WithWoff1Format()
     {
-        Font font = new FontCollection().Add(TestFonts.OpenSansFileWoff1).CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFileWoff1, 12);
 
         Assert.True(font.TryGetGlyphs(new CodePoint('A'), ColorFontSupport.None, out Glyph? glyph));
         GlyphRenderer r = new();
@@ -90,7 +90,7 @@ public class FontLoaderTests
     [Fact]
     public void LoadFont_WithWoff2Format()
     {
-        Font font = new FontCollection().Add(TestFonts.OpensSansWoff2Data()).CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFileWoff2, 12);
 
         Assert.True(font.TryGetGlyphs(new CodePoint('A'), ColorFontSupport.None, out Glyph? glyph));
         GlyphRenderer r = new();
@@ -104,7 +104,7 @@ public class FontLoaderTests
     [Fact]
     public void LoadFont()
     {
-        Font font = new FontCollection().Add(TestFonts.SimpleFontFileData()).CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.SimpleFontFile, 12);
 
         Assert.Equal("SixLaborsSampleAB regular", font.FontMetrics.Description.FontNameInvariantCulture);
         Assert.Equal("Regular", font.FontMetrics.Description.FontSubFamilyNameInvariantCulture);
@@ -120,7 +120,7 @@ public class FontLoaderTests
     [Fact]
     public void LoadFontWoff()
     {
-        Font font = new FontCollection().Add(TestFonts.SimpleFontFileWoffData()).CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.SimpleFontFileWoff, 12);
 
         Assert.Equal("SixLaborsSampleAB regular", font.FontMetrics.Description.FontNameInvariantCulture);
         Assert.Equal("Regular", font.FontMetrics.Description.FontSubFamilyNameInvariantCulture);
@@ -138,7 +138,7 @@ public class FontLoaderTests
     {
         // The following font contains a ClassDefinitionTable with an invalid offset.
         // See https://forum.stimulsoft.com/viewtopic.php?t=60972
-        Font font = new FontCollection().Add(TestFonts.THSarabunFile).CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.THSarabunFile, 12);
 
         FontRectangle advance = TextMeasurer.MeasureAdvance("เราใช้คุกกี้เพื่อพัฒนาประสิทธิภาพ และประสบการณ์ที่ดีในการใช้เว็บไซต์ของคุณ คุณสามารถศึกษารายละเอียดได้ที่", new(font));
 

@@ -25,17 +25,15 @@ public class Issues_470
         string text = stringBuilder.ToString();
 
         FontCollection fontCollection = new();
-        string arial = fontCollection.Add(TestFonts.Arial).Name;
-        string sofia = fontCollection.Add(TestFonts.SofiaSansCondensedLight).Name;
-
-        FontFamily mainFontFamily = fontCollection.Get(arial);
-        Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
+        FontFamily arial = TestFonts.GetFontFamily(fontCollection, TestFonts.Arial);
+        FontFamily sofia = TestFonts.GetFontFamily(fontCollection, TestFonts.SofiaSansCondensedLight);
+        Font mainFont = arial.CreateFont(30, FontStyle.Regular);
 
         TextOptions options = new(mainFont)
         {
             FallbackFontFamilies =
             [
-                fontCollection.Get(sofia),
+                sofia,
             ],
         };
 

@@ -11,7 +11,7 @@ public class Issues_269
     public void CorrectlySetsMetricsForFontsNotAdheringToSpec()
     {
         // AliceFrancesHMK has invalid subtables.
-        Font font = new FontCollection().Add(TestFonts.AliceFrancesHMKRegularFile).CreateFont(25);
+        Font font = TestFonts.GetFont(TestFonts.AliceFrancesHMKRegularFile, 25);
 
         FontRectangle size = TextMeasurer.MeasureSize("H", new TextOptions(font));
         Assert.Equal(30.6000004F, size.Width, Comparer);

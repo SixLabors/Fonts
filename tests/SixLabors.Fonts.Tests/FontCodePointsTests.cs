@@ -10,9 +10,7 @@ public class FontCodePointsTests
     [Fact]
     public void TtfTest()
     {
-        FontCollection collection = new FontCollection();
-        FontFamily family = collection.Add(TestFonts.SimpleFontFile);
-        Font font = family.CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.SimpleFontFile, 12);
 
         IReadOnlyList<CodePoint> codePoints = font.FontMetrics.GetAvailableCodePoints();
         IEnumerable<int> codePointValues = codePoints.Select(x => x.Value);
@@ -30,7 +28,7 @@ public class FontCodePointsTests
         Assert.Contains(0x0062, codePointValues);
         Assert.Contains(0xFFFF, codePointValues);
 
-        HashSet<int> glyphIds = new();
+        HashSet<int> glyphIds = [];
         foreach (CodePoint codePoint in codePoints)
         {
             Assert.True(font.TryGetGlyphs(codePoint, out Glyph? glyph));
@@ -44,9 +42,7 @@ public class FontCodePointsTests
     [Fact]
     public void WoffTest()
     {
-        FontCollection collection = new();
-        FontFamily family = collection.Add(TestFonts.SimpleFontFileWoff);
-        Font font = family.CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.SimpleFontFileWoff, 12);
 
         IReadOnlyList<CodePoint> codePoints = font.FontMetrics.GetAvailableCodePoints();
         IEnumerable<int> codePointValues = codePoints.Select(x => x.Value);
@@ -64,7 +60,7 @@ public class FontCodePointsTests
         Assert.Contains(0x0062, codePointValues);
         Assert.Contains(0xFFFF, codePointValues);
 
-        HashSet<int> glyphIds = new();
+        HashSet<int> glyphIds = [];
         foreach (CodePoint codePoint in codePoints)
         {
             Assert.True(font.TryGetGlyphs(codePoint, out Glyph? glyph));

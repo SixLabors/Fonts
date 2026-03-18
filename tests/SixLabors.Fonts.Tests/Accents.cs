@@ -16,10 +16,9 @@ public class Accents
     [InlineData('õ')]
     public void MeasuringAccentedCharacterDoesNotThrow(char c)
     {
-        FontFamily sans = new FontCollection().Add(TestFonts.OpenSansFile);
-        var font = new Font(sans, 1f, FontStyle.Regular);
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFile, 1f);
 
-        FontRectangle size = TextMeasurer.MeasureSize(c.ToString(), new TextOptions(font));
+        _ = TextMeasurer.MeasureSize(c.ToString(), new TextOptions(font));
     }
 
     [Theory]
@@ -33,9 +32,8 @@ public class Accents
     [InlineData('õ')]
     public void MeasuringWordWithAccentedCharacterDoesNotThrow(char c)
     {
-        FontFamily sans = new FontCollection().Add(TestFonts.OpenSansFile);
-        var font = new Font(sans, 1f, FontStyle.Regular);
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFile, 1f);
 
-        FontRectangle size = TextMeasurer.MeasureSize($"abc{c}def", new TextOptions(font));
+        _ = TextMeasurer.MeasureSize($"abc{c}def", new TextOptions(font));
     }
 }

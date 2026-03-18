@@ -2,12 +2,13 @@
 // Licensed under the Six Labors Split License.
 
 namespace SixLabors.Fonts.Tests.Issues;
+
 public class Issues_378
 {
     [Fact]
     public void DoesNotBreakIncorrectly()
     {
-        Font font = new FontCollection().Add(TestFonts.PlantinStdRegularFile).CreateFont(2048);
+        Font font = TestFonts.GetFont(TestFonts.PlantinStdRegularFile, 2048);
 
         TextOptions options = new(font) { WrappingLength = float.MaxValue };
         FontRectangle size = TextMeasurer.MeasureSize("D\r\nD", options);

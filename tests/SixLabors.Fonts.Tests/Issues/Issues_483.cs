@@ -11,17 +11,15 @@ public class Issues_483
         const string text = "Kannada: ವೇಗವುಳ್ಳ ಕಂದು ನರಿ ಸೋಮಾರಿ ನಾಯಿಯ ಮೇಲೆ ಹಾರುತ್ತದೆ";
 
         FontCollection fontCollection = new();
-        string noto = fontCollection.Add(TestFonts.NotoSansRegular).Name;
-        string kannada = fontCollection.Add(TestFonts.NotoSansKannadaRegular).Name;
-
-        FontFamily mainFontFamily = fontCollection.Get(noto);
-        Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
+        FontFamily noto = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansRegular);
+        FontFamily kannada = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansKannadaRegular);
+        Font mainFont = noto.CreateFont(30, FontStyle.Regular);
 
         TextOptions options = new(mainFont)
         {
             FallbackFontFamilies =
             [
-                fontCollection.Get(kannada),
+                kannada,
             ],
         };
 

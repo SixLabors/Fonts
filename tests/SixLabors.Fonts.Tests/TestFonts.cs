@@ -2,13 +2,12 @@
 // Licensed under the Six Labors Split License.
 
 using System.Collections.Concurrent;
-using System.Reflection;
 
 namespace SixLabors.Fonts.Tests;
 
 public static class TestFonts
 {
-    private static readonly ConcurrentDictionary<string, Stream> Cache = new();
+    private static readonly ConcurrentDictionary<string, Stream> FontStreamCache = new();
 
     public static string TwemojiMozillaFile => GetFullPath("Twemoji Mozilla.ttf");
 
@@ -406,17 +405,53 @@ public static class TestFonts
 
     public static class Issues
     {
-        public static string Issue96File => GetFullPath("Issues/Issue96.fuzz");
+        public static string Issue96File => GetFullPath("Issues/Issue96.ttf");
 
-        public static string Issue97File => GetFullPath("Issues/Issue97.fuzz");
+        public static string Issue97File => GetFullPath("Issues/Issue97.ttf");
 
         public static string Issue298File => GetFullPath("Issues/StyleScript.ttf");
 
         public static string Issue512_CreateCffGlyphMetrics => GetFullPath("Issues/StreamFontMetri.CreateCffGlyphMetrics.otf");
     }
 
-    private static Stream OpenStream(string path) =>
-        Cache.GetOrAdd(
+    /// <summary>
+    /// Gets a font with the given name and size.
+    /// </summary>
+    /// <param name="name">The name of the font.</param>
+    /// <param name="size">The font size.</param>
+    /// <returns>The <see cref="Font"/></returns>
+    public static Font GetFont(string name, float size)
+        => GetFontFamily(name).CreateFont(size);
+
+    /// <summary>
+    /// Gets a font family with the given name.
+    /// </summary>
+    /// <param name="name">The name of the font.</param>
+    /// <returns>The <see cref="Font"/></returns>
+    public static FontFamily GetFontFamily(string name)
+        => GetFontFamily(new FontCollection(), name);
+
+    /// <summary>
+    /// Gets a font with the given name and size.
+    /// </summary>
+    /// <param name="collection">The collection to add the font to</param>
+    /// <param name="name">The name of the font.</param>
+    /// <param name="size">The font size.</param>
+    /// <returns>The <see cref="Font"/></returns>
+    public static Font GetFont(FontCollection collection, string name, float size)
+        => GetFontFamily(collection, name).CreateFont(size);
+
+    /// <summary>
+    /// Gets a font family with the given name
+    /// </summary>
+    /// <param name="collection">The collection to add the font to</param>
+    /// <param name="name">The name of the font.</param>
+    /// <returns>The <see cref="Font"/></returns>
+    public static FontFamily GetFontFamily(FontCollection collection, string name)
+        => collection.Add(name);
+
+    private static MemoryStream OpenStream(string path) =>
+        FontStreamCache.GetOrAdd(
             path,
             p =>
             {
@@ -424,32 +459,14 @@ public static class TestFonts
                 return fs.Clone();
             }).Clone();
 
-    private static Stream Clone(this Stream src)
+    private static MemoryStream Clone(this Stream src)
     {
-        var ms = new MemoryStream();
+        MemoryStream ms = new();
         src.Position = 0;
         src.CopyTo(ms);
         ms.Position = 0;
         return ms;
     }
 
-    public static string GetFullPath(string path)
-    {
-        string root = Path.GetDirectoryName(new Uri(typeof(TestFonts).GetTypeInfo().Assembly.CodeBase).LocalPath);
-
-        string[] paths = new[]
-        {
-            "Fonts",
-            @"..\..\Fonts",
-            @"..\..\..\..\Fonts",
-            @"..\..\..\..\..\Fonts"
-        };
-
-        IEnumerable<string> fullPaths = paths.Select(x => Path.GetFullPath(Path.Combine(root, x)));
-        string rootPath = fullPaths.FirstOrDefault(Directory.Exists);
-
-        Assert.True(rootPath != null, $"could not find the font folder in any of these location, \n{string.Join("\n", fullPaths)}");
-
-        return Path.Combine(rootPath, path);
-    }
+    private static string GetFullPath(string file) => Path.Combine(TestEnvironment.FontTestDataFullPath, file);
 }

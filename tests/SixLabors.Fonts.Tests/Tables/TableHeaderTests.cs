@@ -18,10 +18,10 @@ public class TableHeaderTests
     [MemberData(nameof(ReadAllValuesData))]
     public void ReadAllValues(string tag, uint checksum, uint offset, uint length)
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteTableHeader(tag, checksum, offset, length);
 
-        var header = TableHeader.Read(writer.GetReader());
+        TableHeader header = TableHeader.Read(writer.GetReader());
 
         Assert.Equal(checksum, header.CheckSum);
         Assert.Equal(length, header.Length);

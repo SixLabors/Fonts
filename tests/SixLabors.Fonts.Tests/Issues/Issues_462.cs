@@ -8,8 +8,8 @@ namespace SixLabors.Fonts.Tests.Issues;
 
 public class Issues_462
 {
-    private readonly FontFamily emoji = new FontCollection().Add(TestFonts.NotoColorEmojiRegular);
-    private readonly FontFamily noto = new FontCollection().Add(TestFonts.NotoSansRegular);
+    private readonly FontFamily emoji = TestFonts.GetFontFamily(TestFonts.NotoColorEmojiRegular);
+    private readonly FontFamily noto = TestFonts.GetFontFamily(TestFonts.NotoSansRegular);
 
     [Fact]
     public void CanRenderEmojiFont_With_COLRv1()

@@ -12,7 +12,7 @@ public class ImageDifferenceIsOverThresholdException : ImagesSimilarityException
 
     public ImageDifferenceIsOverThresholdException(params ImageSimilarityReport[] reports)
         : base("Image difference is over threshold!" + FormatReports(reports))
-        => this.Reports = reports.ToArray();
+        => this.Reports = [.. reports];
 
     private static string FormatReports(IEnumerable<ImageSimilarityReport> reports)
     {

@@ -9,7 +9,7 @@ public class Issues_333
     public void DoesNotThrowMissingTableException()
     {
         const string text = "文字測試文字測試文字測試文字測試文字測試";
-        Font font = new FontCollection().Add(TestFonts.PMINGLIUFile).CreateFont(1024);
+        Font font = TestFonts.GetFont(TestFonts.PMINGLIUFile, 1024);
         TextMeasurer.MeasureSize(text, new TextOptions(font));
     }
 }

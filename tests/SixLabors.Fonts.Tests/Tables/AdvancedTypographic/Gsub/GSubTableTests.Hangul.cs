@@ -13,12 +13,7 @@ public partial class GSubTableTests
 {
     private readonly Font hangulFontCFF = CreateHangulFont();
 
-    private static Font CreateHangulFont()
-    {
-        var collection = new FontCollection();
-        FontFamily family = collection.Add(TestFonts.NotoSansKRRegular);
-        return family.CreateFont(12);
-    }
+    private static Font CreateHangulFont() => TestFonts.GetFont(TestFonts.NotoSansKRRegular, 12);
 
     [Fact]
     public void ShouldUseComposedSyllablesCFF()
@@ -26,7 +21,7 @@ public partial class GSubTableTests
         // arrange
         const string input = "\uD734\uAC00\u0020\uAC00\u002D\u002D\u0020\u0028\uC624\u002D\u002D\u0029";
         ColorGlyphRenderer renderer = new();
-        int[] expectedGlyphIndices = { 21324, 10264, 1, 10264, 14, 14, 1, 9, 16956, 14, 14, 10 };
+        int[] expectedGlyphIndices = [21324, 10264, 1, 10264, 14, 14, 1, 9, 16956, 14, 14, 10];
 
         // act
         TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontCFF));
@@ -45,7 +40,7 @@ public partial class GSubTableTests
         // arrange
         const string input = "\u1112\u1172\u1100\u1161\u0020\u1100\u1161\u002D\u002D\u0020\u0028\u110B\u1169\u002D\u002D\u0029";
         ColorGlyphRenderer renderer = new();
-        int[] expectedGlyphIndices = { 21324, 10264, 1, 10264, 14, 14, 1, 9, 16956, 14, 14, 10 };
+        int[] expectedGlyphIndices = [21324, 10264, 1, 10264, 14, 14, 1, 9, 16956, 14, 14, 10];
 
         // act
         TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontCFF));
@@ -64,7 +59,7 @@ public partial class GSubTableTests
         // arrange
         const string input = "\ua960\ud7b0\ud7cb";
         ColorGlyphRenderer renderer = new();
-        int[] expectedGlyphIndices = { 23511, 23860, 24202 };
+        int[] expectedGlyphIndices = [23511, 23860, 24202];
 
         // act
         TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontCFF));
@@ -86,7 +81,7 @@ public partial class GSubTableTests
         // arrange
         const string input = "\u1100\u1161\ud7cb";
         ColorGlyphRenderer renderer = new();
-        int[] expectedGlyphIndices = { 23168, 23789, 24065 };
+        int[] expectedGlyphIndices = [23168, 23789, 24065];
 
         // act
         TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontCFF));
@@ -105,7 +100,7 @@ public partial class GSubTableTests
         // arrange
         const string input = "\ua960\ud7b0\u302f";
         ColorGlyphRenderer renderer = new();
-        int[] expectedGlyphIndices = { 1443, 23759, 23954 };
+        int[] expectedGlyphIndices = [1443, 23759, 23954];
 
         // act
         TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontCFF));
@@ -127,7 +122,7 @@ public partial class GSubTableTests
         // arrange
         const string input = "\uD734\uAC00\u0020\uAC00\u002D\u002D\u0020\u0028\uC624\u002D\u002D\u0029";
         ColorGlyphRenderer renderer = new();
-        int[] expectedGlyphIndices = { 2953, 636, 3, 636, 16, 16, 3, 11, 2077, 16, 16, 12 };
+        int[] expectedGlyphIndices = [2953, 636, 3, 636, 16, 16, 3, 11, 2077, 16, 16, 12];
 
         // act
         TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
@@ -146,7 +141,7 @@ public partial class GSubTableTests
         // arrange
         const string input = "\u1112\u1172\u1100\u1161\u0020\u1100\u1161\u002D\u002D\u0020\u0028\u110B\u1169\u002D\u002D\u0029";
         ColorGlyphRenderer renderer = new();
-        int[] expectedGlyphIndices = { 2953, 636, 3, 636, 16, 16, 3, 11, 2077, 16, 16, 12 };
+        int[] expectedGlyphIndices = [2953, 636, 3, 636, 16, 16, 3, 11, 2077, 16, 16, 12];
 
         // act
         TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
@@ -165,7 +160,7 @@ public partial class GSubTableTests
         // arrange
         const string input = "\ua960\ud7b0\ud7cb";
         ColorGlyphRenderer renderer = new();
-        int[] expectedGlyphIndices = { 21150, 21436, 21569 };
+        int[] expectedGlyphIndices = [21150, 21436, 21569];
 
         // act
         TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
@@ -187,7 +182,7 @@ public partial class GSubTableTests
         // arrange
         const string input = "\u1100\u1161\ud7cb";
         ColorGlyphRenderer renderer = new();
-        int[] expectedGlyphIndices = { 20667, 21294, 21569 };
+        int[] expectedGlyphIndices = [20667, 21294, 21569];
 
         // act
         TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
@@ -206,7 +201,7 @@ public partial class GSubTableTests
         // arrange
         const string input = "\ua960\ud7b0\u302f";
         ColorGlyphRenderer renderer = new();
-        int[] expectedGlyphIndices = { 20665, 21150, 21435 };
+        int[] expectedGlyphIndices = [20665, 21150, 21435];
 
         // act
         TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
@@ -225,7 +220,7 @@ public partial class GSubTableTests
         // arrange
         const string input = "\ua960\ud7b0\ud7cb\u302f";
         ColorGlyphRenderer renderer = new();
-        int[] expectedGlyphIndices = { 20665, 21150, 21436, 21569 };
+        int[] expectedGlyphIndices = [20665, 21150, 21436, 21569];
 
         // act
         TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
@@ -244,7 +239,7 @@ public partial class GSubTableTests
         // arrange
         const string input = "\uac00\u302f";
         ColorGlyphRenderer renderer = new();
-        int[] expectedGlyphIndices = { 20665, 636 };
+        int[] expectedGlyphIndices = [20665, 636];
 
         // act
         TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
@@ -263,7 +258,7 @@ public partial class GSubTableTests
         // arrange
         const string input = "\uac01\u302f";
         ColorGlyphRenderer renderer = new();
-        int[] expectedGlyphIndices = { 20665, 637 };
+        int[] expectedGlyphIndices = [20665, 637];
 
         // act
         TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
@@ -282,7 +277,7 @@ public partial class GSubTableTests
         // arrange
         const string input = "\u1100\u302f\u1161";
         ColorGlyphRenderer renderer = new();
-        int[] expectedGlyphIndices = { 2986, 20665, 21620, 3078 };
+        int[] expectedGlyphIndices = [2986, 20665, 21620, 3078];
 
         // act
         TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));

@@ -9,7 +9,7 @@ public class Issues_403
     [Fact]
     public void DoesNotKernIncorrectly()
     {
-        Font font = new FontCollection().Add(TestFonts.KellySlabFile).CreateFont(2048);
+        Font font = TestFonts.GetFont(TestFonts.KellySlabFile, 2048);
 
         TextOptions options = new(font) { KerningMode = KerningMode.Auto };
         FontRectangle kerned = TextMeasurer.MeasureSize("AY", options);

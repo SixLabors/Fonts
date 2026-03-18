@@ -21,7 +21,7 @@ public class ImageSimilarityReport
         this.ExpectedImage = expectedImage;
         this.ActualImage = actualImage;
         this.TotalNormalizedDifference = totalNormalizedDifference;
-        this.Differences = differences.ToArray();
+        this.Differences = [.. differences];
     }
 
     public int Index { get; }

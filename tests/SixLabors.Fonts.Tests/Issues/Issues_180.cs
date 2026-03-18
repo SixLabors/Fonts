@@ -9,7 +9,7 @@ public class Issues_180
     public void CorrectlySetsHeightMetrics()
     {
         // Whitney-book has invalid hhea values.
-        Font font = new FontCollection().Add(TestFonts.WhitneyBookFile).CreateFont(25);
+        Font font = TestFonts.GetFont(TestFonts.WhitneyBookFile, 25);
 
         FontRectangle size = TextMeasurer.MeasureSize("H", new TextOptions(font));
 

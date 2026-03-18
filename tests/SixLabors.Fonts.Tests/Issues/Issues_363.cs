@@ -8,7 +8,7 @@ public class Issues_363
     [Fact]
     public void GSubFormat2NUllReferenceException()
     {
-        Font font = new FontCollection().Add(TestFonts.BNazaninFile).CreateFont(12);
+        Font font = TestFonts.GetFont(TestFonts.BNazaninFile, 12);
 
         TextOptions textOptions = new(font);
         string text = "تست فونت 1234";

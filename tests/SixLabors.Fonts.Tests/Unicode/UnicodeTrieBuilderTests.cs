@@ -11,8 +11,8 @@ namespace SixLabors.Fonts.Tests.Unicode;
 /// </summary>
 public class UnicodeTrieBuilderTests
 {
-    private static readonly TestRange[] TestRanges1 = new TestRange[]
-    {
+    private static readonly TestRange[] TestRanges1 =
+    [
          new TestRange(0,        0,        0,      false),
          new TestRange(0,        0x40,     0,      false),
          new TestRange(0x40,     0xe7,     0x1234, false),
@@ -28,10 +28,10 @@ public class UnicodeTrieBuilderTests
          new TestRange(0xf0006,  0xf0007,  0x11,   false),
          new TestRange(0xf0007,  0xf0040,  0x12,   false),
          new TestRange(0xf0040,  0x110000, 0,      false)
-    };
+    ];
 
-    private static readonly CheckValue[] CheckValues1 = new CheckValue[]
-    {
+    private static readonly CheckValue[] CheckValues1 =
+    [
         new CheckValue(0,        0),
         new CheckValue(0x40,     0),
         new CheckValue(0xe7,     0x1234),
@@ -48,10 +48,10 @@ public class UnicodeTrieBuilderTests
         new CheckValue(0xf0007,  0x11),
         new CheckValue(0xf0040,  0x12),
         new CheckValue(0x110000, 0),
-    };
+    ];
 
-    private static readonly TestRange[] TestRanges2 = new TestRange[]
-    {
+    private static readonly TestRange[] TestRanges2 =
+    [
         new TestRange(0,        0,        0,      false),
         new TestRange(0x21,     0x7f,     0x5555, true),
         new TestRange(0x2f800,  0x2fedc,  0x7a,   true),
@@ -65,10 +65,10 @@ public class UnicodeTrieBuilderTests
         new TestRange(0x2f900,  0x2ffaa,  1,      false),
         new TestRange(0x2ffaa,  0x2ffab,  2,      true),
         new TestRange(0x2ffbb,  0x2ffc0,  7,      true),
-    };
+    ];
 
-    private static readonly CheckValue[] CheckValues2 = new CheckValue[]
-    {
+    private static readonly CheckValue[] CheckValues2 =
+    [
         new CheckValue(0,        0),
         new CheckValue(0x21,     0),
         new CheckValue(0x72,     0x5555),
@@ -89,10 +89,10 @@ public class UnicodeTrieBuilderTests
         new CheckValue(0x2ffbb,  0),
         new CheckValue(0x2ffc0,  7),
         new CheckValue(0x110000, 0),
-    };
+    ];
 
-    private static readonly TestRange[] TestRanges3 = new TestRange[]
-    {
+    private static readonly TestRange[] TestRanges3 =
+    [
         new TestRange(0,        0,        9, false), // non-zero initial value.
         new TestRange(0x31,     0xa4,     1, false),
         new TestRange(0x3400,   0x6789,   2, false),
@@ -101,10 +101,10 @@ public class UnicodeTrieBuilderTests
         new TestRange(0xabcd,   0xbcde,   3, true),
         new TestRange(0x55555,  0x110000, 6, true), // highStart<U+ffff with non-initialValue
         new TestRange(0xcccc,   0x55555,  6, true),
-    };
+    ];
 
-    private static readonly CheckValue[] CheckValues3 = new CheckValue[]
-    {
+    private static readonly CheckValue[] CheckValues3 =
+    [
         new CheckValue(0,        9),  // non-zero initialValue
         new CheckValue(0x31,     9),
         new CheckValue(0xa4,     1),
@@ -116,35 +116,35 @@ public class UnicodeTrieBuilderTests
         new CheckValue(0xbcde,   3),
         new CheckValue(0xcccc,   9),
         new CheckValue(0x110000, 6),
-    };
+    ];
 
-    private static readonly TestRange[] TestRanges4 = new TestRange[]
-    {
+    private static readonly TestRange[] TestRanges4 =
+    [
         new TestRange(0,        0,        3, false), // Only the element with the initial value.
-    };
+    ];
 
-    private static readonly CheckValue[] CheckValues4 = new CheckValue[]
-    {
+    private static readonly CheckValue[] CheckValues4 =
+    [
         new CheckValue(0,        3),
         new CheckValue(0x110000, 3),
-    };
+    ];
 
-    private static readonly TestRange[] TestRanges5 = new TestRange[]
-    {
+    private static readonly TestRange[] TestRanges5 =
+    [
         new TestRange(0,        0,        3,  false), // Initial value = 3
         new TestRange(0,        0x110000, 5, true)
-    };
+    ];
 
-    private static readonly CheckValue[] CheckValues5 = new CheckValue[]
-    {
+    private static readonly CheckValue[] CheckValues5 =
+    [
         new CheckValue(0,        3),
         new CheckValue(0x110000, 5),
-    };
+    ];
 
     [Fact]
     public void Set()
     {
-        var builder = new UnicodeTrieBuilder(10, 666);
+        UnicodeTrieBuilder builder = new(10, 666);
         builder.Set(0x4567, 99);
 
         Assert.Equal(10u, builder.Get(0x4566));
@@ -156,7 +156,7 @@ public class UnicodeTrieBuilderTests
     [Fact]
     public void SetRange()
     {
-        var builder = new UnicodeTrieBuilder(10, 666);
+        UnicodeTrieBuilder builder = new(10, 666);
         builder.SetRange(13, 6666, 7788, false);
         builder.SetRange(6000, 7000, 9900, true);
 
@@ -172,7 +172,7 @@ public class UnicodeTrieBuilderTests
     [Fact]
     public void SetRangeCompacted()
     {
-        var builder = new UnicodeTrieBuilder(10, 666);
+        UnicodeTrieBuilder builder = new(10, 666);
         builder.SetRange(13, 6666, 7788, false);
         builder.SetRange(6000, 7000, 9900, true);
 
@@ -189,15 +189,15 @@ public class UnicodeTrieBuilderTests
     [Fact]
     public void SetRangeSerialized()
     {
-        var builder = new UnicodeTrieBuilder(10, 666);
+        UnicodeTrieBuilder builder = new(10, 666);
         builder.SetRange(13, 6666, 7788, false);
         builder.SetRange(6000, 7000, 9900, true);
 
-        using var ms = new MemoryStream();
+        using MemoryStream ms = new();
         builder.Freeze().Save(ms);
         ms.Position = 0;
 
-        var trie = new UnicodeTrie(ms);
+        UnicodeTrie trie = new(ms);
         Assert.Equal(10u, trie.Get(12));
         Assert.Equal(7788u, trie.Get(13));
         Assert.Equal(7788u, trie.Get(5999));
@@ -255,7 +255,7 @@ public class UnicodeTrieBuilderTests
         uint initialValue = testRanges[0].Value;
         const uint errorValue = 0x0bad;
 
-        var builder = new UnicodeTrieBuilder(initialValue, errorValue);
+        UnicodeTrieBuilder builder = new(initialValue, errorValue);
         for (int i = 1; i < testRanges.Length; i++)
         {
             TestRange r = testRanges[i];
