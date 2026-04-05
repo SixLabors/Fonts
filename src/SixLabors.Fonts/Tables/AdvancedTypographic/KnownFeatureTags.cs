@@ -7,7 +7,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 /// Provides enumeration for the different font features.
 /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/featuretags"/>
 /// </summary>
-public enum FeatureTags : uint
+public enum KnownFeatureTags : uint
 {
     /// <summary>
     /// Access All Alternates. Shortcode: aalt.

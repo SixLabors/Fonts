@@ -118,9 +118,9 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         isVerticalSubstitution = false;
         isDecomposed = false;
 
-        Tag vert = FeatureTags.VerticalAlternates;
-        Tag vrt2 = FeatureTags.VerticalAlternatesAndRotation;
-        Tag vrtr = FeatureTags.VerticalAlternatesForRotation;
+        Tag vert = KnownFeatureTags.VerticalAlternates;
+        Tag vrt2 = KnownFeatureTags.VerticalAlternatesAndRotation;
+        Tag vrtr = KnownFeatureTags.VerticalAlternatesForRotation;
 
         for (int i = startIndex; i < this.glyphs.Count; i++)
         {
@@ -171,9 +171,9 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         bool hasFallBacks = false;
         List<int> orphans = [];
 
-        Tag vert = FeatureTags.VerticalAlternates;
-        Tag vrt2 = FeatureTags.VerticalAlternatesAndRotation;
-        Tag vrtr = FeatureTags.VerticalAlternatesForRotation;
+        Tag vert = KnownFeatureTags.VerticalAlternates;
+        Tag vrt2 = KnownFeatureTags.VerticalAlternatesAndRotation;
+        Tag vrtr = KnownFeatureTags.VerticalAlternatesForRotation;
 
         for (int i = 0; i < this.glyphs.Count; i++)
         {
@@ -268,9 +268,9 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         LayoutMode layoutMode = this.TextOptions.LayoutMode;
         ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
 
-        Tag vert = FeatureTags.VerticalAlternates;
-        Tag vrt2 = FeatureTags.VerticalAlternatesAndRotation;
-        Tag vrtr = FeatureTags.VerticalAlternatesForRotation;
+        Tag vert = KnownFeatureTags.VerticalAlternates;
+        Tag vrt2 = KnownFeatureTags.VerticalAlternatesAndRotation;
+        Tag vrtr = KnownFeatureTags.VerticalAlternatesForRotation;
 
         for (int i = 0; i < collection.Count; i++)
         {
@@ -358,9 +358,9 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     public void Advance(FontMetrics fontMetrics, int index, ushort glyphId, short dx, short dy)
     {
         LayoutMode layoutMode = this.TextOptions.LayoutMode;
-        Tag vert = FeatureTags.VerticalAlternates;
-        Tag vrt2 = FeatureTags.VerticalAlternatesAndRotation;
-        Tag vrtr = FeatureTags.VerticalAlternatesForRotation;
+        Tag vert = KnownFeatureTags.VerticalAlternates;
+        Tag vrt2 = KnownFeatureTags.VerticalAlternatesAndRotation;
+        Tag vrtr = KnownFeatureTags.VerticalAlternatesForRotation;
 
         GlyphPositioningData glyph = this.glyphs[index];
         GlyphMetrics m = glyph.Metrics;

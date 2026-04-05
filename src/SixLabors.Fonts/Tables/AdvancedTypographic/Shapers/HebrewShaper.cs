@@ -147,7 +147,7 @@ internal class HebrewShaper : DefaultShaper
             if (composed != 0 && fontMetrics.TryGetGlyphId(new CodePoint(composed), out ushort composedGlyphId))
             {
                 // Replace the two glyphs with the composed form.
-                collection.Replace(i - 1, 2, composedGlyphId, FeatureTags.GlyphCompositionDecomposition);
+                collection.Replace(i - 1, 2, composedGlyphId, KnownFeatureTags.GlyphCompositionDecomposition);
                 end--;
                 i--;
             }

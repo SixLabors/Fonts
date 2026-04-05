@@ -1061,7 +1061,7 @@ internal static class TextLayout
 
             if (fontMetrics.TryGetGlyphId(mirror, out ushort glyphId))
             {
-                collection.Replace(i, glyphId, FeatureTags.RightToLeftMirroredForms);
+                collection.Replace(i, glyphId, KnownFeatureTags.RightToLeftMirroredForms);
             }
         }
 
@@ -1087,7 +1087,7 @@ internal static class TextLayout
 
             if (fontMetrics.TryGetGlyphId(mirror, out ushort glyphId))
             {
-                collection.Replace(i, glyphId, FeatureTags.VerticalAlternates);
+                collection.Replace(i, glyphId, KnownFeatureTags.VerticalAlternates);
             }
         }
     }

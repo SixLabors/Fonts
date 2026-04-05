@@ -30,10 +30,10 @@ public readonly struct Tag : IEquatable<Tag>
     public static implicit operator Tag(uint value) => new(value);
 
     /// <summary>
-    /// Implicitly converts a <see cref="FeatureTags"/> to a <see cref="Tag"/>.
+    /// Implicitly converts a <see cref="KnownFeatureTags"/> to a <see cref="Tag"/>.
     /// </summary>
     /// <param name="value">The feature tag enum value.</param>
-    public static implicit operator Tag(FeatureTags value) => new((uint)value);
+    public static implicit operator Tag(KnownFeatureTags value) => new((uint)value);
 
     /// <summary>
     /// Determines whether two <see cref="Tag"/> instances are equal.
