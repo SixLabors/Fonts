@@ -220,7 +220,7 @@ internal sealed class MyanmarShaper : DefaultShaper
                         glyphs[0] = current.GlyphId;
                         glyphs[1] = circleId;
 
-                        substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
+                        substitutionCollection.Replace(i, glyphs, KnownFeatureTags.GlyphCompositionDecomposition);
 
                         // Update shaping info for newly inserted data.
                         GlyphShapingData dotted = substitutionCollection[i + 1];

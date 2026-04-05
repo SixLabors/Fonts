@@ -241,7 +241,7 @@ internal class ThaiShaper : DefaultShaper
 
             // Decompose SARA AM into [NIKHAHIT, SARA AA].
             // Replace puts NIKHAHIT at index i, SARA AA at index i+1.
-            collection.Replace(i, [nikhahitId, saraAAId], FeatureTags.GlyphCompositionDecomposition);
+            collection.Replace(i, [nikhahitId, saraAAId], KnownFeatureTags.GlyphCompositionDecomposition);
             collection[i].CodePoint = new CodePoint(nikhahitCodepoint);
             collection[i + 1].CodePoint = new CodePoint(saraAACodepoint);
             end++;

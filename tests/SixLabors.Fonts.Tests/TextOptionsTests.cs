@@ -313,7 +313,7 @@ public class TextOptionsTests
             DecorationPositioningMode = DecorationPositioningMode.GlyphFont,
             WrappingLength = 42F,
             Tracking = 66F,
-            FeatureTags = new List<Tag> { FeatureTags.OldstyleFigures }
+            FeatureTags = new List<Tag> { KnownFeatureTags.OldstyleFigures }
         };
 
         TextOptions actual = new(expected);

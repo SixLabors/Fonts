@@ -81,7 +81,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [580, 404, 453];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font) { FeatureTags = new Tag[] { FeatureTags.Numerators, FeatureTags.Denominators } });
+        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font) { FeatureTags = new Tag[] { KnownFeatureTags.Numerators, KnownFeatureTags.Denominators } });
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -101,7 +101,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [580, 404, 453];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font) { FeatureTags = new Tag[] { FeatureTags.Fractions } });
+        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font) { FeatureTags = new Tag[] { KnownFeatureTags.Fractions } });
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -357,7 +357,7 @@ public partial class GSubTableTests
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font)
         {
-            FeatureTags = new List<Tag> { FeatureTags.OldstyleFigures }
+            FeatureTags = new List<Tag> { KnownFeatureTags.OldstyleFigures }
         });
 
         // assert

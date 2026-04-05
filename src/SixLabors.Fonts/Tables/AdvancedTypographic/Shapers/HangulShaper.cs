@@ -309,7 +309,7 @@ internal sealed class HangulShaper : DefaultShaper
             ii[1] = vjmo;
             ii[0] = ljmo;
 
-            collection.Replace(index, ii, FeatureTags.GlyphCompositionDecomposition);
+            collection.Replace(index, ii, KnownFeatureTags.GlyphCompositionDecomposition);
             collection.EnableShapingFeature(index, LjmoTag);
             collection.EnableShapingFeature(index + 1, VjmoTag);
             return index + 1;
@@ -320,7 +320,7 @@ internal sealed class HangulShaper : DefaultShaper
         iii[1] = vjmo;
         iii[0] = ljmo;
 
-        collection.Replace(index, iii, FeatureTags.GlyphCompositionDecomposition);
+        collection.Replace(index, iii, KnownFeatureTags.GlyphCompositionDecomposition);
         collection.EnableShapingFeature(index, LjmoTag);
         collection.EnableShapingFeature(index + 1, VjmoTag);
         collection.EnableShapingFeature(index + 2, TjmoTag);
@@ -393,7 +393,7 @@ internal sealed class HangulShaper : DefaultShaper
             {
                 int del = prevType == V ? 3 : 2;
                 int idx = index - del + 1;
-                collection.Replace(idx, del - 1, id, FeatureTags.GlyphCompositionDecomposition);
+                collection.Replace(idx, del - 1, id, KnownFeatureTags.GlyphCompositionDecomposition);
                 collection[idx].CodePoint = s;
                 return idx;
             }
@@ -496,7 +496,7 @@ internal sealed class HangulShaper : DefaultShaper
                 glyphs[0] = id;
             }
 
-            collection.Replace(index, glyphs, FeatureTags.GlyphCompositionDecomposition);
+            collection.Replace(index, glyphs, KnownFeatureTags.GlyphCompositionDecomposition);
             return index + 1;
         }
 

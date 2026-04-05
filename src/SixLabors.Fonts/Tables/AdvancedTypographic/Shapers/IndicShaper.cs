@@ -193,7 +193,7 @@ internal sealed class IndicShaper : DefaultShaper
 
                 if (shouldDecompose)
                 {
-                    substitutionCollection.Replace(i, ids, FeatureTags.GlyphCompositionDecomposition);
+                    substitutionCollection.Replace(i, ids, KnownFeatureTags.GlyphCompositionDecomposition);
                     for (int j = 0; j < decompositions.Length; j++)
                     {
                         substitutionCollection[i + j].CodePoint = new(decompositions[j]);
@@ -382,7 +382,7 @@ internal sealed class IndicShaper : DefaultShaper
                         glyphs[0] = circleId;
                         glyphs[1] = current.GlyphId;
 
-                        substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
+                        substitutionCollection.Replace(i, glyphs, KnownFeatureTags.GlyphCompositionDecomposition);
 
                         // The dotted circle is now at position i (inherits original shaping info).
                         // Update it to be a dotted circle base.

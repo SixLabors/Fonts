@@ -163,7 +163,7 @@ internal sealed class UniversalShaper : DefaultShaper
 
                 if (shouldDecompose)
                 {
-                    substitutionCollection.Replace(i, ids, FeatureTags.GlyphCompositionDecomposition);
+                    substitutionCollection.Replace(i, ids, KnownFeatureTags.GlyphCompositionDecomposition);
                     for (int j = 0; j < decompositions.Length; j++)
                     {
                         substitutionCollection[i + j].CodePoint = new(decompositions[j]);
@@ -353,7 +353,7 @@ internal sealed class UniversalShaper : DefaultShaper
                         glyphs[0] = current.GlyphId;
                         glyphs[1] = circleId;
 
-                        substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
+                        substitutionCollection.Replace(i, glyphs, KnownFeatureTags.GlyphCompositionDecomposition);
 
                         // Update shaping info for newly inserted data.
                         GlyphShapingData dotted = substitutionCollection[i + 1];
