@@ -6,22 +6,45 @@ using System.Globalization;
 namespace SixLabors.Fonts.Unicode;
 
 /// <summary>
-/// Supports a simple iteration over a linebreak collection.
-/// Implementation of the Unicode Line Break Algorithm. UAX:14
-/// <see href="https://www.unicode.org/reports/tr14/tr14-37.html"/>
+/// Enumerates potential line break opportunities for a span of text.
+/// This is the engine behind the Unicode Line Breaking Algorithm as defined by
+/// Unicode Standard Annex #14 (UAX #14):
+/// <see href="https://www.unicode.org/reports/tr14/"/>.
+///
+/// The Unicode rules are the source of truth for the logic below. Comments intentionally
+/// call out the UAX rule numbers so readers can cross-check the implementation against the
+/// specification instead of treating the local state flags as standalone behavior.
+///
+/// The implementation walks one code point at a time, keeps a two-code-point window
+/// (<see cref="currentClass"/> on the left and <see cref="nextClass"/> on the right), and
+/// carries a small amount of extra state for rules that depend on more than the current pair.
 /// Methods are pattern-matched by compiler to allow using foreach pattern.
 /// </summary>
 internal ref struct LineBreakEnumerator
 {
+    // Iteration state:
+    // - charPosition is the UTF-16 offset into the source span.
+    // - position is the code point index after the most recently consumed code point.
+    // - lastPosition is the candidate break boundary between currentClass and nextClass.
     private readonly ReadOnlySpan<char> source;
     private int charPosition;
     private readonly int pointsLength;
     private int position;
     private int lastPosition;
+
+    // The active pair under consideration. currentClass is the left side of the boundary and
+    // nextClass is the right side. Most of UAX #14 reduces to deciding whether that pair breaks.
     private LineBreakClass currentClass;
     private LineBreakClass nextClass;
     private bool first;
+
+    // Tracks whether we are inside an AL/HL/NU run, including trailing combining marks.
+    // This is used by LB30, which needs more context than the pair table alone can express.
     private int alphaNumericCount;
+
+    // Stateful rule flags for the UAX #14 rules that cannot be represented by a simple
+    // currentClass/nextClass lookup. The field names intentionally mirror the rule numbers
+    // so the implementation can be read side by side with the spec.
     private bool lb8a;
     private bool lb21a;
     private bool lb22ex;
@@ -31,6 +54,10 @@ internal ref struct LineBreakEnumerator
     private int lb30a;
     private bool lb31;
 
+    /// <summary>
+    /// Initializes a new line-break enumerator over the supplied UTF-16 text.
+    /// </summary>
+    /// <param name="source">The source text to inspect for UAX #14 break opportunities.</param>
     public LineBreakEnumerator(ReadOnlySpan<char> source)
         : this()
     {
@@ -53,6 +80,9 @@ internal ref struct LineBreakEnumerator
         this.lb30a = 0;
     }
 
+    /// <summary>
+    /// Gets the most recently discovered line break opportunity.
+    /// </summary>
     public LineBreak Current { get; private set; }
 
     /// <summary>
@@ -70,7 +100,8 @@ internal ref struct LineBreakEnumerator
     /// </returns>
     public bool MoveNext()
     {
-        // Get the first char if we're at the beginning of the string.
+        // Prime the left side of the pair window. After this block the loop below always
+        // decides the boundary between currentClass (left) and nextClass (right).
         if (this.first)
         {
             LineBreakClass firstClass = this.NextCharClass();
@@ -87,7 +118,8 @@ internal ref struct LineBreakEnumerator
             LineBreakClass lastClass = this.nextClass;
             this.nextClass = this.NextCharClass();
 
-            // Explicit newline
+            // Required breaks from BK/CR/LF are emitted before any pair-table logic.
+            // This matches the UAX handling for explicit line terminators.
             switch (this.currentClass)
             {
                 case LineBreakClass.BK:
@@ -97,9 +129,12 @@ internal ref struct LineBreakEnumerator
                     return true;
             }
 
+            // Handle the classes that have bespoke UAX behavior first, then fall back to the
+            // pair table plus the stateful exceptions tracked on this enumerator.
             bool? shouldBreak = this.GetSimpleBreak() ?? (bool?)this.GetPairTableBreak(lastClass);
 
-            // Rule LB8a
+            // LB8a suppresses breaks after a ZWJ. We record it after processing the current
+            // boundary so it applies to the next boundary instead of the one we just decided.
             this.lb8a = this.nextClass == LineBreakClass.ZWJ;
 
             if (shouldBreak.Value)
@@ -121,6 +156,8 @@ internal ref struct LineBreakEnumerator
                     break;
             }
 
+            // UAX also exposes an end-of-text boundary. Callers use that final boundary to
+            // finalize the trailing line even when no earlier break opportunity was taken.
             this.Current = new LineBreak(this.FindPriorNonWhitespace(this.pointsLength), this.lastPosition, required);
             return true;
         }
@@ -129,6 +166,9 @@ internal ref struct LineBreakEnumerator
         return false;
     }
 
+    /// <summary>
+    /// Applies the LB1 class remapping required before any pair-table decisions are made.
+    /// </summary>
     private static LineBreakClass MapClass(CodePoint cp, LineBreakClass c)
     {
         // LB 1
@@ -160,6 +200,9 @@ internal ref struct LineBreakEnumerator
         }
     }
 
+    /// <summary>
+    /// Applies the start-of-text normalization required for the first class in the stream.
+    /// </summary>
     private static LineBreakClass MapFirst(LineBreakClass c)
         => c switch
         {
@@ -168,18 +211,29 @@ internal ref struct LineBreakEnumerator
             _ => c,
         };
 
+    /// <summary>
+    /// Returns <see langword="true"/> for the classes treated as alphanumeric by the
+    /// stateful LB30 handling.
+    /// </summary>
     private static bool IsAlphaNumeric(LineBreakClass cls)
         => cls is LineBreakClass.AL
         or LineBreakClass.HL
         or LineBreakClass.NU;
 
+    /// <summary>
+    /// Reads the next class without advancing the enumerator. This is only used by rules such as
+    /// LB25 that need one-code-point lookahead to confirm a numeric punctuation sequence.
+    /// </summary>
     private readonly LineBreakClass PeekNextCharClass()
     {
         CodePoint cp = CodePoint.DecodeFromUtf16At(this.source, this.charPosition);
         return MapClass(cp, CodePoint.GetLineBreakClass(cp));
     }
 
-    // Get the next character class
+    /// <summary>
+    /// Consumes the next code point, applies LB1 class resolution, and updates any stateful
+    /// rule flags that depend on more than the current pair.
+    /// </summary>
     private LineBreakClass NextCharClass()
     {
         CodePoint cp = CodePoint.DecodeFromUtf16At(this.source, this.charPosition, out int count);
@@ -187,14 +241,17 @@ internal ref struct LineBreakEnumerator
         this.charPosition += count;
         this.position++;
 
-        // Keep track of alphanumeric + any combining marks.
-        // This is used for LB22 and LB30.
+        // Track an alphanumeric run together with any trailing combining marks. LB30 needs to
+        // know whether an opening punctuation follows such a run, but once currentClass advances
+        // we would otherwise lose that earlier context.
         if (IsAlphaNumeric(this.currentClass) || (this.alphaNumericCount > 0 && cls == LineBreakClass.CM))
         {
             this.alphaNumericCount++;
         }
 
-        // Track combining mark exceptions. LB22
+        // LB22 distinguishes between "CM after one of the explicitly allowed classes" and
+        // "CM after anything else" when the next class is IN. Record that now before currentClass
+        // collapses to CM on the next iteration.
         if (cls == LineBreakClass.CM)
         {
             switch (this.currentClass)
@@ -212,7 +269,8 @@ internal ref struct LineBreakEnumerator
             }
         }
 
-        // Track combining mark exceptions. LB31
+        // LB31 is another context-sensitive rule. We record the contexts that permit a break
+        // before an opening punctuation and defer the final decision until OP is nextClass.
         if (this.first && cls == LineBreakClass.CM)
         {
             this.lb31 = true;
@@ -257,19 +315,21 @@ internal ref struct LineBreakEnumerator
             this.lb31 = false;
         }
 
-        // Rule LB24
+        // Seed the multi-code-point context used later by LB24.
         if (this.first && (cls == LineBreakClass.CL || cls == LineBreakClass.CP))
         {
             this.lb24ex = true;
         }
 
-        // Rule LB25
+        // Seed the multi-code-point context used later by LB25.
         if (this.first
             && (cls == LineBreakClass.CL || cls == LineBreakClass.IS || cls == LineBreakClass.SY))
         {
             this.lb25ex = true;
         }
 
+        // LB25 spans punctuation, spaces, and surrounding numeric runs. Look ahead one code point
+        // so punctuation after a space or letter can still participate in the same numeric context.
         if (cls is LineBreakClass.SP or LineBreakClass.WJ or LineBreakClass.AL)
         {
             LineBreakClass next = this.PeekNextCharClass();
@@ -294,9 +354,15 @@ internal ref struct LineBreakEnumerator
         return cls;
     }
 
+    /// <summary>
+    /// Handles the UAX rules for spaces and explicit line terminators before falling back to the
+    /// pair table for the ordinary pair-based decisions.
+    /// </summary>
     private bool? GetSimpleBreak()
     {
-        // handle classes not handled by the pair table
+        // These classes are easier to express directly than through the pair table:
+        // - spaces never break immediately before themselves,
+        // - hard line terminators update currentClass so the next iteration emits a required break.
         switch (this.nextClass)
         {
             case LineBreakClass.SP:
@@ -316,9 +382,14 @@ internal ref struct LineBreakEnumerator
         return null;
     }
 
+    /// <summary>
+    /// Applies the pair-table result and then layers on the stateful UAX exceptions that require
+    /// additional context beyond the current pair.
+    /// </summary>
     private bool GetPairTableBreak(LineBreakClass lastClass)
     {
-        // If not handled already, use the pair table
+        // The pair table is the baseline answer from UAX #14. The rule-specific flags below
+        // then tighten or loosen that answer where the spec requires extra context.
         bool shouldBreak = false;
         switch (LineBreakPairTable.Table[(int)this.currentClass][(int)this.nextClass])
         {
@@ -387,6 +458,20 @@ internal ref struct LineBreakEnumerator
                             break;
                     }
 
+                    if (lastClass == LineBreakClass.SP
+                        && this.nextClass is LineBreakClass.AL or LineBreakClass.HL)
+                    {
+                        // Once we have already broken at the punctuation-adjacent space, keep the
+                        // LB25 state alive only if the following letters immediately continue into
+                        // another CL/IS/SY sequence. Otherwise the punctuation context has ended
+                        // and must not leak forward to a later AL|NU pair.
+                        LineBreakClass ahead = this.PeekNextCharClass();
+                        if (ahead is not LineBreakClass.CL and not LineBreakClass.IS and not LineBreakClass.SY)
+                        {
+                            this.lb25ex = false;
+                        }
+                    }
+
                     if (this.nextClass is LineBreakClass.PR or LineBreakClass.NU)
                     {
                         shouldBreak = true;
@@ -428,7 +513,9 @@ internal ref struct LineBreakEnumerator
                 break;
         }
 
-        // Rule LB22
+        // Apply the remaining non-pair-table rules in the same place every time so the
+        // interaction between pair-table output and rule-specific overrides stays obvious.
+        // LB22
         if (this.nextClass == LineBreakClass.IN)
         {
             switch (lastClass)
@@ -459,6 +546,7 @@ internal ref struct LineBreakEnumerator
             }
         }
 
+        // LB8a suppresses a break after ZWJ regardless of the pair-table answer.
         if (this.lb8a)
         {
             shouldBreak = false;
@@ -490,7 +578,9 @@ internal ref struct LineBreakEnumerator
             this.lb30a = 0;
         }
 
-        // Rule LB30b
+        // LB30b depends on the Extended_Pictographic property, but Mahjong tiles are a special case:
+        // their Line_Break class is ID even though they live in an Extended_Pictographic-adjacent
+        // block, so we need an explicit guard here to mirror the Unicode test data.
         if (this.nextClass == LineBreakClass.EM && this.lastPosition > 0)
         {
             // Mahjong Tiles (Unicode block) are extended pictographics but have a class of ID
@@ -508,6 +598,11 @@ internal ref struct LineBreakEnumerator
         return shouldBreak;
     }
 
+    /// <summary>
+    /// Walks backward from a wrap position to the nearest non-breaking trailing content so that
+    /// measurement excludes trailing spaces and hard line terminators while wrapping still occurs
+    /// at the original boundary.
+    /// </summary>
     private readonly int FindPriorNonWhitespace(int from)
     {
         if (from > 0)
