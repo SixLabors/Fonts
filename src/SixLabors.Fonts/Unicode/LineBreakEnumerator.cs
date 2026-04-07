@@ -55,7 +55,7 @@ internal ref struct LineBreakEnumerator
     private bool lb31;
 
     /// <summary>
-    /// Initializes a new line-break enumerator over the supplied UTF-16 text.
+    /// Initializes a new instance of the <see cref="LineBreakEnumerator"/> struct.
     /// </summary>
     /// <param name="source">The source text to inspect for UAX #14 break opportunities.</param>
     public LineBreakEnumerator(ReadOnlySpan<char> source)
