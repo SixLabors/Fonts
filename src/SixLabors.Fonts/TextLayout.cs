@@ -1023,7 +1023,21 @@ internal static class TextLayout
                 charIndex += charsConsumed;
 
                 // Get the glyph id for the codepoint and add to the collection.
-                _ = font.FontMetrics.TryGetGlyphId(current, next, out ushort glyphId, out skipNextCodePoint);
+                bool hasGlyph = font.FontMetrics.TryGetGlyphId(current, next, out ushort glyphId, out skipNextCodePoint);
+
+                // Unsupported default-ignorable code points such as FE0F should not block
+                // GSUB sequences like emoji ZWJ ligatures. Preserve joiners explicitly.
+                if (!hasGlyph &&
+                    UnicodeUtility.IsDefaultIgnorableCodePoint((uint)current.Value) &&
+                    !UnicodeUtility.ShouldRenderWhiteSpaceOnly(current) &&
+                    !CodePoint.IsZeroWidthJoiner(current) &&
+                    !CodePoint.IsZeroWidthNonJoiner(current))
+                {
+                    codePointIndex++;
+                    graphemeCodePointIndex++;
+                    continue;
+                }
+
                 substitutions.AddGlyph(glyphId, current, (TextDirection)bidiRuns[bidiRunIndex].Direction, textRuns[textRunIndex], codePointIndex);
 
                 codePointIndex++;

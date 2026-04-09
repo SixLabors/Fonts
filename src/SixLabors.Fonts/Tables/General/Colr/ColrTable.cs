@@ -283,7 +283,7 @@ internal class ColrTable : Table
 
         // 2) Flatten paint graph to layers. Start with no current glyph id.
         List<ResolvedGlyphLayer> acc = [];
-        this.FlattenPaintToLayers(root, null, Matrix3x2.Identity, CompositeMode.SrcOver, processor, acc);
+        this.FlattenPaintToLayers(root, null, Matrix3x2.Identity, Matrix3x2.Identity, false, CompositeMode.SrcOver, processor, acc);
 
         // 3) If nothing emitted, the graph did not bind any geometry (no PaintGlyph/ColrGlyph reached).
         if (acc.Count == 0)
@@ -311,14 +311,18 @@ internal class ColrTable : Table
     /// <param name="currentGlyphId">
     /// The glyph id whose outline will receive the paint. Set by <c>PaintGlyph</c>/<c>PaintColrGlyph</c>.
     /// </param>
-    /// <param name="transform">Accumulated transform.</param>
+    /// <param name="glyphTransform">The accumulated transform to apply to the glyph's geometry.</param>
+    /// <param name="paintTransform">The accumulated transform to apply to the paint.</param>
+    /// <param name="transformPaint">Whether wrapper transforms should be applied to the paint (true) or to the glyph geometry (false).</param>
     /// <param name="compositeMode">Accumulated composite mode.</param>
     /// <param name="processor">The glyph variation processor, or null for non-variable fonts.</param>
     /// <param name="outLayers">Accumulator for resolved layers.</param>
     private void FlattenPaintToLayers(
         Paint node,
         ushort? currentGlyphId,
-        Matrix3x2 transform,
+        Matrix3x2 glyphTransform,
+        Matrix3x2 paintTransform,
+        bool transformPaint,
         CompositeMode compositeMode,
         GlyphVariationProcessor? processor,
         List<ResolvedGlyphLayer> outLayers)
@@ -346,7 +350,7 @@ internal class ColrTable : Table
 
                     if (this.paintCache!.TryGetValue(off, out Paint? child) && child is not null)
                     {
-                        this.FlattenPaintToLayers(child, currentGlyphId, transform, compositeMode, processor, outLayers);
+                        this.FlattenPaintToLayers(child, currentGlyphId, glyphTransform, paintTransform, transformPaint, compositeMode, processor, outLayers);
                     }
                 }
 
@@ -355,11 +359,11 @@ internal class ColrTable : Table
 
             case PaintColrGlyph pcg:
             {
-                // Resolve the referenced glyph's root paint and recurse under that glyph id.
+                // Resolve the referenced glyph's root paint and recurse through its own bindings.
                 if (this.TryGetRootPaintOffset(pcg.GlyphId, out uint off) && off != 0
                     && this.paintCache!.TryGetValue(off, out Paint? colrRoot) && colrRoot is not null)
                 {
-                    this.FlattenPaintToLayers(colrRoot, pcg.GlyphId, transform, compositeMode, processor, outLayers);
+                    this.FlattenPaintToLayers(colrRoot, null, glyphTransform, Matrix3x2.Identity, false, compositeMode, processor, outLayers);
                 }
 
                 return;
@@ -368,7 +372,7 @@ internal class ColrTable : Table
             case PaintGlyph pg:
             {
                 // Bind geometry to the specified glyph id and recurse into its child paint.
-                this.FlattenPaintToLayers(pg.Child, pg.GlyphId, transform, compositeMode, processor, outLayers);
+                this.FlattenPaintToLayers(pg.Child, pg.GlyphId, glyphTransform, Matrix3x2.Identity, true, compositeMode, processor, outLayers);
                 return;
             }
 
@@ -378,8 +382,17 @@ internal class ColrTable : Table
             case PaintTransform pt:
             {
                 Affine2x3 a = pt.Transform;
-                transform *= new Matrix3x2(a.Xx, a.Yx, a.Xy, a.Yy, a.Dx, a.Dy);
-                this.FlattenPaintToLayers(pt.Child, currentGlyphId, transform, compositeMode, processor, outLayers);
+                Matrix3x2 next = new(a.Xx, a.Yx, a.Xy, a.Yy, a.Dx, a.Dy);
+                if (transformPaint)
+                {
+                    paintTransform *= next;
+                }
+                else
+                {
+                    glyphTransform *= next;
+                }
+
+                this.FlattenPaintToLayers(pt.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, compositeMode, processor, outLayers);
                 return;
             }
 
@@ -393,15 +406,33 @@ internal class ColrTable : Table
                 float yy = a.Yy + this.ResolveDelta(processor, vib + 3u);
                 float dx = a.Dx + this.ResolveDelta(processor, vib + 4u);
                 float dy = a.Dy + this.ResolveDelta(processor, vib + 5u);
-                transform *= new Matrix3x2(xx, yx, xy, yy, dx, dy);
-                this.FlattenPaintToLayers(pvt.Child, currentGlyphId, transform, compositeMode, processor, outLayers);
+                Matrix3x2 next = new(xx, yx, xy, yy, dx, dy);
+                if (transformPaint)
+                {
+                    paintTransform *= next;
+                }
+                else
+                {
+                    glyphTransform *= next;
+                }
+
+                this.FlattenPaintToLayers(pvt.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, compositeMode, processor, outLayers);
                 return;
             }
 
             case PaintTranslate t:
             {
-                transform *= Matrix3x2.CreateTranslation(t.Dx, t.Dy);
-                this.FlattenPaintToLayers(t.Child, currentGlyphId, transform, compositeMode, processor, outLayers);
+                Matrix3x2 next = Matrix3x2.CreateTranslation(t.Dx, t.Dy);
+                if (transformPaint)
+                {
+                    paintTransform *= next;
+                }
+                else
+                {
+                    glyphTransform *= next;
+                }
+
+                this.FlattenPaintToLayers(t.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, compositeMode, processor, outLayers);
                 return;
             }
 
@@ -409,15 +440,33 @@ internal class ColrTable : Table
             {
                 float dx = vt.Dx + this.ResolveDelta(processor, vt.VarIndexBase + 0u);
                 float dy = vt.Dy + this.ResolveDelta(processor, vt.VarIndexBase + 1u);
-                transform *= Matrix3x2.CreateTranslation(dx, dy);
-                this.FlattenPaintToLayers(vt.Child, currentGlyphId, transform, compositeMode, processor, outLayers);
+                Matrix3x2 next = Matrix3x2.CreateTranslation(dx, dy);
+                if (transformPaint)
+                {
+                    paintTransform *= next;
+                }
+                else
+                {
+                    glyphTransform *= next;
+                }
+
+                this.FlattenPaintToLayers(vt.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, compositeMode, processor, outLayers);
                 return;
             }
 
             case PaintScale s:
             {
-                transform *= BuildScale(s.ScaleX, s.ScaleY, s.AroundCenter, s.CenterX, s.CenterY);
-                this.FlattenPaintToLayers(s.Child, currentGlyphId, transform, compositeMode, processor, outLayers);
+                Matrix3x2 next = BuildScale(s.ScaleX, s.ScaleY, s.AroundCenter, s.CenterX, s.CenterY);
+                if (transformPaint)
+                {
+                    paintTransform *= next;
+                }
+                else
+                {
+                    glyphTransform *= next;
+                }
+
+                this.FlattenPaintToLayers(s.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, compositeMode, processor, outLayers);
                 return;
             }
 
@@ -429,15 +478,33 @@ internal class ColrTable : Table
                 int centerOffset = vs.Uniform ? 1 : 2;
                 float cx = vs.AroundCenter ? vs.CenterX + this.ResolveDelta(processor, vib + (uint)centerOffset) : 0;
                 float cy = vs.AroundCenter ? vs.CenterY + this.ResolveDelta(processor, vib + (uint)centerOffset + 1u) : 0;
-                transform *= BuildScale(sx, sy, vs.AroundCenter, cx, cy);
-                this.FlattenPaintToLayers(vs.Child, currentGlyphId, transform, compositeMode, processor, outLayers);
+                Matrix3x2 next = BuildScale(sx, sy, vs.AroundCenter, cx, cy);
+                if (transformPaint)
+                {
+                    paintTransform *= next;
+                }
+                else
+                {
+                    glyphTransform *= next;
+                }
+
+                this.FlattenPaintToLayers(vs.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, compositeMode, processor, outLayers);
                 return;
             }
 
             case PaintRotate r:
             {
-                transform *= BuildRotate(r.Angle, r.AroundCenter, r.CenterX, r.CenterY);
-                this.FlattenPaintToLayers(r.Child, currentGlyphId, transform, compositeMode, processor, outLayers);
+                Matrix3x2 next = BuildRotate(r.Angle, r.AroundCenter, r.CenterX, r.CenterY);
+                if (transformPaint)
+                {
+                    paintTransform *= next;
+                }
+                else
+                {
+                    glyphTransform *= next;
+                }
+
+                this.FlattenPaintToLayers(r.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, compositeMode, processor, outLayers);
                 return;
             }
 
@@ -447,15 +514,33 @@ internal class ColrTable : Table
                 float angle = vr.Angle + this.ResolveDelta(processor, vib + 0u);
                 float cx = vr.AroundCenter ? vr.CenterX + this.ResolveDelta(processor, vib + 1u) : 0;
                 float cy = vr.AroundCenter ? vr.CenterY + this.ResolveDelta(processor, vib + 2u) : 0;
-                transform *= BuildRotate(angle, vr.AroundCenter, cx, cy);
-                this.FlattenPaintToLayers(vr.Child, currentGlyphId, transform, compositeMode, processor, outLayers);
+                Matrix3x2 next = BuildRotate(angle, vr.AroundCenter, cx, cy);
+                if (transformPaint)
+                {
+                    paintTransform *= next;
+                }
+                else
+                {
+                    glyphTransform *= next;
+                }
+
+                this.FlattenPaintToLayers(vr.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, compositeMode, processor, outLayers);
                 return;
             }
 
             case PaintSkew k:
             {
-                transform *= BuildSkew(k.XSkew, k.YSkew, k.AroundCenter, k.CenterX, k.CenterY);
-                this.FlattenPaintToLayers(k.Child, currentGlyphId, transform, compositeMode, processor, outLayers);
+                Matrix3x2 next = BuildSkew(k.XSkew, k.YSkew, k.AroundCenter, k.CenterX, k.CenterY);
+                if (transformPaint)
+                {
+                    paintTransform *= next;
+                }
+                else
+                {
+                    glyphTransform *= next;
+                }
+
+                this.FlattenPaintToLayers(k.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, compositeMode, processor, outLayers);
                 return;
             }
 
@@ -466,8 +551,17 @@ internal class ColrTable : Table
                 float ySkew = vk.YSkew + this.ResolveDelta(processor, vib + 1u);
                 float cx = vk.AroundCenter ? vk.CenterX + this.ResolveDelta(processor, vib + 2u) : 0;
                 float cy = vk.AroundCenter ? vk.CenterY + this.ResolveDelta(processor, vib + 3u) : 0;
-                transform *= BuildSkew(xSkew, ySkew, vk.AroundCenter, cx, cy);
-                this.FlattenPaintToLayers(vk.Child, currentGlyphId, transform, compositeMode, processor, outLayers);
+                Matrix3x2 next = BuildSkew(xSkew, ySkew, vk.AroundCenter, cx, cy);
+                if (transformPaint)
+                {
+                    paintTransform *= next;
+                }
+                else
+                {
+                    glyphTransform *= next;
+                }
+
+                this.FlattenPaintToLayers(vk.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, compositeMode, processor, outLayers);
                 return;
             }
 
@@ -476,8 +570,8 @@ internal class ColrTable : Table
                 compositeMode = MapCompositeMode(comp.CompositeMode);
 
                 // Backdrop first, then Source. Both inherit the current glyph id.
-                this.FlattenPaintToLayers(comp.Backdrop, currentGlyphId, transform, compositeMode, processor, outLayers);
-                this.FlattenPaintToLayers(comp.Source, currentGlyphId, transform, compositeMode, processor, outLayers);
+                this.FlattenPaintToLayers(comp.Backdrop, currentGlyphId, glyphTransform, paintTransform, transformPaint, compositeMode, processor, outLayers);
+                this.FlattenPaintToLayers(comp.Source, currentGlyphId, glyphTransform, paintTransform, transformPaint, compositeMode, processor, outLayers);
                 return;
             }
 
@@ -497,7 +591,7 @@ internal class ColrTable : Table
                 if (currentGlyphId.HasValue)
                 {
                     _ = this.TryGetClipBox(currentGlyphId.Value, processor, out Bounds? clip);
-                    outLayers.Add(new ResolvedGlyphLayer(currentGlyphId.Value, node, transform, compositeMode, clip));
+                    outLayers.Add(new ResolvedGlyphLayer(currentGlyphId.Value, node, glyphTransform, paintTransform, compositeMode, clip));
                 }
 
                 return;
@@ -1456,7 +1550,7 @@ internal sealed class PaintCaches
 
 /// <summary>
 /// Represents a resolved COLR v1 glyph layer produced by flattening the paint DAG.
-/// Associates a glyph ID with its paint node, accumulated transform, composite mode, and optional clip box.
+/// Associates a glyph ID with its paint node, geometry transform, paint transform, composite mode, and optional clip box.
 /// </summary>
 #pragma warning disable SA1201 // Elements should appear in the correct order
 [DebuggerDisplay("Id: {GlyphId}")]
@@ -1468,14 +1562,16 @@ internal readonly struct ResolvedGlyphLayer
     /// </summary>
     /// <param name="id">The glyph ID whose outline this layer paints.</param>
     /// <param name="paint">The leaf paint node for this layer.</param>
-    /// <param name="transform">The accumulated affine transform.</param>
+    /// <param name="glyphTransform">The accumulated affine transform applied to glyph geometry.</param>
+    /// <param name="paintTransform">The accumulated affine transform applied to the leaf paint.</param>
     /// <param name="mode">The composite mode to apply.</param>
     /// <param name="clipBox">The optional clip box bounds, or <see langword="null"/>.</param>
-    public ResolvedGlyphLayer(ushort id, Paint paint, Matrix3x2 transform, CompositeMode mode, Bounds? clipBox)
+    public ResolvedGlyphLayer(ushort id, Paint paint, Matrix3x2 glyphTransform, Matrix3x2 paintTransform, CompositeMode mode, Bounds? clipBox)
     {
         this.GlyphId = id;
         this.Paint = paint;
-        this.Transform = transform;
+        this.GlyphTransform = glyphTransform;
+        this.PaintTransform = paintTransform;
         this.CompositeMode = mode;
         this.ClipBox = clipBox;
     }
@@ -1491,9 +1587,14 @@ internal readonly struct ResolvedGlyphLayer
     public Paint Paint { get; }
 
     /// <summary>
-    /// Gets the accumulated affine transform from the paint DAG traversal.
+    /// Gets the accumulated affine transform applied to glyph geometry.
     /// </summary>
-    public Matrix3x2 Transform { get; }
+    public Matrix3x2 GlyphTransform { get; }
+
+    /// <summary>
+    /// Gets the accumulated affine transform applied to the leaf paint.
+    /// </summary>
+    public Matrix3x2 PaintTransform { get; }
 
     /// <summary>
     /// Gets the composite mode to apply when rendering this layer.

@@ -12,6 +12,7 @@ using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Kern;
 using SixLabors.Fonts.Tables.General.Post;
+using SixLabors.Fonts.Tables.General.Svg;
 using SixLabors.Fonts.Tables.TrueType;
 using SixLabors.Fonts.Tables.TrueType.Hinting;
 using SixLabors.Fonts.Unicode;
@@ -34,6 +35,7 @@ internal partial class StreamFontMetrics : FontMetrics
     private readonly ConcurrentDictionary<(int CodePoint, ushort Id, TextAttributes Attributes, ColorFontSupport ColorSupport, bool IsVerticalLayout), GlyphMetrics> glyphCache;
     private readonly ConcurrentDictionary<(int CodePoint, int NextCodePoint), (bool Success, ushort GlyphId, bool SkipNextCodePoint)> glyphIdCache;
     private readonly ConcurrentDictionary<ushort, (bool Success, CodePoint CodePoint)> codePointCache;
+    private SvgGlyphSource? svgGlyphSource;
     private readonly FontDescription description;
     private readonly HorizontalMetrics horizontalMetrics;
     private readonly VerticalMetrics verticalMetrics;
@@ -104,7 +106,8 @@ internal partial class StreamFontMetrics : FontMetrics
         TrueTypeFontTables tables,
         GlyphVariationProcessor processor,
         ConcurrentDictionary<(int CodePoint, int NextCodePoint), (bool Success, ushort GlyphId, bool SkipNextCodePoint)> sharedGlyphIdCache,
-        ConcurrentDictionary<ushort, (bool Success, CodePoint CodePoint)> sharedCodePointCache)
+        ConcurrentDictionary<ushort, (bool Success, CodePoint CodePoint)> sharedCodePointCache,
+        SvgGlyphSource? svgGlyphSource)
     {
         this.trueTypeFontTables = tables;
         this.outlineType = OutlineType.TrueType;
@@ -113,6 +116,7 @@ internal partial class StreamFontMetrics : FontMetrics
         this.glyphIdCache = sharedGlyphIdCache;
         this.codePointCache = sharedCodePointCache;
         this.glyphCache = new();
+        this.svgGlyphSource = svgGlyphSource;
 
         (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) metrics = this.Initialize(tables);
         this.horizontalMetrics = metrics.HorizontalMetrics;
@@ -130,7 +134,8 @@ internal partial class StreamFontMetrics : FontMetrics
         CompactFontTables tables,
         GlyphVariationProcessor processor,
         ConcurrentDictionary<(int CodePoint, int NextCodePoint), (bool Success, ushort GlyphId, bool SkipNextCodePoint)> sharedGlyphIdCache,
-        ConcurrentDictionary<ushort, (bool Success, CodePoint CodePoint)> sharedCodePointCache)
+        ConcurrentDictionary<ushort, (bool Success, CodePoint CodePoint)> sharedCodePointCache,
+        SvgGlyphSource? svgGlyphSource)
     {
         this.compactFontTables = tables;
         this.outlineType = OutlineType.CFF;
@@ -139,6 +144,7 @@ internal partial class StreamFontMetrics : FontMetrics
         this.glyphIdCache = sharedGlyphIdCache;
         this.codePointCache = sharedCodePointCache;
         this.glyphCache = new();
+        this.svgGlyphSource = svgGlyphSource;
 
         (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) metrics = this.Initialize(tables);
         this.horizontalMetrics = metrics.HorizontalMetrics;
@@ -519,7 +525,7 @@ internal partial class StreamFontMetrics : FontMetrics
                 tables.Cvar,
                 userCoordinates);
 
-            return new StreamFontMetrics(tables, processor, this.glyphIdCache, this.codePointCache);
+            return new StreamFontMetrics(tables, processor, this.glyphIdCache, this.codePointCache, this.svgGlyphSource);
         }
         else
         {
@@ -535,7 +541,7 @@ internal partial class StreamFontMetrics : FontMetrics
                 tables.MVar,
                 userCoordinates: userCoordinates);
 
-            return new StreamFontMetrics(tables, processor, this.glyphIdCache, this.codePointCache);
+            return new StreamFontMetrics(tables, processor, this.glyphIdCache, this.codePointCache, this.svgGlyphSource);
         }
     }
 
@@ -825,4 +831,7 @@ internal partial class StreamFontMetrics : FontMetrics
             OutlineType.CFF => this.CreateCffGlyphMetrics(in codePoint, glyphId, glyphType, textAttributes, textDecorations, colorSupport, isVerticalLayout, paletteIndex),
             _ => throw new NotSupportedException(),
         };
+
+    private SvgGlyphSource GetOrCreateSvgGlyphSource(SvgTable svgTable)
+        => this.svgGlyphSource ??= new SvgGlyphSource(svgTable);
 }
