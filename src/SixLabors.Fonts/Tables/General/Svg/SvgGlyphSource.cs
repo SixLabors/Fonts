@@ -821,21 +821,23 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             return null;
         }
 
-        // TODO: Rewrite this using Span.Split to avoid allocations.
-        string[] parts = style.Split(';', StringSplitOptions.RemoveEmptyEntries);
-        for (int i = 0; i < parts.Length; i++)
+        ReadOnlySpan<char> span = style.AsSpan();
+        while (span.Length > 0)
         {
-            string part = parts[i];
-            int c = part.IndexOf(':');
-            if (c <= 0)
+            int semi = span.IndexOf(';');
+            ReadOnlySpan<char> part = semi >= 0 ? span[..semi] : span;
+            span = semi >= 0 ? span[(semi + 1)..] : [];
+
+            int colon = part.IndexOf(':');
+            if (colon <= 0)
             {
                 continue;
             }
 
-            string name = part.AsSpan(0, c).Trim().ToString();
-            if (name.Equals(prop, StringComparison.OrdinalIgnoreCase))
+            ReadOnlySpan<char> name = part[..colon].Trim();
+            if (name.Equals(prop.AsSpan(), StringComparison.OrdinalIgnoreCase))
             {
-                return part.AsSpan(c + 1).Trim().ToString();
+                return part[(colon + 1)..].Trim().ToString();
             }
         }
 
@@ -861,15 +863,16 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             int r = s.IndexOf(')');
             if (l >= 0 && r > l)
             {
-                // TODO: Rewrite this using Span.Split to avoid allocations.
-                string[] comps = s.Substring(l + 1, r - l - 1).Split(',');
-                if (comps.Length >= 3)
+                ReadOnlySpan<char> inner = s.AsSpan(l + 1, r - l - 1);
+                Span<Range> ranges = stackalloc Range[5];
+                int count = inner.Split(ranges, ',');
+                if (count >= 3)
                 {
-                    byte rr = ParseByte(comps[0]);
-                    byte gg = ParseByte(comps[1]);
-                    byte bb = ParseByte(comps[2]);
+                    byte rr = ParseByte(inner[ranges[0]]);
+                    byte gg = ParseByte(inner[ranges[1]]);
+                    byte bb = ParseByte(inner[ranges[2]]);
                     byte aa = 255;
-                    if (comps.Length >= 4 && float.TryParse(comps[3], NumberStyles.Float, CultureInfo.InvariantCulture, out float af))
+                    if (count >= 4 && float.TryParse(inner[ranges[3]].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out float af))
                     {
                         aa = (byte)Math.Clamp((int)Math.Round(255f * af), 0, 255);
                     }
@@ -1429,7 +1432,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                 i++;
             }
 
-            string op = s[start..i];
+            ReadOnlySpan<char> op = s.AsSpan(start, i - start);
 
             SkipSep(s, ref i);
             if (i >= n || s[i] != '(')
@@ -1455,78 +1458,58 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                 i++;
             }
 
-            string args = s.Substring(argsStart, (i - argsStart) - 1);
+            ReadOnlySpan<char> args = s.AsSpan(argsStart, (i - argsStart) - 1);
             float[] a = ParseFloatList(args);
 
             Matrix3x2 t = Matrix3x2.Identity;
-            switch (op)
+            if (op.SequenceEqual("matrix"))
             {
-                case "matrix":
+                if (a.Length >= 6)
                 {
-                    if (a.Length >= 6)
-                    {
-                        t = new Matrix3x2(a[0], a[1], a[2], a[3], a[4], a[5]);
-                    }
-
-                    break;
+                    t = new Matrix3x2(a[0], a[1], a[2], a[3], a[4], a[5]);
                 }
-
-                case "translate":
+            }
+            else if (op.SequenceEqual("translate"))
+            {
+                if (a.Length == 1)
                 {
-                    if (a.Length == 1)
-                    {
-                        t = Matrix3x2.CreateTranslation(a[0], 0f);
-                    }
-                    else if (a.Length >= 2)
-                    {
-                        t = Matrix3x2.CreateTranslation(a[0], a[1]);
-                    }
-
-                    break;
+                    t = Matrix3x2.CreateTranslation(a[0], 0f);
                 }
-
-                case "scale":
+                else if (a.Length >= 2)
                 {
-                    if (a.Length == 1)
-                    {
-                        t = Matrix3x2.CreateScale(a[0], a[0]);
-                    }
-                    else if (a.Length >= 2)
-                    {
-                        t = Matrix3x2.CreateScale(a[0], a[1]);
-                    }
-
-                    break;
+                    t = Matrix3x2.CreateTranslation(a[0], a[1]);
                 }
-
-                case "rotate":
+            }
+            else if (op.SequenceEqual("scale"))
+            {
+                if (a.Length == 1)
                 {
-                    if (a.Length >= 1)
-                    {
-                        t = Matrix3x2.CreateRotation(a[0] * (float)(Math.PI / 180.0));
-                    }
-
-                    break;
+                    t = Matrix3x2.CreateScale(a[0], a[0]);
                 }
-
-                case "skewX":
+                else if (a.Length >= 2)
                 {
-                    if (a.Length >= 1)
-                    {
-                        t = new Matrix3x2(1f, 0f, MathF.Tan(a[0] * (float)(Math.PI / 180.0)), 1f, 0f, 0f);
-                    }
-
-                    break;
+                    t = Matrix3x2.CreateScale(a[0], a[1]);
                 }
-
-                case "skewY":
+            }
+            else if (op.SequenceEqual("rotate"))
+            {
+                if (a.Length >= 1)
                 {
-                    if (a.Length >= 1)
-                    {
-                        t = new Matrix3x2(1f, MathF.Tan(a[0] * (float)(Math.PI / 180.0)), 0f, 1f, 0f, 0f);
-                    }
-
-                    break;
+                    t = Matrix3x2.CreateRotation(a[0] * (float)(Math.PI / 180.0));
+                }
+            }
+            else if (op.SequenceEqual("skewX"))
+            {
+                if (a.Length >= 1)
+                {
+                    t = new Matrix3x2(1f, 0f, MathF.Tan(a[0] * (float)(Math.PI / 180.0)), 1f, 0f, 0f);
+                }
+            }
+            else if (op.SequenceEqual("skewY"))
+            {
+                if (a.Length >= 1)
+                {
+                    t = new Matrix3x2(1f, MathF.Tan(a[0] * (float)(Math.PI / 180.0)), 0f, 1f, 0f, 0f);
                 }
             }
 
@@ -1652,8 +1635,11 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         => str.IsEmpty ? 0 : float.Parse(str, CultureInfo.InvariantCulture);
 
     private static float[] ParseFloatList(string s)
+        => string.IsNullOrEmpty(s) ? [] : ParseFloatList(s.AsSpan());
+
+    private static float[] ParseFloatList(ReadOnlySpan<char> s)
     {
-        if (string.IsNullOrEmpty(s))
+        if (s.IsEmpty)
         {
             return [];
         }
@@ -1715,7 +1701,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                 }
             }
 
-            if (float.TryParse(s.AsSpan(start, i - start), NumberStyles.Float, CultureInfo.InvariantCulture, out float v))
+            if (float.TryParse(s[start..i], NumberStyles.Float, CultureInfo.InvariantCulture, out float v))
             {
                 vals.Add(v);
             }
