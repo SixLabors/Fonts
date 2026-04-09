@@ -102,7 +102,7 @@ public class Issues_462
     public void CanRenderEmojiSanityMatrix_With_COLRv1()
         => this.AssertCanRenderEmojiSanityMatrix(ColorFontSupport.ColrV1);
 
-    [Fact(Skip = "Local Only, Parsing the full font is slow.")]
+    [Fact]
     public void CanRenderEmojiSanityMatrix_With_SVG()
         => this.AssertCanRenderEmojiSanityMatrix(ColorFontSupport.Svg);
 

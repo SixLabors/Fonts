@@ -281,7 +281,7 @@ internal partial class StreamFontMetrics
                 this,
                 glyphId,
                 codePoint,
-                new SvgGlyphSource(svg),
+                this.GetOrCreateSvgGlyphSource(svg),
                 bounds,
                 advanceWidth,
                 advancedHeight,
