@@ -10,7 +10,6 @@ using System.Xml;
 using System.Xml.Linq;
 using SixLabors.Fonts.Rendering;
 
-#pragma warning disable SA1201 // Elements should appear in the correct order
 namespace SixLabors.Fonts.Tables.General.Svg;
 
 /// <summary>
@@ -20,16 +19,10 @@ namespace SixLabors.Fonts.Tables.General.Svg;
 /// </summary>
 internal sealed class SvgGlyphSource : IPaintedGlyphSource
 {
+    private static readonly SolidPaint DefaultBlackFillPaint = new() { Color = GlyphColor.Black };
     private readonly SvgTable svgTable;
-    private readonly Dictionary<ushort, ParsedDoc> docCache = [];
+    private readonly ConcurrentDictionary<(int Start, int Length), ParsedDoc> docCache = [];
     private readonly ConcurrentDictionary<ushort, (PaintedGlyph Glyph, PaintedCanvasMetadata Canvas)> cachedGlyphs = [];
-
-    private sealed class ParsedDoc
-    {
-        public required XDocument Doc { get; init; }
-
-        public required Dictionary<string, XElement> IdMap { get; init; }
-    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SvgGlyphSource"/> class.
@@ -58,9 +51,10 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                     Walk(
                         glyphRoot,
                         rootTransform,
-                        inheritedPaint: null,
+                        inheritedPaint: DefaultBlackFillPaint,
+                        inheritedOpacityMul: 1F,
                         outputLayers: layers,
-                        idMap: parsed.IdMap);
+                        parsedDoc: parsed);
 
                     if (layers.Count > 0)
                     {
@@ -83,12 +77,13 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
     {
         parsed = default;
 
-        if (!this.svgTable.TryGetDocumentSpan(glyphId, out int _, out int _))
+        if (!this.svgTable.TryGetDocumentSpan(glyphId, out int start, out int length))
         {
             return false;
         }
 
-        if (this.docCache.TryGetValue(glyphId, out parsed))
+        (int Start, int Length) docKey = (start, length);
+        if (this.docCache.TryGetValue(docKey, out parsed))
         {
             return true;
         }
@@ -124,7 +119,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                 IdMap = idMap
             };
 
-            this.docCache[glyphId] = parsed;
+            this.docCache[docKey] = parsed;
             return true;
         }
     }
@@ -159,13 +154,17 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         XElement node,
         Matrix3x2 parentLocalTransform,
         Paint? inheritedPaint,
+        float inheritedOpacityMul,
         List<PaintedLayer> outputLayers,
-        Dictionary<string, XElement> idMap)
+        ParsedDoc parsedDoc)
     {
-        Matrix3x2 localTransform = parentLocalTransform * ParseTransform(node.Attribute("transform")?.Value);
+        Dictionary<string, XElement> idMap = parsedDoc.IdMap;
+        Matrix3x2 nodeTransform = ParseTransform(node.Attribute("transform")?.Value);
+        Matrix3x2 localTransform = parentLocalTransform * nodeTransform;
 
         FillRule fillRule = ResolveFillRule(node, FillRule.NonZero);
-        Paint? paint = ResolvePaint(node, inheritedPaint, idMap, out bool fillNone, out float opacityMul);
+        Paint? paint = ResolvePaint(node, inheritedPaint, parsedDoc, out bool fillNone, out float opacityMul);
+        float combinedOpacityMul = inheritedOpacityMul * opacityMul;
 
         string name = node.Name.LocalName;
         switch (name)
@@ -175,7 +174,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             {
                 foreach (XElement child in node.Elements())
                 {
-                    Walk(child, localTransform, fillNone ? null : paint, outputLayers, idMap);
+                    Walk(child, localTransform, fillNone ? null : paint, combinedOpacityMul, outputLayers, parsedDoc);
                 }
 
                 break;
@@ -191,15 +190,16 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
 
                 float ux = ParseFloat(node.Attribute("x")?.Value);
                 float uy = ParseFloat(node.Attribute("y")?.Value);
-                Matrix3x2 xf = localTransform * Matrix3x2.CreateTranslation(ux, uy);
+                Matrix3x2 xf = parentLocalTransform
+                    * Matrix3x2.CreateTranslation(ux, uy)
+                    * nodeTransform;
 
-                Paint? usePaint = ResolvePaint(node, paint, idMap, out bool useNone, out float _);
-                Paint? childInherited = useNone ? null : usePaint;
+                Paint? childInherited = fillNone ? null : paint;
 
                 XElement? target = LookupById(idMap, href);
                 if (target is not null)
                 {
-                    Walk(target, xf, childInherited, outputLayers, idMap);
+                    Walk(target, xf, childInherited, combinedOpacityMul, outputLayers, parsedDoc);
                 }
 
                 break;
@@ -218,10 +218,10 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                     break;
                 }
 
-                List<PathCommand> cmds = BuildCommandsFromPathData(d);
+                List<PathCommand> cmds = GetOrBuildPathCommands(node, d, parsedDoc);
                 if (cmds.Count > 0)
                 {
-                    Paint? layerPaint = ApplyOpacityToPaint(paint, opacityMul);
+                    Paint? layerPaint = ApplyOpacityToPaint(paint, combinedOpacityMul);
                     outputLayers.Add(new(layerPaint, fillRule, localTransform, null, cmds));
                 }
 
@@ -241,10 +241,10 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                 if (coords.Length >= 4)
                 {
                     bool close = string.Equals(node.Name.LocalName, "polygon", StringComparison.Ordinal);
-                    List<PathCommand> cmds = BuildCommandsFromPoly(coords, close);
+                    List<PathCommand> cmds = GetOrBuildPolyCommands(node, coords, close, parsedDoc);
                     if (cmds.Count > 0)
                     {
-                        Paint? layerPaint = ApplyOpacityToPaint(paint, opacityMul);
+                        Paint? layerPaint = ApplyOpacityToPaint(paint, combinedOpacityMul);
                         outputLayers.Add(new(layerPaint, fillRule, localTransform, null, cmds));
                     }
                 }
@@ -267,18 +267,10 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                 // TODO: Rounded corners (rx/ry) not handled here (could be approximated later if needed).
                 if (w > 0f && h > 0f)
                 {
-                    float[] coords =
-                    [
-                        x, y,
-                        x + w, y,
-                        x + w, y + h,
-                        x, y + h
-                    ];
-
-                    List<PathCommand> cmds = BuildCommandsFromPoly(coords, close: true);
+                    List<PathCommand> cmds = GetOrBuildRectCommands(node, x, y, w, h, parsedDoc);
                     if (cmds.Count > 0)
                     {
-                        Paint? layerPaint = ApplyOpacityToPaint(paint, opacityMul);
+                        Paint? layerPaint = ApplyOpacityToPaint(paint, combinedOpacityMul);
                         outputLayers.Add(new(layerPaint, fillRule, localTransform, null, cmds));
                     }
                 }
@@ -298,10 +290,10 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                 float r = ParseFloat(node.Attribute("r")?.Value);
                 if (r > 0f)
                 {
-                    List<PathCommand> cmds = BuildCommandsForEllipse(cx, cy, r, r);
+                    List<PathCommand> cmds = GetOrBuildEllipseCommands(node, cx, cy, r, r, parsedDoc);
                     if (cmds.Count > 0)
                     {
-                        Paint? layerPaint = ApplyOpacityToPaint(paint, opacityMul);
+                        Paint? layerPaint = ApplyOpacityToPaint(paint, combinedOpacityMul);
                         outputLayers.Add(new(layerPaint, fillRule, localTransform, null, cmds));
                     }
                 }
@@ -322,10 +314,10 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                 float ry = ParseFloat(node.Attribute("ry")?.Value);
                 if (rx > 0f && ry > 0f)
                 {
-                    List<PathCommand> cmds = BuildCommandsForEllipse(cx, cy, rx, ry);
+                    List<PathCommand> cmds = GetOrBuildEllipseCommands(node, cx, cy, rx, ry, parsedDoc);
                     if (cmds.Count > 0)
                     {
-                        Paint? layerPaint = ApplyOpacityToPaint(paint, opacityMul);
+                        Paint? layerPaint = ApplyOpacityToPaint(paint, combinedOpacityMul);
                         outputLayers.Add(new(layerPaint, fillRule, localTransform, null, cmds));
                     }
                 }
@@ -405,7 +397,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
     private static Paint? ResolvePaint(
         XElement e,
         Paint? inherited,
-        Dictionary<string, XElement> idMap,
+        ParsedDoc parsedDoc,
         out bool fillNone,
         out float opacityMul)
     {
@@ -453,27 +445,46 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
 
         if (TryExtractUrlId(fill, out string? paintId) && paintId is not null)
         {
-            return ResolvePaintServer(paintId, idMap) ?? inherited;
+            return ResolvePaintServer(paintId, parsedDoc) ?? inherited;
         }
 
         return inherited;
     }
 
-    private static Paint? ResolvePaintServer(string id, Dictionary<string, XElement> idMap)
+    /// <summary>
+    /// Resolves a referenced paint server and caches the parsed paint so repeated
+    /// uses of the same gradient id do not rebuild the gradient definition.
+    /// </summary>
+    /// <param name="id">The referenced paint server identifier.</param>
+    /// <param name="parsedDoc">The parsed SVG document and its caches.</param>
+    /// <returns>The resolved paint, or <see langword="null"/> if the reference is unknown.</returns>
+    private static Paint? ResolvePaintServer(string id, ParsedDoc parsedDoc)
     {
-        if (!idMap.TryGetValue(id, out XElement? server))
+        if (parsedDoc.PaintServerCache.TryGetValue(id, out Paint? cached))
+        {
+            return cached;
+        }
+
+        if (!parsedDoc.IdMap.TryGetValue(id, out XElement? server))
         {
             return null;
         }
 
         string tag = server.Name.LocalName;
-        return tag switch
+        Paint? paint = tag switch
         {
             // SVG only has linearGradient and radialGradient.
-            "linearGradient" => BuildLinearGradient(server, idMap),
-            "radialGradient" => BuildRadialGradient(server, idMap),
+            "linearGradient" => BuildLinearGradient(server, parsedDoc.IdMap),
+            "radialGradient" => BuildRadialGradient(server, parsedDoc.IdMap),
             _ => null
         };
+
+        if (paint is not null)
+        {
+            parsedDoc.PaintServerCache.TryAdd(id, paint);
+        }
+
+        return paint;
     }
 
     private static LinearGradientPaint? BuildLinearGradient(XElement grad, Dictionary<string, XElement> idMap)
@@ -716,7 +727,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             return null;
         }
 
-        if (s!.EndsWith('%'))
+        if (s.EndsWith('%'))
         {
             if (float.TryParse(s.AsSpan(0, s.Length - 1), NumberStyles.Float, CultureInfo.InvariantCulture, out float p))
             {
@@ -938,6 +949,150 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
     {
         XNamespace xlink = "http://www.w3.org/1999/xlink";
         return e.Attribute(xlink + "href")?.Value ?? e.Attribute("href")?.Value;
+    }
+
+    /// <summary>
+    /// Returns cached path commands for an SVG <c>path</c> element, or parses and caches them
+    /// when the element is a reusable definition with an <c>id</c>.
+    /// </summary>
+    /// <param name="node">The SVG node that owns the geometry.</param>
+    /// <param name="d">The raw SVG path data.</param>
+    /// <param name="parsedDoc">The parsed SVG document and its caches.</param>
+    /// <returns>The parsed path commands.</returns>
+    private static List<PathCommand> GetOrBuildPathCommands(XElement node, string d, ParsedDoc parsedDoc)
+    {
+        if (TryGetCachedGeometry(node, parsedDoc, out List<PathCommand>? cached, out string? geometryId))
+        {
+            return cached;
+        }
+
+        return CacheGeometry(geometryId, parsedDoc, BuildCommandsFromPathData(d));
+    }
+
+    /// <summary>
+    /// Returns cached path commands for a polygon or polyline definition, or builds and caches them.
+    /// </summary>
+    /// <param name="node">The SVG node that owns the geometry.</param>
+    /// <param name="coords">The parsed coordinate list.</param>
+    /// <param name="close">Whether the geometry should be explicitly closed.</param>
+    /// <param name="parsedDoc">The parsed SVG document and its caches.</param>
+    /// <returns>The parsed path commands.</returns>
+    private static List<PathCommand> GetOrBuildPolyCommands(XElement node, float[] coords, bool close, ParsedDoc parsedDoc)
+    {
+        if (TryGetCachedGeometry(node, parsedDoc, out List<PathCommand>? cached, out string? geometryId))
+        {
+            return cached;
+        }
+
+        return CacheGeometry(geometryId, parsedDoc, BuildCommandsFromPoly(coords, close));
+    }
+
+    /// <summary>
+    /// Returns cached path commands for a rectangle definition, or builds and caches them.
+    /// </summary>
+    /// <param name="node">The SVG node that owns the geometry.</param>
+    /// <param name="x">The rectangle origin X.</param>
+    /// <param name="y">The rectangle origin Y.</param>
+    /// <param name="w">The rectangle width.</param>
+    /// <param name="h">The rectangle height.</param>
+    /// <param name="parsedDoc">The parsed SVG document and its caches.</param>
+    /// <returns>The parsed path commands.</returns>
+    private static List<PathCommand> GetOrBuildRectCommands(
+        XElement node,
+        float x,
+        float y,
+        float w,
+        float h,
+        ParsedDoc parsedDoc)
+    {
+        if (TryGetCachedGeometry(node, parsedDoc, out List<PathCommand>? cached, out string? geometryId))
+        {
+            return cached;
+        }
+
+        float[] coords =
+        [
+            x, y,
+            x + w, y,
+            x + w, y + h,
+            x, y + h
+        ];
+
+        return CacheGeometry(geometryId, parsedDoc, BuildCommandsFromPoly(coords, close: true));
+    }
+
+    /// <summary>
+    /// Returns cached path commands for an ellipse or circle definition, or builds and caches them.
+    /// </summary>
+    /// <param name="node">The SVG node that owns the geometry.</param>
+    /// <param name="cx">The ellipse center X.</param>
+    /// <param name="cy">The ellipse center Y.</param>
+    /// <param name="rx">The ellipse radius on the X axis.</param>
+    /// <param name="ry">The ellipse radius on the Y axis.</param>
+    /// <param name="parsedDoc">The parsed SVG document and its caches.</param>
+    /// <returns>The parsed path commands.</returns>
+    private static List<PathCommand> GetOrBuildEllipseCommands(
+        XElement node,
+        float cx,
+        float cy,
+        float rx,
+        float ry,
+        ParsedDoc parsedDoc)
+    {
+        if (TryGetCachedGeometry(node, parsedDoc, out List<PathCommand>? cached, out string? geometryId))
+        {
+            return cached;
+        }
+
+        return CacheGeometry(geometryId, parsedDoc, BuildCommandsForEllipse(cx, cy, rx, ry));
+    }
+
+    /// <summary>
+    /// Looks up cached geometry for a reusable SVG element by its <c>id</c>.
+    /// </summary>
+    /// <param name="node">The SVG node that may have cached geometry.</param>
+    /// <param name="parsedDoc">The parsed SVG document and its caches.</param>
+    /// <param name="cached">When this method returns, contains the cached commands if found.</param>
+    /// <param name="geometryId">When this method returns, contains the element id used as the cache key.</param>
+    /// <returns><see langword="true"/> if cached geometry was found; otherwise, <see langword="false"/>.</returns>
+    private static bool TryGetCachedGeometry(
+        XElement node,
+        ParsedDoc parsedDoc,
+        [NotNullWhen(true)] out List<PathCommand>? cached,
+        [NotNullWhen(true)] out string? geometryId)
+    {
+        geometryId = node.Attribute("id")?.Value;
+        if (geometryId is not null && parsedDoc.GeometryCache.TryGetValue(geometryId, out List<PathCommand>? commands))
+        {
+            cached = commands;
+            return true;
+        }
+
+        cached = null;
+        return false;
+    }
+
+    /// <summary>
+    /// Stores geometry in the per-document cache when the
+    /// source element has a reusable <c>id</c>.
+    /// </summary>
+    /// <param name="geometryId">The cache key, or <see langword="null"/> when the element is anonymous.</param>
+    /// <param name="parsedDoc">The parsed SVG document and its caches.</param>
+    /// <param name="commands">The newly built commands.</param>
+    /// <returns>The cached or materialized command list.</returns>
+    private static List<PathCommand> CacheGeometry(string? geometryId, ParsedDoc parsedDoc, List<PathCommand> commands)
+    {
+        if (commands.Count == 0)
+        {
+            return [];
+        }
+
+        if (geometryId is not null)
+        {
+            parsedDoc.GeometryCache.TryAdd(geometryId, commands);
+        }
+
+        return commands;
     }
 
     private static List<PathCommand> BuildCommandsFromPoly(float[] coords, bool close)
@@ -1571,4 +1726,21 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
 
     private static bool NearlyEqual(in Vector2 a, in Vector2 b, float eps = 1e-3f)
         => MathF.Abs(a.X - b.X) <= eps && MathF.Abs(a.Y - b.Y) <= eps;
+
+    private sealed class ParsedDoc
+    {
+        public required XDocument Doc { get; init; }
+
+        public required Dictionary<string, XElement> IdMap { get; init; }
+
+        /// <summary>
+        /// Gets the per-document cache of parsed geometry for reusable SVG defs.
+        /// </summary>
+        public ConcurrentDictionary<string, List<PathCommand>> GeometryCache { get; } = new(StringComparer.Ordinal);
+
+        /// <summary>
+        /// Gets the per-document cache of resolved paint servers.
+        /// </summary>
+        public ConcurrentDictionary<string, Paint> PaintServerCache { get; } = new(StringComparer.Ordinal);
+    }
 }

@@ -58,24 +58,14 @@ internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
 
                     // Flatten paint graph: accumulate wrapper transforms; attach composite mode to leaves.
                     List<Rendering.Paint> leafPaints = [];
-                    FlattenPaint(rl.Paint, rl.Transform, rl.CompositeMode, this.Cpal, this.Colr, this.processor, leafPaints);
+                    FlattenPaint(rl.Paint, rl.PaintTransform, rl.CompositeMode, this.Cpal, this.Colr, this.processor, leafPaints);
 
                     // Emit one layer per leaf paint.
                     Bounds? clip = rl.ClipBox;
                     for (int p = 0; p < leafPaints.Count; p++)
                     {
                         Rendering.Paint leaf = leafPaints[p];
-                        Matrix3x2 xForm = Matrix3x2.Identity;
-                        if (leaf is SolidPaint solid)
-                        {
-                            // Move the transform from the paint to the layer.
-                            // We do this so that solid paints are also transformed correctly as
-                            // their location is defined in the local space of the layer.
-                            xForm = solid.Transform;
-                            solid.Transform = Matrix3x2.Identity;
-                        }
-
-                        layers.Add(new PaintedLayer(leaf, FillRule.NonZero, xForm, clip, path));
+                        layers.Add(new PaintedLayer(leaf, FillRule.NonZero, rl.GlyphTransform, clip, path));
                     }
                 }
 
