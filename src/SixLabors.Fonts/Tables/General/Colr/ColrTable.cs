@@ -311,7 +311,9 @@ internal class ColrTable : Table
     /// <param name="currentGlyphId">
     /// The glyph id whose outline will receive the paint. Set by <c>PaintGlyph</c>/<c>PaintColrGlyph</c>.
     /// </param>
-    /// <param name="transform">Accumulated transform.</param>
+    /// <param name="glyphTransform">The accumulated transform to apply to the glyph's geometry.</param>
+    /// <param name="paintTransform">The accumulated transform to apply to the paint.</param>
+    /// <param name="transformPaint">Whether wrapper transforms should be applied to the paint (true) or to the glyph geometry (false).</param>
     /// <param name="compositeMode">Accumulated composite mode.</param>
     /// <param name="processor">The glyph variation processor, or null for non-variable fonts.</param>
     /// <param name="outLayers">Accumulator for resolved layers.</param>
