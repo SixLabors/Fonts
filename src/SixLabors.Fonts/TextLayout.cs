@@ -1490,14 +1490,14 @@ internal static class TextLayout
                         if (textLine.TrySplitAt(breakAt, keepAll, out remaining))
                         {
                             processed = breakAt.PositionWrap;
-                            textLines.Add(textLine.Finalize(options));
+                            textLines.Add(textLine.Finalize());
                             textLine = remaining;
                         }
                     }
                     else if (textLine.TrySplitAt(wrappingLength, out remaining))
                     {
                         processed += textLine.Count;
-                        textLines.Add(textLine.Finalize(options));
+                        textLines.Add(textLine.Finalize());
                         textLine = remaining;
                     }
                     else
@@ -1529,7 +1529,7 @@ internal static class TextLayout
                         }
 
                         // Add the split part to the list and continue processing.
-                        textLines.Add(textLine.Finalize(options));
+                        textLines.Add(textLine.Finalize());
                         textLine = remaining;
                     }
                     else
@@ -1551,14 +1551,22 @@ internal static class TextLayout
                             break;
                         }
 
-                        textLines.Add(textLine.Finalize(options));
+                        textLines.Add(textLine.Finalize());
                         textLine = overflow;
                     }
                 }
 
-                textLines.Add(textLine.Finalize(options));
+                textLines.Add(textLine.Finalize());
                 break;
             }
+        }
+
+        // Finally we justify each line except the last one
+        // The method itself determines the justification based on the options.
+        for (int i = 0; i < textLines.Count - 1; i++)
+        {
+            TextLine line = textLines[i];
+            line.Justify(options);
         }
 
         return new TextBox(textLines);
@@ -1933,13 +1941,10 @@ internal static class TextLayout
             }
         }
 
-        public TextLine Finalize(TextOptions options)
+        public TextLine Finalize()
         {
             this.TrimTrailingWhitespace();
             this.BidiReOrder();
-            RecalculateLineMetrics(this);
-
-            this.Justify(options);
             RecalculateLineMetrics(this);
             return this;
         }
@@ -1986,6 +1991,7 @@ internal static class TextLayout
                     }
                 }
 
+                RecalculateLineMetrics(this);
                 return;
             }
 
@@ -2014,6 +2020,8 @@ internal static class TextLayout
                     }
                 }
             }
+
+            RecalculateLineMetrics(this);
         }
 
         public void BidiReOrder()
