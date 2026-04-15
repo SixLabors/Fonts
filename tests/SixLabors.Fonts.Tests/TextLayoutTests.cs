@@ -695,6 +695,174 @@ public class TextLayoutTests
     }
 
     [Theory]
+    [InlineData(TextDirection.LeftToRight, TextJustification.InterCharacter)]
+    [InlineData(TextDirection.LeftToRight, TextJustification.InterWord)]
+    [InlineData(TextDirection.RightToLeft, TextJustification.InterCharacter)]
+    [InlineData(TextDirection.RightToLeft, TextJustification.InterWord)]
+    public void TextJustification_MultiParagraph_Horizontal_DoesNotJustifyParagraphFinalLines(TextDirection direction, TextJustification justification)
+    {
+        const string paragraph = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ornare maximus vehicula. Duis nisi velit, dictum id mauris vitae, lobortis pretium quam. Quisque sed nisi pulvinar, consequat justo id, feugiat leo. Cras eu elementum dui.";
+        string text = $"{paragraph}\n{paragraph}";
+        const float wrappingLength = 400;
+        const float pointSize = 12;
+        Font font = CreateRenderingFont(pointSize);
+        TextOptions options = new(font)
+        {
+            TextDirection = direction,
+            WrappingLength = wrappingLength,
+            TextJustification = justification
+        };
+
+        TextLayoutTestUtilities.TestLayout(text, options, properties: new { direction, justification });
+
+        // Compare justified and non-justified layouts line-by-line.
+        // This lets us prove that some wrapped lines are still stretched, while
+        // paragraph-final lines remain unchanged even when they are not the last
+        // line of the overall text box.
+        IReadOnlyList<IReadOnlyList<GlyphLayout>> justifiedLines = CollectLines(TextLayout.GenerateLayout(text.AsSpan(), options));
+
+        options.TextJustification = TextJustification.None;
+        IReadOnlyList<IReadOnlyList<GlyphLayout>> unJustifiedLines = CollectLines(TextLayout.GenerateLayout(text.AsSpan(), options));
+
+        Assert.Equal(unJustifiedLines.Count, justifiedLines.Count);
+
+        bool foundUnchangedNonLastLine = false;
+        bool foundJustifiedNonParagraphLine = false;
+        for (int i = 0; i < justifiedLines.Count; i++)
+        {
+            TextMeasurer.TryGetCharacterAdvances(justifiedLines[i], options.Dpi, out ReadOnlySpan<GlyphBounds> justifiedCharacterBounds);
+            TextMeasurer.TryGetCharacterAdvances(unJustifiedLines[i], options.Dpi, out ReadOnlySpan<GlyphBounds> unJustifiedCharacterBounds);
+
+            GlyphBounds[] justified = justifiedCharacterBounds.ToArray();
+            GlyphBounds[] unJustified = unJustifiedCharacterBounds.ToArray();
+
+            bool isLastLine = i == justifiedLines.Count - 1;
+            bool linesMatch = justified.Length == unJustified.Length;
+
+            // A paragraph-final line should be byte-for-byte equivalent in terms of
+            // measured per-character advances, so we first test whether every glyph
+            // advance is unchanged relative to the non-justified layout.
+            if (linesMatch)
+            {
+                for (int j = 0; j < justified.Length; j++)
+                {
+                    if (justified[j].Bounds.Width != unJustified[j].Bounds.Width)
+                    {
+                        linesMatch = false;
+                        break;
+                    }
+                }
+            }
+
+            if (isLastLine)
+            {
+                // The trailing line in the text box must never be justified.
+                Assert.True(linesMatch);
+            }
+            else
+            {
+                float justifiedWidth = justified.Sum(x => x.Bounds.Width);
+                float unJustifiedWidth = unJustified.Sum(x => x.Bounds.Width);
+
+                // At least one earlier line should stay unchanged, proving that a
+                // paragraph-final line created by the explicit newline was not justified.
+                foundUnchangedNonLastLine |= linesMatch;
+
+                // At least one other earlier line should still widen, proving that we
+                // did not disable justification for all wrapped lines.
+                foundJustifiedNonParagraphLine |= justifiedWidth > unJustifiedWidth;
+            }
+        }
+
+        // We expect both behaviors in the same layout: one unchanged paragraph-final
+        // line before the end, and one earlier wrapped line that still stretches.
+        Assert.True(foundUnchangedNonLastLine);
+        Assert.True(foundJustifiedNonParagraphLine);
+    }
+
+    [Theory]
+    [InlineData(TextDirection.LeftToRight, TextJustification.InterCharacter)]
+    [InlineData(TextDirection.LeftToRight, TextJustification.InterWord)]
+    [InlineData(TextDirection.RightToLeft, TextJustification.InterCharacter)]
+    [InlineData(TextDirection.RightToLeft, TextJustification.InterWord)]
+    public void TextJustification_MultiParagraph_Vertical_DoesNotJustifyParagraphFinalLines(TextDirection direction, TextJustification justification)
+    {
+        const string paragraph = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ornare maximus vehicula. Duis nisi velit, dictum id mauris vitae, lobortis pretium quam. Quisque sed nisi pulvinar, consequat justo id, feugiat leo. Cras eu elementum dui.";
+        string text = $"{paragraph}\n{paragraph}";
+        const float wrappingLength = 400;
+        const float pointSize = 12;
+        Font font = CreateRenderingFont(pointSize);
+        TextOptions options = new(font)
+        {
+            LayoutMode = LayoutMode.VerticalLeftRight,
+            TextDirection = direction,
+            WrappingLength = wrappingLength,
+            TextJustification = justification
+        };
+
+        TextLayoutTestUtilities.TestLayout(text, options, properties: new { direction, justification });
+
+        // Same coverage as the horizontal test, but in vertical flow where the
+        // effective line extent is measured along height rather than width.
+        IReadOnlyList<IReadOnlyList<GlyphLayout>> justifiedLines = CollectLines(TextLayout.GenerateLayout(text.AsSpan(), options));
+
+        options.TextJustification = TextJustification.None;
+        IReadOnlyList<IReadOnlyList<GlyphLayout>> unJustifiedLines = CollectLines(TextLayout.GenerateLayout(text.AsSpan(), options));
+
+        Assert.Equal(unJustifiedLines.Count, justifiedLines.Count);
+
+        bool foundUnchangedNonLastLine = false;
+        bool foundJustifiedNonParagraphLine = false;
+        for (int i = 0; i < justifiedLines.Count; i++)
+        {
+            TextMeasurer.TryGetCharacterAdvances(justifiedLines[i], options.Dpi, out ReadOnlySpan<GlyphBounds> justifiedCharacterBounds);
+            TextMeasurer.TryGetCharacterAdvances(unJustifiedLines[i], options.Dpi, out ReadOnlySpan<GlyphBounds> unJustifiedCharacterBounds);
+
+            GlyphBounds[] justified = justifiedCharacterBounds.ToArray();
+            GlyphBounds[] unJustified = unJustifiedCharacterBounds.ToArray();
+
+            bool isLastLine = i == justifiedLines.Count - 1;
+            bool linesMatch = justified.Length == unJustified.Length;
+
+            // Paragraph-final lines should preserve every per-glyph advance from the
+            // non-justified layout, so unchanged per-character heights are the signal
+            // that a line was intentionally skipped by the justification pass.
+            if (linesMatch)
+            {
+                for (int j = 0; j < justified.Length; j++)
+                {
+                    if (justified[j].Bounds.Height != unJustified[j].Bounds.Height)
+                    {
+                        linesMatch = false;
+                        break;
+                    }
+                }
+            }
+
+            if (isLastLine)
+            {
+                // The trailing line in the text box must remain ragged in vertical layout too.
+                Assert.True(linesMatch);
+            }
+            else
+            {
+                float justifiedHeight = justified.Sum(x => x.Bounds.Height);
+                float unJustifiedHeight = unJustified.Sum(x => x.Bounds.Height);
+
+                // This captures a non-last line that still behaves like a paragraph end.
+                foundUnchangedNonLastLine |= linesMatch;
+
+                // This captures a wrapped line that continues to justify normally.
+                foundJustifiedNonParagraphLine |= justifiedHeight > unJustifiedHeight;
+            }
+        }
+
+        // Both conditions are required for the test to be meaningful.
+        Assert.True(foundUnchangedNonLastLine);
+        Assert.True(foundJustifiedNonParagraphLine);
+    }
+
+    [Theory]
     [InlineData(TextDirection.LeftToRight)]
     [InlineData(TextDirection.RightToLeft)]
     public void TextJustification_InterWord_Horizontal(TextDirection direction)
@@ -1567,6 +1735,27 @@ public class TextLayoutTests
         }
 
         return line;
+    }
+
+    private static IReadOnlyList<IReadOnlyList<GlyphLayout>> CollectLines(IReadOnlyList<GlyphLayout> glyphs)
+    {
+        List<IReadOnlyList<GlyphLayout>> lines = [];
+        List<GlyphLayout>? current = null;
+
+        // Re-slice the flat glyph list into visual lines using IsStartOfLine so the
+        // tests can compare whole lines instead of reasoning about glyph indices.
+        for (int i = 0; i < glyphs.Count; i++)
+        {
+            if (glyphs[i].IsStartOfLine || current is null)
+            {
+                current = [];
+                lines.Add(current);
+            }
+
+            current.Add(glyphs[i]);
+        }
+
+        return lines;
     }
 
 #if OS_WINDOWS

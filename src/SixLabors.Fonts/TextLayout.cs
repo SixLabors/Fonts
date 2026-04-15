@@ -43,7 +43,7 @@ internal static class TextLayout
         int start = 0;
         int end = text.GetGraphemeCount();
         List<TextRun> textRuns = [];
-        foreach (TextRun textRun in options.TextRuns!.OrderBy(x => x.Start))
+        foreach (TextRun textRun in options.TextRuns.OrderBy(x => x.Start))
         {
             // Fill gaps within runs.
             if (textRun.Start > start)
@@ -1490,14 +1490,14 @@ internal static class TextLayout
                         if (textLine.TrySplitAt(breakAt, keepAll, out remaining))
                         {
                             processed = breakAt.PositionWrap;
-                            textLines.Add(textLine.Finalize(options));
+                            textLines.Add(textLine.Finalize(true));
                             textLine = remaining;
                         }
                     }
                     else if (textLine.TrySplitAt(wrappingLength, out remaining))
                     {
                         processed += textLine.Count;
-                        textLines.Add(textLine.Finalize(options));
+                        textLines.Add(textLine.Finalize());
                         textLine = remaining;
                     }
                     else
@@ -1529,7 +1529,7 @@ internal static class TextLayout
                         }
 
                         // Add the split part to the list and continue processing.
-                        textLines.Add(textLine.Finalize(options));
+                        textLines.Add(textLine.Finalize(breakAt.Required));
                         textLine = remaining;
                     }
                     else
@@ -1551,13 +1551,23 @@ internal static class TextLayout
                             break;
                         }
 
-                        textLines.Add(textLine.Finalize(options));
+                        textLines.Add(textLine.Finalize());
                         textLine = overflow;
                     }
                 }
 
-                textLines.Add(textLine.Finalize(options));
+                textLines.Add(textLine.Finalize(true));
                 break;
+            }
+        }
+
+        // Finally we justify each line that does not end a paragraph.
+        for (int i = 0; i < textLines.Count; i++)
+        {
+            TextLine line = textLines[i];
+            if (!line.SkipJustification)
+            {
+                line.Justify(options);
             }
         }
 
@@ -1695,6 +1705,8 @@ internal static class TextLayout
         public TextLine(int capacity) => this.data = new(capacity);
 
         public int Count => this.data.Count;
+
+        public bool SkipJustification { get; private set; }
 
         public float ScaledLineAdvance { get; private set; }
 
@@ -1933,13 +1945,11 @@ internal static class TextLayout
             }
         }
 
-        public TextLine Finalize(TextOptions options)
+        public TextLine Finalize(bool skipJustification = false)
         {
+            this.SkipJustification = skipJustification;
             this.TrimTrailingWhitespace();
             this.BidiReOrder();
-            RecalculateLineMetrics(this);
-
-            this.Justify(options);
             RecalculateLineMetrics(this);
             return this;
         }
@@ -1975,6 +1985,11 @@ internal static class TextLayout
                     }
                 }
 
+                if (nonZeroCount == 0)
+                {
+                    return;
+                }
+
                 float padding = delta / nonZeroCount;
                 for (int i = 0; i < this.data.Count - 1; i++)
                 {
@@ -1986,6 +2001,7 @@ internal static class TextLayout
                     }
                 }
 
+                RecalculateLineMetrics(this);
                 return;
             }
 
@@ -2003,6 +2019,11 @@ internal static class TextLayout
                     }
                 }
 
+                if (whiteSpaceCount == 0)
+                {
+                    return;
+                }
+
                 float padding = delta / whiteSpaceCount;
                 for (int i = 0; i < this.data.Count - 1; i++)
                 {
@@ -2014,6 +2035,8 @@ internal static class TextLayout
                     }
                 }
             }
+
+            RecalculateLineMetrics(this);
         }
 
         public void BidiReOrder()
