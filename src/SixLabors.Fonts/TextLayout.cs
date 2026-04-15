@@ -43,7 +43,7 @@ internal static class TextLayout
         int start = 0;
         int end = text.GetGraphemeCount();
         List<TextRun> textRuns = [];
-        foreach (TextRun textRun in options.TextRuns!.OrderBy(x => x.Start))
+        foreach (TextRun textRun in options.TextRuns.OrderBy(x => x.Start))
         {
             // Fill gaps within runs.
             if (textRun.Start > start)
@@ -1490,7 +1490,7 @@ internal static class TextLayout
                         if (textLine.TrySplitAt(breakAt, keepAll, out remaining))
                         {
                             processed = breakAt.PositionWrap;
-                            textLines.Add(textLine.Finalize());
+                            textLines.Add(textLine.Finalize(true));
                             textLine = remaining;
                         }
                     }
@@ -1529,7 +1529,7 @@ internal static class TextLayout
                         }
 
                         // Add the split part to the list and continue processing.
-                        textLines.Add(textLine.Finalize());
+                        textLines.Add(textLine.Finalize(breakAt.Required));
                         textLine = remaining;
                     }
                     else
@@ -1556,17 +1556,19 @@ internal static class TextLayout
                     }
                 }
 
-                textLines.Add(textLine.Finalize());
+                textLines.Add(textLine.Finalize(true));
                 break;
             }
         }
 
-        // Finally we justify each line except the last one
-        // The method itself determines the justification based on the options.
-        for (int i = 0; i < textLines.Count - 1; i++)
+        // Finally we justify each line that does not end a paragraph.
+        for (int i = 0; i < textLines.Count; i++)
         {
             TextLine line = textLines[i];
-            line.Justify(options);
+            if (!line.SkipJustification)
+            {
+                line.Justify(options);
+            }
         }
 
         return new TextBox(textLines);
@@ -1703,6 +1705,8 @@ internal static class TextLayout
         public TextLine(int capacity) => this.data = new(capacity);
 
         public int Count => this.data.Count;
+
+        public bool SkipJustification { get; private set; }
 
         public float ScaledLineAdvance { get; private set; }
 
@@ -1941,8 +1945,9 @@ internal static class TextLayout
             }
         }
 
-        public TextLine Finalize()
+        public TextLine Finalize(bool skipJustification = false)
         {
+            this.SkipJustification = skipJustification;
             this.TrimTrailingWhitespace();
             this.BidiReOrder();
             RecalculateLineMetrics(this);
