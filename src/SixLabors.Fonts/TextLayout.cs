@@ -1980,6 +1980,11 @@ internal static class TextLayout
                     }
                 }
 
+                if (nonZeroCount == 0)
+                {
+                    return;
+                }
+
                 float padding = delta / nonZeroCount;
                 for (int i = 0; i < this.data.Count - 1; i++)
                 {
@@ -2007,6 +2012,11 @@ internal static class TextLayout
                     {
                         whiteSpaceCount++;
                     }
+                }
+
+                if (whiteSpaceCount == 0)
+                {
+                    return;
                 }
 
                 float padding = delta / whiteSpaceCount;
