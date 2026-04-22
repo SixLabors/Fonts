@@ -12,8 +12,19 @@ namespace SixLabors.Fonts;
 /// <summary>
 /// Encapsulated logic or laying out text.
 /// </summary>
-internal static class TextLayout
+internal static partial class TextLayout
 {
+    /// <summary>
+    /// Shapes the supplied text and returns every laid-out glyph in layout order.
+    /// </summary>
+    /// <remarks>
+    /// Equivalent to <see cref="ProcessText"/> followed by <see cref="LayoutText(TextBox, TextOptions)"/>.
+    /// Prefer <see cref="GetBounds(TextBox, TextOptions)"/> for callers that only need aggregate ink bounds,
+    /// or the streaming <see cref="LayoutText{TVisitor}"/> overload to avoid materializing the glyph list.
+    /// </remarks>
+    /// <param name="text">The text to lay out.</param>
+    /// <param name="options">The text shaping and layout options.</param>
+    /// <returns>The laid-out glyphs in layout order, or an empty list when <paramref name="text"/> is empty.</returns>
     public static IReadOnlyList<GlyphLayout> GenerateLayout(ReadOnlySpan<char> text, TextOptions options)
     {
         if (text.IsEmpty)
@@ -25,6 +36,17 @@ internal static class TextLayout
         return LayoutText(textBox, options);
     }
 
+    /// <summary>
+    /// Resolves the ordered sequence of <see cref="TextRun"/> instances that cover <paramref name="text"/>.
+    /// </summary>
+    /// <remarks>
+    /// If <see cref="TextOptions.TextRuns"/> is <see langword="null"/> or empty, a single run covering the entire
+    /// grapheme range of <paramref name="text"/> using <see cref="TextOptions.Font"/> is returned. Otherwise the
+    /// supplied runs are ordered, gaps are filled with default-font runs, and overlapping ranges are trimmed.
+    /// </remarks>
+    /// <param name="text">The text to partition into runs.</param>
+    /// <param name="options">The text shaping options supplying the default font and optional user-defined runs.</param>
+    /// <returns>The resolved runs that together cover the entire grapheme range of <paramref name="text"/>.</returns>
     public static IReadOnlyList<TextRun> BuildTextRuns(ReadOnlySpan<char> text, TextOptions options)
     {
         if (options.TextRuns is null || options.TextRuns.Count == 0)
@@ -85,6 +107,18 @@ internal static class TextLayout
         return textRuns;
     }
 
+    /// <summary>
+    /// Shapes and line-breaks <paramref name="text"/> into a <see cref="TextBox"/> ready for layout.
+    /// </summary>
+    /// <remarks>
+    /// Performs the font-run build, bidi analysis, GSUB/GPOS shaping (including fallback font
+    /// resolution for unmapped codepoints), and line breaking. The result is a sequence of
+    /// <see cref="TextLine"/> entries with resolved glyph metrics but no pen positioning — positioning
+    /// is applied later by <see cref="LayoutText{TVisitor}"/>.
+    /// </remarks>
+    /// <param name="text">The text to process.</param>
+    /// <param name="options">The text shaping options.</param>
+    /// <returns>The shaped, line-broken text ready for glyph positioning.</returns>
     internal static TextBox ProcessText(ReadOnlySpan<char> text, TextOptions options)
     {
         // Gather the font and fallbacks.
@@ -197,10 +231,62 @@ internal static class TextLayout
         return BreakLines(text, options, bidiRuns, bidiMap, positionings, layoutMode);
     }
 
-    private static List<GlyphLayout> LayoutText(TextBox textBox, TextOptions options)
+    /// <summary>
+    /// Lays out the supplied <see cref="TextBox"/> and materializes every glyph into a
+    /// <see cref="List{T}"/>.
+    /// </summary>
+    /// <remarks>
+    /// Prefer the streaming overload <see cref="LayoutText{TVisitor}"/> when the caller only needs
+    /// aggregated state (for example ink bounds), to avoid allocating the list.
+    /// </remarks>
+    /// <param name="textBox">The shaped and line-broken text.</param>
+    /// <param name="options">The text shaping options used to shape <paramref name="textBox"/>.</param>
+    /// <returns>The laid-out glyphs in layout order.</returns>
+    internal static List<GlyphLayout> LayoutText(TextBox textBox, TextOptions options)
+    {
+        GlyphLayoutCollector visitor = new([]);
+        LayoutText(textBox, options, ref visitor);
+        return visitor.Glyphs;
+    }
+
+    /// <summary>
+    /// Lays out the supplied <see cref="TextBox"/> and returns the union of the ink bounds of
+    /// every emitted glyph in a single streaming pass.
+    /// </summary>
+    /// <remarks>
+    /// Equivalent to iterating <see cref="LayoutText(TextBox, TextOptions)"/> and unioning each
+    /// glyph's <see cref="GlyphLayout.BoundingBox"/>, but avoids materializing the glyph list and
+    /// the second iteration pass.
+    /// </remarks>
+    /// <param name="textBox">The shaped and line-broken text.</param>
+    /// <param name="options">The text shaping options used to shape <paramref name="textBox"/>.</param>
+    /// <returns>
+    /// The union of the ink bounds of every laid-out glyph, or <see cref="FontRectangle.Empty"/>
+    /// if no glyphs were emitted.
+    /// </returns>
+    internal static FontRectangle GetBounds(TextBox textBox, TextOptions options)
+    {
+        GlyphBoundsAccumulator visitor = new(options.Dpi);
+        LayoutText(textBox, options, ref visitor);
+        return visitor.Result();
+    }
+
+    /// <summary>
+    /// Lays out the supplied <see cref="TextBox"/>, streaming each laid-out glyph through the
+    /// supplied <paramref name="visitor"/> in layout order.
+    /// </summary>
+    /// <remarks>
+    /// The visitor type is constrained to a struct implementing <see cref="IGlyphLayoutVisitor"/>
+    /// so the JIT specializes dispatch per visitor — no boxing or delegate allocation.
+    /// </remarks>
+    /// <typeparam name="TVisitor">The concrete visitor struct type.</typeparam>
+    /// <param name="textBox">The shaped and line-broken text.</param>
+    /// <param name="options">The text shaping options used to shape <paramref name="textBox"/>.</param>
+    /// <param name="visitor">The visitor that receives each laid-out glyph.</param>
+    internal static void LayoutText<TVisitor>(TextBox textBox, TextOptions options, ref TVisitor visitor)
+        where TVisitor : struct, IGlyphLayoutVisitor
     {
         LayoutMode layoutMode = options.LayoutMode;
-        List<GlyphLayout> glyphs = [];
 
         Vector2 boxLocation = options.Origin / options.Dpi;
         Vector2 penLocation = boxLocation;
@@ -219,7 +305,7 @@ internal static class TextLayout
         {
             for (int i = 0; i < textBox.TextLines.Count; i++)
             {
-                glyphs.AddRange(LayoutLineHorizontal(
+                LayoutLineHorizontal(
                     textBox,
                     textBox.TextLines[i],
                     direction,
@@ -227,7 +313,8 @@ internal static class TextLayout
                     options,
                     i,
                     ref boxLocation,
-                    ref penLocation));
+                    ref penLocation,
+                    ref visitor);
             }
         }
         else if (layoutMode == LayoutMode.HorizontalBottomTop)
@@ -235,7 +322,7 @@ internal static class TextLayout
             int index = 0;
             for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
             {
-                glyphs.AddRange(LayoutLineHorizontal(
+                LayoutLineHorizontal(
                     textBox,
                     textBox.TextLines[i],
                     direction,
@@ -243,14 +330,15 @@ internal static class TextLayout
                     options,
                     index++,
                     ref boxLocation,
-                    ref penLocation));
+                    ref penLocation,
+                    ref visitor);
             }
         }
         else if (layoutMode is LayoutMode.VerticalLeftRight)
         {
             for (int i = 0; i < textBox.TextLines.Count; i++)
             {
-                glyphs.AddRange(LayoutLineVertical(
+                LayoutLineVertical(
                     textBox,
                     textBox.TextLines[i],
                     direction,
@@ -258,7 +346,8 @@ internal static class TextLayout
                     options,
                     i,
                     ref boxLocation,
-                    ref penLocation));
+                    ref penLocation,
+                    ref visitor);
             }
         }
         else if (layoutMode is LayoutMode.VerticalRightLeft)
@@ -266,7 +355,7 @@ internal static class TextLayout
             int index = 0;
             for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
             {
-                glyphs.AddRange(LayoutLineVertical(
+                LayoutLineVertical(
                     textBox,
                     textBox.TextLines[i],
                     direction,
@@ -274,14 +363,15 @@ internal static class TextLayout
                     options,
                     index++,
                     ref boxLocation,
-                    ref penLocation));
+                    ref penLocation,
+                    ref visitor);
             }
         }
         else if (layoutMode is LayoutMode.VerticalMixedLeftRight)
         {
             for (int i = 0; i < textBox.TextLines.Count; i++)
             {
-                glyphs.AddRange(LayoutLineVerticalMixed(
+                LayoutLineVerticalMixed(
                     textBox,
                     textBox.TextLines[i],
                     direction,
@@ -289,7 +379,8 @@ internal static class TextLayout
                     options,
                     i,
                     ref boxLocation,
-                    ref penLocation));
+                    ref penLocation,
+                    ref visitor);
             }
         }
         else
@@ -297,7 +388,7 @@ internal static class TextLayout
             int index = 0;
             for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
             {
-                glyphs.AddRange(LayoutLineVerticalMixed(
+                LayoutLineVerticalMixed(
                     textBox,
                     textBox.TextLines[i],
                     direction,
@@ -305,14 +396,28 @@ internal static class TextLayout
                     options,
                     index++,
                     ref boxLocation,
-                    ref penLocation));
+                    ref penLocation,
+                    ref visitor);
             }
         }
-
-        return glyphs;
     }
 
-    private static List<GlyphLayout> LayoutLineHorizontal(
+    /// <summary>
+    /// Positions one line of horizontal text. Applies vertical-block alignment (on the first line),
+    /// horizontal-block alignment, per-line text alignment, and any first-line ink-overshoot
+    /// compensation, then streams each positioned glyph through <paramref name="visitor"/>.
+    /// </summary>
+    /// <typeparam name="TVisitor">The concrete visitor struct type.</typeparam>
+    /// <param name="textBox">The containing text box (used to look up sibling lines for block alignment).</param>
+    /// <param name="textLine">The line being laid out.</param>
+    /// <param name="direction">The resolved text direction for this line.</param>
+    /// <param name="maxScaledAdvance">The widest scaled line advance in the block (or wrapping length).</param>
+    /// <param name="options">The text shaping and layout options.</param>
+    /// <param name="index">The zero-based visual index of this line within the block.</param>
+    /// <param name="boxLocation">The running top-left position of the glyph boxes; advanced by this method.</param>
+    /// <param name="penLocation">The running pen position used for glyph placement; advanced by this method.</param>
+    /// <param name="visitor">The visitor that receives each positioned glyph.</param>
+    private static void LayoutLineHorizontal<TVisitor>(
         TextBox textBox,
         TextLine textLine,
         TextDirection direction,
@@ -320,7 +425,9 @@ internal static class TextLayout
         TextOptions options,
         int index,
         ref Vector2 boxLocation,
-        ref Vector2 penLocation)
+        ref Vector2 penLocation,
+        ref TVisitor visitor)
+        where TVisitor : struct, IGlyphLayoutVisitor
     {
         // Offset the location to center the line vertically.
         bool isFirstLine = index == 0;
@@ -415,13 +522,13 @@ internal static class TextLayout
 
         penLocation.X += offsetX;
 
-        List<GlyphLayout> glyphs = [];
+        bool emitted = false;
         for (int i = 0; i < textLine.Count; i++)
         {
             TextLine.GlyphLayoutData data = textLine[i];
             if (data.IsNewLine)
             {
-                glyphs.Add(new GlyphLayout(
+                visitor.Visit(new GlyphLayout(
                     new Glyph(data.Metrics[0], data.PointSize),
                     boxLocation,
                     penLocation,
@@ -437,13 +544,13 @@ internal static class TextLayout
                 penLocation.Y += yLineAdvance;
                 boxLocation.X = originX;
                 boxLocation.Y += advanceY;
-                return glyphs;
+                return;
             }
 
             int j = 0;
             foreach (GlyphMetrics metric in data.Metrics)
             {
-                glyphs.Add(new GlyphLayout(
+                visitor.Visit(new GlyphLayout(
                     new Glyph(metric, data.PointSize),
                     boxLocation,
                     penLocation + new Vector2(0, textLine.ScaledMaxAscender),
@@ -455,6 +562,7 @@ internal static class TextLayout
                     data.GraphemeIndex,
                     data.StringIndex));
 
+                emitted = true;
                 j++;
             }
 
@@ -464,16 +572,30 @@ internal static class TextLayout
 
         boxLocation.X = originX;
         penLocation.X = originX;
-        if (glyphs.Count > 0)
+        if (emitted)
         {
             penLocation.Y += yLineAdvance;
             boxLocation.Y += advanceY;
         }
-
-        return glyphs;
     }
 
-    private static List<GlyphLayout> LayoutLineVertical(
+    /// <summary>
+    /// Positions one line of vertical text (<see cref="LayoutMode.VerticalLeftRight"/> and
+    /// <see cref="LayoutMode.VerticalRightLeft"/>). All glyphs are treated as naturally vertical —
+    /// transformed (rotated) graphemes receive grapheme-level horizontal centering based on the
+    /// collective ink width of every entry sharing a grapheme index.
+    /// </summary>
+    /// <typeparam name="TVisitor">The concrete visitor struct type.</typeparam>
+    /// <param name="textBox">The containing text box (used to look up sibling lines for block alignment).</param>
+    /// <param name="textLine">The line being laid out.</param>
+    /// <param name="direction">The resolved text direction for this line.</param>
+    /// <param name="maxScaledAdvance">The longest scaled line advance in the block (or wrapping length).</param>
+    /// <param name="options">The text shaping and layout options.</param>
+    /// <param name="index">The zero-based visual index of this line within the block.</param>
+    /// <param name="boxLocation">The running top-left position of the glyph boxes; advanced by this method.</param>
+    /// <param name="penLocation">The running pen position used for glyph placement; advanced by this method.</param>
+    /// <param name="visitor">The visitor that receives each positioned glyph.</param>
+    private static void LayoutLineVertical<TVisitor>(
         TextBox textBox,
         TextLine textLine,
         TextDirection direction,
@@ -481,7 +603,9 @@ internal static class TextLayout
         TextOptions options,
         int index,
         ref Vector2 boxLocation,
-        ref Vector2 penLocation)
+        ref Vector2 penLocation,
+        ref TVisitor visitor)
+        where TVisitor : struct, IGlyphLayoutVisitor
     {
         float originX = penLocation.X;
         float originY = penLocation.Y;
@@ -570,7 +694,7 @@ internal static class TextLayout
 
         float lineOriginX = penLocation.X;
 
-        List<GlyphLayout> glyphs = new(textLine.Count);
+        bool emitted = false;
 
         // Grapheme-scoped state for transformed glyph alignment.
         //
@@ -591,7 +715,7 @@ internal static class TextLayout
             TextLine.GlyphLayoutData data = textLine[i];
             if (data.IsNewLine)
             {
-                glyphs.Add(new GlyphLayout(
+                visitor.Visit(new GlyphLayout(
                     new Glyph(data.Metrics[0], data.PointSize),
                     boxLocation,
                     penLocation,
@@ -607,7 +731,7 @@ internal static class TextLayout
                 boxLocation.Y = originY;
                 penLocation.X += xLineAdvance;
                 penLocation.Y = originY;
-                return glyphs;
+                return;
             }
 
             int j = 0;
@@ -727,7 +851,7 @@ internal static class TextLayout
                     advanceW = scale.X * metric.AdvanceWidth;
                 }
 
-                glyphs.Add(new GlyphLayout(
+                visitor.Visit(new GlyphLayout(
                     new Glyph(metric, data.PointSize),
                     boxLocation,
                     penLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0),
@@ -739,6 +863,7 @@ internal static class TextLayout
                     data.GraphemeIndex,
                     data.StringIndex));
 
+                emitted = true;
                 j++;
             }
 
@@ -759,16 +884,30 @@ internal static class TextLayout
 
         boxLocation.Y = originY;
         penLocation.Y = originY;
-        if (glyphs.Count > 0)
+        if (emitted)
         {
             boxLocation.X += advanceX;
             penLocation.X += xLineAdvance;
         }
-
-        return glyphs;
     }
 
-    private static List<GlyphLayout> LayoutLineVerticalMixed(
+    /// <summary>
+    /// Positions one line of vertical-mixed text (<see cref="LayoutMode.VerticalMixedLeftRight"/>
+    /// and <see cref="LayoutMode.VerticalMixedRightLeft"/>). Transformed entries are rotated 90°
+    /// and laid out sideways using the font's horizontal metrics while the pen still advances
+    /// along Y; naturally-vertical entries are positioned using their vertical metrics.
+    /// </summary>
+    /// <typeparam name="TVisitor">The concrete visitor struct type.</typeparam>
+    /// <param name="textBox">The containing text box (used to look up sibling lines for block alignment).</param>
+    /// <param name="textLine">The line being laid out.</param>
+    /// <param name="direction">The resolved text direction for this line.</param>
+    /// <param name="maxScaledAdvance">The longest scaled line advance in the block (or wrapping length).</param>
+    /// <param name="options">The text shaping and layout options.</param>
+    /// <param name="index">The zero-based visual index of this line within the block.</param>
+    /// <param name="boxLocation">The running top-left position of the glyph boxes; advanced by this method.</param>
+    /// <param name="penLocation">The running pen position used for glyph placement; advanced by this method.</param>
+    /// <param name="visitor">The visitor that receives each positioned glyph.</param>
+    private static void LayoutLineVerticalMixed<TVisitor>(
         TextBox textBox,
         TextLine textLine,
         TextDirection direction,
@@ -776,7 +915,9 @@ internal static class TextLayout
         TextOptions options,
         int index,
         ref Vector2 boxLocation,
-        ref Vector2 penLocation)
+        ref Vector2 penLocation,
+        ref TVisitor visitor)
+        where TVisitor : struct, IGlyphLayoutVisitor
     {
         float originY = penLocation.Y;
         float offsetY = 0;
@@ -862,13 +1003,13 @@ internal static class TextLayout
         penLocation.Y += offsetY;
         penLocation.X += offsetX;
 
-        List<GlyphLayout> glyphs = [];
+        bool emitted = false;
         for (int i = 0; i < textLine.Count; i++)
         {
             TextLine.GlyphLayoutData data = textLine[i];
             if (data.IsNewLine)
             {
-                glyphs.Add(new GlyphLayout(
+                visitor.Visit(new GlyphLayout(
                     new Glyph(data.Metrics[0], data.PointSize),
                     boxLocation,
                     penLocation,
@@ -884,7 +1025,7 @@ internal static class TextLayout
                 boxLocation.Y = originY;
                 penLocation.X += xLineAdvance;
                 penLocation.Y = originY;
-                return glyphs;
+                return;
             }
 
             if (data.IsTransformed)
@@ -908,7 +1049,7 @@ internal static class TextLayout
 
                     float centerOffsetX = baselineDelta + descenderAbs + descenderDelta;
 
-                    glyphs.Add(new GlyphLayout(
+                    visitor.Visit(new GlyphLayout(
                         new Glyph(metric, data.PointSize),
                         boxLocation,
                         penLocation + new Vector2(centerOffsetX, 0),
@@ -920,6 +1061,7 @@ internal static class TextLayout
                         data.GraphemeIndex,
                         data.StringIndex));
 
+                    emitted = true;
                     j++;
                 }
             }
@@ -932,7 +1074,7 @@ internal static class TextLayout
                     Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
                     Vector2 offset = new(0, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
 
-                    glyphs.Add(new GlyphLayout(
+                    visitor.Visit(new GlyphLayout(
                         new Glyph(metric, data.PointSize),
                         boxLocation,
                         penLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0),
@@ -944,6 +1086,7 @@ internal static class TextLayout
                         data.GraphemeIndex,
                         data.StringIndex));
 
+                    emitted = true;
                     j++;
                 }
             }
@@ -953,15 +1096,37 @@ internal static class TextLayout
 
         boxLocation.Y = originY;
         penLocation.Y = originY;
-        if (glyphs.Count > 0)
+        if (emitted)
         {
             boxLocation.X += advanceX;
             penLocation.X += xLineAdvance;
         }
-
-        return glyphs;
     }
 
+    /// <summary>
+    /// Shapes a single font run — maps codepoints in <paramref name="text"/> to glyph ids using
+    /// <paramref name="font"/>, then runs GSUB substitution and GPOS positioning. Codepoints that
+    /// the font cannot map are recorded for a later fallback pass.
+    /// </summary>
+    /// <param name="text">The run-relative text slice to shape.</param>
+    /// <param name="start">The starting grapheme index (absolute within the original input).</param>
+    /// <param name="textRuns">The ordered list of resolved text runs.</param>
+    /// <param name="textRunIndex">The index of the current text run; advanced as the enumerator crosses run boundaries.</param>
+    /// <param name="codePointIndex">The running codepoint index (absolute within the original input).</param>
+    /// <param name="bidiRunIndex">The running bidi run index.</param>
+    /// <param name="isFallbackRun">
+    /// <see langword="true"/> if this call is the fallback-font pass (in which case unmapped codepoints
+    /// may still emit <c>.notdef</c> glyphs).
+    /// </param>
+    /// <param name="font">The font to shape with.</param>
+    /// <param name="bidiRuns">The resolved bidi runs covering the whole input.</param>
+    /// <param name="bidiMap">A codepoint → bidi-run mapping accumulated across shaping passes.</param>
+    /// <param name="substitutions">The GSUB substitution collection to write into.</param>
+    /// <param name="positionings">The GPOS positioning collection to write into.</param>
+    /// <returns>
+    /// <see langword="true"/> if every codepoint mapped successfully; <see langword="false"/> if any
+    /// codepoint remains unmapped (so a fallback-font pass is needed).
+    /// </returns>
     private static bool DoFontRun(
         ReadOnlySpan<char> text,
         int start,
@@ -1057,6 +1222,13 @@ internal static class TextLayout
             : positionings.TryUpdate(font, substitutions);
     }
 
+    /// <summary>
+    /// Substitutes mirrored bracket glyphs (for example <c>(</c> ↔ <c>)</c>) inside right-to-left
+    /// bidi runs, per Unicode Bidirectional Algorithm rule L4. Relies on the font's <c>rtlm</c>
+    /// feature when available and falls back to the Unicode mirror table otherwise.
+    /// </summary>
+    /// <param name="fontMetrics">The font metrics used to look up mirrored glyph ids.</param>
+    /// <param name="collection">The substitution collection whose glyphs will be rewritten in place.</param>
     private static void SubstituteBidiMirrors(FontMetrics fontMetrics, GlyphSubstitutionCollection collection)
     {
         for (int i = 0; i < collection.Count; i++)
@@ -1106,6 +1278,20 @@ internal static class TextLayout
         }
     }
 
+    /// <summary>
+    /// Assembles shaped glyphs into <see cref="TextLine"/> instances, applying line-break
+    /// opportunities derived from <see cref="LineBreakEnumerator"/> and the configured
+    /// <see cref="TextOptions.WordBreaking"/> / <see cref="TextOptions.WrappingLength"/> settings.
+    /// Finalizes each line (trimming trailing whitespace and applying bidi reordering) and applies
+    /// justification where requested.
+    /// </summary>
+    /// <param name="text">The original source text.</param>
+    /// <param name="options">The text shaping and layout options.</param>
+    /// <param name="bidiRuns">The resolved bidi runs covering the whole input.</param>
+    /// <param name="bidiMap">The codepoint → bidi-run mapping built during shaping.</param>
+    /// <param name="positionings">The GPOS positioning collection containing the shaped entries.</param>
+    /// <param name="layoutMode">The active layout mode (drives horizontal vs vertical metrics selection).</param>
+    /// <returns>The shaped, line-broken, finalized text box ready for glyph placement.</returns>
     private static TextBox BreakLines(
         ReadOnlySpan<char> text,
         TextOptions options,
@@ -1574,6 +1760,21 @@ internal static class TextLayout
         return new TextBox(textLines);
     }
 
+    /// <summary>
+    /// Calculates the X offset to apply to a single line of horizontal text so that it is positioned
+    /// within the wrapping block according to the requested horizontal and text alignment.
+    /// </summary>
+    /// <remarks>
+    /// The returned offset is in unscaled (pre-Dpi) units and is combined with the pen location at
+    /// layout time. The result depends on the text direction because <see cref="TextAlignment.Start"/>
+    /// and <see cref="TextAlignment.End"/> flip under right-to-left text.
+    /// </remarks>
+    /// <param name="lineAdvance">The scaled advance of the current line.</param>
+    /// <param name="maxScaledAdvance">The scaled advance of the widest line (or wrapping length, whichever is greater).</param>
+    /// <param name="horizontalAlignment">Block-level horizontal alignment of the whole text.</param>
+    /// <param name="textAlignment">Per-line alignment within the block.</param>
+    /// <param name="direction">The resolved text direction for this line.</param>
+    /// <returns>The X offset to add to the line's pen location.</returns>
     internal static float CalculateLineOffsetX(
         float lineAdvance,
         float maxScaledAdvance,
@@ -1623,6 +1824,21 @@ internal static class TextLayout
         return offsetX;
     }
 
+    /// <summary>
+    /// Calculates the Y offset to apply to a single line of vertical text so that it is positioned
+    /// within the wrapping block according to the requested vertical and text alignment.
+    /// </summary>
+    /// <remarks>
+    /// The returned offset is in unscaled (pre-Dpi) units and is combined with the pen location at
+    /// layout time. The result depends on the text direction because <see cref="TextAlignment.Start"/>
+    /// and <see cref="TextAlignment.End"/> flip under right-to-left text.
+    /// </remarks>
+    /// <param name="lineAdvance">The scaled advance of the current line.</param>
+    /// <param name="maxScaledAdvance">The scaled advance of the longest line (or wrapping length, whichever is greater).</param>
+    /// <param name="verticalAlignment">Block-level vertical alignment of the whole text.</param>
+    /// <param name="textAlignment">Per-line alignment within the block.</param>
+    /// <param name="direction">The resolved text direction for this line.</param>
+    /// <returns>The Y offset to add to the line's pen location.</returns>
     internal static float CalculateLineOffsetY(
         float lineAdvance,
         float maxScaledAdvance,
@@ -1675,53 +1891,147 @@ internal static class TextLayout
         return offsetY;
     }
 
+    /// <summary>
+    /// A shaped and line-broken block of text produced by <see cref="ProcessText"/> and consumed
+    /// by <see cref="LayoutText{TVisitor}"/>.
+    /// </summary>
     internal sealed class TextBox
     {
         private float? scaledMaxAdvance;
 
         private float? minY;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TextBox"/> class.
+        /// </summary>
+        /// <param name="textLines">The shaped, line-broken lines that make up this text box.</param>
         public TextBox(IReadOnlyList<TextLine> textLines)
             => this.TextLines = textLines;
 
+        /// <summary>
+        /// Gets the shaped and line-broken lines that make up the text.
+        /// </summary>
         public IReadOnlyList<TextLine> TextLines { get; }
 
+        /// <summary>
+        /// Returns the widest scaled line advance across all lines. The result is memoized.
+        /// </summary>
+        /// <returns>The widest scaled line advance.</returns>
         public float ScaledMaxAdvance()
             => this.scaledMaxAdvance ??= this.TextLines.Max(x => x.ScaledLineAdvance);
 
+        /// <summary>
+        /// Returns the smallest (most negative) scaled Y position encountered across all lines.
+        /// Used to detect ink that extends above the typographic ascender (stacked marks in Tibetan etc.).
+        /// The result is memoized.
+        /// </summary>
+        /// <returns>The smallest scaled Y position in the text box.</returns>
         public float ScaledMinY()
             => this.minY ??= this.TextLines.Min(x => x.ScaledMinY);
 
+        /// <summary>
+        /// Returns the resolved text direction of the first glyph in the first line. Used as the
+        /// block-level direction for alignment calculations.
+        /// </summary>
+        /// <returns>The block-level text direction.</returns>
         public TextDirection TextDirection() => this.TextLines[0][0].TextDirection;
     }
 
+    /// <summary>
+    /// A shaped line of text — an ordered sequence of <see cref="GlyphLayoutData"/> entries plus
+    /// per-line aggregate metrics (advance, ascender, descender, etc.) used to position the line
+    /// during layout.
+    /// </summary>
     internal sealed class TextLine
     {
         private readonly List<GlyphLayoutData> data;
         private readonly Dictionary<int, float> advances = [];
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TextLine"/> class with a small default capacity.
+        /// </summary>
         public TextLine() => this.data = new(16);
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TextLine"/> class with the specified initial
+        /// entry capacity.
+        /// </summary>
+        /// <param name="capacity">Initial capacity for the internal entry list.</param>
         public TextLine(int capacity) => this.data = new(capacity);
 
+        /// <summary>
+        /// Gets the number of <see cref="GlyphLayoutData"/> entries in this line.
+        /// </summary>
         public int Count => this.data.Count;
 
+        /// <summary>
+        /// Gets a value indicating whether this line should be skipped during text justification.
+        /// Set by <see cref="Finalize"/> for lines that end a paragraph.
+        /// </summary>
         public bool SkipJustification { get; private set; }
 
+        /// <summary>
+        /// Gets the sum of scaled advances across all entries in this line.
+        /// </summary>
         public float ScaledLineAdvance { get; private set; }
 
+        /// <summary>
+        /// Gets the greatest scaled line height across all entries, multiplied by the configured
+        /// line-spacing factor.
+        /// </summary>
         public float ScaledMaxLineHeight { get; private set; } = -1;
 
+        /// <summary>
+        /// Gets the greatest scaled ascender across all entries in this line.
+        /// </summary>
         public float ScaledMaxAscender { get; private set; } = -1;
 
+        /// <summary>
+        /// Gets the greatest scaled descender across all entries in this line.
+        /// </summary>
         public float ScaledMaxDescender { get; private set; } = -1;
 
+        /// <summary>
+        /// Gets the greatest scaled symmetric-metrics delta across all entries in this line.
+        /// Browsers adjust ascender/descender symmetrically for baseline alignment; this captures
+        /// that adjustment.
+        /// </summary>
         public float ScaledMaxDelta { get; private set; } = float.MinValue;
 
+        /// <summary>
+        /// Gets the smallest (most negative) scaled Y position across all entries in this line.
+        /// Used to detect ink that extends above the typographic ascender (for example stacked
+        /// marks in Tibetan) so the layout engine can reserve extra ascent.
+        /// </summary>
         public float ScaledMinY { get; private set; }
 
+        /// <summary>
+        /// Gets the <see cref="GlyphLayoutData"/> entry at the given index.
+        /// </summary>
+        /// <param name="index">The zero-based index into this line.</param>
+        /// <returns>The entry at the given index.</returns>
         public GlyphLayoutData this[int index] => this.data[index];
 
+        /// <summary>
+        /// Appends a shaped entry to this line, updating the aggregated line-level metrics.
+        /// </summary>
+        /// <param name="metrics">The glyph metrics produced by shaping this entry's codepoint.</param>
+        /// <param name="pointSize">The point size at which the entry is rendered.</param>
+        /// <param name="scaledAdvance">The scaled advance contributed by this entry.</param>
+        /// <param name="scaledLineHeight">The scaled line height contributed by this entry (before line-spacing).</param>
+        /// <param name="scaledAscender">The scaled typographic ascender.</param>
+        /// <param name="scaledDescender">The scaled typographic descender.</param>
+        /// <param name="scaledDelta">The symmetric metrics delta applied during line-box construction.</param>
+        /// <param name="bidiRun">The bidi run this entry belongs to.</param>
+        /// <param name="graphemeIndex">The grapheme index in the source text.</param>
+        /// <param name="isLastInGrapheme">Whether this entry is the last codepoint in its grapheme cluster.</param>
+        /// <param name="codePointIndex">The codepoint index in the source text.</param>
+        /// <param name="graphemeCodePointIndex">The index of the codepoint within its grapheme cluster.</param>
+        /// <param name="isTransformed">Whether the entry participates in a transformed (rotated) vertical layout.</param>
+        /// <param name="isDecomposed">Whether the entry was produced by Unicode decomposition.</param>
+        /// <param name="stringIndex">The character index in the source string.</param>
+        /// <param name="layoutMode">The glyph-level layout mode to use for ink bounds computation.</param>
+        /// <param name="lineSpacing">The line-spacing factor to apply to <paramref name="scaledLineHeight"/>.</param>
         public void Add(
             IReadOnlyList<GlyphMetrics> metrics,
             float pointSize,
@@ -1803,12 +2113,26 @@ internal static class TextLayout
                 stringIndex));
         }
 
+        /// <summary>
+        /// Inserts all entries from <paramref name="textLine"/> into this line at the given index
+        /// and recomputes aggregated metrics.
+        /// </summary>
+        /// <param name="index">The zero-based index at which to insert.</param>
+        /// <param name="textLine">The line whose entries should be inserted.</param>
         public void InsertAt(int index, TextLine textLine)
         {
             this.data.InsertRange(index, textLine.data);
             RecalculateLineMetrics(this);
         }
 
+        /// <summary>
+        /// Returns the cumulative scaled advance up to and including the glyph at the given index.
+        /// Whitespace entries at or after <paramref name="index"/> are skipped so the returned value
+        /// represents the advance at the last non-whitespace glyph before a potential line break.
+        /// </summary>
+        /// <remarks>Results are memoized by index.</remarks>
+        /// <param name="index">The zero-based index to measure up to.</param>
+        /// <returns>The cumulative scaled advance.</returns>
         public float MeasureAt(int index)
         {
             if (this.advances.TryGetValue(index, out float advance))
@@ -1838,6 +2162,14 @@ internal static class TextLayout
             return advance;
         }
 
+        /// <summary>
+        /// Splits this line at the first non-whitespace glyph whose cumulative advance meets or
+        /// exceeds <paramref name="length"/>. On success, the split-off tail is returned as a new
+        /// line and removed from this one; both lines have their aggregated metrics recomputed.
+        /// </summary>
+        /// <param name="length">The scaled advance threshold at which to split.</param>
+        /// <param name="result">The trailing portion of the split, or <see langword="null"/> if no split was performed.</param>
+        /// <returns><see langword="true"/> if a split occurred; otherwise <see langword="false"/>.</returns>
         public bool TrySplitAt(float length, [NotNullWhen(true)] out TextLine? result)
         {
             float advance = this.data[0].ScaledAdvance;
@@ -1871,6 +2203,15 @@ internal static class TextLayout
             return false;
         }
 
+        /// <summary>
+        /// Splits this line at the glyph immediately preceding the supplied <see cref="LineBreak"/>
+        /// wrap position. When <paramref name="keepAll"/> is set and the preceding glyph is CJK,
+        /// the split is delayed until the nearest non-CJK codepoint to preserve word integrity.
+        /// </summary>
+        /// <param name="lineBreak">The resolved line-break opportunity.</param>
+        /// <param name="keepAll">When <see langword="true"/>, avoid breaking between CJK codepoints.</param>
+        /// <param name="result">The trailing portion of the split, or <see langword="null"/> if no split was performed.</param>
+        /// <returns><see langword="true"/> if a split occurred; otherwise <see langword="false"/>.</returns>
         public bool TrySplitAt(LineBreak lineBreak, bool keepAll, [NotNullWhen(true)] out TextLine? result)
         {
             int index = this.data.Count;
@@ -1923,6 +2264,10 @@ internal static class TextLayout
             return true;
         }
 
+        /// <summary>
+        /// Removes trailing breaking-whitespace entries from this line. Non-breaking spaces are
+        /// preserved and the first entry is always kept even when whitespace.
+        /// </summary>
         private void TrimTrailingWhitespace()
         {
             int count = this.data.Count;
@@ -1945,6 +2290,15 @@ internal static class TextLayout
             }
         }
 
+        /// <summary>
+        /// Finalizes this line after line-breaking: trims trailing breaking whitespace, applies
+        /// bidi reordering so entries are in visual order, and recomputes aggregated metrics.
+        /// </summary>
+        /// <param name="skipJustification">
+        /// When <see langword="true"/>, marks the line so <see cref="Justify"/> becomes a no-op
+        /// (used for paragraph-final lines).
+        /// </param>
+        /// <returns>This line, for fluent chaining.</returns>
         public TextLine Finalize(bool skipJustification = false)
         {
             this.SkipJustification = skipJustification;
@@ -1954,6 +2308,17 @@ internal static class TextLayout
             return this;
         }
 
+        /// <summary>
+        /// Distributes the remaining space between the line advance and the wrapping length across
+        /// either inter-character or inter-word gaps, as configured by
+        /// <see cref="TextOptions.TextJustification"/>.
+        /// </summary>
+        /// <remarks>
+        /// No-op when the line was finalized with <c>skipJustification</c>, when wrapping is
+        /// disabled, when no justification style is selected, or when the line is already at or
+        /// beyond the wrapping length.
+        /// </remarks>
+        /// <param name="options">The text shaping options supplying the wrapping length and justification style.</param>
         public void Justify(TextOptions options)
         {
             if (options.WrappingLength == -1F || options.TextJustification == TextJustification.None)
@@ -2039,6 +2404,10 @@ internal static class TextLayout
             RecalculateLineMetrics(this);
         }
 
+        /// <summary>
+        /// Re-orders the entries in this line from logical to visual order according to the
+        /// Unicode Bidirectional Algorithm (<see href="https://unicode.org/reports/tr9/"/>, rules L1 and L2).
+        /// </summary>
         public void BidiReOrder()
         {
             // Build up the collection of ordered runs.
@@ -2119,6 +2488,12 @@ internal static class TextLayout
             }
         }
 
+        /// <summary>
+        /// Recomputes the aggregated per-line metrics (advance, max line height, ascender,
+        /// descender, delta, min-Y) from the current entries. Called after any mutation that
+        /// can affect these — split, insert, trim, justify.
+        /// </summary>
+        /// <param name="textLine">The line to recompute metrics for.</param>
         private static void RecalculateLineMetrics(TextLine textLine)
         {
             // Lastly recalculate this line metrics.
@@ -2210,9 +2585,33 @@ internal static class TextLayout
             return range!.Left!;
         }
 
+        /// <summary>
+        /// Per-codepoint shaping data stored inside a <see cref="TextLine"/>.
+        /// Each entry corresponds to a single codepoint — complex scripts may map one grapheme to
+        /// multiple entries (tracked via <see cref="GraphemeCodePointIndex"/>).
+        /// </summary>
         [DebuggerDisplay("{DebuggerDisplay,nq}")]
         internal struct GlyphLayoutData
         {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="GlyphLayoutData"/> struct.
+            /// </summary>
+            /// <param name="metrics">The shaped glyph metrics for this codepoint.</param>
+            /// <param name="pointSize">The point size at which the glyph is rendered.</param>
+            /// <param name="scaledAdvance">The scaled advance of this entry.</param>
+            /// <param name="scaledLineHeight">The scaled line height contributed by this entry.</param>
+            /// <param name="scaledAscender">The scaled typographic ascender.</param>
+            /// <param name="scaledDescender">The scaled typographic descender.</param>
+            /// <param name="scaledDelta">The symmetric metrics delta applied during line-box construction.</param>
+            /// <param name="scaledMinY">The minimum scaled Y (topmost ink) across <paramref name="metrics"/>.</param>
+            /// <param name="bidiRun">The resolved bidi run this entry belongs to.</param>
+            /// <param name="graphemeIndex">The grapheme index in the source text.</param>
+            /// <param name="isLastInGrapheme">Whether this is the last codepoint in its grapheme cluster.</param>
+            /// <param name="codePointIndex">The codepoint index in the source text.</param>
+            /// <param name="graphemeCodePointIndex">The index of this codepoint within its grapheme cluster.</param>
+            /// <param name="isTransformed">Whether the entry participates in a transformed vertical layout.</param>
+            /// <param name="isDecomposed">Whether the entry was produced by Unicode decomposition.</param>
+            /// <param name="stringIndex">The UTF-16 character index in the source string.</param>
             public GlyphLayoutData(
                 IReadOnlyList<GlyphMetrics> metrics,
                 float pointSize,
@@ -2249,75 +2648,123 @@ internal static class TextLayout
                 this.StringIndex = stringIndex;
             }
 
+            /// <summary>Gets the source codepoint for this entry.</summary>
             public readonly CodePoint CodePoint => this.Metrics[0].CodePoint;
 
+            /// <summary>Gets the shaped glyph metrics produced for this codepoint (one codepoint may map to several glyphs).</summary>
             public IReadOnlyList<GlyphMetrics> Metrics { get; }
 
+            /// <summary>Gets the point size at which this entry is rendered.</summary>
             public float PointSize { get; }
 
+            /// <summary>Gets or sets the scaled advance of this entry (mutated by justification).</summary>
             public float ScaledAdvance { get; set; }
 
+            /// <summary>Gets the scaled line height contributed by this entry, before line-spacing is applied.</summary>
             public float ScaledLineHeight { get; }
 
+            /// <summary>Gets the scaled typographic ascender.</summary>
             public float ScaledAscender { get; }
 
+            /// <summary>Gets the scaled typographic descender.</summary>
             public float ScaledDescender { get; }
 
+            /// <summary>Gets the symmetric ascender/descender delta applied during line-box construction.</summary>
             public float ScaledDelta { get; }
 
+            /// <summary>Gets the smallest (most negative) scaled Y across <see cref="Metrics"/>.</summary>
             public float ScaledMinY { get; }
 
+            /// <summary>Gets the resolved bidi run this entry belongs to.</summary>
             public BidiRun BidiRun { get; }
 
+            /// <summary>Gets the text direction derived from <see cref="BidiRun"/>.</summary>
             public readonly TextDirection TextDirection => (TextDirection)this.BidiRun.Direction;
 
+            /// <summary>Gets the grapheme index in the source text.</summary>
             public int GraphemeIndex { get; }
 
+            /// <summary>Gets a value indicating whether this is the last codepoint in its grapheme cluster.</summary>
             public bool IsLastInGrapheme { get; }
 
+            /// <summary>Gets the index of this codepoint within its grapheme cluster (0-based).</summary>
             public int GraphemeCodePointIndex { get; }
 
+            /// <summary>Gets the codepoint index in the source text.</summary>
             public int CodePointIndex { get; }
 
+            /// <summary>Gets a value indicating whether the entry participates in a transformed vertical layout.</summary>
             public bool IsTransformed { get; }
 
+            /// <summary>Gets a value indicating whether the entry was produced by Unicode decomposition.</summary>
             public bool IsDecomposed { get; }
 
+            /// <summary>Gets the UTF-16 character index in the source string.</summary>
             public int StringIndex { get; }
 
+            /// <summary>Gets a value indicating whether the codepoint is a line-break character.</summary>
             public readonly bool IsNewLine => CodePoint.IsNewLine(this.CodePoint);
 
             private readonly string DebuggerDisplay => FormattableString
                 .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {this.TextDirection} : {this.CodePointIndex}, level: {this.BidiRun.Level}");
         }
 
+        /// <summary>
+        /// A node in the linked list of contiguous same-level bidi runs used by <see cref="LinearReOrder"/>.
+        /// Each node owns the glyph entries at its bidi embedding level and can be reversed in place.
+        /// </summary>
         private sealed class OrderedBidiRun
         {
             private ArrayBuilder<GlyphLayoutData> info;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="OrderedBidiRun"/> class.
+            /// </summary>
+            /// <param name="level">The bidi embedding level for this run.</param>
             public OrderedBidiRun(int level) => this.Level = level;
 
+            /// <summary>Gets the bidi embedding level of this run.</summary>
             public int Level { get; }
 
+            /// <summary>Gets or sets the next run in visual order.</summary>
             public OrderedBidiRun? Next { get; set; }
 
+            /// <summary>Appends an entry to this run.</summary>
+            /// <param name="info">The entry to append.</param>
             public void Add(GlyphLayoutData info) => this.info.Add(info);
 
+            /// <summary>Returns a slice view over this run's entries.</summary>
+            /// <returns>A slice over the entries.</returns>
             public ArraySlice<GlyphLayoutData> AsSlice() => this.info.AsSlice();
 
+            /// <summary>Reverses the entries in this run in place (for rule L2).</summary>
             public void Reverse() => this.AsSlice().Span.Reverse();
         }
 
+        /// <summary>
+        /// An intermediate grouping of <see cref="OrderedBidiRun"/> links used by the linear-reorder
+        /// algorithm to stitch pairs of same-level ranges together.
+        /// </summary>
         private sealed class BidiRange
         {
+            /// <summary>Gets or sets the shared bidi embedding level for this range.</summary>
             public int Level { get; set; }
 
+            /// <summary>Gets or sets the leftmost run in the range.</summary>
             public OrderedBidiRun? Left { get; set; }
 
+            /// <summary>Gets or sets the rightmost run in the range.</summary>
             public OrderedBidiRun? Right { get; set; }
 
+            /// <summary>Gets or sets the previous range in the processing stack.</summary>
             public BidiRange? Previous { get; set; }
 
+            /// <summary>
+            /// Stitches the current range with its predecessor, producing a single merged range
+            /// whose internal orientation depends on the predecessor's embedding level parity.
+            /// </summary>
+            /// <param name="range">The current range whose <see cref="Previous"/> will be merged.</param>
+            /// <returns>The merged range (always the predecessor instance, reused in place).</returns>
             public static BidiRange MergeWithPrevious(BidiRange? range)
             {
                 BidiRange previous = range!.Previous!;
