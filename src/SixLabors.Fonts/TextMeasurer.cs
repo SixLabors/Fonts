@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using SixLabors.Fonts.Unicode;
+
 namespace SixLabors.Fonts;
 
 /// <summary>
@@ -8,6 +10,118 @@ namespace SixLabors.Fonts;
 /// </summary>
 public static class TextMeasurer
 {
+    /// <summary>
+    /// Measures the full set of layout metrics for the supplied text in a single pass.
+    /// </summary>
+    /// <param name="text">The text.</param>
+    /// <param name="options">The text shaping options.</param>
+    /// <returns>A <see cref="TextMetrics"/> value containing every measurement for the laid-out text.</returns>
+    /// <remarks>
+    /// This method is cheaper than calling multiple granular overloads back-to-back because the text is
+    /// shaped and laid out only once. Prefer the granular overloads (for example <see cref="MeasureAdvance(string, TextOptions)"/>)
+    /// when only one or two values are required, because they avoid materializing the per-character and per-line arrays.
+    /// </remarks>
+    public static TextMetrics Measure(string text, TextOptions options)
+        => Measure(text.AsSpan(), options);
+
+    /// <summary>
+    /// Measures the full set of layout metrics for the supplied text in a single pass.
+    /// </summary>
+    /// <param name="text">The text.</param>
+    /// <param name="options">The text shaping options.</param>
+    /// <returns>A <see cref="TextMetrics"/> value containing every measurement for the laid-out text.</returns>
+    /// <remarks>
+    /// This method is cheaper than calling multiple granular overloads back-to-back because the text is
+    /// shaped and laid out only once. Prefer the granular overloads (for example <see cref="MeasureAdvance(ReadOnlySpan{char}, TextOptions)"/>)
+    /// when only one or two values are required, because they avoid materializing the per-character and per-line arrays.
+    /// </remarks>
+    public static TextMetrics Measure(ReadOnlySpan<char> text, TextOptions options)
+    {
+        if (text.IsEmpty)
+        {
+            return TextMetrics.Empty;
+        }
+
+        TextLayout.TextBox textBox = TextLayout.ProcessText(text, options);
+        List<GlyphLayout> glyphLayouts = TextLayout.LayoutText(textBox, options);
+        float dpi = options.Dpi;
+        bool isHorizontal = options.LayoutMode.IsHorizontal();
+
+        FontRectangle advance = GetAdvance(textBox, dpi, isHorizontal);
+
+        int count = glyphLayouts.Count;
+        GlyphBounds[] characterAdvances = new GlyphBounds[count];
+        GlyphBounds[] characterSizes = new GlyphBounds[count];
+        GlyphBounds[] characterBounds = new GlyphBounds[count];
+        GlyphBounds[] characterRenderableBounds = new GlyphBounds[count];
+
+        float left = float.MaxValue;
+        float top = float.MaxValue;
+        float right = float.MinValue;
+        float bottom = float.MinValue;
+
+        for (int i = 0; i < count; i++)
+        {
+            GlyphLayout g = glyphLayouts[i];
+            FontRectangle glyphBox = g.BoundingBox(dpi);
+            FontRectangle advanceRect = new(g.BoxLocation.X * dpi, g.BoxLocation.Y * dpi, g.AdvanceX * dpi, g.AdvanceY * dpi);
+            FontRectangle renderableRect = FontRectangle.Union(advanceRect, glyphBox);
+
+            CodePoint codePoint = g.Glyph.GlyphMetrics.CodePoint;
+            int graphemeIndex = g.GraphemeIndex;
+            int stringIndex = g.StringIndex;
+
+            FontRectangle advanceBox = new(0, 0, g.AdvanceX * dpi, g.AdvanceY * dpi);
+            FontRectangle sizeBox = new(0, 0, glyphBox.Width, glyphBox.Height);
+
+            characterAdvances[i] = new GlyphBounds(codePoint, in advanceBox, graphemeIndex, stringIndex);
+            characterSizes[i] = new GlyphBounds(codePoint, in sizeBox, graphemeIndex, stringIndex);
+            characterBounds[i] = new GlyphBounds(codePoint, in glyphBox, graphemeIndex, stringIndex);
+            characterRenderableBounds[i] = new GlyphBounds(codePoint, in renderableRect, graphemeIndex, stringIndex);
+
+            if (glyphBox.Left < left)
+            {
+                left = glyphBox.Left;
+            }
+
+            if (glyphBox.Top < top)
+            {
+                top = glyphBox.Top;
+            }
+
+            if (glyphBox.Right > right)
+            {
+                right = glyphBox.Right;
+            }
+
+            if (glyphBox.Bottom > bottom)
+            {
+                bottom = glyphBox.Bottom;
+            }
+        }
+
+        FontRectangle bounds = count == 0
+            ? FontRectangle.Empty
+            : FontRectangle.FromLTRB(left, top, right, bottom);
+        FontRectangle size = new(0, 0, bounds.Width, bounds.Height);
+        FontRectangle absoluteAdvance = new(options.Origin.X, options.Origin.Y, advance.Width, advance.Height);
+        FontRectangle renderableBounds = FontRectangle.Union(absoluteAdvance, bounds);
+
+        LineMetrics[] lineMetrics = GetLineMetrics(textBox, options);
+
+        return new TextMetrics(
+            advance,
+            bounds,
+            size,
+            renderableBounds,
+            textBox.TextLines.Count,
+            characterAdvances,
+            characterSizes,
+            characterBounds,
+            characterRenderableBounds,
+            lineMetrics);
+    }
+
     /// <summary>
     /// Measures the logical advance of the text in pixel units.
     /// </summary>
@@ -69,7 +183,10 @@ public static class TextMeasurer
     /// Use <see cref="MeasureBounds(ReadOnlySpan{char}, TextOptions)"/> when the returned X and Y offset are also required.
     /// </remarks>
     public static FontRectangle MeasureSize(ReadOnlySpan<char> text, TextOptions options)
-        => GetSize(TextLayout.GenerateLayout(text, options), options.Dpi);
+    {
+        FontRectangle bounds = MeasureBounds(text, options);
+        return new FontRectangle(0, 0, bounds.Width, bounds.Height);
+    }
 
     /// <summary>
     /// Measures the rendered glyph bounds of the text in pixel units.
@@ -115,7 +232,14 @@ public static class TextMeasurer
     /// <see cref="MeasureRenderableBounds(ReadOnlySpan{char}, TextOptions)"/> for the union of both.
     /// </remarks>
     public static FontRectangle MeasureBounds(ReadOnlySpan<char> text, TextOptions options)
-        => GetBounds(TextLayout.GenerateLayout(text, options), options.Dpi);
+    {
+        if (text.IsEmpty)
+        {
+            return FontRectangle.Empty;
+        }
+
+        return TextLayout.GetBounds(TextLayout.ProcessText(text, options), options);
+    }
 
     /// <summary>
     /// Measures the full renderable bounds of the text in pixel units.
@@ -137,9 +261,10 @@ public static class TextMeasurer
             return FontRectangle.Empty;
         }
 
-        FontRectangle advance = MeasureAdvance(text, options);
+        TextLayout.TextBox textBox = TextLayout.ProcessText(text, options);
+        FontRectangle advance = GetAdvance(textBox, options.Dpi, options.LayoutMode.IsHorizontal());
         FontRectangle absoluteAdvance = new(options.Origin.X, options.Origin.Y, advance.Width, advance.Height);
-        FontRectangle bounds = MeasureBounds(text, options);
+        FontRectangle bounds = TextLayout.GetBounds(textBox, options);
         return FontRectangle.Union(absoluteAdvance, bounds);
     }
 
@@ -330,7 +455,11 @@ public static class TextMeasurer
             return [];
         }
 
-        TextLayout.TextBox textBox = TextLayout.ProcessText(text, options);
+        return GetLineMetrics(TextLayout.ProcessText(text, options), options);
+    }
+
+    private static LineMetrics[] GetLineMetrics(TextLayout.TextBox textBox, TextOptions options)
+    {
         LineMetrics[] metrics = new LineMetrics[textBox.TextLines.Count];
 
         // Determine the line-box extent used for alignment within the flow direction.
