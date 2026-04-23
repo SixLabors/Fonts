@@ -114,6 +114,19 @@ internal static class ShaperFactory
             or ScriptClass.Tibetan
             or ScriptClass.Tifinagh
             or ScriptClass.Tirhuta
+            or ScriptClass.Kawi
+            or ScriptClass.NagMundari
+            or ScriptClass.Garay
+            or ScriptClass.GurungKhema
+            or ScriptClass.KiratRai
+            or ScriptClass.OlOnal
+            or ScriptClass.Sunuwar
+            or ScriptClass.Todhri
+            or ScriptClass.TuluTigalari
+            or ScriptClass.BeriaErfe
+            or ScriptClass.Sidetic
+            or ScriptClass.TaiYo
+            or ScriptClass.TolongSiki
             => new UniversalShaper(script, textOptions, fontMetrics),
             _ => new DefaultShaper(script, textOptions),
         };

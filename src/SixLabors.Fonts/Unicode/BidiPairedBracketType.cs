@@ -4,24 +4,27 @@
 namespace SixLabors.Fonts.Unicode;
 
 /// <summary>
-/// Provides enumeration for classifying characters into opening and closing paired brackets
-/// for the purposes of the Unicode Bidirectional Algorithm.
-/// <see href="https://www.unicode.org/Public/UCD/latest/ucd/BidiBrackets.txt"/>.
+/// Unicode Bidi_Paired_Bracket_Type property values.
+/// <see href="https://www.unicode.org/reports/tr9/#Paired_Brackets"/>
 /// </summary>
+/// <remarks>
+/// UAX #9 uses this property with <c>Bidi_Paired_Bracket</c> to find bracket pairs
+/// while resolving neutral characters.
+/// </remarks>
 public enum BidiPairedBracketType
 {
     /// <summary>
-    /// None.
+    /// No paired bracket behavior.
     /// </summary>
     None = 0,
 
     /// <summary>
-    /// Open.
+    /// Opening paired bracket.
     /// </summary>
     Open = 1,
 
     /// <summary>
-    /// Close.
+    /// Closing paired bracket.
     /// </summary>
     Close = 2
 }

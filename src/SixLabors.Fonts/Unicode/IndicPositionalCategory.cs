@@ -4,87 +4,99 @@
 namespace SixLabors.Fonts.Unicode;
 
 /// <summary>
-/// Unicode Indic Positional Categories.
+/// Unicode Indic_Positional_Category property values.
+/// <see href="https://www.unicode.org/reports/tr44/#Indic_Positional_Category"/>
 /// </summary>
+/// <remarks>
+/// These values describe the notional slot of dependent vowels, visible viramas, and related
+/// signs around an Indic syllable core. The property supplements
+/// <see cref="IndicSyllabicCategory"/> for shaping and segmentation, but it is not a
+/// prescriptive font-design or final glyph-placement property. <see cref="NA"/> is
+/// the default for code points whose syllabic role does not have a positional slot.
+/// </remarks>
 public enum IndicPositionalCategory
 {
     /// <summary>
-    /// Bottom
+    /// Bottom.
     /// </summary>
-    Bottom,
+    Bottom = 0,
 
     /// <summary>
-    /// Bottom_And_Left
+    /// Bottom_And_Left.
     /// </summary>
-    BottomAndLeft,
+    BottomAndLeft = 1,
 
     /// <summary>
-    /// Bottom_And_Right
+    /// Bottom_And_Right.
     /// </summary>
-    BottomAndRight,
+    BottomAndRight = 2,
 
     /// <summary>
-    /// Left
+    /// Left.
     /// </summary>
-    Left,
+    Left = 3,
 
     /// <summary>
-    /// Left_And_Right
+    /// Left_And_Right.
     /// </summary>
-    LeftAndRight,
+    LeftAndRight = 4,
 
     /// <summary>
-    /// NA
+    /// Overstruck.
     /// </summary>
-    NA,
+    Overstruck = 6,
 
     /// <summary>
-    /// Overstruck
+    /// Right.
     /// </summary>
-    Overstruck,
+    Right = 7,
 
     /// <summary>
-    /// Right
+    /// Top.
     /// </summary>
-    Right,
+    Top = 8,
 
     /// <summary>
-    /// Top
+    /// Top_And_Bottom.
     /// </summary>
-    Top,
+    TopAndBottom = 9,
 
     /// <summary>
-    /// Top_And_Bottom
+    /// Top_And_Bottom_And_Left.
     /// </summary>
-    TopAndBottom,
+    TopAndBottomAndLeft = 10,
 
     /// <summary>
-    /// Top_And_Bottom_And_Left
+    /// Top_And_Bottom_And_Right.
     /// </summary>
-    TopAndBottomAndLeft,
+    TopAndBottomAndRight = 11,
 
     /// <summary>
-    /// Top_And_Bottom_And_Right
+    /// Top_And_Left.
     /// </summary>
-    TopAndBottomAndRight,
+    TopAndLeft = 12,
 
     /// <summary>
-    /// Top_And_Left
+    /// Top_And_Left_And_Right.
     /// </summary>
-    TopAndLeft,
+    TopAndLeftAndRight = 13,
 
     /// <summary>
-    /// Top_And_Left_And_Right
+    /// Top_And_Right.
     /// </summary>
-    TopAndLeftAndRight,
+    TopAndRight = 14,
 
     /// <summary>
-    /// Top_And_Right
+    /// Visual_Order_Left.
     /// </summary>
-    TopAndRight,
+    VisualOrderLeft = 15,
 
     /// <summary>
-    /// Visual_Order_Left
+    /// Not applicable.
     /// </summary>
-    VisualOrderLeft,
+    /// <remarks>
+    /// This is the Unicode fallback for code points without an explicit
+    /// Indic_Positional_Category.
+    /// </remarks>
+    NA = 0xFF,
 }

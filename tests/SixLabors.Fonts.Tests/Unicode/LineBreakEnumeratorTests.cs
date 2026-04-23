@@ -75,15 +75,27 @@ public class LineBreakEnumeratorTests
     }
 
     [Fact]
+    public void NumericFractionDoesNotBreakAfterSolidus()
+    {
+        List<LineBreak> breaks = [.. new LineBreakEnumerator("1/2".AsSpan())];
+
+        Assert.DoesNotContain(breaks, x => x.PositionWrap == 2);
+        Assert.Equal(3, breaks[^1].PositionWrap);
+    }
+
+    [Fact]
+    public void NonNumericSolidusKeepsDefaultBreakAfter()
+    {
+        List<LineBreak> breaks = [.. new LineBreakEnumerator("a/2".AsSpan())];
+
+        Assert.Contains(breaks, x => x.PositionWrap == 2);
+    }
+
+    [Fact]
     public void ForwardTextWithOuterWhitespace()
     {
         string text = " Apples Pears Bananas   ";
-        List<LineBreak> breaks = new();
-
-        foreach (LineBreak lineBreak in new LineBreakEnumerator(text.AsSpan()))
-        {
-            breaks.Add(lineBreak);
-        }
+        List<LineBreak> breaks = [.. new LineBreakEnumerator(text.AsSpan())];
 
         Assert.Equal(1, breaks[0].PositionWrap);
         Assert.Equal(0, breaks[0].PositionMeasure);
@@ -99,12 +111,7 @@ public class LineBreakEnumeratorTests
     public void ForwardTest()
     {
         string text = "Apples Pears Bananas";
-        List<LineBreak> breaks = new();
-
-        foreach (LineBreak lineBreak in new LineBreakEnumerator(text.AsSpan()))
-        {
-            breaks.Add(lineBreak);
-        }
+        List<LineBreak> breaks = [.. new LineBreakEnumerator(text.AsSpan())];
 
         Assert.Equal(7, breaks[0].PositionWrap);
         Assert.Equal(6, breaks[0].PositionMeasure);
@@ -114,11 +121,80 @@ public class LineBreakEnumeratorTests
         Assert.Equal(20, breaks[2].PositionMeasure);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void MoveNextDoesNotAllocate(bool tailorUrls)
+    {
+        const string text = "Alpha beta\r\n\u200Bgamma \U0001F1FA\U0001F1F8 https://a/2024/05 123,456.";
+
+        ConsumeLineBreaks(text.AsSpan(), tailorUrls);
+
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        int total = ConsumeLineBreaks(text.AsSpan(), tailorUrls);
+        long after = GC.GetAllocatedBytesForCurrentThread();
+
+        Assert.True(total > 0);
+        Assert.Equal(before, after);
+    }
+
+    [Theory]
+    [InlineData("http://a/2024/05")]
+    [InlineData("https://a/2024/05")]
+    [InlineData("www.example.com/2024/05")]
+    [InlineData("(https://a/2024/05)")]
+    [InlineData("<https://a/2024/05>")]
+    public void UrlTailoringAllowsNumericPathSegmentBreak(string text)
+    {
+        List<LineBreak> breaks = [.. new LineBreakEnumerator(text.AsSpan(), tailorUrls: true)];
+
+        Assert.Contains(breaks, x => x.PositionWrap == GetAsciiBreakAfterLastSolidus(text));
+    }
+
+    [Fact]
+    public void UrlTailoringIsOptIn()
+    {
+        const string text = "https://a/2024/05";
+        List<LineBreak> breaks = [.. new LineBreakEnumerator(text.AsSpan())];
+
+        Assert.DoesNotContain(breaks, x => x.PositionWrap == GetAsciiBreakAfterLastSolidus(text));
+    }
+
+    [Theory]
+    [InlineData("1http://a/2024/05")]
+    [InlineData("awww.example.com/2024/05")]
+    [InlineData("x-www.example.com/2024/05")]
+    [InlineData("C:/2024/05")]
+    [InlineData("/2024/05")]
+    [InlineData("2024/05/06")]
+    [InlineData("1/2/3")]
+    [InlineData("ISO/IEC 14496/12")]
+    public void UrlTailoringDoesNotCreateNumericPathSegmentBreakForNonUrls(string text)
+    {
+        List<LineBreak> breaks = [.. new LineBreakEnumerator(text.AsSpan(), tailorUrls: true)];
+
+        for (int i = 0; i < text.Length - 1; i++)
+        {
+            if (text[i] == '/' && text[i + 1] is >= '0' and <= '9')
+            {
+                Assert.DoesNotContain(breaks, x => x.PositionWrap == i + 1);
+            }
+        }
+    }
+
+    [Fact]
+    public void UrlTailoringSuppressesNonUrlSolidusBreak()
+    {
+        List<LineBreak> breaks = [.. new LineBreakEnumerator("a/2".AsSpan(), tailorUrls: true)];
+
+        Assert.DoesNotContain(breaks, x => x.PositionWrap == 2);
+    }
+
     [Fact]
     public void ICUTests() => Assert.True(this.ICUTestsImpl());
 
-    // Contains over 7000 tests
-    // https://www.unicode.org/Public/13.0.0/ucd/auxiliary/LineBreakTest.html
+    // Unicode line break conformance tests
+    // https://www.unicode.org/Public/17.0.0/ucd/auxiliary/LineBreakTest.txt
     public bool ICUTestsImpl()
     {
         this.output.WriteLine("Line Breaker Tests");
@@ -128,7 +204,7 @@ public class LineBreakEnumeratorTests
         string[] lines = File.ReadAllLines(Path.Combine(TestEnvironment.UnicodeTestDataFullPath, "LineBreakTest.txt"));
 
         // Process each line
-        List<Test> tests = new();
+        List<Test> tests = [];
         for (int lineNumber = 1; lineNumber < lines.Length + 1; lineNumber++)
         {
             // Get the line, remove comments
@@ -140,8 +216,8 @@ public class LineBreakEnumeratorTests
                 continue;
             }
 
-            List<uint> codePoints = new();
-            List<int> breakPoints = new();
+            List<uint> codePoints = [];
+            List<int> breakPoints = [];
 
             // Parse the test
             int p = 0;
@@ -183,7 +259,7 @@ public class LineBreakEnumeratorTests
             tests.Add(test);
         }
 
-        List<int> foundBreaks = new();
+        List<int> foundBreaks = [];
 
         for (int testNumber = 0; testNumber < tests.Count; testNumber++)
         {
@@ -219,7 +295,7 @@ public class LineBreakEnumeratorTests
 
             if (!pass)
             {
-                LineBreakClass[] classes = [.. t.CodePoints.Select(x => UnicodeData.GetLineBreakClass(x))];
+                LineBreakClass[] classes = [.. t.CodePoints.Select(UnicodeData.GetLineBreakClass)];
 
                 this.output.WriteLine($"Failed test on line {t.LineNumber}");
                 this.output.WriteLine($"    Code Points: {string.Join(" ", t.CodePoints)}");
@@ -235,6 +311,26 @@ public class LineBreakEnumeratorTests
     }
 
     private static bool IsHexDigit(char ch) => char.IsDigit(ch) || (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f');
+
+    private static int GetAsciiBreakAfterLastSolidus(string text)
+    {
+        int solidusIndex = text.LastIndexOf('/');
+        Assert.True(solidusIndex >= 0);
+        return solidusIndex + 1;
+    }
+
+    private static int ConsumeLineBreaks(ReadOnlySpan<char> text, bool tailorUrls)
+    {
+        int total = 0;
+        LineBreakEnumerator enumerator = new(text, tailorUrls);
+        while (enumerator.MoveNext())
+        {
+            LineBreak lineBreak = enumerator.Current;
+            total += lineBreak.PositionMeasure + lineBreak.PositionWrap + (lineBreak.Required ? 1 : 0);
+        }
+
+        return total;
+    }
 
     private readonly struct Test
     {

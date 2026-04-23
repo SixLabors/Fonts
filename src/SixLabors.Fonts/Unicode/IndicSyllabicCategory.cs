@@ -4,188 +4,201 @@
 namespace SixLabors.Fonts.Unicode;
 
 /// <summary>
-/// Unicode Indic Syllabic Categories.
-/// <see href="https://www.unicode.org/reports/tr44/tr44-14.html#Indic_Syllabic_Category"/>
+/// Unicode Indic_Syllabic_Category property values.
+/// <see href="https://www.unicode.org/reports/tr44/#Indic_Syllabic_Category"/>
 /// </summary>
+/// <remarks>
+/// These values describe subtypes relevant to Indic syllable, or aksara,
+/// construction and segmentation.
+/// </remarks>
 public enum IndicSyllabicCategory
 {
     /// <summary>
     /// Avagraha.
     /// </summary>
-    Avagraha,
+    Avagraha = 0,
 
     /// <summary>
     /// Bindu.
     /// </summary>
-    Bindu,
+    Bindu = 1,
 
     /// <summary>
     /// Brahmi_Joining_Number.
     /// </summary>
-    BrahmiJoiningNumber,
+    BrahmiJoiningNumber = 2,
 
     /// <summary>
     /// Cantillation_Mark.
     /// </summary>
-    CantillationMark,
+    CantillationMark = 3,
 
     /// <summary>
     /// Consonant
     /// </summary>
-    Consonant,
+    Consonant = 4,
 
     /// <summary>
     /// Consonant_Dead
     /// </summary>
-    ConsonantDead,
+    ConsonantDead = 5,
 
     /// <summary>
     /// Consonant_Final
     /// </summary>
-    ConsonantFinal,
+    ConsonantFinal = 6,
 
     /// <summary>
     /// Consonant_Head_Letter
     /// </summary>
-    ConsonantHeadLetter,
+    ConsonantHeadLetter = 7,
 
     /// <summary>
     /// Consonant_Initial_Postfixed
     /// </summary>
-    ConsonantInitialPostfixed,
+    ConsonantInitialPostfixed = 8,
 
     /// <summary>
     /// Consonant_Killer
     /// </summary>
-    ConsonantKiller,
+    ConsonantKiller = 9,
 
     /// <summary>
     /// Consonant_Medial
     /// </summary>
-    ConsonantMedial,
+    ConsonantMedial = 10,
 
     /// <summary>
     /// Consonant_Placeholder
     /// </summary>
-    ConsonantPlaceholder,
+    ConsonantPlaceholder = 11,
 
     /// <summary>
     /// Consonant_Preceding_Repha
     /// </summary>
-    ConsonantPrecedingRepha,
+    ConsonantPrecedingRepha = 12,
 
     /// <summary>
     /// Consonant_Prefixed
     /// </summary>
-    ConsonantPrefixed,
+    ConsonantPrefixed = 13,
 
     /// <summary>
     /// Consonant_Subjoined
     /// </summary>
-    ConsonantSubjoined,
+    ConsonantSubjoined = 14,
 
     /// <summary>
     /// Consonant_Succeeding_Repha
     /// </summary>
-    ConsonantSucceedingRepha,
+    ConsonantSucceedingRepha = 15,
 
     /// <summary>
     /// Consonant_With_Stacker
     /// </summary>
-    ConsonantWithStacker,
+    ConsonantWithStacker = 16,
 
     /// <summary>
     /// Gemination_Mark
     /// </summary>
-    GeminationMark,
+    GeminationMark = 17,
 
     /// <summary>
     /// Invisible_Stacker
     /// </summary>
-    InvisibleStacker,
+    InvisibleStacker = 18,
 
     /// <summary>
     /// Joiner
     /// </summary>
-    Joiner,
+    Joiner = 19,
 
     /// <summary>
     /// Modifying_Letter
     /// </summary>
-    ModifyingLetter,
+    ModifyingLetter = 20,
 
     /// <summary>
     /// Non_Joiner
     /// </summary>
-    NonJoiner,
+    NonJoiner = 21,
 
     /// <summary>
     /// Nukta
     /// </summary>
-    Nukta,
+    Nukta = 22,
 
     /// <summary>
     /// Number
     /// </summary>
-    Number,
+    Number = 23,
 
     /// <summary>
     /// Number_Joiner
     /// </summary>
-    NumberJoiner,
-
-    /// <summary>
-    /// Other
-    /// </summary>
-    Other,
+    NumberJoiner = 24,
 
     /// <summary>
     /// Pure_Killer
     /// </summary>
-    PureKiller,
+    PureKiller = 26,
 
     /// <summary>
     /// Register_Shifter
     /// </summary>
-    RegisterShifter,
+    RegisterShifter = 27,
+
+    /// <summary>
+    /// Reordering_Killer
+    /// </summary>
+    ReorderingKiller = 28,
 
     /// <summary>
     /// Syllable_Modifier
     /// </summary>
-    SyllableModifier,
+    SyllableModifier = 29,
 
     /// <summary>
     /// Tone_Letter
     /// </summary>
-    ToneLetter,
+    ToneLetter = 30,
 
     /// <summary>
     /// Tone_Mark
     /// </summary>
-    ToneMark,
+    ToneMark = 31,
 
     /// <summary>
     /// Virama
     /// </summary>
-    Virama,
+    Virama = 32,
 
     /// <summary>
     /// Visarga
     /// </summary>
-    Visarga,
+    Visarga = 33,
 
     /// <summary>
     /// Vowel
     /// </summary>
-    Vowel,
+    Vowel = 34,
 
     /// <summary>
     /// Vowel_Dependent
     /// </summary>
-    VowelDependent,
+    VowelDependent = 35,
 
     /// <summary>
     /// Vowel_Independent
     /// </summary>
-    VowelIndependent
+    VowelIndependent = 36,
+
+    /// <summary>
+    /// Other.
+    /// </summary>
+    /// <remarks>
+    /// This is the Unicode fallback for code points without an explicit
+    /// Indic_Syllabic_Category.
+    /// </remarks>
+    Other = 0xFF
 }

@@ -575,11 +575,25 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
         => UnicodeData.GetVerticalOrientation(codePoint.value);
 
     /// <summary>
+    /// Gets the <see cref="EastAsianWidthClass"/> for the given codepoint.
+    /// </summary>
+    /// <param name="codePoint">The codepoint to evaluate.</param>
+    /// <returns>The <see cref="EastAsianWidthClass"/>.</returns>
+    /// <remarks>
+    /// This returns the Unicode East_Asian_Width property value from UAX #11. It does
+    /// not resolve context-sensitive display-cell width; for example,
+    /// <see cref="EastAsianWidthClass.Ambiguous"/> may resolve as narrow or wide
+    /// depending on language, script, source encoding, font, or explicit markup.
+    /// </remarks>
+    public static EastAsianWidthClass GetEastAsianWidthClass(in CodePoint codePoint)
+        => UnicodeData.GetEastAsianWidthClass(codePoint.value);
+
+    /// <summary>
     /// Gets the <see cref="ArabicJoiningClass"/> for the given codepoint.
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
-    /// <returns>The <see cref="BidiClass"/>.</returns>
-    internal static ArabicJoiningClass GetArabicJoiningClass(in CodePoint codePoint)
+    /// <returns>The <see cref="ArabicJoiningClass"/>.</returns>
+    public static ArabicJoiningClass GetArabicJoiningClass(in CodePoint codePoint)
         => new(codePoint);
 
     /// <summary>
@@ -587,15 +601,23 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns>The <see cref="ScriptClass"/>.</returns>
-    internal static ScriptClass GetScriptClass(in CodePoint codePoint)
+    public static ScriptClass GetScriptClass(in CodePoint codePoint)
         => UnicodeData.GetScriptClass(codePoint.value);
+
+    /// <summary>
+    /// Gets the <see cref="IndicConjunctBreakClass"/> for the given codepoint.
+    /// </summary>
+    /// <param name="codePoint">The codepoint to evaluate.</param>
+    /// <returns>The <see cref="IndicConjunctBreakClass"/>.</returns>
+    public static IndicConjunctBreakClass GetIndicConjunctBreakClass(in CodePoint codePoint)
+        => UnicodeData.GetIndicConjunctBreakClass(codePoint.value);
 
     /// <summary>
     /// Gets the <see cref="IndicSyllabicCategory"/> for the given codepoint.
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns>The <see cref="IndicSyllabicCategory"/>.</returns>
-    internal static IndicSyllabicCategory GetIndicSyllabicCategory(in CodePoint codePoint)
+    public static IndicSyllabicCategory GetIndicSyllabicCategory(in CodePoint codePoint)
         => UnicodeData.GetIndicSyllabicCategory(codePoint.value);
 
     /// <summary>
@@ -603,7 +625,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns>The <see cref="IndicPositionalCategory"/>.</returns>
-    internal static IndicPositionalCategory GetIndicPositionalCategory(in CodePoint codePoint)
+    public static IndicPositionalCategory GetIndicPositionalCategory(in CodePoint codePoint)
         => UnicodeData.GetIndicPositionalCategory(codePoint.value);
 
     /// <summary>
@@ -680,6 +702,11 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
                 return new CodePoint(UnicodeUtility.GetScalarFromUtf16SurrogatePair(hi, low));
             }
 
+            return ReplacementChar;
+        }
+
+        if (UnicodeUtility.IsLowSurrogateCodePoint(code))
+        {
             return ReplacementChar;
         }
 

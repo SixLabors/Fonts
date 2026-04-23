@@ -1,130 +1,128 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-// Reordering these enum properties will require the regeneration of the Grapheme.trie.
 namespace SixLabors.Fonts.Unicode;
 
 /// <summary>
-/// Unicode Grapheme Cluster classes.
+/// Unicode Grapheme_Cluster_Break property values and local rule sentinels.
 /// <see href="https://www.unicode.org/reports/tr29/#Grapheme_Cluster_Break_Property_Values"/>
 /// </summary>
+/// <remarks>
+/// UAX #29 uses these classes in ordered boundary rules to determine extended
+/// grapheme clusters. Some members are rule sentinels rather than Unicode property
+/// values exposed by the standard.
+/// </remarks>
 public enum GraphemeClusterClass
 {
     /// <summary>
-    /// This is not a property value; it is used in the rules to represent any code point.
+    /// Rule sentinel that matches any code point.
     /// </summary>
+    /// <remarks>
+    /// This is not a Unicode property value; it represents the "any" operand in
+    /// UAX #29 boundary rules.
+    /// </remarks>
     Any = 0,
 
     /// <summary>
-    /// U+000D CARRIAGE RETURN (CR)
+    /// U+000D CARRIAGE RETURN (CR).
     /// </summary>
     CarriageReturn = 1,
 
     /// <summary>
-    /// U+000A LINE FEED (LF)
+    /// U+000A LINE FEED (LF).
     /// </summary>
     LineFeed = 2,
 
     /// <summary>
-    /// General_Category = Line_Separator, or<br/>
-    /// General_Category = Paragraph_Separator, or<br/>
-    /// General_Category = Control, or<br/>
-    /// General_Category = Unassigned and Default_Ignorable_Code_Point, or<br/>
-    /// General_Category = Format<br/>
-    /// and not U+000D CARRIAGE RETURN<br/>
-    /// and not U+000A LINE FEED<br/>
-    /// and not U+200C ZERO WIDTH NON-JOINER (ZWNJ)<br/>
-    /// and not U+200D ZERO WIDTH JOINER (ZWJ)<br/>
-    /// and not Prepended_Concatenation_Mark = Yes
+    /// Controls, separators, formats, and default-ignorable unassigned code points
+    /// that form hard grapheme cluster boundaries.
     /// </summary>
+    /// <remarks>
+    /// This class excludes CR, LF, U+200C ZERO WIDTH NON-JOINER, U+200D ZERO
+    /// WIDTH JOINER, and prepended concatenation marks because those participate
+    /// in more specific UAX #29 rules.
+    /// </remarks>
     Control = 3,
 
     /// <summary>
-    /// Grapheme_Extend = Yes, or<br/>
-    /// Emoji_Modifier = Yes<br/>
-    /// This includes:<br/>
-    /// General_Category = Nonspacing_Mark<br/>
-    /// General_Category = Enclosing_Mark<br/>
-    /// U+200C ZERO WIDTH NON-JOINER<br/>
-    /// plus a few General_Category = Spacing_Mark needed for canonical equivalence.
+    /// Extending code points that remain in the same extended grapheme cluster as
+    /// the preceding base.
     /// </summary>
+    /// <remarks>
+    /// This includes Grapheme_Extend code points, emoji modifiers, U+200C ZERO
+    /// WIDTH NON-JOINER, and a small number of spacing marks needed for canonical
+    /// equivalence.
+    /// </remarks>
     Extend = 4,
 
     /// <summary>
-    /// Regional_Indicator = Yes<br/>
-    /// This consists of the range:<br/>
-    /// U+1F1E6 REGIONAL INDICATOR SYMBOL LETTER A
-    /// ..U+1F1FF REGIONAL INDICATOR SYMBOL LETTER Z
+    /// Regional indicator symbols used to build flag emoji pairs.
     /// </summary>
     RegionalIndicator = 5,
 
     /// <summary>
-    /// Indic_Syllabic_Category = Consonant_Preceding_Repha, or<br/>
-    /// Indic_Syllabic_Category = Consonant_Prefixed, or<br/>
-    /// Prepended_Concatenation_Mark = Yes
+    /// Code points that prepend to the following grapheme cluster.
     /// </summary>
+    /// <remarks>
+    /// This includes Indic_Syllabic_Category values Consonant_Preceding_Repha and
+    /// Consonant_Prefixed, plus Prepended_Concatenation_Mark code points.
+    /// </remarks>
     Prepend = 6,
 
     /// <summary>
-    /// Grapheme_Cluster_Break ≠ Extend, and<br/>
-    /// General_Category = Spacing_Mark, or<br/>
-    /// any of the following (which have General_Category = Other_Letter):<br/>
-    /// U+0E33 ( ำ ) THAI CHARACTER SARA AM<br/>
-    /// U+0EB3 ( ຳ ) LAO VOWEL SIGN AM
+    /// Spacing marks that extend the previous grapheme cluster.
     /// </summary>
+    /// <remarks>
+    /// This includes spacing marks whose Grapheme_Cluster_Break value is not
+    /// Extend, plus U+0E33 THAI CHARACTER SARA AM and U+0EB3 LAO VOWEL SIGN AM.
+    /// </remarks>
     SpacingMark = 7,
 
     /// <summary>
-    /// Hangul_Syllable_Type = L, such as:<br/>
-    /// U+1100 ( ᄀ ) HANGUL CHOSEONG KIYEOK<br/>
-    /// U+115F ( ᅟ ) HANGUL CHOSEONG FILLER<br/>
-    /// U+A960 ( ꥠ ) HANGUL CHOSEONG TIKEUT-MIEUM<br/>
-    /// U+A97C ( ꥼ ) HANGUL CHOSEONG SSANGYEORINHIEUH
+    /// Hangul leading consonant Jamo (Hangul_Syllable_Type = L).
     /// </summary>
     HangulLead = 8,
 
     /// <summary>
-    /// Hangul_Syllable_Type=V, such as:<br/>
-    /// U+1160 ( ᅠ ) HANGUL JUNGSEONG FILLER<br/>
-    /// U+11A2 ( ᆢ ) HANGUL JUNGSEONG SSANGARAEA<br/>
-    /// U+D7B0 ( ힰ ) HANGUL JUNGSEONG O-YEO<br/>
-    /// U+D7C6 ( ퟆ ) HANGUL JUNGSEONG ARAEA-E
+    /// Hangul vowel Jamo (Hangul_Syllable_Type = V).
     /// </summary>
     HangulVowel = 9,
 
     /// <summary>
-    /// Hangul_Syllable_Type = T, such as:<br/>
-    /// U+11A8 ( ᆨ ) HANGUL JONGSEONG KIYEOK<br/>
-    /// U+11F9 ( ᇹ ) HANGUL JONGSEONG YEORINHIEUH<br/>
-    /// U+D7CB ( ퟋ ) HANGUL JONGSEONG NIEUN-RIEUL<br/>
-    /// U+D7FB ( ퟻ ) HANGUL JONGSEONG PHIEUPH-THIEUTH
+    /// Hangul trailing consonant Jamo (Hangul_Syllable_Type = T).
     /// </summary>
     HangulTail = 10,
 
     /// <summary>
-    /// Hangul_Syllable_Type=LV, that is:<br/>
-    /// U+AC00 ( 가 ) HANGUL SYLLABLE GA<br/>
-    /// U+AC1C ( 개 ) HANGUL SYLLABLE GAE<br/>
-    /// U+AC38 ( 갸 ) HANGUL SYLLABLE GYA
+    /// Hangul LV syllables.
     /// </summary>
     HangulLeadVowel = 11,
 
     /// <summary>
-    /// Hangul_Syllable_Type=LVT, that is:<br/>
-    /// U+AC01 ( 각 ) HANGUL SYLLABLE GAG<br/>
-    /// U+AC02 ( 갂 ) HANGUL SYLLABLE GAGG<br/>
-    /// U+AC03 ( 갃 ) HANGUL SYLLABLE GAGS<br/>
-    /// U+AC04 ( 간 ) HANGUL SYLLABLE GAN
+    /// Hangul LVT syllables.
     /// </summary>
     HangulLeadVowelTail = 12,
 
     /// <summary>
-    /// Extended Pictographic
+    /// Extended pictographic code points used by GB11 emoji ZWJ sequence handling.
     /// </summary>
+    /// <remarks>
+    /// This is not itself a Grapheme_Cluster_Break property value; UAX #29 uses
+    /// it when matching emoji ZWJ sequences.
+    /// </remarks>
     ExtendedPictographic = 13,
 
     /// <summary>
-    /// U+200D ZERO WIDTH JOINER
+    /// U+200D ZERO WIDTH JOINER.
     /// </summary>
-    ZeroWidthJoiner = 14
+    ZeroWidthJoiner = 14,
+
+    /// <summary>
+    /// Other.
+    /// </summary>
+    /// <remarks>
+    /// This is the Unicode <c>Other</c> / <c>XX</c> fallback for code points
+    /// without an explicit grapheme cluster break class.
+    /// </remarks>
+    Other = 0xFF
 }

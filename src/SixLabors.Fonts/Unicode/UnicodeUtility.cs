@@ -340,7 +340,7 @@ internal static class UnicodeUtility
     /// <param name="value">The codepoint value.</param>
     /// <remarks>
     /// <see href="http://www.unicode.org/reports/tr44/#Default_Ignorable_Code_Point"/>
-    /// <see href="https://www.unicode.org/Public/14.0.0/ucd/DerivedCoreProperties.txt"/>
+    /// <see href="https://www.unicode.org/Public/17.0.0/ucd/DerivedCoreProperties.txt"/>
     /// </remarks>
     public static bool IsDefaultIgnorableCodePoint(uint value)
     {

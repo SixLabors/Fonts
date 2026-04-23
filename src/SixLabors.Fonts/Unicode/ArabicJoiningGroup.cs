@@ -4,9 +4,13 @@
 namespace SixLabors.Fonts.Unicode;
 
 /// <summary>
-/// Unicode Arabic Joining Groups
-/// <see href="https://www.unicode.org/versions/Unicode13.0.0/ch09.pdf"/>.
+/// Unicode Joining_Group property values used for Arabic-script cursive shaping.
+/// <see href="https://www.unicode.org/reports/tr44/#Joining_Group"/>
 /// </summary>
+/// <remarks>
+/// Joining groups identify characters that share the same basic joining shape for
+/// cursive joining.
+/// </remarks>
 public enum ArabicJoiningGroup
 {
     /// <summary>
@@ -143,6 +147,11 @@ public enum ArabicJoiningGroup
     /// Kaph
     /// </summary>
     Kaph,
+
+    /// <summary>
+    /// Kashmiri_Yeh
+    /// </summary>
+    KashmiriYeh,
 
     /// <summary>
     /// Khaph
@@ -470,7 +479,7 @@ public enum ArabicJoiningGroup
     TehMarbuta,
 
     /// <summary>
-    /// Hamza_On_Heh_Goal
+    /// Teh_Marbuta_Goal, formerly known by the stable alias Hamza_On_Heh_Goal.
     /// </summary>
     TehMarbutaGoal,
 
@@ -478,6 +487,11 @@ public enum ArabicJoiningGroup
     /// Teth
     /// </summary>
     Teth,
+
+    /// <summary>
+    /// Thin_Noon
+    /// </summary>
+    ThinNoon,
 
     /// <summary>
     /// Thin_Yeh

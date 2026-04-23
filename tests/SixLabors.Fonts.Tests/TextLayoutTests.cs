@@ -449,6 +449,70 @@ public class TextLayoutTests
         }
     }
 
+    [Fact]
+    public void StandardWordBreakingAllowsUrlBreakAfterNumericPathSegment()
+    {
+        const string text = "https://a/2024/05";
+        const string expectedFirstLine = "https://a/2024/";
+        Font font = CreateFont(text);
+        TextOptions noWrap = new(font);
+        float expectedWidth = TextMeasurer.MeasureAdvance(expectedFirstLine, noWrap).Width;
+
+        TextOptions options = new(font)
+        {
+            WrappingLength = expectedWidth + 1.1F,
+            WordBreaking = WordBreaking.Standard
+        };
+
+        IReadOnlyList<IReadOnlyList<GlyphLayout>> lines = CollectLines(TextLayout.GenerateLayout(text.AsSpan(), options));
+        FontRectangle size = TextMeasurer.MeasureAdvance(text, options);
+
+        Assert.Equal(2, lines.Count);
+        Assert.Equal(expectedFirstLine, GetSourceTextForLine(text, lines[0]));
+        Assert.Equal("05", GetSourceTextForLine(text, lines[1]));
+        Assert.Equal(expectedWidth, size.Width, Comparer);
+    }
+
+    [Fact]
+    public void StandardWordBreakingDoesNotTreatNumericFractionAsUrl()
+    {
+        const string text = "1/2/3";
+        Font font = CreateFont(text);
+        TextOptions noWrap = new(font);
+        float fullWidth = TextMeasurer.MeasureAdvance(text, noWrap).Width;
+        float wrappingWidth = TextMeasurer.MeasureAdvance("1/2/", noWrap).Width + .01F;
+
+        TextOptions options = new(font)
+        {
+            WrappingLength = wrappingWidth,
+            WordBreaking = WordBreaking.Standard
+        };
+
+        FontRectangle size = TextMeasurer.MeasureAdvance(text, options);
+
+        Assert.Equal(fullWidth, size.Width, Comparer);
+    }
+
+    [Fact]
+    public void StandardWordBreakingKeepsNonUrlSolidusRunTogether()
+    {
+        const string text = "bbbbb/ccccc";
+        Font font = CreateFont(text);
+        TextOptions noWrap = new(font);
+        float fullWidth = TextMeasurer.MeasureAdvance(text, noWrap).Width;
+        float wrappingWidth = TextMeasurer.MeasureAdvance("bbbbb/", noWrap).Width + 1.1F;
+
+        TextOptions options = new(font)
+        {
+            WrappingLength = wrappingWidth,
+            WordBreaking = WordBreaking.Standard
+        };
+
+        FontRectangle size = TextMeasurer.MeasureAdvance(text, options);
+
+        Assert.Equal(fullWidth, size.Width, Comparer);
+    }
+
     [Theory]
     [InlineData("ab", 477, 1081, false)] // no kerning rules defined for lowercase ab so widths should stay the same
     [InlineData("ab", 477, 1081, true)]
@@ -1756,6 +1820,13 @@ public class TextLayoutTests
         }
 
         return lines;
+    }
+
+    private static string GetSourceTextForLine(string text, IReadOnlyList<GlyphLayout> line)
+    {
+        int start = line.Min(x => x.StringIndex);
+        int end = line.Max(x => x.StringIndex + x.CodePoint.Utf16SequenceLength);
+        return text[start..end];
     }
 
 #if OS_WINDOWS
