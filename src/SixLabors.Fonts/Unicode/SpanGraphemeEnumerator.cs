@@ -7,7 +7,10 @@ namespace SixLabors.Fonts.Unicode;
 /// An enumerator for retrieving Grapheme instances from a <see cref="ReadOnlySpan{Char}"/>.
 /// <br/>
 /// Implements the Unicode Grapheme Cluster Algorithm. UAX:29
-/// <see href="https://www.unicode.org/reports/tr29/tr29-37.html"/>
+/// <see href="https://www.unicode.org/reports/tr29/"/>
+/// <br/>
+/// Supports the UAX #29 extended grapheme cluster rule for Indic conjunct sequences
+/// (GB9c) using the <see cref="IndicConjunctBreakClass"/> property.
 /// <br/>
 /// Methods are pattern-matched by compiler to allow using foreach pattern.
 /// </summary>
@@ -45,50 +48,25 @@ public ref struct SpanGraphemeEnumerator
     /// </returns>
     public bool MoveNext()
     {
-        // GB9c (Indic conjuncts) requires some script-specific state.
-        // This implementation uses existing IndicSyllabicCategory data as a pragmatic approximation
-        // for the InCB tailoring required by UAX#29. It is sufficient to prevent the common
-        // "dead consonant" split for sequences like: RA   VIRAMA   KA   ... (eg: "\u0930\u094D\u0915\u093F").
-        bool indicLinkerJustConsumed;
-
-        static bool IsIndicLinker(in CodePoint cp)
-        {
-            // In practice, this is primarily VIRAMA (and in some scripts, "pure killer").
-            // We intentionally keep this tight to avoid accidental over-aggregation.
-            IndicSyllabicCategory isc = CodePoint.GetIndicSyllabicCategory(cp);
-            return isc is IndicSyllabicCategory.Virama or IndicSyllabicCategory.PureKiller;
-        }
-
-        static bool IsIndicConsonant(in CodePoint cp)
-        {
-            IndicSyllabicCategory isc = CodePoint.GetIndicSyllabicCategory(cp);
-            return isc is IndicSyllabicCategory.Consonant
-                or IndicSyllabicCategory.ConsonantDead
-                or IndicSyllabicCategory.ConsonantWithStacker
-                or IndicSyllabicCategory.ConsonantSubjoined
-                or IndicSyllabicCategory.ConsonantFinal
-                or IndicSyllabicCategory.ConsonantMedial
-                or IndicSyllabicCategory.ConsonantHeadLetter
-                or IndicSyllabicCategory.ConsonantPlaceholder
-                or IndicSyllabicCategory.ConsonantInitialPostfixed
-                or IndicSyllabicCategory.ConsonantKiller
-                or IndicSyllabicCategory.ConsonantPrefixed
-                or IndicSyllabicCategory.ConsonantPrecedingRepha
-                or IndicSyllabicCategory.ConsonantSucceedingRepha;
-        }
+        // GB9c is a stateful rule: whether the next consonant can join depends on
+        // the InCB classes already consumed into the current cluster. Keep that state
+        // outside Processor so Processor remains a simple UTF-16/code-point reader.
+        IndicConjunctState indicConjunctState = default;
 
         // Accept the current scalar into the cluster and advance to the next scalar.
         // IMPORTANT: Processor.Current* represents the next scalar not yet included in CharsConsumed.
         void ConsumeCurrentAndAdvance(ref Processor p)
         {
-            // Update Indic state based on the scalar being consumed into the cluster.
-            indicLinkerJustConsumed = IsIndicLinker(p.CurrentCodePoint);
+            indicConjunctState.Consume(p.CurrentCodePoint);
             p.MoveNext();
         }
 
-        // Drain trailers per GB9/GB9a, plus GB9c-style Indic conjunct tailoring:
-        // If we just consumed a Linker (eg Virama) and the next scalar is an Indic consonant,
-        // do not break, instead consume that consonant into the same grapheme cluster.
+        // Drain trailers per GB9/GB9a, plus GB9c-style Indic conjunct tailoring.
+        // GB9 and GB9a always keep Extend, ZWJ, and SpacingMark with the preceding
+        // cluster. GB9c additionally keeps an Indic consonant with the same cluster
+        // when the cluster so far matches:
+        // InCB=Consonant [InCB=Extend InCB=Linker]* InCB=Linker [InCB=Extend InCB=Linker]*
+        // x InCB=Consonant
         void DrainTrailersAndIndicConjuncts(ref Processor p)
         {
             while (true)
@@ -101,8 +79,11 @@ public ref struct SpanGraphemeEnumerator
                     ConsumeCurrentAndAdvance(ref p);
                 }
 
-                // rule GB9c (tailoring): ... Linker x Consonant
-                if (indicLinkerJustConsumed && IsIndicConsonant(p.CurrentCodePoint))
+                // Rule GB9c only fires when the already-consumed cluster has seen
+                // a consonant and a following linker. Extend values preserve that
+                // state, so they are consumed above before this check runs.
+                if (indicConjunctState.CanLinkConsonant
+                    && CodePoint.GetIndicConjunctBreakClass(p.CurrentCodePoint) == IndicConjunctBreakClass.Consonant)
                 {
                     ConsumeCurrentAndAdvance(ref p);
                     continue;
@@ -287,6 +268,75 @@ public ref struct SpanGraphemeEnumerator
             CodePoint codePoint = CodePoint.DecodeFromUtf16At(this.source, this.CharsConsumed, out this.charsConsumed);
             this.CurrentCodePoint = codePoint;
             this.CurrentType = CodePoint.GetGraphemeClusterClass(codePoint);
+        }
+    }
+
+    /// <summary>
+    /// Tracks the already-consumed part of the UAX #29 GB9c Indic conjunct rule.
+    /// </summary>
+    /// <remarks>
+    /// GB9c prevents a grapheme break before an Indic consonant when the current cluster already
+    /// contains an Indic consonant followed by at least one linker, with optional extend/linker
+    /// code points in between. This state machine consumes the same code points as the main
+    /// grapheme enumerator and remembers only the minimum information needed for that decision.
+    /// </remarks>
+    private struct IndicConjunctState
+    {
+        /// <summary>
+        /// Indicates that the current cluster contains an <c>InCB=Consonant</c> starter.
+        /// </summary>
+        private bool hasConsonant;
+
+        /// <summary>
+        /// Indicates that a linker has been consumed after the current consonant starter.
+        /// </summary>
+        private bool hasLinker;
+
+        /// <summary>
+        /// Gets a value indicating whether GB9c should suppress a break before the next consonant.
+        /// </summary>
+        /// <remarks>
+        /// This becomes true only after a consonant and a following linker have both been consumed.
+        /// <c>InCB=Extend</c> values leave the state unchanged, so combining marks can appear
+        /// between the linker and the next consonant.
+        /// </remarks>
+        public readonly bool CanLinkConsonant => this.hasConsonant && this.hasLinker;
+
+        /// <summary>
+        /// Updates the GB9c state with a code point that has just been consumed into the cluster.
+        /// </summary>
+        /// <param name="codePoint">The consumed code point.</param>
+        public void Consume(in CodePoint codePoint)
+        {
+            switch (CodePoint.GetIndicConjunctBreakClass(codePoint))
+            {
+                case IndicConjunctBreakClass.Consonant:
+                    // A consonant starts or restarts the GB9c candidate. It cannot link a
+                    // following consonant until a linker has also been consumed.
+                    this.hasConsonant = true;
+                    this.hasLinker = false;
+                    break;
+
+                case IndicConjunctBreakClass.Linker:
+                    // Linkers only matter after a consonant starter. Leading linkers cannot
+                    // create a GB9c sequence by themselves.
+                    if (this.hasConsonant)
+                    {
+                        this.hasLinker = true;
+                    }
+
+                    break;
+
+                case IndicConjunctBreakClass.Extend:
+                    // Extend values are transparent for GB9c and preserve the current candidate.
+                    break;
+
+                default:
+                    // Any other class ends the candidate conjunct sequence.
+                    this.hasConsonant = false;
+                    this.hasLinker = false;
+                    break;
+            }
         }
     }
 }

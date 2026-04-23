@@ -16,7 +16,7 @@ namespace UnicodeTrieGenerator;
 public static partial class Generator
 {
     // Aliases and enum derived from
-    // https://www.unicode.org/Public/14.0.0/ucd/PropertyValueAliases.txt
+    // https://www.unicode.org/Public/17.0.0/ucd/PropertyValueAliases.txt
     private static readonly Dictionary<string, UnicodeCategory> UnicodeCategoryMap
         = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -60,6 +60,17 @@ public static partial class Generator
             { "C", BidiPairedBracketType.Close }
         };
 
+    private static readonly Dictionary<string, EastAsianWidthClass> EastAsianWidthClassMap
+        = new(StringComparer.OrdinalIgnoreCase)
+        {
+            { "A", EastAsianWidthClass.Ambiguous },
+            { "F", EastAsianWidthClass.Fullwidth },
+            { "H", EastAsianWidthClass.Halfwidth },
+            { "N", EastAsianWidthClass.Neutral },
+            { "Na", EastAsianWidthClass.Narrow },
+            { "W", EastAsianWidthClass.Wide }
+        };
+
     private static readonly Dictionary<string, GraphemeClusterClass> GraphemeClusterClassMap
         = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -77,7 +88,63 @@ public static partial class Generator
             { "LV", GraphemeClusterClass.HangulLeadVowel },
             { "LVT", GraphemeClusterClass.HangulLeadVowelTail },
             { "ExtPict", GraphemeClusterClass.ExtendedPictographic },
-            { "ZWJ", GraphemeClusterClass.ZeroWidthJoiner }
+            { "ZWJ", GraphemeClusterClass.ZeroWidthJoiner },
+            { "Other", GraphemeClusterClass.Other },
+            { "XX", GraphemeClusterClass.Other }
+        };
+
+    private static readonly Dictionary<string, LineBreakClass> LineBreakClassMap
+        = new(StringComparer.OrdinalIgnoreCase)
+        {
+            { "OP", LineBreakClass.OpenPunctuation },
+            { "CL", LineBreakClass.ClosePunctuation },
+            { "CP", LineBreakClass.CloseParenthesis },
+            { "QU", LineBreakClass.Quotation },
+            { "GL", LineBreakClass.Glue },
+            { "NS", LineBreakClass.Nonstarter },
+            { "EX", LineBreakClass.Exclamation },
+            { "SY", LineBreakClass.BreakSymbols },
+            { "IS", LineBreakClass.InfixNumeric },
+            { "PR", LineBreakClass.PrefixNumeric },
+            { "PO", LineBreakClass.PostfixNumeric },
+            { "NU", LineBreakClass.Numeric },
+            { "AL", LineBreakClass.Alphabetic },
+            { "HL", LineBreakClass.HebrewLetter },
+            { "ID", LineBreakClass.Ideographic },
+            { "IN", LineBreakClass.Inseparable },
+            { "HY", LineBreakClass.Hyphen },
+            { "BA", LineBreakClass.BreakAfter },
+            { "BB", LineBreakClass.BreakBefore },
+            { "B2", LineBreakClass.BreakBeforeAndAfter },
+            { "ZW", LineBreakClass.ZeroWidthSpace },
+            { "CM", LineBreakClass.CombiningMark },
+            { "WJ", LineBreakClass.WordJoiner },
+            { "H2", LineBreakClass.HangulLeadVowelSyllable },
+            { "H3", LineBreakClass.HangulLeadVowelTailSyllable },
+            { "JL", LineBreakClass.HangulLeadJamo },
+            { "JV", LineBreakClass.HangulVowelJamo },
+            { "JT", LineBreakClass.HangulTailJamo },
+            { "RI", LineBreakClass.RegionalIndicator },
+            { "EB", LineBreakClass.EmojiBase },
+            { "EM", LineBreakClass.EmojiModifier },
+            { "ZWJ", LineBreakClass.ZeroWidthJoiner },
+            { "CB", LineBreakClass.ContingentBreak },
+            { "AI", LineBreakClass.Ambiguous },
+            { "BK", LineBreakClass.MandatoryBreak },
+            { "CJ", LineBreakClass.ConditionalJapaneseStarter },
+            { "CR", LineBreakClass.CarriageReturn },
+            { "LF", LineBreakClass.LineFeed },
+            { "NL", LineBreakClass.NextLine },
+            { "SA", LineBreakClass.ComplexContext },
+            { "SG", LineBreakClass.Surrogate },
+            { "SP", LineBreakClass.Space },
+            { "AK", LineBreakClass.Aksara },
+            { "AP", LineBreakClass.AksaraPrebase },
+            { "AS", LineBreakClass.AksaraStart },
+            { "HH", LineBreakClass.UnambiguousHyphen },
+            { "VF", LineBreakClass.ViramaFinal },
+            { "VI", LineBreakClass.Virama },
+            { "XX", LineBreakClass.Unknown }
         };
 
     private static readonly Dictionary<string, ScriptClass> ScriptMap
@@ -245,7 +312,20 @@ public static partial class Generator
             { "Cuneiform", ScriptClass.Cuneiform },
             { "Yezidi", ScriptClass.Yezidi },
             { "Yi", ScriptClass.Yi },
-            { "Zanabazar_Square", ScriptClass.ZanabazarSquare }
+            { "Zanabazar_Square", ScriptClass.ZanabazarSquare },
+            { "Beria_Erfe", ScriptClass.BeriaErfe },
+            { "Garay", ScriptClass.Garay },
+            { "Gurung_Khema", ScriptClass.GurungKhema },
+            { "Kawi", ScriptClass.Kawi },
+            { "Kirat_Rai", ScriptClass.KiratRai },
+            { "Nag_Mundari", ScriptClass.NagMundari },
+            { "Ol_Onal", ScriptClass.OlOnal },
+            { "Sidetic", ScriptClass.Sidetic },
+            { "Sunuwar", ScriptClass.Sunuwar },
+            { "Tai_Yo", ScriptClass.TaiYo },
+            { "Todhri", ScriptClass.Todhri },
+            { "Tolong_Siki", ScriptClass.TolongSiki },
+            { "Tulu_Tigalari", ScriptClass.TuluTigalari }
         };
 
     private static readonly Dictionary<string, ArabicJoiningType> JoiningTypeMap
@@ -289,6 +369,7 @@ public static partial class Generator
             { "Heth", ArabicJoiningGroup.Heth },
             { "Kaf", ArabicJoiningGroup.Kaf },
             { "Kaph", ArabicJoiningGroup.Kaph },
+            { "Kashmiri_Yeh", ArabicJoiningGroup.KashmiriYeh },
             { "Khaph", ArabicJoiningGroup.Khaph },
             { "Knotted_Heh", ArabicJoiningGroup.KnottedHeh },
             { "Lam", ArabicJoiningGroup.Lam },
@@ -357,6 +438,7 @@ public static partial class Generator
             { "Teh_Marbuta_Goal", ArabicJoiningGroup.TehMarbutaGoal },
             { "Hamza_On_Heh_Goal", ArabicJoiningGroup.TehMarbutaGoal },
             { "Teth", ArabicJoiningGroup.Teth },
+            { "Thin_Noon", ArabicJoiningGroup.ThinNoon },
             { "Thin_Yeh", ArabicJoiningGroup.ThinYeh },
             { "Vertical_Tail", ArabicJoiningGroup.VerticalTail },
             { "Waw", ArabicJoiningGroup.Waw },
@@ -400,6 +482,7 @@ public static partial class Generator
             { "Other", IndicSyllabicCategory.Other },
             { "Pure_Killer", IndicSyllabicCategory.PureKiller },
             { "Register_Shifter", IndicSyllabicCategory.RegisterShifter },
+            { "Reordering_Killer", IndicSyllabicCategory.ReorderingKiller },
             { "Syllable_Modifier", IndicSyllabicCategory.SyllableModifier },
             { "Tone_Letter", IndicSyllabicCategory.ToneLetter },
             { "Tone_Mark", IndicSyllabicCategory.ToneMark },
@@ -458,9 +541,11 @@ public static partial class Generator
         GenerateBidiBracketsTrie();
         GenerateBidiMirrorTrie();
         GenerateLineBreakTrie();
+        GenerateEastAsianWidthTrie();
         UnicodeTrie ugc = GenerateUnicodeCategoryTrie();
         GenerateScriptTrie();
         GenerateGraphemeBreakTrie();
+        GenerateIndicConjunctBreakTrie();
         UnicodeTrie uajt = GenerateArabicShapingTrie();
         UnicodeTrie uisc = GenerateIndicSyllabicCategoryTrie();
         UnicodeTrie uipc = GenerateIndicPositionalCategoryTrie();
@@ -496,7 +581,7 @@ public static partial class Generator
     public static void GenerateGraphemeBreakTrie()
     {
         Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
-        UnicodeTrieBuilder builder = new((uint)GraphemeClusterClass.Any);
+        UnicodeTrieBuilder builder = new((uint)GraphemeClusterClass.Other);
 
         using (StreamReader sr = GetStreamReader("GraphemeBreakProperty.txt"))
         {
@@ -550,6 +635,49 @@ public static partial class Generator
 
         UnicodeTrie trie = builder.Freeze();
         GenerateTrieClass("Grapheme", trie);
+    }
+
+    /// <summary>
+    /// Generates the UnicodeTrie for the Indic_Conjunct_Break property.
+    /// </summary>
+    public static void GenerateIndicConjunctBreakTrie()
+    {
+        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*InCB;\s*(Consonant|Extend|Linker)\s*#");
+        UnicodeTrieBuilder builder = new((uint)IndicConjunctBreakClass.None);
+
+        using (StreamReader sr = GetStreamReader("DerivedCoreProperties.txt"))
+        {
+            string? line;
+            while ((line = sr.ReadLine()) != null)
+            {
+                Match match = regex.Match(line);
+
+                if (match.Success)
+                {
+                    string start = match.Groups[1].Value;
+                    string end = match.Groups[2].Value;
+                    string value = match.Groups[3].Value;
+
+                    if (string.IsNullOrEmpty(end))
+                    {
+                        end = start;
+                    }
+
+                    IndicConjunctBreakClass cls = value switch
+                    {
+                        "Consonant" => IndicConjunctBreakClass.Consonant,
+                        "Extend" => IndicConjunctBreakClass.Extend,
+                        "Linker" => IndicConjunctBreakClass.Linker,
+                        _ => IndicConjunctBreakClass.None
+                    };
+
+                    builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)cls, true);
+                }
+            }
+        }
+
+        UnicodeTrie trie = builder.Freeze();
+        GenerateTrieClass("IndicConjunctBreak", trie);
     }
 
     /// <summary>
@@ -623,7 +751,7 @@ public static partial class Generator
     private static void GenerateLineBreakTrie()
     {
         Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
-        UnicodeTrieBuilder builder = new((uint)LineBreakClass.XX);
+        UnicodeTrieBuilder builder = new((uint)LineBreakClass.Unknown);
 
         using (StreamReader sr = GetStreamReader("LineBreak.txt"))
         {
@@ -643,13 +771,48 @@ public static partial class Generator
                         end = start;
                     }
 
-                    builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)Enum.Parse<LineBreakClass>(point), true);
+                    builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)LineBreakClassMap[point], true);
                 }
             }
         }
 
         UnicodeTrie trie = builder.Freeze();
         GenerateTrieClass("LineBreak", trie);
+    }
+
+    /// <summary>
+    /// Generates the UnicodeTrie for East Asian Width classes used by UAX #14.
+    /// </summary>
+    private static void GenerateEastAsianWidthTrie()
+    {
+        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        UnicodeTrieBuilder builder = new((uint)EastAsianWidthClass.Neutral);
+
+        using (StreamReader sr = GetStreamReader("EastAsianWidth.txt"))
+        {
+            string? line;
+            while ((line = sr.ReadLine()) != null)
+            {
+                Match match = regex.Match(line);
+
+                if (match.Success)
+                {
+                    string start = match.Groups[1].Value;
+                    string end = match.Groups[2].Value;
+                    string width = match.Groups[3].Value;
+
+                    if (string.IsNullOrEmpty(end))
+                    {
+                        end = start;
+                    }
+
+                    builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)EastAsianWidthClassMap[width], true);
+                }
+            }
+        }
+
+        UnicodeTrie trie = builder.Freeze();
+        GenerateTrieClass("EastAsianWidth", trie);
     }
 
     /// <summary>

@@ -4,30 +4,33 @@
 namespace SixLabors.Fonts.Unicode;
 
 /// <summary>
-/// Unicode Vertical Orientation types.
+/// Unicode Vertical_Orientation property values.
 /// <see href="https://www.unicode.org/reports/tr50/#vo"/>
 /// </summary>
+/// <remarks>
+/// These values are used when laying out text vertically. They describe the default
+/// orientation of the character's code chart glyph and whether a vertical alternate
+/// glyph should be used when the font supplies one.
+/// </remarks>
 public enum VerticalOrientationType
 {
     /// <summary>
-    /// Characters which are displayed upright, with the same orientation that appears in the code charts.
+    /// Upright (U): displayed upright with the same orientation used in the code charts.
     /// </summary>
     Upright,
 
     /// <summary>
-    /// Characters which are displayed sideways, rotated 90 degrees clockwise compared to the code charts.
+    /// Rotated (R): displayed sideways, rotated 90 degrees clockwise from the code charts.
     /// </summary>
     Rotate,
 
     /// <summary>
-    /// Characters which are not just upright or sideways, but generally require a different glyph than in the code
-    /// charts when used in vertical texts. In addition, as a fallback, the character can be displayed with the code
-    /// chart glyph upright.
+    /// Transformed upright (Tu): normally uses a vertical alternate glyph, falling back to upright.
     /// </summary>
     TransformUpright,
 
     /// <summary>
-    /// Same as <see cref="TransformUpright"/> except that, as a fallback, the character can be displayed with the code chart glyph rotated 90 degrees clockwise.
+    /// Transformed rotated (Tr): normally uses a vertical alternate glyph, falling back to rotated.
     /// </summary>
     TransformRotate
 }

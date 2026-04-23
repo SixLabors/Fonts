@@ -1,227 +1,256 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-// Reordering these enum properties will require the regeneration of the LineBreak.trie.
 namespace SixLabors.Fonts.Unicode;
 
 /// <summary>
-/// Unicode line break classes.
-/// <see href="https://www.unicode.org/reports/tr14/tr14-37.html#Table1"/>
+/// Unicode Line_Break property values.
+/// <see href="https://www.unicode.org/reports/tr14/#Table1"/>
 /// </summary>
 public enum LineBreakClass : uint
 {
     /// <summary>
-    /// Open punctuation
+    /// Open punctuation (OP): characters that prohibit a line break after them.
     /// </summary>
-    OP = 0,
+    OpenPunctuation = 0,
 
     /// <summary>
-    /// Closing punctuation
+    /// Close punctuation (CL): characters that prohibit a line break before them.
     /// </summary>
-    CL = 1,
+    ClosePunctuation = 1,
 
     /// <summary>
-    /// Closing parenthesis
+    /// Close parenthesis (CP): closing bracket and parenthesis characters that prohibit a line break before them.
     /// </summary>
-    CP = 2,
+    CloseParenthesis = 2,
 
     /// <summary>
-    /// Ambiguous quotation
+    /// Quotation (QU): quotation marks that can behave as opening punctuation, closing punctuation, or both.
     /// </summary>
-    QU = 3,
+    Quotation = 3,
 
     /// <summary>
-    /// Glue
+    /// Non-breaking glue (GL): characters that prohibit line breaks before and after themselves.
     /// </summary>
-    GL = 4,
+    Glue = 4,
 
     /// <summary>
-    /// Non-starters
+    /// Nonstarter (NS): characters that allow only indirect line breaks before themselves.
     /// </summary>
-    NS = 5,
+    Nonstarter = 5,
 
     /// <summary>
-    /// Exclamation/Interrogation
+    /// Exclamation or interrogation (EX): sentence punctuation that prohibits a line break before itself.
     /// </summary>
-    EX = 6,
+    Exclamation = 6,
 
     /// <summary>
-    /// Symbols allowing break after
+    /// Symbols allowing break after (SY): characters that prevent a line break before and allow one after.
     /// </summary>
-    SY = 7,
+    BreakSymbols = 7,
 
     /// <summary>
-    /// Infix separator
+    /// Infix numeric separator (IS): characters that suppress breaks inside numeric expressions.
     /// </summary>
-    IS = 8,
+    InfixNumeric = 8,
 
     /// <summary>
-    /// Prefix
+    /// Prefix numeric (PR): characters that stay with a following numeric expression.
     /// </summary>
-    PR = 9,
+    PrefixNumeric = 9,
 
     /// <summary>
-    /// Postfix
+    /// Postfix numeric (PO): characters that stay with a preceding numeric expression.
     /// </summary>
-    PO = 10,
+    PostfixNumeric = 10,
 
     /// <summary>
-    /// Numeric
+    /// Numeric (NU): digits and related characters that form numeric expressions.
     /// </summary>
-    NU = 11,
+    Numeric = 11,
 
     /// <summary>
-    /// Alphabetic
+    /// Alphabetic (AL): letters and ordinary symbols that use alphabetic line breaking behavior.
     /// </summary>
-    AL = 12,
+    Alphabetic = 12,
 
     /// <summary>
-    /// Hebrew Letter
+    /// Hebrew letter (HL): Hebrew characters with special hyphen and solidus behavior.
     /// </summary>
-    HL = 13,
+    HebrewLetter = 13,
 
     /// <summary>
-    /// Ideographic
+    /// Ideographic (ID): ideographic characters that generally allow breaks before or after.
     /// </summary>
-    ID = 14,
+    Ideographic = 14,
 
     /// <summary>
-    /// Inseparable characters
+    /// Inseparable (IN): characters, such as leaders, that allow only indirect line breaks between pairs.
     /// </summary>
-    IN = 15,
+    Inseparable = 15,
 
     /// <summary>
-    /// Hyphen
+    /// Hyphen (HY): hyphen-minus and similar characters that allow breaks after except in numeric context.
     /// </summary>
-    HY = 16,
+    Hyphen = 16,
 
     /// <summary>
-    /// Break after
+    /// Break after (BA): characters that generally provide a line break opportunity after themselves.
     /// </summary>
-    BA = 17,
+    BreakAfter = 17,
 
     /// <summary>
-    /// Break before
+    /// Break before (BB): characters that generally provide a line break opportunity before themselves.
     /// </summary>
-    BB = 18,
+    BreakBefore = 18,
 
     /// <summary>
-    /// Break on either side (but not pair)
+    /// Break before and after (B2): characters that allow breaks on either side, but not between two B2 characters.
     /// </summary>
-    B2 = 19,
+    BreakBeforeAndAfter = 19,
 
     /// <summary>
-    /// Zero-width space
+    /// Zero width space (ZW): an explicit opportunity for a line break.
     /// </summary>
-    ZW = 20,
+    ZeroWidthSpace = 20,
 
     /// <summary>
-    /// Combining marks
+    /// Combining mark (CM): combining marks and related controls that stay with the preceding character.
     /// </summary>
-    CM = 21,
+    CombiningMark = 21,
 
     /// <summary>
-    /// Word joiner
+    /// Word joiner (WJ): characters that prohibit line breaks before and after themselves.
     /// </summary>
-    WJ = 22,
+    WordJoiner = 22,
 
     /// <summary>
-    /// Hangul LV
+    /// Hangul LV syllable (H2): part of the Hangul sequence classes used to form Korean syllable blocks.
     /// </summary>
-    H2 = 23,
+    HangulLeadVowelSyllable = 23,
 
     /// <summary>
-    /// Hangul LVT
+    /// Hangul LVT syllable (H3): part of the Hangul sequence classes used to form Korean syllable blocks.
     /// </summary>
-    H3 = 24,
+    HangulLeadVowelTailSyllable = 24,
 
     /// <summary>
-    /// Hangul L Jamo
+    /// Hangul L Jamo (JL): leading consonant Jamo used to form Korean syllable blocks.
     /// </summary>
-    JL = 25,
+    HangulLeadJamo = 25,
 
     /// <summary>
-    /// Hangul V Jamo
+    /// Hangul V Jamo (JV): vowel Jamo used to form Korean syllable blocks.
     /// </summary>
-    JV = 26,
+    HangulVowelJamo = 26,
 
     /// <summary>
-    /// Hangul T Jamo
+    /// Hangul T Jamo (JT): trailing consonant Jamo used to form Korean syllable blocks.
     /// </summary>
-    JT = 27,
+    HangulTailJamo = 27,
 
     /// <summary>
-    /// Regional Indicator
+    /// Regional indicator (RI): symbols paired for flag sequences.
     /// </summary>
-    RI = 28,
+    RegionalIndicator = 28,
 
     /// <summary>
-    /// Emoji Base
+    /// Emoji base (EB): emoji characters that must not break from a following emoji modifier.
     /// </summary>
-    EB = 29,
+    EmojiBase = 29,
 
     /// <summary>
-    /// Emoji Modifier
+    /// Emoji modifier (EM): emoji modifiers that must not break from a preceding emoji base.
     /// </summary>
-    EM = 30,
+    EmojiModifier = 30,
 
     /// <summary>
-    /// Zero Width Joiner
+    /// Zero width joiner (ZWJ): joiner control that prohibits breaks inside joiner sequences.
     /// </summary>
-    ZWJ = 31,
+    ZeroWidthJoiner = 31,
 
     /// <summary>
-    /// Contingent break
+    /// Contingent break (CB): break opportunity determined by additional layout information.
     /// </summary>
-    CB = 32,
+    ContingentBreak = 32,
 
     /// <summary>
-    /// Ambiguous (Alphabetic or Ideograph)
+    /// Ambiguous alphabetic or ideographic (AI): resolved by LB1 before rule evaluation.
     /// </summary>
-    AI = 33,
+    Ambiguous = 33,
 
     /// <summary>
-    /// Break (mandatory)
+    /// Mandatory break (BK): characters that cause a line break after themselves.
     /// </summary>
-    BK = 34,
+    MandatoryBreak = 34,
 
     /// <summary>
-    /// Conditional Japanese Starter
+    /// Conditional Japanese starter (CJ): small Kana and related characters resolved by tailoring.
     /// </summary>
-    CJ = 35,
+    ConditionalJapaneseStarter = 35,
 
     /// <summary>
-    /// Carriage return
+    /// Carriage return (CR): causes a line break after itself except in a CR LF sequence.
     /// </summary>
-    CR = 36,
+    CarriageReturn = 36,
 
     /// <summary>
-    /// Line feed
+    /// Line feed (LF): causes a line break after itself.
     /// </summary>
-    LF = 37,
+    LineFeed = 37,
 
     /// <summary>
-    /// Next line
+    /// Next line (NL): causes a line break after itself.
     /// </summary>
-    NL = 38,
+    NextLine = 38,
 
     /// <summary>
-    /// South-East Asian
+    /// Complex context dependent (SA): requires language-specific analysis for line break opportunities.
     /// </summary>
-    SA = 39,
+    ComplexContext = 39,
 
     /// <summary>
-    /// Surrogates
+    /// Surrogate (SG): surrogate code points, which do not occur in well-formed Unicode scalar text.
     /// </summary>
-    SG = 40,
+    Surrogate = 40,
 
     /// <summary>
-    /// Space
+    /// Space (SP): enables indirect line breaks.
     /// </summary>
-    SP = 41,
+    Space = 41,
 
     /// <summary>
-    /// Unknown
+    /// Aksara (AK): consonants that form orthographic syllables in Brahmic scripts.
     /// </summary>
-    XX = 42,
+    Aksara = 43,
+
+    /// <summary>
+    /// Aksara pre-base (AP): pre-base signs, such as repha, that form Brahmic orthographic syllables.
+    /// </summary>
+    AksaraPrebase = 44,
+
+    /// <summary>
+    /// Aksara start (AS): independent vowels and related starters for Brahmic orthographic syllables.
+    /// </summary>
+    AksaraStart = 45,
+
+    /// <summary>
+    /// Unambiguous hyphen (HH): hyphen characters with unambiguous break-after behavior except word-initially.
+    /// </summary>
+    UnambiguousHyphen = 46,
+
+    /// <summary>
+    /// Virama final (VF): final consonant viramas that form Brahmic orthographic syllables.
+    /// </summary>
+    ViramaFinal = 47,
+
+    /// <summary>
+    /// Virama (VI): conjoining viramas that form Brahmic orthographic syllables.
+    /// </summary>
+    Virama = 48,
+
+    /// <summary>
+    /// Unknown (XX): code points without an explicit line break class.
+    /// </summary>
+    Unknown = 0xFF,
 }

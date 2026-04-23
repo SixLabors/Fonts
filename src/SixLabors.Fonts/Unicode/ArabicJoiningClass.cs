@@ -7,9 +7,15 @@ using System.Runtime.CompilerServices;
 namespace SixLabors.Fonts.Unicode;
 
 /// <summary>
-/// Represents the Unicode Arabic Joining value of a given <see cref="CodePoint"/>.
-/// <see href="https://www.unicode.org/versions/Unicode14.0.0/ch09.pdf"/>
+/// Represents the Unicode joining properties of a given <see cref="CodePoint"/>.
+/// <see href="https://www.unicode.org/reports/tr44/#Joining_Type"/>
+/// <see href="https://www.unicode.org/reports/tr44/#Joining_Group"/>
 /// </summary>
+/// <remarks>
+/// This combines the Unicode <c>Joining_Type</c> and <c>Joining_Group</c>
+/// properties used by cursive shaping. Unlisted nonspacing marks, enclosing marks,
+/// and format controls follow the Unicode default joining behavior.
+/// </remarks>
 public readonly struct ArabicJoiningClass
 {
     /// <summary>

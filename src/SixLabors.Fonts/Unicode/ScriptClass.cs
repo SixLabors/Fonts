@@ -4,22 +4,28 @@
 namespace SixLabors.Fonts.Unicode;
 
 /// <summary>
-/// Unicode Script classes <see href="http://www.unicode.org/reports/tr24/#Script"/>
+/// Unicode Script property values.
+/// <see href="https://www.unicode.org/reports/tr24/#Script"/>
 /// </summary>
+/// <remarks>
+/// <see cref="Common"/> and <see cref="Inherited"/> are Unicode script values.
+/// <see cref="Default"/> is an OpenType fallback tag rather than a Unicode Script
+/// property value.
+/// </remarks>
 public enum ScriptClass
 {
     /// <summary>
-    /// Shortcode: Zzzz
+    /// Unknown script. Shortcode: Zzzz.
     /// </summary>
     Unknown,
 
     /// <summary>
-    /// Shortcode: Zyyy
+    /// Common script. Shortcode: Zyyy.
     /// </summary>
     Common,
 
     /// <summary>
-    /// Shortcode: Zinh, Qaai
+    /// Inherited script. Shortcode: Zinh, Qaai.
     /// </summary>
     Inherited,
 
@@ -824,7 +830,72 @@ public enum ScriptClass
     ZanabazarSquare,
 
     /// <summary>
-    /// Shortcode: DFLT
+    /// Shortcode: Berf
+    /// </summary>
+    BeriaErfe,
+
+    /// <summary>
+    /// Shortcode: Gara
+    /// </summary>
+    Garay,
+
+    /// <summary>
+    /// Shortcode: Gukh
+    /// </summary>
+    GurungKhema,
+
+    /// <summary>
+    /// Shortcode: Kawi
+    /// </summary>
+    Kawi,
+
+    /// <summary>
+    /// Shortcode: Krai
+    /// </summary>
+    KiratRai,
+
+    /// <summary>
+    /// Shortcode: Nagm
+    /// </summary>
+    NagMundari,
+
+    /// <summary>
+    /// Shortcode: Onao
+    /// </summary>
+    OlOnal,
+
+    /// <summary>
+    /// Shortcode: Sidt
+    /// </summary>
+    Sidetic,
+
+    /// <summary>
+    /// Shortcode: Sunu
+    /// </summary>
+    Sunuwar,
+
+    /// <summary>
+    /// Shortcode: Tayo
+    /// </summary>
+    TaiYo,
+
+    /// <summary>
+    /// Shortcode: Todr
+    /// </summary>
+    Todhri,
+
+    /// <summary>
+    /// Shortcode: Tols
+    /// </summary>
+    TolongSiki,
+
+    /// <summary>
+    /// Shortcode: Tutg
+    /// </summary>
+    TuluTigalari,
+
+    /// <summary>
+    /// OpenType default script tag. Shortcode: DFLT.
     /// </summary>
     Default = 999
 }
