@@ -1723,43 +1723,33 @@ internal static partial class TextLayout
 
         /// <summary>
         /// Splits this line at the glyph immediately preceding the supplied <see cref="LineBreak"/>
-        /// wrap position. When <paramref name="keepAll"/> is set and the preceding glyph is CJK,
-        /// the split is delayed until the nearest non-CJK codepoint to preserve word integrity.
+        /// wrap position. When <paramref name="keepAll"/> is set, the split is delayed until
+        /// the nearest boundary outside a CSS keep-all word unit sequence.
         /// </summary>
         /// <param name="lineBreak">The resolved line-break opportunity.</param>
-        /// <param name="keepAll">When <see langword="true"/>, avoid breaking between CJK codepoints.</param>
+        /// <param name="keepAll">When <see langword="true"/>, avoid breaking within keep-all word unit sequences.</param>
         /// <param name="result">The trailing portion of the split, or <see langword="null"/> if no split was performed.</param>
         /// <returns><see langword="true"/> if a split occurred; otherwise <see langword="false"/>.</returns>
         public bool TrySplitAt(LineBreak lineBreak, bool keepAll, [NotNullWhen(true)] out TextLine? result)
         {
             int index = this.data.Count;
-            GlyphLayoutData glyphData = default;
             while (index > 0)
             {
-                glyphData = this.data[--index];
-                if (glyphData.CodePointIndex == lineBreak.PositionWrap)
+                if (this.data[--index].CodePointIndex == lineBreak.PositionWrap)
                 {
                     break;
                 }
             }
 
-            // Word breaks should not be used for Chinese/Japanese/Korean (CJK) text
-            // when word-breaking mode is keep-all.
+            // CSS word-break: keep-all suppresses implicit breaks between typographic letter units.
             if (index > 0
                 && !lineBreak.Required
                 && keepAll
-                && UnicodeUtility.IsCJKCodePoint((uint)glyphData.CodePoint.Value))
+                && this.IsKeepAllSuppressedBreak(index))
             {
-                // Loop through previous glyphs to see if there is
-                // a non CJK codepoint we can break at.
-                while (index > 0)
+                while (index > 0 && this.IsKeepAllSuppressedBreak(index))
                 {
-                    glyphData = this.data[--index];
-                    if (!UnicodeUtility.IsCJKCodePoint((uint)glyphData.CodePoint.Value))
-                    {
-                        index++;
-                        break;
-                    }
+                    index--;
                 }
             }
 
@@ -1781,6 +1771,46 @@ internal static partial class TextLayout
 
             return true;
         }
+
+        /// <summary>
+        /// Returns whether CSS <c>word-break: keep-all</c> suppresses the candidate break before
+        /// the entry at <paramref name="index"/>.
+        /// </summary>
+        /// <remarks>
+        /// See <see href="https://drafts.csswg.org/css-text-4/#word-break-property">CSS Text Module Level 4, word-break</see>.
+        /// </remarks>
+        /// <param name="index">The entry index immediately after the candidate break.</param>
+        /// <returns><see langword="true"/> if the candidate break is within a keep-all word unit sequence.</returns>
+        private bool IsKeepAllSuppressedBreak(int index)
+        {
+            if (index <= 0 || index >= this.data.Count)
+            {
+                return false;
+            }
+
+            return IsKeepAllWordUnit(this.data[index - 1].CodePoint)
+                && IsKeepAllWordUnit(this.data[index].CodePoint);
+        }
+
+        /// <summary>
+        /// Returns whether <paramref name="codePoint"/> participates in a CSS keep-all word unit
+        /// sequence.
+        /// </summary>
+        /// <remarks>
+        /// CSS <c>keep-all</c> uses typographic letter units and the Unicode line-breaking
+        /// classes <c>NU</c>, <c>AL</c>, <c>AI</c>, and <c>ID</c>.
+        /// See <see href="https://www.unicode.org/reports/tr14/#Line_Break_Property_Values">Unicode Standard Annex #14, Line Breaking Classes</see>.
+        /// </remarks>
+        /// <param name="codePoint">The code point to classify.</param>
+        /// <returns><see langword="true"/> if the code point participates in a keep-all word unit sequence.</returns>
+        private static bool IsKeepAllWordUnit(CodePoint codePoint)
+            => CodePoint.IsLetter(codePoint)
+            || CodePoint.IsNumber(codePoint)
+            || CodePoint.GetLineBreakClass(codePoint) is
+                LineBreakClass.Numeric
+                or LineBreakClass.Alphabetic
+                or LineBreakClass.Ambiguous
+                or LineBreakClass.Ideographic;
 
         /// <summary>
         /// Removes trailing breaking-whitespace entries from this line. Non-breaking spaces are

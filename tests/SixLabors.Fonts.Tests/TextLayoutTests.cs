@@ -450,6 +450,45 @@ public class TextLayoutTests
     }
 
     [Fact]
+    public void KeepAllSuppressesBreaksBetweenTypographicWordUnits()
+    {
+        const string text = "\u7A93\u304E\u308F\u306E\u30C8\u30C3\u30C8\u3061\u3083\u3093";
+        Font font = TestFonts.GetFont(TestFonts.NotoSansJPRegular, 20);
+        float wrappingLength = TextMeasurer.MeasureAdvance("\u7A93\u304E", new TextOptions(font)).Width;
+
+        TextOptions standard = new(font)
+        {
+            WrappingLength = wrappingLength,
+            WordBreaking = WordBreaking.Standard
+        };
+
+        TextOptions keepAll = new(font)
+        {
+            WrappingLength = wrappingLength,
+            WordBreaking = WordBreaking.KeepAll
+        };
+
+        Assert.True(TextMeasurer.CountLines(text, standard) > 1);
+        Assert.Equal(1, TextMeasurer.CountLines(text, keepAll));
+    }
+
+    [Fact]
+    public void KeepAllAllowsBreaksAtWordSeparators()
+    {
+        const string text = "hello world";
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFile, 20);
+        float wrappingLength = TextMeasurer.MeasureAdvance("hello", new TextOptions(font)).Width * .95F;
+
+        TextOptions options = new(font)
+        {
+            WrappingLength = wrappingLength,
+            WordBreaking = WordBreaking.KeepAll
+        };
+
+        Assert.Equal(2, TextMeasurer.CountLines(text, options));
+    }
+
+    [Fact]
     public void StandardWordBreakingAllowsUrlBreakAfterNumericPathSegment()
     {
         const string text = "https://a/2024/05";
