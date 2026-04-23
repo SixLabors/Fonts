@@ -8,7 +8,7 @@ final_modifiers = FMAbv* FMBlw* | FMPst?;
 virama_terminated_cluster =
   R? (B | GB) VS?
   consonant_modifiers
-  H
+  (H | RK)
 ;
 
 standard_cluster =

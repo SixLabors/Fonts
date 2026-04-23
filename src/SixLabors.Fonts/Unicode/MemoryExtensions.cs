@@ -56,7 +56,7 @@ public static class MemoryExtensions
     /// </summary>
     /// <param name="span">The readonly span of char elements representing the text to enumerate.</param>
     /// <remarks>
-    /// Invalid sequences will be represented in the enumeration by <see cref="GraphemeClusterClass.Any"/>.
+    /// Invalid UTF-16 sequences are treated as <see cref="CodePoint.ReplacementChar"/> while determining grapheme boundaries.
     /// </remarks>
     /// <returns>The <see cref="SpanGraphemeEnumerator"/>.</returns>
     public static SpanGraphemeEnumerator EnumerateGraphemes(this ReadOnlySpan<char> span)
@@ -67,7 +67,7 @@ public static class MemoryExtensions
     /// </summary>
     /// <param name="span">The span of char elements representing the text to enumerate.</param>
     /// <remarks>
-    /// Invalid sequences will be represented in the enumeration by <see cref="GraphemeClusterClass.Any"/>.
+    /// Invalid UTF-16 sequences are treated as <see cref="CodePoint.ReplacementChar"/> while determining grapheme boundaries.
     /// </remarks>
     /// <returns>The <see cref="SpanGraphemeEnumerator"/>.</returns>
     public static SpanGraphemeEnumerator EnumerateGraphemes(this Span<char> span)

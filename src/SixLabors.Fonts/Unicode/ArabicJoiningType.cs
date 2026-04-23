@@ -4,38 +4,42 @@
 namespace SixLabors.Fonts.Unicode;
 
 /// <summary>
-/// Unicode Arabic Joining Types
-/// <see href="https://www.unicode.org/versions/Unicode13.0.0/ch09.pdf"/> Table 9-3.
+/// Unicode Joining_Type property values used for Arabic-script cursive shaping.
+/// <see href="https://www.unicode.org/reports/tr44/#Joining_Type"/>
 /// </summary>
+/// <remarks>
+/// These values describe how a character participates in cursive joining with
+/// neighboring characters.
+/// </remarks>
 public enum ArabicJoiningType
 {
     /// <summary>
-    /// Right Joining (R)
+    /// Right_Joining (R): joins on the right side only.
     /// </summary>
     RightJoining,
 
     /// <summary>
-    /// Left Joining (L)
+    /// Left_Joining (L): joins on the left side only.
     /// </summary>
     LeftJoining,
 
     /// <summary>
-    /// Dual Joining (D)
+    /// Dual_Joining (D): joins on both sides.
     /// </summary>
     DualJoining,
 
     /// <summary>
-    /// Join Causing (C)
+    /// Join_Causing (C): causes adjacent join-capable characters to join.
     /// </summary>
     JoinCausing,
 
     /// <summary>
-    /// Non Joining (U)
+    /// Non_Joining (U): does not participate in cursive joining.
     /// </summary>
     NonJoining,
 
     /// <summary>
-    /// Transparent (T)
+    /// Transparent (T): ignored when determining the joining relationship of surrounding characters.
     /// </summary>
     Transparent
 }

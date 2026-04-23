@@ -201,5 +201,18 @@ internal sealed class UnicodeScriptTagMap : Dictionary<ScriptClass, Tag[]>
             { ScriptClass.Yezidi, new[] { Tag.Parse("yezi") } },
             { ScriptClass.Yi, new[] { Tag.Parse("yiii") } },
             { ScriptClass.ZanabazarSquare, new[] { Tag.Parse("zanb") } },
+            { ScriptClass.BeriaErfe, new[] { Tag.Parse("berf") } },
+            { ScriptClass.Garay, new[] { Tag.Parse("gara") } },
+            { ScriptClass.GurungKhema, new[] { Tag.Parse("gukh") } },
+            { ScriptClass.Kawi, new[] { Tag.Parse("kawi") } },
+            { ScriptClass.KiratRai, new[] { Tag.Parse("krai") } },
+            { ScriptClass.NagMundari, new[] { Tag.Parse("nagm") } },
+            { ScriptClass.OlOnal, new[] { Tag.Parse("onao") } },
+            { ScriptClass.Sidetic, new[] { Tag.Parse("sidt") } },
+            { ScriptClass.Sunuwar, new[] { Tag.Parse("sunu") } },
+            { ScriptClass.TaiYo, new[] { Tag.Parse("tayo") } },
+            { ScriptClass.Todhri, new[] { Tag.Parse("todr") } },
+            { ScriptClass.TolongSiki, new[] { Tag.Parse("tols") } },
+            { ScriptClass.TuluTigalari, new[] { Tag.Parse("tutg") } },
         };
 }

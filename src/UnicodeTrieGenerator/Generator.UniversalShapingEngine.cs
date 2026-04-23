@@ -105,6 +105,7 @@ public static partial class Generator
                 ISC.ConsonantPrefixed
             }
         },
+        { "RK", new List<object> { ISC.ReorderingKiller } },
         { "Rsv", new List<object> { new Dictionary<string, object> { { "UGC", GC.OtherNotAssigned } } } },
         {
             "S", new List<object>

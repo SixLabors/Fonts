@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using SixLabors.Fonts.Unicode;
+using SixLabors.Fonts.Unicode.Resources;
 
 namespace SixLabors.Fonts.Tests.Unicode;
 
@@ -148,6 +149,19 @@ public partial class CodePointTests
 
         Assert.Equal(3, letterCount);
         Assert.Equal(7, codePointCount);
+    }
+
+    [Fact]
+    public void CanEnumerateLoneLowSurrogateAsReplacementChar()
+    {
+        const string text = "a\udc00b";
+        CodePoint[] codePoints = [.. text.AsSpan().EnumerateCodePoints()];
+
+        Assert.Collection(
+            codePoints,
+            x => Assert.Equal(new CodePoint('a'), x),
+            x => Assert.Equal(CodePoint.ReplacementChar, x),
+            x => Assert.Equal(new CodePoint('b'), x));
     }
 
     [Fact]
@@ -383,6 +397,19 @@ public partial class CodePointTests
     }
 
     [Theory]
+    [InlineData(0x0000, EastAsianWidthClass.Neutral)]
+    [InlineData(0x00A1, EastAsianWidthClass.Ambiguous)]
+    [InlineData(0x3000, EastAsianWidthClass.Fullwidth)]
+    [InlineData(0xFF61, EastAsianWidthClass.Halfwidth)]
+    [InlineData(0x0041, EastAsianWidthClass.Narrow)]
+    [InlineData(0x4E00, EastAsianWidthClass.Wide)]
+    public void CodePointHasEastAsianWidthClass(uint codePoint, EastAsianWidthClass expectedResult)
+    {
+        EastAsianWidthClass result = CodePoint.GetEastAsianWidthClass(new CodePoint(codePoint));
+        Assert.Equal(expectedResult, result);
+    }
+
+    [Theory]
     [InlineData(0x002E, 0x002F, VerticalOrientationType.Rotate)]
     [InlineData(0x003F, 0x0040, VerticalOrientationType.Rotate)]
     [InlineData(0x00A7, 0x00A7, VerticalOrientationType.Upright)]
@@ -408,5 +435,42 @@ public partial class CodePointTests
         CodePoint codePoint = new(value);
         Assert.Equal(syllable, CodePoint.GetIndicSyllabicCategory(codePoint));
         Assert.Equal(position, CodePoint.GetIndicPositionalCategory(codePoint));
+    }
+
+    [Theory]
+    [InlineData(0x1BF2)]
+    [InlineData(0x1BF3)]
+    public static void UniversalShapingUsesReorderingKillerCategory(uint value)
+    {
+        CodePoint codePoint = new(value);
+
+        Assert.Equal(ScriptClass.Batak, CodePoint.GetScriptClass(codePoint));
+        Assert.Equal(IndicSyllabicCategory.ReorderingKiller, CodePoint.GetIndicSyllabicCategory(codePoint));
+        Assert.Equal("RK", UniversalShapingData.Categories[UnicodeData.GetUniversalShapingSymbolCount(value)]);
+    }
+
+    [Theory]
+    [InlineData(0x0915, IndicConjunctBreakClass.Consonant)]
+    [InlineData(0x094D, IndicConjunctBreakClass.Linker)]
+    [InlineData(0x0300, IndicConjunctBreakClass.Extend)]
+    [InlineData(0x0041, IndicConjunctBreakClass.None)]
+    public static void CodePointIsIndicConjunctBreakClass(uint value, IndicConjunctBreakClass expected)
+        => Assert.Equal(expected, CodePoint.GetIndicConjunctBreakClass(new CodePoint(value)));
+
+    [Fact]
+    public static void CodePointUsesUnicodeFallbackClasses()
+    {
+        Assert.Equal(0xFFu, (uint)LineBreakClass.Unknown);
+        Assert.Equal(0xFF, (int)GraphemeClusterClass.Other);
+        Assert.Equal(0xFF, (int)IndicSyllabicCategory.Other);
+        Assert.Equal(0xFF, (int)IndicPositionalCategory.NA);
+
+        CodePoint privateUse = new(0xE000);
+        Assert.Equal(LineBreakClass.Unknown, CodePoint.GetLineBreakClass(privateUse));
+
+        CodePoint latinCapitalA = new('A');
+        Assert.Equal(GraphemeClusterClass.Other, CodePoint.GetGraphemeClusterClass(latinCapitalA));
+        Assert.Equal(IndicSyllabicCategory.Other, CodePoint.GetIndicSyllabicCategory(latinCapitalA));
+        Assert.Equal(IndicPositionalCategory.NA, CodePoint.GetIndicPositionalCategory(latinCapitalA));
     }
 }
