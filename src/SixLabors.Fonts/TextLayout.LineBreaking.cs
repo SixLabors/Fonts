@@ -59,7 +59,7 @@ internal static partial class TextLayout
         for (graphemeIndex = 0; graphemeEnumerator.MoveNext(); graphemeIndex++)
         {
             // Now enumerate through each codepoint in the grapheme.
-            ReadOnlySpan<char> grapheme = graphemeEnumerator.Current;
+            ReadOnlySpan<char> grapheme = graphemeEnumerator.Current.Span;
             int graphemeCodePointIndex = 0;
             SpanCodePointEnumerator codePointEnumerator = new(grapheme);
             while (codePointEnumerator.MoveNext())
@@ -330,7 +330,7 @@ internal static partial class TextLayout
                 graphemeCodePointIndex++;
             }
 
-            stringIndex += graphemeEnumerator.Current.Length;
+            stringIndex += grapheme.Length;
         }
 
         // Calculate the break opportunities once. The wrapping loop below may scan them

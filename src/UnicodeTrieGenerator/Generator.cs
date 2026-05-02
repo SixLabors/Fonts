@@ -542,6 +542,7 @@ public static partial class Generator
         GenerateBidiMirrorTrie();
         GenerateLineBreakTrie();
         GenerateEastAsianWidthTrie();
+        GenerateEmojiTrie();
         UnicodeTrie ugc = GenerateUnicodeCategoryTrie();
         GenerateScriptTrie();
         GenerateGraphemeBreakTrie();
@@ -813,6 +814,107 @@ public static partial class Generator
 
         UnicodeTrie trie = builder.Freeze();
         GenerateTrieClass("EastAsianWidth", trie);
+    }
+
+    /// <summary>
+    /// Generates the UnicodeTrie for emoji scalar properties used by terminal width resolution.
+    /// </summary>
+    private static void GenerateEmojiTrie()
+    {
+        Regex emojiDataRegex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        Regex variationSequenceRegex = new(@"^([0-9A-F]+)\s+(FE0E|FE0F)\s*;\s*(text style|emoji style)\s*;");
+        Regex emojiSequenceRegex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+)|(?:\s+[0-9A-F]+)+)?\s*;\s*(.*?)\s*;");
+        UnicodeTrieBuilder builder = new();
+
+        using (StreamReader sr = GetStreamReader("emoji-data.txt"))
+        {
+            string? line;
+            while ((line = sr.ReadLine()) != null)
+            {
+                Match match = emojiDataRegex.Match(line);
+
+                if (match.Success)
+                {
+                    string start = match.Groups[1].Value;
+                    string end = match.Groups[2].Value;
+                    string prop = match.Groups[3].Value;
+
+                    if (string.IsNullOrEmpty(end))
+                    {
+                        end = start;
+                    }
+
+                    EmojiProperties property = prop switch
+                    {
+                        "Emoji" => EmojiProperties.Emoji,
+                        "Emoji_Presentation" => EmojiProperties.EmojiPresentation,
+                        "Emoji_Modifier" => EmojiProperties.EmojiModifier,
+                        "Emoji_Modifier_Base" => EmojiProperties.EmojiModifierBase,
+                        "Emoji_Component" => EmojiProperties.EmojiComponent,
+                        _ => EmojiProperties.None
+                    };
+
+                    if (property != EmojiProperties.None)
+                    {
+                        SetEmojiPropertyRange(builder, ParseHexInt(start), ParseHexInt(end), property);
+                    }
+                }
+            }
+        }
+
+        using (StreamReader sr = GetStreamReader("emoji-variation-sequences.txt"))
+        {
+            string? line;
+            while ((line = sr.ReadLine()) != null)
+            {
+                Match match = variationSequenceRegex.Match(line);
+
+                if (match.Success)
+                {
+                    int codePoint = ParseHexInt(match.Groups[1].Value);
+
+                    // emoji-variation-sequences.txt pairs a base scalar with either
+                    // U+FE0F VARIATION SELECTOR-16 for emoji presentation or
+                    // U+FE0E VARIATION SELECTOR-15 for text presentation.
+                    EmojiProperties property = match.Groups[2].Value == "FE0F"
+                        ? EmojiProperties.EmojiPresentationSequenceBase
+                        : EmojiProperties.TextPresentationSequenceBase;
+
+                    SetEmojiPropertyRange(builder, codePoint, codePoint, property);
+                }
+            }
+        }
+
+        using (StreamReader sr = GetStreamReader("emoji-sequences.txt"))
+        {
+            string? line;
+            while ((line = sr.ReadLine()) != null)
+            {
+                Match match = emojiSequenceRegex.Match(line);
+
+                if (match.Success && match.Groups[3].Value == "Emoji_Keycap_Sequence")
+                {
+                    int codePoint = ParseHexInt(match.Groups[1].Value);
+                    SetEmojiPropertyRange(builder, codePoint, codePoint, EmojiProperties.EmojiKeycapSequenceBase);
+                }
+            }
+        }
+
+        UnicodeTrie trie = builder.Freeze();
+        GenerateTrieClass("Emoji", trie);
+    }
+
+    private static void SetEmojiPropertyRange(
+        UnicodeTrieBuilder builder,
+        int start,
+        int end,
+        EmojiProperties property)
+    {
+        for (int i = start; i <= end; i++)
+        {
+            uint value = builder.Get(i) | (uint)property;
+            builder.Set(i, value);
+        }
     }
 
     /// <summary>

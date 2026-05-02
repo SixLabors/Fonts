@@ -65,6 +65,18 @@ public static class MemoryExtensions
     /// <summary>
     /// Returns an enumeration of Grapheme instances from the provided span.
     /// </summary>
+    /// <param name="span">The readonly span of char elements representing the text to enumerate.</param>
+    /// <param name="terminalWidthOptions">The terminal width options to apply while enumerating.</param>
+    /// <remarks>
+    /// Invalid UTF-16 sequences are treated as <see cref="CodePoint.ReplacementChar"/> while determining grapheme boundaries.
+    /// </remarks>
+    /// <returns>The <see cref="SpanGraphemeEnumerator"/>.</returns>
+    public static SpanGraphemeEnumerator EnumerateGraphemes(this ReadOnlySpan<char> span, TerminalWidthOptions terminalWidthOptions)
+        => new(span, terminalWidthOptions);
+
+    /// <summary>
+    /// Returns an enumeration of Grapheme instances from the provided span.
+    /// </summary>
     /// <param name="span">The span of char elements representing the text to enumerate.</param>
     /// <remarks>
     /// Invalid UTF-16 sequences are treated as <see cref="CodePoint.ReplacementChar"/> while determining grapheme boundaries.
@@ -72,6 +84,18 @@ public static class MemoryExtensions
     /// <returns>The <see cref="SpanGraphemeEnumerator"/>.</returns>
     public static SpanGraphemeEnumerator EnumerateGraphemes(this Span<char> span)
         => new(span);
+
+    /// <summary>
+    /// Returns an enumeration of Grapheme instances from the provided span.
+    /// </summary>
+    /// <param name="span">The span of char elements representing the text to enumerate.</param>
+    /// <param name="terminalWidthOptions">The terminal width options to apply while enumerating.</param>
+    /// <remarks>
+    /// Invalid UTF-16 sequences are treated as <see cref="CodePoint.ReplacementChar"/> while determining grapheme boundaries.
+    /// </remarks>
+    /// <returns>The <see cref="SpanGraphemeEnumerator"/>.</returns>
+    public static SpanGraphemeEnumerator EnumerateGraphemes(this Span<char> span, TerminalWidthOptions terminalWidthOptions)
+        => new(span, terminalWidthOptions);
 
     /// <summary>
     /// Returns the number of graphemes in the provided text.
@@ -88,7 +112,7 @@ public static class MemoryExtensions
     public static int GetGraphemeCount(this ReadOnlySpan<char> span)
     {
         int count = 0;
-        var enumerator = new SpanGraphemeEnumerator(span);
+        SpanGraphemeEnumerator enumerator = new(span);
         while (enumerator.MoveNext())
         {
             count++;
@@ -105,7 +129,7 @@ public static class MemoryExtensions
     public static int GetGraphemeCount(this Span<char> span)
     {
         int count = 0;
-        var enumerator = new SpanGraphemeEnumerator(span);
+        SpanGraphemeEnumerator enumerator = new(span);
         while (enumerator.MoveNext())
         {
             count++;

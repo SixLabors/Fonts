@@ -589,6 +589,14 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
         => UnicodeData.GetEastAsianWidthClass(codePoint.value);
 
     /// <summary>
+    /// Gets the <see cref="EmojiProperties"/> for the given codepoint.
+    /// </summary>
+    /// <param name="codePoint">The codepoint to evaluate.</param>
+    /// <returns>The <see cref="EmojiProperties"/>.</returns>
+    public static EmojiProperties GetEmojiProperties(in CodePoint codePoint)
+        => UnicodeData.GetEmojiProperties(codePoint.value);
+
+    /// <summary>
     /// Gets the <see cref="ArabicJoiningClass"/> for the given codepoint.
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
