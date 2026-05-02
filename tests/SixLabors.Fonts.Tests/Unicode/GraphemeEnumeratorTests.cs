@@ -285,6 +285,42 @@ public class GraphemeEnumeratorTests
         Assert.Equal(GraphemeClusterFlags.AllZeroWidth | GraphemeClusterFlags.IsSingleCodePoint, cluster.Flags);
     }
 
+    [Fact]
+    public void Should_Return_Aggregate_Terminal_Cell_Width()
+    {
+        // U+754C CJK UNIFIED IDEOGRAPH-754C is wide; U+0301 COMBINING ACUTE
+        // ACCENT belongs to the preceding 'e' cluster.
+        const string text = "A界e\u0301";
+
+        Assert.Equal(4, text.GetTerminalCellWidth());
+        Assert.Equal(4, text.AsSpan().GetTerminalCellWidth());
+    }
+
+    [Fact]
+    public void Should_Return_NonPrintable_Aggregate_Terminal_Cell_Width_For_Controls_By_Default()
+    {
+        // U+001B ESCAPE is non-printable under the default terminal control policy.
+        const string text = "\x1b[0m";
+
+        Assert.Equal(-1, text.GetTerminalCellWidth());
+    }
+
+    [Fact]
+    public void Should_Apply_Control_Options_To_Aggregate_Terminal_Cell_Width()
+    {
+        TerminalWidthOptions options = new()
+        {
+            ControlCharacterWidth = TerminalControlCharacterWidth.Zero
+        };
+
+        // U+001B ESCAPE contributes no cells when control characters are configured
+        // as zero width.
+        const string text = "\x1b[0m";
+
+        Assert.Equal(3, text.GetTerminalCellWidth(options));
+        Assert.Equal(3, text.AsSpan().GetTerminalCellWidth(options));
+    }
+
     [Theory]
     [MemberData(nameof(TerminalWidthData))]
     public void Should_Return_Terminal_Width_For_Common_Cases(string text, int expectedWidth, int[] expectedClusterWidths)

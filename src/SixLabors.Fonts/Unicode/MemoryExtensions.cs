@@ -98,6 +98,90 @@ public static class MemoryExtensions
         => new(span, terminalWidthOptions);
 
     /// <summary>
+    /// Returns the terminal cell width of the provided text.
+    /// </summary>
+    /// <param name="text">The text to measure.</param>
+    /// <returns>
+    /// The terminal cell width, or <c>-1</c> when the configured control-character policy treats
+    /// any grapheme cluster in the text as non-printable.
+    /// </returns>
+    public static int GetTerminalCellWidth(this string text) => text.AsSpan().GetTerminalCellWidth();
+
+    /// <summary>
+    /// Returns the terminal cell width of the provided text.
+    /// </summary>
+    /// <param name="text">The text to measure.</param>
+    /// <param name="terminalWidthOptions">The terminal width options to apply while measuring.</param>
+    /// <returns>
+    /// The terminal cell width, or <c>-1</c> when the configured control-character policy treats
+    /// any grapheme cluster in the text as non-printable.
+    /// </returns>
+    public static int GetTerminalCellWidth(this string text, TerminalWidthOptions terminalWidthOptions)
+        => text.AsSpan().GetTerminalCellWidth(terminalWidthOptions);
+
+    /// <summary>
+    /// Returns the terminal cell width of the provided span.
+    /// </summary>
+    /// <param name="span">The readonly span of char elements representing the text to measure.</param>
+    /// <returns>
+    /// The terminal cell width, or <c>-1</c> when the configured control-character policy treats
+    /// any grapheme cluster in the text as non-printable.
+    /// </returns>
+    public static int GetTerminalCellWidth(this ReadOnlySpan<char> span)
+        => span.GetTerminalCellWidth(default);
+
+    /// <summary>
+    /// Returns the terminal cell width of the provided span.
+    /// </summary>
+    /// <param name="span">The readonly span of char elements representing the text to measure.</param>
+    /// <param name="terminalWidthOptions">The terminal width options to apply while measuring.</param>
+    /// <returns>
+    /// The terminal cell width, or <c>-1</c> when the configured control-character policy treats
+    /// any grapheme cluster in the text as non-printable.
+    /// </returns>
+    public static int GetTerminalCellWidth(this ReadOnlySpan<char> span, TerminalWidthOptions terminalWidthOptions)
+    {
+        int width = 0;
+        SpanGraphemeEnumerator enumerator = new(span, terminalWidthOptions);
+
+        while (enumerator.MoveNext())
+        {
+            int terminalCellWidth = enumerator.Current.TerminalCellWidth;
+            if (terminalCellWidth < 0)
+            {
+                return -1;
+            }
+
+            width += terminalCellWidth;
+        }
+
+        return width;
+    }
+
+    /// <summary>
+    /// Returns the terminal cell width of the provided span.
+    /// </summary>
+    /// <param name="span">The span of char elements representing the text to measure.</param>
+    /// <returns>
+    /// The terminal cell width, or <c>-1</c> when the configured control-character policy treats
+    /// any grapheme cluster in the text as non-printable.
+    /// </returns>
+    public static int GetTerminalCellWidth(this Span<char> span)
+        => ((ReadOnlySpan<char>)span).GetTerminalCellWidth();
+
+    /// <summary>
+    /// Returns the terminal cell width of the provided span.
+    /// </summary>
+    /// <param name="span">The span of char elements representing the text to measure.</param>
+    /// <param name="terminalWidthOptions">The terminal width options to apply while measuring.</param>
+    /// <returns>
+    /// The terminal cell width, or <c>-1</c> when the configured control-character policy treats
+    /// any grapheme cluster in the text as non-printable.
+    /// </returns>
+    public static int GetTerminalCellWidth(this Span<char> span, TerminalWidthOptions terminalWidthOptions)
+        => ((ReadOnlySpan<char>)span).GetTerminalCellWidth(terminalWidthOptions);
+
+    /// <summary>
     /// Returns the number of graphemes in the provided text.
     /// </summary>
     /// <param name="text">The text to enumerate.</param>
