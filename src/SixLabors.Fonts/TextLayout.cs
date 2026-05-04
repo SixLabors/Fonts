@@ -484,7 +484,7 @@ internal static partial class TextLayout
                     new Glyph(data.Metrics[0], data.PointSize),
                     boxLocation,
                     penLocation,
-                    Vector2.Zero,
+                    penLocation,
                     data.ScaledAdvance,
                     yLineAdvance,
                     GlyphLayoutMode.Horizontal,
@@ -502,11 +502,13 @@ internal static partial class TextLayout
             int j = 0;
             foreach (GlyphMetrics metric in data.Metrics)
             {
+                Vector2 glyphOrigin = penLocation + new Vector2(0, textLine.ScaledMaxAscender);
+
                 visitor.Visit(new GlyphLayout(
                     new Glyph(metric, data.PointSize),
                     boxLocation,
-                    penLocation + new Vector2(0, textLine.ScaledMaxAscender),
-                    Vector2.Zero,
+                    glyphOrigin,
+                    glyphOrigin,
                     data.ScaledAdvance,
                     advanceY,
                     GlyphLayoutMode.Horizontal,
@@ -671,7 +673,7 @@ internal static partial class TextLayout
                     new Glyph(data.Metrics[0], data.PointSize),
                     boxLocation,
                     penLocation,
-                    Vector2.Zero,
+                    penLocation,
                     xLineAdvance,
                     data.ScaledAdvance,
                     GlyphLayoutMode.Vertical,
@@ -790,8 +792,10 @@ internal static partial class TextLayout
                 // Align the glyph horizontally and vertically centering vertically around the baseline.
                 Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
 
-                // Offset our in both directions to account for horizontal ink centering and vertical baseline centering.
-                Vector2 offset = new(alignX, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
+                // Move the glyph origin without changing the advance or decoration origin.
+                Vector2 glyphOffset = new(alignX, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
+                Vector2 decorationOrigin = penLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0);
+                Vector2 glyphOrigin = decorationOrigin + glyphOffset;
 
                 float advanceW = advanceX;
 
@@ -806,8 +810,8 @@ internal static partial class TextLayout
                 visitor.Visit(new GlyphLayout(
                     new Glyph(metric, data.PointSize),
                     boxLocation,
-                    penLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0),
-                    offset,
+                    glyphOrigin,
+                    decorationOrigin,
                     advanceW,
                     data.ScaledAdvance,
                     GlyphLayoutMode.Vertical,
@@ -965,7 +969,7 @@ internal static partial class TextLayout
                     new Glyph(data.Metrics[0], data.PointSize),
                     boxLocation,
                     penLocation,
-                    Vector2.Zero,
+                    penLocation,
                     xLineAdvance,
                     data.ScaledAdvance,
                     GlyphLayoutMode.Vertical,
@@ -1000,12 +1004,13 @@ internal static partial class TextLayout
                     float descenderDelta = (Math.Abs(textLine.ScaledMaxDescender) - descenderAbs) * .5F;
 
                     float centerOffsetX = baselineDelta + descenderAbs + descenderDelta;
+                    Vector2 glyphOrigin = penLocation + new Vector2(centerOffsetX, 0);
 
                     visitor.Visit(new GlyphLayout(
                         new Glyph(metric, data.PointSize),
                         boxLocation,
-                        penLocation + new Vector2(centerOffsetX, 0),
-                        Vector2.Zero,
+                        glyphOrigin,
+                        glyphOrigin,
                         advanceX,
                         data.ScaledAdvance,
                         GlyphLayoutMode.VerticalRotated,
@@ -1024,13 +1029,15 @@ internal static partial class TextLayout
                 {
                     // Align the glyph horizontally and vertically centering vertically around the baseline.
                     Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
-                    Vector2 offset = new(0, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
+                    Vector2 glyphOffset = new(0, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
+                    Vector2 decorationOrigin = penLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0);
+                    Vector2 glyphOrigin = decorationOrigin + glyphOffset;
 
                     visitor.Visit(new GlyphLayout(
                         new Glyph(metric, data.PointSize),
                         boxLocation,
-                        penLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0),
-                        offset,
+                        glyphOrigin,
+                        decorationOrigin,
                         advanceX,
                         data.ScaledAdvance,
                         GlyphLayoutMode.Vertical,

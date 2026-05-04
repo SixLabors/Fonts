@@ -7,7 +7,7 @@ using SixLabors.Fonts.Rendering;
 namespace SixLabors.Fonts;
 
 /// <summary>
-/// A glyph from a particular font face.
+/// Represents a font-specific glyph at the point size used for layout and rendering.
 /// </summary>
 public readonly struct Glyph
 {
@@ -20,29 +20,35 @@ public readonly struct Glyph
     }
 
     /// <summary>
-    /// Gets the glyph metrics.
+    /// Gets the font metrics for this glyph.
     /// </summary>
     public GlyphMetrics GlyphMetrics { get; }
 
     /// <summary>
-    /// Calculates the bounding box.
+    /// Calculates the rendered glyph bounds for the specified layout mode and origin.
     /// </summary>
-    /// <param name="mode">The glyph layout mode to measure using.</param>
-    /// <param name="location">The location to calculate from.</param>
-    /// <param name="dpi">The DPI (Dots Per Inch) to measure the glyph at.</param>
-    /// <returns>The bounding box</returns>
-    public FontRectangle BoundingBox(GlyphLayoutMode mode, Vector2 location, float dpi)
-        => this.GlyphMetrics.GetBoundingBox(mode, location, this.pointSize * dpi);
+    /// <param name="mode">The glyph layout mode to measure with.</param>
+    /// <param name="glyphOrigin">The glyph origin to calculate the bounds from.</param>
+    /// <param name="dpi">The DPI to measure the glyph at.</param>
+    /// <returns>The rendered glyph bounds.</returns>
+    public FontRectangle BoundingBox(GlyphLayoutMode mode, Vector2 glyphOrigin, float dpi)
+        => this.GlyphMetrics.GetBoundingBox(mode, glyphOrigin, this.pointSize * dpi);
 
     /// <summary>
-    /// Renders the glyph to the render surface relative to a top left origin.
+    /// Renders the glyph to the render surface.
     /// </summary>
-    /// <param name="surface">The surface.</param>
+    /// <param name="surface">The target render surface.</param>
     /// <param name="graphemeIndex">The index of the grapheme this glyph is part of.</param>
-    /// <param name="location">The location to render the glyph at.</param>
-    /// <param name="offset">The offset of the glyph vector relative to the top-left position of the glyph advance.</param>
+    /// <param name="glyphOrigin">The origin used to render the glyph outline.</param>
+    /// <param name="decorationOrigin">The origin used to render text decorations.</param>
     /// <param name="mode">The glyph layout mode to render using.</param>
     /// <param name="options">The options to render using.</param>
-    internal void RenderTo(IGlyphRenderer surface, int graphemeIndex, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options)
-        => this.GlyphMetrics.RenderTo(surface, graphemeIndex, location, offset, mode, options);
+    internal void RenderTo(
+        IGlyphRenderer surface,
+        int graphemeIndex,
+        Vector2 glyphOrigin,
+        Vector2 decorationOrigin,
+        GlyphLayoutMode mode,
+        TextOptions options)
+        => this.GlyphMetrics.RenderTo(surface, graphemeIndex, glyphOrigin, decorationOrigin, mode, options);
 }

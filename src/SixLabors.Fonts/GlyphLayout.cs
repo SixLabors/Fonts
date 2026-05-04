@@ -7,15 +7,15 @@ using SixLabors.Fonts.Unicode;
 namespace SixLabors.Fonts;
 
 /// <summary>
-/// A glyphs layout and location
+/// Represents the layout and render positions of a glyph entry.
 /// </summary>
 internal readonly struct GlyphLayout
 {
     internal GlyphLayout(
         Glyph glyph,
-        Vector2 boxLocation,
-        Vector2 penLocation,
-        Vector2 offset,
+        Vector2 advanceOrigin,
+        Vector2 glyphOrigin,
+        Vector2 decorationOrigin,
         float advanceWidth,
         float advanceHeight,
         GlyphLayoutMode layoutMode,
@@ -25,9 +25,9 @@ internal readonly struct GlyphLayout
     {
         this.Glyph = glyph;
         this.CodePoint = glyph.GlyphMetrics.CodePoint;
-        this.BoxLocation = boxLocation;
-        this.PenLocation = penLocation;
-        this.Offset = offset;
+        this.AdvanceOrigin = advanceOrigin;
+        this.GlyphOrigin = glyphOrigin;
+        this.DecorationOrigin = decorationOrigin;
         this.AdvanceX = advanceWidth;
         this.AdvanceY = advanceHeight;
         this.LayoutMode = layoutMode;
@@ -37,38 +37,37 @@ internal readonly struct GlyphLayout
     }
 
     /// <summary>
-    /// Gets the glyph.
+    /// Gets the font-specific glyph for this laid-out glyph entry.
     /// </summary>
     public Glyph Glyph { get; }
 
     /// <summary>
-    /// Gets the codepoint represented by this glyph.
+    /// Gets the code point represented by this glyph.
     /// </summary>
     public CodePoint CodePoint { get; }
 
     /// <summary>
-    /// Gets the location of the glyph box.
+    /// Gets the origin of the logical advance box.
     /// </summary>
-    public Vector2 BoxLocation { get; }
+    public Vector2 AdvanceOrigin { get; }
 
     /// <summary>
-    /// Gets the location to render the glyph at.
+    /// Gets the origin used to render the glyph outline.
     /// </summary>
-    public Vector2 PenLocation { get; }
+    public Vector2 GlyphOrigin { get; }
 
     /// <summary>
-    /// Gets the offset of the glyph vector relative to the top-left position of the glyph advance.
-    /// For horizontal layout this will always be <see cref="Vector2.Zero"/>.
+    /// Gets the origin used to render text decorations.
     /// </summary>
-    public Vector2 Offset { get; }
+    public Vector2 DecorationOrigin { get; }
 
     /// <summary>
-    /// Gets the width.
+    /// Gets the advance in the x direction.
     /// </summary>
     public float AdvanceX { get; }
 
     /// <summary>
-    /// Gets the height.
+    /// Gets the advance in the y direction.
     /// </summary>
     public float AdvanceY { get; }
 
@@ -83,12 +82,12 @@ internal readonly struct GlyphLayout
     public bool IsStartOfLine { get; }
 
     /// <summary>
-    /// Gets grapheme index of glyph in original text.
+    /// Gets the grapheme index of the glyph in the original text.
     /// </summary>
     public int GraphemeIndex { get; }
 
     /// <summary>
-    /// Gets string index of glyph in original text.
+    /// Gets the UTF-16 string index of the glyph in the original text.
     /// </summary>
     public int StringIndex { get; }
 
@@ -101,14 +100,8 @@ internal readonly struct GlyphLayout
     internal FontRectangle BoundingBox(float dpi)
     {
         // Same logic as in GlyphMetrics.RenderTo
-        Vector2 location = this.PenLocation;
-        Vector2 offset = this.Offset;
-
-        location *= dpi;
-        offset *= dpi;
-        Vector2 renderLocation = location + offset;
-
-        FontRectangle box = this.Glyph.BoundingBox(this.LayoutMode, renderLocation, dpi);
+        Vector2 glyphOrigin = this.GlyphOrigin * dpi;
+        FontRectangle box = this.Glyph.BoundingBox(this.LayoutMode, glyphOrigin, dpi);
 
         if (this.IsWhiteSpace())
         {
@@ -147,7 +140,7 @@ internal readonly struct GlyphLayout
     {
         string s = this.IsStartOfLine ? "@ " : string.Empty;
         string ws = this.IsWhiteSpace() ? "!" : string.Empty;
-        Vector2 l = this.PenLocation;
+        Vector2 l = this.GlyphOrigin;
         return $"{s}{ws}{this.CodePoint.ToDebuggerDisplay()} {l.X},{l.Y} {this.AdvanceX}x{this.AdvanceY}";
     }
 }

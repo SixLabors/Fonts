@@ -310,11 +310,17 @@ public abstract class GlyphMetrics
     /// </summary>
     /// <param name="renderer">The surface renderer.</param>
     /// <param name="graphemeIndex">The index of the grapheme this glyph is part of.</param>
-    /// <param name="location">The location representing offset of the glyph outer bounds relative to the origin.</param>
-    /// <param name="offset">The offset of the glyph vector relative to the top-left position of the glyph advance.</param>
+    /// <param name="glyphOrigin">The origin used to render the glyph outline.</param>
+    /// <param name="decorationOrigin">The origin used to render text decorations.</param>
     /// <param name="mode">The glyph layout mode to render using.</param>
     /// <param name="options">The options used to influence the rendering of this glyph.</param>
-    internal abstract void RenderTo(IGlyphRenderer renderer, int graphemeIndex, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options);
+    internal abstract void RenderTo(
+        IGlyphRenderer renderer,
+        int graphemeIndex,
+        Vector2 glyphOrigin,
+        Vector2 decorationOrigin,
+        GlyphLayoutMode mode,
+        TextOptions options);
 
     /// <summary>
     /// Renders text decorations, such as underline, strikeout, and overline, for the current glyph to the specified

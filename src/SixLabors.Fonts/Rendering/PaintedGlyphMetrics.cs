@@ -112,8 +112,8 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
     internal override void RenderTo(
         IGlyphRenderer renderer,
         int graphemeIndex,
-        Vector2 location,
-        Vector2 offset,
+        Vector2 glyphOrigin,
+        Vector2 decorationOrigin,
         GlyphLayoutMode mode,
         TextOptions options)
     {
@@ -126,9 +126,8 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
         float dpi = options.Dpi;
 
         // Device-space placement.
-        location *= dpi;
-        offset *= dpi;
-        Vector2 renderLocation = location + offset;
+        glyphOrigin *= dpi;
+        decorationOrigin *= dpi;
 
         float scaledPpem = this.GetScaledSize(pointSize, dpi);
         Vector2 scale = new Vector2(scaledPpem) / this.ScaleFactor; // uniform
@@ -138,10 +137,10 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
         // Layout similarity: uniform scale then rotation; translation added below.
         Matrix3x2 layout = Matrix3x2.CreateScale(scale);
         layout *= rotation;
-        layout.Translation = (this.Offset * scale) + renderLocation;
+        layout.Translation = (this.Offset * scale) + glyphOrigin;
 
         // Bounds in device space for BeginGlyph.
-        FontRectangle box = this.GetBoundingBox(mode, renderLocation, scaledPpem);
+        FontRectangle box = this.GetBoundingBox(mode, glyphOrigin, scaledPpem);
         GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode, graphemeIndex);
 
         if (renderer.BeginGlyph(in box, in parameters))
@@ -160,7 +159,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
             }
 
             renderer.EndGlyph();
-            this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPpem, options);
+            this.RenderDecorationsTo(renderer, decorationOrigin, mode, rotation, scaledPpem, options);
         }
     }
 

@@ -131,7 +131,7 @@ public sealed partial class TextBlock
         public void Visit(in GlyphLayout glyph)
         {
             FontRectangle glyphBox = glyph.BoundingBox(this.dpi);
-            FontRectangle advanceRect = new(glyph.BoxLocation.X * this.dpi, glyph.BoxLocation.Y * this.dpi, glyph.AdvanceX * this.dpi, glyph.AdvanceY * this.dpi);
+            FontRectangle advanceRect = new(glyph.AdvanceOrigin.X * this.dpi, glyph.AdvanceOrigin.Y * this.dpi, glyph.AdvanceX * this.dpi, glyph.AdvanceY * this.dpi);
             FontRectangle renderableRect = FontRectangle.Union(advanceRect, glyphBox);
 
             CodePoint codePoint = glyph.Glyph.GlyphMetrics.CodePoint;
@@ -228,7 +228,7 @@ public sealed partial class TextBlock
 
                 default:
                     FontRectangle glyphBounds = glyph.BoundingBox(this.dpi);
-                    FontRectangle advance = new(glyph.BoxLocation.X * this.dpi, glyph.BoxLocation.Y * this.dpi, glyph.AdvanceX * this.dpi, glyph.AdvanceY * this.dpi);
+                    FontRectangle advance = new(glyph.AdvanceOrigin.X * this.dpi, glyph.AdvanceOrigin.Y * this.dpi, glyph.AdvanceX * this.dpi, glyph.AdvanceY * this.dpi);
                     bounds = FontRectangle.Union(advance, glyphBounds);
                     break;
             }
@@ -260,6 +260,6 @@ public sealed partial class TextBlock
 
         /// <inheritdoc/>
         public readonly void Visit(in GlyphLayout glyph)
-            => glyph.Glyph.RenderTo(this.renderer, glyph.GraphemeIndex, glyph.PenLocation, glyph.Offset, glyph.LayoutMode, this.options);
+            => glyph.Glyph.RenderTo(this.renderer, glyph.GraphemeIndex, glyph.GlyphOrigin, glyph.DecorationOrigin, glyph.LayoutMode, this.options);
     }
 }
