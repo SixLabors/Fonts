@@ -274,13 +274,18 @@ internal static partial class TextLayout
     /// <param name="options">The text options used to lay out <paramref name="textBox"/>.</param>
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
     /// <param name="visitor">The visitor that receives each positioned glyph.</param>
-    private static void LayoutText<TVisitor>(
+    public static void LayoutText<TVisitor>(
         TextBox textBox,
         TextOptions options,
         float wrappingLength,
         ref TVisitor visitor)
         where TVisitor : struct, IGlyphLayoutVisitor
     {
+        if (textBox.TextLines.Count == 0)
+        {
+            return;
+        }
+
         LayoutMode layoutMode = options.LayoutMode;
 
         Vector2 boxLocation = options.Origin / options.Dpi;

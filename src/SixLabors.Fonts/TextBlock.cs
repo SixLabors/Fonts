@@ -9,7 +9,7 @@ namespace SixLabors.Fonts;
 /// <summary>
 /// Represents text prepared for repeated line layout, measurement, and rendering.
 /// </summary>
-public sealed class TextBlock
+public sealed partial class TextBlock
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="TextBlock"/> class.
@@ -75,66 +75,27 @@ public sealed class TextBlock
     public TextMetrics Measure(float wrappingLength)
     {
         TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
-        List<GlyphLayout> glyphLayouts = TextLayout.LayoutText(textBox, this.Options, wrappingLength);
         float dpi = this.Options.Dpi;
         bool isHorizontal = this.Options.LayoutMode.IsHorizontal();
 
         FontRectangle advance = GetAdvance(textBox, dpi, isHorizontal);
 
-        int count = glyphLayouts.Count;
+        int count = CountGlyphLayouts(textBox);
         GlyphBounds[] characterAdvances = new GlyphBounds[count];
         GlyphBounds[] characterSizes = new GlyphBounds[count];
         GlyphBounds[] characterBounds = new GlyphBounds[count];
         GlyphBounds[] characterRenderableBounds = new GlyphBounds[count];
 
-        float left = float.MaxValue;
-        float top = float.MaxValue;
-        float right = float.MinValue;
-        float bottom = float.MinValue;
+        TextMetricsVisitor visitor = new(
+            dpi,
+            characterAdvances,
+            characterSizes,
+            characterBounds,
+            characterRenderableBounds);
 
-        for (int i = 0; i < count; i++)
-        {
-            GlyphLayout glyph = glyphLayouts[i];
-            FontRectangle glyphBox = glyph.BoundingBox(dpi);
-            FontRectangle advanceRect = new(glyph.BoxLocation.X * dpi, glyph.BoxLocation.Y * dpi, glyph.AdvanceX * dpi, glyph.AdvanceY * dpi);
-            FontRectangle renderableRect = FontRectangle.Union(advanceRect, glyphBox);
+        TextLayout.LayoutText(textBox, this.Options, wrappingLength, ref visitor);
 
-            CodePoint codePoint = glyph.Glyph.GlyphMetrics.CodePoint;
-            int graphemeIndex = glyph.GraphemeIndex;
-            int stringIndex = glyph.StringIndex;
-
-            FontRectangle advanceBox = new(0, 0, glyph.AdvanceX * dpi, glyph.AdvanceY * dpi);
-            FontRectangle sizeBox = new(0, 0, glyphBox.Width, glyphBox.Height);
-
-            characterAdvances[i] = new GlyphBounds(codePoint, in advanceBox, graphemeIndex, stringIndex);
-            characterSizes[i] = new GlyphBounds(codePoint, in sizeBox, graphemeIndex, stringIndex);
-            characterBounds[i] = new GlyphBounds(codePoint, in glyphBox, graphemeIndex, stringIndex);
-            characterRenderableBounds[i] = new GlyphBounds(codePoint, in renderableRect, graphemeIndex, stringIndex);
-
-            if (glyphBox.Left < left)
-            {
-                left = glyphBox.Left;
-            }
-
-            if (glyphBox.Top < top)
-            {
-                top = glyphBox.Top;
-            }
-
-            if (glyphBox.Right > right)
-            {
-                right = glyphBox.Right;
-            }
-
-            if (glyphBox.Bottom > bottom)
-            {
-                bottom = glyphBox.Bottom;
-            }
-        }
-
-        FontRectangle bounds = count == 0
-            ? FontRectangle.Empty
-            : FontRectangle.FromLTRB(left, top, right, bottom);
+        FontRectangle bounds = visitor.Bounds();
         FontRectangle size = new(0, 0, bounds.Width, bounds.Height);
         FontRectangle absoluteAdvance = new(this.Options.Origin.X, this.Options.Origin.Y, advance.Width, advance.Height);
         FontRectangle renderableBounds = FontRectangle.Union(absoluteAdvance, bounds);
@@ -206,8 +167,8 @@ public sealed class TextBlock
     /// <returns>Whether any of the entries had non-empty advances.</returns>
     public bool TryMeasureCharacterAdvances(float wrappingLength, out ReadOnlySpan<GlyphBounds> advances)
     {
-        IReadOnlyList<GlyphLayout> glyphs = this.LayoutText(wrappingLength);
-        return TryGetCharacterAdvances(glyphs, this.Options.Dpi, out advances);
+        TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
+        return TryMeasureCharacterBounds(textBox, this.Options, wrappingLength, GlyphBoundsMeasurement.Advance, out advances);
     }
 
     /// <summary>
@@ -218,8 +179,8 @@ public sealed class TextBlock
     /// <returns>Whether any of the entries had non-empty dimensions.</returns>
     public bool TryMeasureCharacterSizes(float wrappingLength, out ReadOnlySpan<GlyphBounds> sizes)
     {
-        IReadOnlyList<GlyphLayout> glyphs = this.LayoutText(wrappingLength);
-        return TryGetCharacterSizes(glyphs, this.Options.Dpi, out sizes);
+        TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
+        return TryMeasureCharacterBounds(textBox, this.Options, wrappingLength, GlyphBoundsMeasurement.Size, out sizes);
     }
 
     /// <summary>
@@ -230,8 +191,8 @@ public sealed class TextBlock
     /// <returns>Whether any of the entries had non-empty bounds.</returns>
     public bool TryMeasureCharacterBounds(float wrappingLength, out ReadOnlySpan<GlyphBounds> bounds)
     {
-        IReadOnlyList<GlyphLayout> glyphs = this.LayoutText(wrappingLength);
-        return TryGetCharacterBounds(glyphs, this.Options.Dpi, out bounds);
+        TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
+        return TryMeasureCharacterBounds(textBox, this.Options, wrappingLength, GlyphBoundsMeasurement.Bounds, out bounds);
     }
 
     /// <summary>
@@ -242,8 +203,8 @@ public sealed class TextBlock
     /// <returns>Whether any of the entries had non-empty bounds.</returns>
     public bool TryMeasureCharacterRenderableBounds(float wrappingLength, out ReadOnlySpan<GlyphBounds> bounds)
     {
-        IReadOnlyList<GlyphLayout> glyphs = this.LayoutText(wrappingLength);
-        return TryGetCharacterRenderableBounds(glyphs, this.Options.Dpi, out bounds);
+        TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
+        return TryMeasureCharacterBounds(textBox, this.Options, wrappingLength, GlyphBoundsMeasurement.RenderableBounds, out bounds);
     }
 
     /// <summary>
@@ -269,15 +230,13 @@ public sealed class TextBlock
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
     public void RenderTo(IGlyphRenderer renderer, float wrappingLength)
     {
-        IReadOnlyList<GlyphLayout> glyphs = this.LayoutText(wrappingLength);
-        FontRectangle rect = GetBounds(glyphs, this.Options.Dpi);
+        TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
+        FontRectangle rect = TextLayout.GetBounds(textBox, this.Options, wrappingLength);
 
         renderer.BeginText(in rect);
 
-        foreach (GlyphLayout glyph in glyphs)
-        {
-            glyph.Glyph.RenderTo(renderer, glyph.GraphemeIndex, glyph.PenLocation, glyph.Offset, glyph.LayoutMode, this.Options);
-        }
+        GlyphRendererVisitor visitor = new(renderer, this.Options);
+        TextLayout.LayoutText(textBox, this.Options, wrappingLength, ref visitor);
 
         renderer.EndText();
     }
@@ -363,6 +322,57 @@ public sealed class TextBlock
     }
 
     /// <summary>
+    /// Counts the laid-out glyph entries emitted from a line-broken text box.
+    /// </summary>
+    /// <param name="textBox">The shaped and line-broken text box.</param>
+    /// <returns>The number of glyph entries that layout will emit.</returns>
+    private static int CountGlyphLayouts(TextLayout.TextBox textBox)
+    {
+        int count = 0;
+        for (int i = 0; i < textBox.TextLines.Count; i++)
+        {
+            TextLayout.TextLine line = textBox.TextLines[i];
+            for (int j = 0; j < line.Count; j++)
+            {
+                TextLayout.TextLine.GlyphLayoutData data = line[j];
+                count += data.IsNewLine ? 1 : data.Metrics.Count;
+            }
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// Measures one per-character bounds collection by streaming laid-out glyphs.
+    /// </summary>
+    /// <param name="textBox">The shaped and line-broken text box.</param>
+    /// <param name="options">The text options used for layout.</param>
+    /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
+    /// <param name="measurement">The bounds measurement to collect.</param>
+    /// <param name="bounds">The measured glyph bounds.</param>
+    /// <returns>Whether any glyph has non-empty bounds.</returns>
+    private static bool TryMeasureCharacterBounds(
+        TextLayout.TextBox textBox,
+        TextOptions options,
+        float wrappingLength,
+        GlyphBoundsMeasurement measurement,
+        out ReadOnlySpan<GlyphBounds> bounds)
+    {
+        int count = CountGlyphLayouts(textBox);
+        if (count == 0)
+        {
+            bounds = [];
+            return false;
+        }
+
+        GlyphBounds[] result = new GlyphBounds[count];
+        GlyphBoundsVisitor visitor = new(result, options.Dpi, measurement);
+        TextLayout.LayoutText(textBox, options, wrappingLength, ref visitor);
+        bounds = result;
+        return visitor.HasSize;
+    }
+
+    /// <summary>
     /// Measures the logical advance of an already line-broken text box.
     /// </summary>
     /// <param name="textBox">The shaped and line-broken text box.</param>
@@ -400,170 +410,5 @@ public sealed class TextBlock
         }
 
         return new FontRectangle(0, 0, verticalWidth * dpi, verticalHeight * dpi);
-    }
-
-    /// <summary>
-    /// Measures the rendered bounds of laid-out glyphs.
-    /// </summary>
-    /// <param name="glyphLayouts">The laid-out glyphs.</param>
-    /// <param name="dpi">The target DPI.</param>
-    /// <returns>The rendered glyph bounds.</returns>
-    private static FontRectangle GetBounds(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi)
-    {
-        if (glyphLayouts.Count == 0)
-        {
-            return FontRectangle.Empty;
-        }
-
-        float left = float.MaxValue;
-        float top = float.MaxValue;
-        float bottom = float.MinValue;
-        float right = float.MinValue;
-        for (int i = 0; i < glyphLayouts.Count; i++)
-        {
-            FontRectangle box = glyphLayouts[i].BoundingBox(dpi);
-            if (left > box.Left)
-            {
-                left = box.Left;
-            }
-
-            if (top > box.Top)
-            {
-                top = box.Top;
-            }
-
-            if (bottom < box.Bottom)
-            {
-                bottom = box.Bottom;
-            }
-
-            if (right < box.Right)
-            {
-                right = box.Right;
-            }
-        }
-
-        return FontRectangle.FromLTRB(left, top, right, bottom);
-    }
-
-    /// <summary>
-    /// Measures the logical advances of laid-out glyphs.
-    /// </summary>
-    /// <param name="glyphLayouts">The laid-out glyphs.</param>
-    /// <param name="dpi">The target DPI.</param>
-    /// <param name="characterBounds">The measured glyph bounds.</param>
-    /// <returns>Whether any glyph has non-empty bounds.</returns>
-    private static bool TryGetCharacterAdvances(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi, out ReadOnlySpan<GlyphBounds> characterBounds)
-    {
-        bool hasSize = false;
-        if (glyphLayouts.Count == 0)
-        {
-            characterBounds = [];
-            return hasSize;
-        }
-
-        GlyphBounds[] characterBoundsList = new GlyphBounds[glyphLayouts.Count];
-        for (int i = 0; i < glyphLayouts.Count; i++)
-        {
-            GlyphLayout glyph = glyphLayouts[i];
-            FontRectangle bounds = new(0, 0, glyph.AdvanceX * dpi, glyph.AdvanceY * dpi);
-            hasSize |= bounds.Width > 0 || bounds.Height > 0;
-            characterBoundsList[i] = new GlyphBounds(glyph.Glyph.GlyphMetrics.CodePoint, in bounds, glyph.GraphemeIndex, glyph.StringIndex);
-        }
-
-        characterBounds = characterBoundsList;
-        return hasSize;
-    }
-
-    /// <summary>
-    /// Measures the normalized rendered sizes of laid-out glyphs.
-    /// </summary>
-    /// <param name="glyphLayouts">The laid-out glyphs.</param>
-    /// <param name="dpi">The target DPI.</param>
-    /// <param name="characterBounds">The measured glyph bounds.</param>
-    /// <returns>Whether any glyph has non-empty bounds.</returns>
-    private static bool TryGetCharacterSizes(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi, out ReadOnlySpan<GlyphBounds> characterBounds)
-    {
-        bool hasSize = false;
-        if (glyphLayouts.Count == 0)
-        {
-            characterBounds = [];
-            return hasSize;
-        }
-
-        GlyphBounds[] characterBoundsList = new GlyphBounds[glyphLayouts.Count];
-
-        for (int i = 0; i < glyphLayouts.Count; i++)
-        {
-            GlyphLayout glyph = glyphLayouts[i];
-            FontRectangle bounds = glyph.BoundingBox(dpi);
-            bounds = new(0, 0, bounds.Width, bounds.Height);
-
-            hasSize |= bounds.Width > 0 || bounds.Height > 0;
-            characterBoundsList[i] = new GlyphBounds(glyph.Glyph.GlyphMetrics.CodePoint, in bounds, glyph.GraphemeIndex, glyph.StringIndex);
-        }
-
-        characterBounds = characterBoundsList;
-        return hasSize;
-    }
-
-    /// <summary>
-    /// Measures the rendered bounds of laid-out glyphs.
-    /// </summary>
-    /// <param name="glyphLayouts">The laid-out glyphs.</param>
-    /// <param name="dpi">The target DPI.</param>
-    /// <param name="characterBounds">The measured glyph bounds.</param>
-    /// <returns>Whether any glyph has non-empty bounds.</returns>
-    private static bool TryGetCharacterBounds(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi, out ReadOnlySpan<GlyphBounds> characterBounds)
-    {
-        bool hasSize = false;
-        if (glyphLayouts.Count == 0)
-        {
-            characterBounds = [];
-            return hasSize;
-        }
-
-        GlyphBounds[] characterBoundsList = new GlyphBounds[glyphLayouts.Count];
-        for (int i = 0; i < glyphLayouts.Count; i++)
-        {
-            GlyphLayout glyph = glyphLayouts[i];
-            FontRectangle bounds = glyph.BoundingBox(dpi);
-            hasSize |= bounds.Width > 0 || bounds.Height > 0;
-            characterBoundsList[i] = new GlyphBounds(glyph.Glyph.GlyphMetrics.CodePoint, in bounds, glyph.GraphemeIndex, glyph.StringIndex);
-        }
-
-        characterBounds = characterBoundsList;
-        return hasSize;
-    }
-
-    /// <summary>
-    /// Measures the full renderable bounds of laid-out glyphs.
-    /// </summary>
-    /// <param name="glyphLayouts">The laid-out glyphs.</param>
-    /// <param name="dpi">The target DPI.</param>
-    /// <param name="characterBounds">The measured glyph bounds.</param>
-    /// <returns>Whether any glyph has non-empty bounds.</returns>
-    private static bool TryGetCharacterRenderableBounds(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi, out ReadOnlySpan<GlyphBounds> characterBounds)
-    {
-        bool hasSize = false;
-        if (glyphLayouts.Count == 0)
-        {
-            characterBounds = [];
-            return hasSize;
-        }
-
-        GlyphBounds[] characterBoundsList = new GlyphBounds[glyphLayouts.Count];
-        for (int i = 0; i < glyphLayouts.Count; i++)
-        {
-            GlyphLayout glyph = glyphLayouts[i];
-            FontRectangle glyphBounds = glyph.BoundingBox(dpi);
-            FontRectangle advance = new(glyph.BoxLocation.X * dpi, glyph.BoxLocation.Y * dpi, glyph.AdvanceX * dpi, glyph.AdvanceY * dpi);
-            FontRectangle bounds = FontRectangle.Union(advance, glyphBounds);
-            hasSize |= bounds.Width > 0 || bounds.Height > 0;
-            characterBoundsList[i] = new GlyphBounds(glyph.Glyph.GlyphMetrics.CodePoint, in bounds, glyph.GraphemeIndex, glyph.StringIndex);
-        }
-
-        characterBounds = characterBoundsList;
-        return hasSize;
     }
 }
