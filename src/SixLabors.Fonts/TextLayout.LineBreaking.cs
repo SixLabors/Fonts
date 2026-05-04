@@ -11,42 +11,24 @@ namespace SixLabors.Fonts;
 internal static partial class TextLayout
 {
     /// <summary>
-    /// Assembles shaped glyphs into <see cref="TextLine"/> instances, applying line-break
-    /// opportunities derived from <see cref="LineBreakEnumerator"/> and the configured
-    /// <see cref="TextOptions.WordBreaking"/> / <see cref="TextOptions.WrappingLength"/> settings.
-    /// Finalizes each line (trimming trailing whitespace and applying bidi reordering) and applies
-    /// justification where requested.
+    /// Composes the logical <see cref="TextLine"/> from shaped glyph data before width-dependent line breaking.
     /// </summary>
+    /// <param name="shapedText">The width-independent shaping state.</param>
     /// <param name="text">The original source text.</param>
     /// <param name="options">The text shaping and layout options.</param>
-    /// <param name="bidiRuns">The resolved bidi runs covering the whole input.</param>
-    /// <param name="bidiMap">The code point to bidi-run mapping built during shaping.</param>
-    /// <param name="positionings">The GPOS positioning collection containing the shaped entries.</param>
-    /// <param name="layoutMode">The active layout mode (drives horizontal vs vertical metrics selection).</param>
-    /// <returns>The shaped, line-broken, finalized text box ready for glyph placement.</returns>
-    private static TextBox BreakLines(
+    /// <returns>The logical text line and line break opportunities before line breaking.</returns>
+    public static LogicalTextLine ComposeLogicalLine(
+        in ShapedText shapedText,
         ReadOnlySpan<char> text,
-        TextOptions options,
-        BidiRun[] bidiRuns,
-        Dictionary<int, int> bidiMap,
-        GlyphPositioningCollection positionings,
-        LayoutMode layoutMode)
+        TextOptions options)
     {
-        bool shouldWrap = options.WrappingLength > 0;
-
-        // Wrapping length is always provided in pixels. Convert to inches for comparison.
-        float wrappingLength = shouldWrap ? options.WrappingLength / options.Dpi : float.MaxValue;
-        bool breakAll = options.WordBreaking == WordBreaking.BreakAll;
-        bool keepAll = options.WordBreaking == WordBreaking.KeepAll;
-        bool breakWord = options.WordBreaking == WordBreaking.BreakWord;
-        bool isHorizontalLayout = layoutMode.IsHorizontal();
-        bool isVerticalLayout = layoutMode.IsVertical();
-        bool isVerticalMixedLayout = layoutMode.IsVerticalMixed();
+        bool isHorizontalLayout = shapedText.LayoutMode.IsHorizontal();
+        bool isVerticalLayout = shapedText.LayoutMode.IsVertical();
+        bool isVerticalMixedLayout = shapedText.LayoutMode.IsVerticalMixed();
 
         int graphemeIndex;
         int codePointIndex = 0;
         int glyphSearchIndex = 0;
-        List<TextLine> textLines = [];
         TextLine textLine = new();
         int stringIndex = 0;
 
@@ -64,7 +46,7 @@ internal static partial class TextLayout
             SpanCodePointEnumerator codePointEnumerator = new(grapheme);
             while (codePointEnumerator.MoveNext())
             {
-                if (!positionings.TryGetGlyphMetricsAtOffset(
+                if (!shapedText.Positionings.TryGetGlyphMetricsAtOffset(
                     codePointIndex,
                     ref glyphSearchIndex,
                     out float pointSize,
@@ -151,7 +133,7 @@ internal static partial class TextLayout
                                   spaceGlyphId,
                                   glyph.TextAttributes,
                                   glyph.TextDecorations,
-                                  layoutMode,
+                                  shapedText.LayoutMode,
                                   options.ColorFontSupport);
 
                             if (isHorizontalLayout || shouldRotate)
@@ -314,7 +296,7 @@ internal static partial class TextLayout
                         ascender,
                         descender,
                         delta,
-                        bidiRuns[bidiMap[codePointIndex]],
+                        shapedText.BidiRuns[shapedText.BidiMap[codePointIndex]],
                         graphemeIndex,
                         isLastInGrapheme,
                         codePointIndex,
@@ -333,10 +315,39 @@ internal static partial class TextLayout
             stringIndex += grapheme.Length;
         }
 
-        // Calculate the break opportunities once. The wrapping loop below may scan them
-        // repeatedly as each finalized line is split off from the remaining text.
+        // Line break candidates are width-independent and belong with the composed logical line.
         List<LineBreak> lineBreaks = CollectLineBreaks(text);
 
+        return new LogicalTextLine(textLine, lineBreaks);
+    }
+
+    /// <summary>
+    /// Applies line-break opportunities to a shaped <see cref="TextLine"/> using the configured
+    /// <see cref="TextOptions.WordBreaking"/> behavior and supplied wrapping length.
+    /// Finalizes each line (trimming trailing whitespace and applying bidi reordering) and applies
+    /// justification where requested.
+    /// </summary>
+    /// <param name="logicalLine">The logical text line and line break opportunities to break.</param>
+    /// <param name="options">The text shaping and layout options.</param>
+    /// <param name="wrappingLength">The wrapping length in pixels.</param>
+    /// <returns>The shaped, line-broken, finalized text box ready for glyph placement.</returns>
+    public static TextBox BreakLines(
+        in LogicalTextLine logicalLine,
+        TextOptions options,
+        float wrappingLength)
+    {
+        bool shouldWrap = wrappingLength > 0;
+
+        // Wrapping length is always provided in pixels. Convert to inches for comparison.
+        float scaledWrappingLength = shouldWrap ? wrappingLength / options.Dpi : float.MaxValue;
+        bool breakAll = options.WordBreaking == WordBreaking.BreakAll;
+        bool keepAll = options.WordBreaking == WordBreaking.KeepAll;
+        bool breakWord = options.WordBreaking == WordBreaking.BreakWord;
+        List<TextLine> textLines = [];
+
+        // Always clone the logical line so we can modify it during breaking without affecting the original.
+        TextLine textLine = new(logicalLine.TextLine);
+        IReadOnlyList<LineBreak> lineBreaks = logicalLine.LineBreaks;
         int processed = 0;
         while (textLine.Count > 0)
         {
@@ -351,7 +362,7 @@ internal static partial class TextLayout
 
                 // Measure the text up to the adjusted break point
                 float advance = textLine.MeasureAt(lineBreak.PositionMeasure - processed);
-                if (advance >= wrappingLength)
+                if (advance >= scaledWrappingLength)
                 {
                     bestBreak ??= lineBreak;
                     break;
@@ -386,7 +397,7 @@ internal static partial class TextLayout
                             textLine = remaining;
                         }
                     }
-                    else if (textLine.TrySplitAt(wrappingLength, out remaining))
+                    else if (textLine.TrySplitAt(scaledWrappingLength, out remaining))
                     {
                         processed += textLine.Count;
                         textLines.Add(textLine.Finalize());
@@ -411,8 +422,8 @@ internal static partial class TextLayout
                         {
                             // A break was found, but we need to check if the line is too long
                             // and break if required.
-                            if (textLine.ScaledLineAdvance > wrappingLength &&
-                                textLine.TrySplitAt(wrappingLength, out TextLine? overflow))
+                            if (textLine.ScaledLineAdvance > scaledWrappingLength &&
+                                textLine.TrySplitAt(scaledWrappingLength, out TextLine? overflow))
                             {
                                 // Reinsert the overflow at the beginning of the remaining line
                                 processed -= overflow.Count;
@@ -436,9 +447,9 @@ internal static partial class TextLayout
                 // text. We can break here and finalize the line.
                 if (breakWord || breakAll)
                 {
-                    while (textLine.ScaledLineAdvance > wrappingLength)
+                    while (textLine.ScaledLineAdvance > scaledWrappingLength)
                     {
-                        if (!textLine.TrySplitAt(wrappingLength, out TextLine? overflow))
+                        if (!textLine.TrySplitAt(scaledWrappingLength, out TextLine? overflow))
                         {
                             break;
                         }

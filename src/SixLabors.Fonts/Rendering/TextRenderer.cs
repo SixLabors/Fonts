@@ -4,7 +4,7 @@
 namespace SixLabors.Fonts.Rendering;
 
 /// <summary>
-/// Encapsulated logic for laying out and then rendering text to a <see cref="IGlyphRenderer"/> surface.
+/// Encapsulates logic for laying out and then rendering text to a <see cref="IGlyphRenderer"/> surface.
 /// </summary>
 public class TextRenderer
 {
@@ -21,7 +21,7 @@ public class TextRenderer
     /// </summary>
     /// <param name="renderer">The target renderer.</param>
     /// <param name="text">The text to render.</param>
-    /// <param name="options">The text options.</param>
+    /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
     public static void RenderTextTo(IGlyphRenderer renderer, ReadOnlySpan<char> text, TextOptions options)
         => new TextRenderer(renderer).RenderText(text, options);
 
@@ -30,35 +30,26 @@ public class TextRenderer
     /// </summary>
     /// <param name="renderer">The target renderer.</param>
     /// <param name="text">The text to render.</param>
-    /// <param name="options">The text option.</param>
+    /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
     public static void RenderTextTo(IGlyphRenderer renderer, string text, TextOptions options)
         => new TextRenderer(renderer).RenderText(text, options);
 
     /// <summary>
-    /// Renders the text to the default renderer.
+    /// Renders the text to the configured renderer.
     /// </summary>
     /// <param name="text">The text to render.</param>
-    /// <param name="options">The text options.</param>
+    /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
     public void RenderText(string text, TextOptions options)
         => this.RenderText(text.AsSpan(), options);
 
     /// <summary>
-    /// Renders the text to the default renderer.
+    /// Renders the text to the configured renderer.
     /// </summary>
     /// <param name="text">The text to render.</param>
-    /// <param name="options">The style.</param>
+    /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
     public void RenderText(ReadOnlySpan<char> text, TextOptions options)
     {
-        IReadOnlyList<GlyphLayout> glyphsToRender = TextLayout.GenerateLayout(text, options);
-        FontRectangle rect = TextMeasurer.GetBounds(glyphsToRender, options.Dpi);
-
-        this.renderer.BeginText(in rect);
-
-        foreach (GlyphLayout g in glyphsToRender)
-        {
-            g.Glyph.RenderTo(this.renderer, g.GraphemeIndex, g.PenLocation, g.Offset, g.LayoutMode, options);
-        }
-
-        this.renderer.EndText();
+        TextBlock block = new(text, options);
+        block.RenderTo(this.renderer, options.WrappingLength);
     }
 }

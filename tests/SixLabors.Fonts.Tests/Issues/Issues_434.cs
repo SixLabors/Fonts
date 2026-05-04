@@ -25,8 +25,8 @@ public class Issues_434
             int lineCount = TextMeasurer.CountLines(text, options);
             Assert.Equal(expectedLineCount, lineCount);
 
-            IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text, options);
-            Assert.Equal(47, layout.Count);
+            TextMetrics metrics = TextMeasurer.Measure(text, options);
+            Assert.Equal(47, metrics.CharacterAdvances.Count);
         }
     }
 
@@ -48,8 +48,8 @@ public class Issues_434
             int lineCount = TextMeasurer.CountLines(text, options);
             Assert.Equal(expectedLineCount, lineCount);
 
-            IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text, options);
-            Assert.Equal(48, layout.Count);
+            TextMetrics metrics = TextMeasurer.Measure(text, options);
+            Assert.Equal(48, metrics.CharacterAdvances.Count);
         }
     }
 }

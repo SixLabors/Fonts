@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using SixLabors.Fonts.Rendering;
+
 namespace SixLabors.Fonts.Tests.Issues;
 
 public class Issues_429
@@ -20,23 +22,22 @@ public class Issues_429
                 LayoutMode = LayoutMode.VerticalMixedRightLeft
             };
 
-            IReadOnlyList<GlyphLayout> glyphs = TextLayout.GenerateLayout(text.AsSpan(), options);
+            GlyphRenderer renderer = new();
+            TextRenderer.RenderTextTo(renderer, text, options);
 
             // Only the Latin glyph + space should be rotated.
             // Any other glyphs that appear rotated have actually been substituted by the font.
             int[] rotatedGlyphs = [20, 21, 22, 23, 24, 25, 26, 27];
 
-            for (int i = 0; i < glyphs.Count; i++)
+            for (int i = 0; i < renderer.GlyphKeys.Count; i++)
             {
-                GlyphLayout glyph = glyphs[i];
-
                 if (rotatedGlyphs.Contains(i))
                 {
-                    Assert.Equal(GlyphLayoutMode.VerticalRotated, glyph.LayoutMode);
+                    Assert.Equal(GlyphLayoutMode.VerticalRotated, renderer.GlyphKeys[i].LayoutMode);
                 }
                 else
                 {
-                    Assert.Equal(GlyphLayoutMode.Vertical, glyph.LayoutMode);
+                    Assert.Equal(GlyphLayoutMode.Vertical, renderer.GlyphKeys[i].LayoutMode);
                 }
             }
         }

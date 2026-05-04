@@ -3,6 +3,7 @@
 
 using System.Globalization;
 using SixLabors.Fonts.Tests.Fakes;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests.Issues;
 
@@ -14,21 +15,20 @@ public class Issues_47
     {
         Font font = CreateFont("\t x");
 
-        GlyphRenderer r = new();
-
-        IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
+        TextMetrics metrics = TextMeasurer.Measure(text, new TextOptions(new Font(font, 30))
         {
             WrappingLength = 350,
             HorizontalAlignment = HorizontalAlignment.Left
         });
 
-        float lineYPos = layout[0].PenLocation.Y;
-        foreach (GlyphLayout glyph in layout)
+        int glyphIndex = 0;
+        for (int lineIndex = 0; lineIndex < metrics.Lines.Count; lineIndex++)
         {
-            if (lineYPos != glyph.PenLocation.Y)
+            int startGlyphIndex = glyphIndex;
+            glyphIndex = AdvanceGlyphIndex(metrics.CharacterAdvances, glyphIndex, metrics.Lines[lineIndex].GraphemeCount);
+            if (lineIndex > 0)
             {
-                Assert.False(glyph.IsWhiteSpace());
-                lineYPos = glyph.PenLocation.Y;
+                Assert.False(CodePoint.IsWhiteSpace(metrics.CharacterAdvances[startGlyphIndex].Codepoint));
             }
         }
     }
@@ -42,23 +42,21 @@ public class Issues_47
     {
         Font font = CreateFont("\t x");
 
-        GlyphRenderer r = new();
-
-        IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
+        TextMetrics metrics = TextMeasurer.Measure(text, new TextOptions(new Font(font, 30))
         {
             WrappingLength = 350,
             HorizontalAlignment = horizontalAlignment
         });
 
-        float lineYPos = layout[0].PenLocation.Y;
-        for (int i = 0; i < layout.Count; i++)
+        int glyphIndex = 0;
+        for (int lineIndex = 0; lineIndex < metrics.Lines.Count; lineIndex++)
         {
-            GlyphLayout glyph = layout[i];
-            if (lineYPos != glyph.PenLocation.Y)
+            int startGlyphIndex = glyphIndex;
+            glyphIndex = AdvanceGlyphIndex(metrics.CharacterAdvances, glyphIndex, metrics.Lines[lineIndex].GraphemeCount);
+            if (lineIndex > 0)
             {
-                Assert.False(glyph.IsWhiteSpace());
-                Assert.False(layout[i - 1].IsWhiteSpace());
-                lineYPos = glyph.PenLocation.Y;
+                Assert.False(CodePoint.IsWhiteSpace(metrics.CharacterAdvances[startGlyphIndex].Codepoint));
+                Assert.False(CodePoint.IsWhiteSpace(metrics.CharacterAdvances[startGlyphIndex - 1].Codepoint));
             }
         }
     }
@@ -69,16 +67,14 @@ public class Issues_47
         Font font = CreateFont("\t x");
         string text = "   hello world hello world hello world";
 
-        GlyphRenderer r = new();
-
-        IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
+        TextMetrics metrics = TextMeasurer.Measure(text, new TextOptions(new Font(font, 30))
         {
             WrappingLength = 350
         });
 
-        Assert.True(layout[0].IsWhiteSpace());
-        Assert.True(layout[1].IsWhiteSpace());
-        Assert.True(layout[2].IsWhiteSpace());
+        Assert.True(CodePoint.IsWhiteSpace(metrics.CharacterAdvances[0].Codepoint));
+        Assert.True(CodePoint.IsWhiteSpace(metrics.CharacterAdvances[1].Codepoint));
+        Assert.True(CodePoint.IsWhiteSpace(metrics.CharacterAdvances[2].Codepoint));
     }
 
     [Fact]
@@ -87,16 +83,38 @@ public class Issues_47
         Font font = CreateFont("\t x");
         string text = "hello world hello world hello world   ";
 
-        GlyphRenderer r = new();
-
-        IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
+        TextMetrics metrics = TextMeasurer.Measure(text, new TextOptions(new Font(font, 30))
         {
             WrappingLength = 350
         });
 
-        Assert.False(layout[layout.Count - 1].IsWhiteSpace());
-        Assert.False(layout[layout.Count - 2].IsWhiteSpace());
-        Assert.False(layout[layout.Count - 3].IsWhiteSpace());
+        Assert.False(CodePoint.IsWhiteSpace(metrics.CharacterAdvances[^1].Codepoint));
+        Assert.False(CodePoint.IsWhiteSpace(metrics.CharacterAdvances[^2].Codepoint));
+        Assert.False(CodePoint.IsWhiteSpace(metrics.CharacterAdvances[^3].Codepoint));
+    }
+
+    private static int AdvanceGlyphIndex(IReadOnlyList<GlyphBounds> glyphs, int glyphIndex, int graphemeCount)
+    {
+        int consumed = 0;
+        int lastGraphemeIndex = -1;
+        while (glyphIndex < glyphs.Count && consumed < graphemeCount)
+        {
+            int graphemeIndex = glyphs[glyphIndex].GraphemeIndex;
+            if (graphemeIndex != lastGraphemeIndex)
+            {
+                consumed++;
+                lastGraphemeIndex = graphemeIndex;
+            }
+
+            glyphIndex++;
+        }
+
+        while (glyphIndex < glyphs.Count && glyphs[glyphIndex].GraphemeIndex == lastGraphemeIndex)
+        {
+            glyphIndex++;
+        }
+
+        return glyphIndex;
     }
 
     public static Font CreateFont(string text)

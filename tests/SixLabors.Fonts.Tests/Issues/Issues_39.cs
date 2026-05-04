@@ -20,7 +20,7 @@ public class Issues_39
 
     public static Font CreateFont(string text)
     {
-        IFontMetricsCollection fc = (IFontMetricsCollection)new FontCollection();
+        IFontMetricsCollection fc = new FontCollection();
         Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
         return new Font(d, 1F);
     }

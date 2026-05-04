@@ -4,12 +4,12 @@
 namespace SixLabors.Fonts;
 
 /// <content>
-/// Visitor types for streaming laid-out glyphs through <see cref="LayoutText{TVisitor}"/>.
+/// Visitor types for streaming laid-out glyphs through the layout pipeline.
 /// </content>
 internal static partial class TextLayout
 {
     /// <summary>
-    /// Receives laid-out glyphs streamed from <see cref="LayoutText{TVisitor}(TextBox, TextOptions, ref TVisitor)"/>.
+    /// Receives laid-out glyphs streamed from the layout pipeline.
     /// Implementations are value types so the generic dispatch is specialized by the JIT and no boxing or
     /// delegate allocation is required.
     /// </summary>

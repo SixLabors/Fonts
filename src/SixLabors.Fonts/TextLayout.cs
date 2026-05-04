@@ -10,32 +10,10 @@ using SixLabors.Fonts.Unicode;
 namespace SixLabors.Fonts;
 
 /// <summary>
-/// Encapsulated logic or laying out text.
+/// Encapsulates logic for laying out text.
 /// </summary>
 internal static partial class TextLayout
 {
-    /// <summary>
-    /// Shapes the supplied text and returns every laid-out glyph in layout order.
-    /// </summary>
-    /// <remarks>
-    /// Equivalent to <see cref="ProcessText"/> followed by <see cref="LayoutText(TextBox, TextOptions)"/>.
-    /// Prefer <see cref="GetBounds(TextBox, TextOptions)"/> for callers that only need aggregate ink bounds,
-    /// or the streaming <see cref="LayoutText{TVisitor}"/> overload to avoid materializing the glyph list.
-    /// </remarks>
-    /// <param name="text">The text to lay out.</param>
-    /// <param name="options">The text shaping and layout options.</param>
-    /// <returns>The laid-out glyphs in layout order, or an empty list when <paramref name="text"/> is empty.</returns>
-    public static IReadOnlyList<GlyphLayout> GenerateLayout(ReadOnlySpan<char> text, TextOptions options)
-    {
-        if (text.IsEmpty)
-        {
-            return Array.Empty<GlyphLayout>();
-        }
-
-        TextBox textBox = ProcessText(text, options);
-        return LayoutText(textBox, options);
-    }
-
     /// <summary>
     /// Resolves the ordered sequence of <see cref="TextRun"/> instances that cover <paramref name="text"/>.
     /// </summary>
@@ -45,10 +23,17 @@ internal static partial class TextLayout
     /// supplied runs are ordered, gaps are filled with default-font runs, and overlapping ranges are trimmed.
     /// </remarks>
     /// <param name="text">The text to partition into runs.</param>
-    /// <param name="options">The text shaping options supplying the default font and optional user-defined runs.</param>
+    /// <param name="options">The text options supplying the default font and optional user-defined runs.</param>
     /// <returns>The resolved runs that together cover the entire grapheme range of <paramref name="text"/>.</returns>
     public static IReadOnlyList<TextRun> BuildTextRuns(ReadOnlySpan<char> text, TextOptions options)
     {
+        int start = 0;
+        int end = text.GetGraphemeCount();
+        if (end == 0)
+        {
+            return [];
+        }
+
         if (options.TextRuns is null || options.TextRuns.Count == 0)
         {
             return new TextRun[]
@@ -62,8 +47,6 @@ internal static partial class TextLayout
             };
         }
 
-        int start = 0;
-        int end = text.GetGraphemeCount();
         List<TextRun> textRuns = [];
         foreach (TextRun textRun in options.TextRuns.OrderBy(x => x.Start))
         {
@@ -108,18 +91,17 @@ internal static partial class TextLayout
     }
 
     /// <summary>
-    /// Shapes and line-breaks <paramref name="text"/> into a <see cref="TextBox"/> ready for layout.
+    /// Shapes <paramref name="text"/> into shaping state that is independent of the wrapping length.
     /// </summary>
     /// <remarks>
     /// Performs the font-run build, bidi analysis, GSUB/GPOS shaping (including fallback font
-    /// resolution for unmapped codepoints), and line breaking. The result is a sequence of
-    /// <see cref="TextLine"/> entries with resolved glyph metrics but no pen positioning — positioning
-    /// is applied later by <see cref="LayoutText{TVisitor}"/>.
+    /// resolution for unmapped codepoints). The result contains the positioned glyph collection
+    /// and bidi state used by logical line composition.
     /// </remarks>
     /// <param name="text">The text to process.</param>
-    /// <param name="options">The text shaping options.</param>
-    /// <returns>The shaped, line-broken text ready for glyph positioning.</returns>
-    internal static TextBox ProcessText(ReadOnlySpan<char> text, TextOptions options)
+    /// <param name="options">The text options used while shaping.</param>
+    /// <returns>The wrapping-independent shaping state.</returns>
+    public static ShapedText ShapeText(ReadOnlySpan<char> text, TextOptions options)
     {
         // Gather the font and fallbacks.
         Font[] fallbackFonts = (options.FallbackFontFamilies?.Count > 0)
@@ -228,52 +210,60 @@ internal static partial class TextLayout
             font.FontMetrics.UpdatePositions(positionings);
         }
 
-        return BreakLines(text, options, bidiRuns, bidiMap, positionings, layoutMode);
+        return new ShapedText(positionings, bidiRuns, bidiMap, layoutMode);
     }
 
     /// <summary>
     /// Lays out the supplied <see cref="TextBox"/> and materializes every glyph into a
-    /// <see cref="List{T}"/>.
+    /// <see cref="List{T}"/> using the supplied wrapping length for alignment.
     /// </summary>
-    /// <remarks>
-    /// Prefer the streaming overload <see cref="LayoutText{TVisitor}"/> when the caller only needs
-    /// aggregated state (for example ink bounds), to avoid allocating the list.
-    /// </remarks>
     /// <param name="textBox">The shaped and line-broken text.</param>
-    /// <param name="options">The text shaping options used to shape <paramref name="textBox"/>.</param>
+    /// <param name="options">The text options used to lay out <paramref name="textBox"/>.</param>
+    /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
     /// <returns>The laid-out glyphs in layout order.</returns>
-    internal static List<GlyphLayout> LayoutText(TextBox textBox, TextOptions options)
+    public static List<GlyphLayout> LayoutText(TextBox textBox, TextOptions options, float wrappingLength)
     {
+        if (textBox.TextLines.Count == 0)
+        {
+            return [];
+        }
+
         GlyphLayoutCollector visitor = new([]);
-        LayoutText(textBox, options, ref visitor);
+        LayoutText(textBox, options, wrappingLength, ref visitor);
         return visitor.Glyphs;
     }
 
     /// <summary>
     /// Lays out the supplied <see cref="TextBox"/> and returns the union of the ink bounds of
-    /// every emitted glyph in a single streaming pass.
+    /// every emitted glyph in a single streaming pass using the supplied wrapping length for alignment.
     /// </summary>
     /// <remarks>
-    /// Equivalent to iterating <see cref="LayoutText(TextBox, TextOptions)"/> and unioning each
+    /// Equivalent to iterating <see cref="LayoutText(TextBox, TextOptions, float)"/> and unioning each
     /// glyph's <see cref="GlyphLayout.BoundingBox"/>, but avoids materializing the glyph list and
     /// the second iteration pass.
     /// </remarks>
     /// <param name="textBox">The shaped and line-broken text.</param>
-    /// <param name="options">The text shaping options used to shape <paramref name="textBox"/>.</param>
+    /// <param name="options">The text options used to lay out <paramref name="textBox"/>.</param>
+    /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
     /// <returns>
     /// The union of the ink bounds of every laid-out glyph, or <see cref="FontRectangle.Empty"/>
     /// if no glyphs were emitted.
     /// </returns>
-    internal static FontRectangle GetBounds(TextBox textBox, TextOptions options)
+    public static FontRectangle GetBounds(TextBox textBox, TextOptions options, float wrappingLength)
     {
+        if (textBox.TextLines.Count == 0)
+        {
+            return FontRectangle.Empty;
+        }
+
         GlyphBoundsAccumulator visitor = new(options.Dpi);
-        LayoutText(textBox, options, ref visitor);
+        LayoutText(textBox, options, wrappingLength, ref visitor);
         return visitor.Result();
     }
 
     /// <summary>
     /// Lays out the supplied <see cref="TextBox"/>, streaming each laid-out glyph through the
-    /// supplied <paramref name="visitor"/> in layout order.
+    /// supplied <paramref name="visitor"/> in layout order using the supplied wrapping length for alignment.
     /// </summary>
     /// <remarks>
     /// The visitor type is constrained to a struct implementing <see cref="IGlyphLayoutVisitor"/>
@@ -281,9 +271,14 @@ internal static partial class TextLayout
     /// </remarks>
     /// <typeparam name="TVisitor">The concrete visitor struct type.</typeparam>
     /// <param name="textBox">The shaped and line-broken text.</param>
-    /// <param name="options">The text shaping options used to shape <paramref name="textBox"/>.</param>
-    /// <param name="visitor">The visitor that receives each laid-out glyph.</param>
-    internal static void LayoutText<TVisitor>(TextBox textBox, TextOptions options, ref TVisitor visitor)
+    /// <param name="options">The text options used to lay out <paramref name="textBox"/>.</param>
+    /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
+    /// <param name="visitor">The visitor that receives each positioned glyph.</param>
+    private static void LayoutText<TVisitor>(
+        TextBox textBox,
+        TextOptions options,
+        float wrappingLength,
+        ref TVisitor visitor)
         where TVisitor : struct, IGlyphLayoutVisitor
     {
         LayoutMode layoutMode = options.LayoutMode;
@@ -291,12 +286,12 @@ internal static partial class TextLayout
         Vector2 boxLocation = options.Origin / options.Dpi;
         Vector2 penLocation = boxLocation;
 
-        // If a wrapping length is specified that should be used to determine the
-        // box size to align text within.
+        // When wrapping is enabled, the wrapping length defines the minimum line-box
+        // extent used by alignment.
         float maxScaledAdvance = textBox.ScaledMaxAdvance();
-        if (options.TextAlignment != TextAlignment.Start && options.WrappingLength > 0)
+        if (options.TextAlignment != TextAlignment.Start && wrappingLength > 0)
         {
-            maxScaledAdvance = Math.Max(options.WrappingLength / options.Dpi, maxScaledAdvance);
+            maxScaledAdvance = Math.Max(wrappingLength / options.Dpi, maxScaledAdvance);
         }
 
         TextDirection direction = textBox.TextDirection();
@@ -412,7 +407,7 @@ internal static partial class TextLayout
     /// <param name="textLine">The line being laid out.</param>
     /// <param name="direction">The resolved text direction for this line.</param>
     /// <param name="maxScaledAdvance">The widest scaled line advance in the block (or wrapping length).</param>
-    /// <param name="options">The text shaping and layout options.</param>
+    /// <param name="options">The text options used to position the line.</param>
     /// <param name="index">The zero-based visual index of this line within the block.</param>
     /// <param name="boxLocation">The running top-left position of the glyph boxes; advanced by this method.</param>
     /// <param name="penLocation">The running pen position used for glyph placement; advanced by this method.</param>
@@ -590,7 +585,7 @@ internal static partial class TextLayout
     /// <param name="textLine">The line being laid out.</param>
     /// <param name="direction">The resolved text direction for this line.</param>
     /// <param name="maxScaledAdvance">The longest scaled line advance in the block (or wrapping length).</param>
-    /// <param name="options">The text shaping and layout options.</param>
+    /// <param name="options">The text options used to position the line.</param>
     /// <param name="index">The zero-based visual index of this line within the block.</param>
     /// <param name="boxLocation">The running top-left position of the glyph boxes; advanced by this method.</param>
     /// <param name="penLocation">The running pen position used for glyph placement; advanced by this method.</param>
@@ -902,7 +897,7 @@ internal static partial class TextLayout
     /// <param name="textLine">The line being laid out.</param>
     /// <param name="direction">The resolved text direction for this line.</param>
     /// <param name="maxScaledAdvance">The longest scaled line advance in the block (or wrapping length).</param>
-    /// <param name="options">The text shaping and layout options.</param>
+    /// <param name="options">The text options used to position the line.</param>
     /// <param name="index">The zero-based visual index of this line within the block.</param>
     /// <param name="boxLocation">The running top-left position of the glyph boxes; advanced by this method.</param>
     /// <param name="penLocation">The running pen position used for glyph placement; advanced by this method.</param>
@@ -1411,8 +1406,7 @@ internal static partial class TextLayout
     }
 
     /// <summary>
-    /// A shaped and line-broken block of text produced by <see cref="ProcessText"/> and consumed
-    /// by <see cref="LayoutText{TVisitor}"/>.
+    /// Represents a shaped and line-broken block of text.
     /// </summary>
     internal sealed class TextBox
     {
@@ -1479,9 +1473,50 @@ internal static partial class TextLayout
         public TextLine(int capacity) => this.data = new(capacity);
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="TextLine"/> class by copying another line.
+        /// </summary>
+        /// <param name="source">The line to copy.</param>
+        public TextLine(TextLine source)
+        {
+            this.data = [.. source.data];
+            this.SkipJustification = source.SkipJustification;
+            this.ScaledLineAdvance = source.ScaledLineAdvance;
+            this.ScaledMaxLineHeight = source.ScaledMaxLineHeight;
+            this.ScaledMaxAscender = source.ScaledMaxAscender;
+            this.ScaledMaxDescender = source.ScaledMaxDescender;
+            this.ScaledMaxDelta = source.ScaledMaxDelta;
+            this.ScaledMinY = source.ScaledMinY;
+        }
+
+        /// <summary>
         /// Gets the number of <see cref="GlyphLayoutData"/> entries in this line.
         /// </summary>
         public int Count => this.data.Count;
+
+        /// <summary>
+        /// Gets the number of graphemes in this line.
+        /// </summary>
+        public int GraphemeCount
+        {
+            get
+            {
+                int count = 0;
+                int lastGraphemeIndex = -1;
+                for (int i = 0; i < this.data.Count; i++)
+                {
+                    int graphemeIndex = this.data[i].GraphemeIndex;
+                    if (graphemeIndex == lastGraphemeIndex)
+                    {
+                        continue;
+                    }
+
+                    count++;
+                    lastGraphemeIndex = graphemeIndex;
+                }
+
+                return count;
+            }
+        }
 
         /// <summary>
         /// Gets a value indicating whether this line should be skipped during text justification.
@@ -1867,7 +1902,7 @@ internal static partial class TextLayout
         /// disabled, when no justification style is selected, or when the line is already at or
         /// beyond the wrapping length.
         /// </remarks>
-        /// <param name="options">The text shaping options supplying the wrapping length and justification style.</param>
+        /// <param name="options">The text options supplying the wrapping length and justification style.</param>
         public void Justify(TextOptions options)
         {
             if (options.WrappingLength == -1F || options.TextJustification == TextJustification.None)
