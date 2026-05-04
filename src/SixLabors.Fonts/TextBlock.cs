@@ -277,6 +277,7 @@ public sealed partial class TextBlock
         TextDirection direction = textBox.TextDirection();
         LayoutMode layoutMode = options.LayoutMode;
         bool isHorizontalLayout = layoutMode.IsHorizontal();
+        int glyphIndex = 0;
 
         for (int i = 0; i < textBox.TextLines.Count; i++)
         {
@@ -319,12 +320,16 @@ public sealed partial class TextBlock
             float descender = baseline + line.ScaledMaxDescender + delta;
 
             // Bidi reordering mutates entries into visual order, so the source
-            // start is the minimum original string index rather than line[0].
+            // start is the minimum original source index rather than line[0].
             int stringIndex = line[0].StringIndex;
+            int graphemeIndex = line[0].GraphemeIndex;
             for (int j = 1; j < line.Count; j++)
             {
                 stringIndex = Math.Min(stringIndex, line[j].StringIndex);
+                graphemeIndex = Math.Min(graphemeIndex, line[j].GraphemeIndex);
             }
+
+            int glyphCount = CountGlyphLayouts(line);
 
             metrics[i] = new LineMetrics(
                 ascender * options.Dpi,
@@ -334,7 +339,12 @@ public sealed partial class TextBlock
                 offset * options.Dpi,
                 line.ScaledLineAdvance * options.Dpi,
                 stringIndex,
-                line.GraphemeCount);
+                graphemeIndex,
+                line.GraphemeCount,
+                glyphIndex,
+                glyphCount);
+
+            glyphIndex += glyphCount;
         }
 
         return metrics;
@@ -350,12 +360,24 @@ public sealed partial class TextBlock
         int count = 0;
         for (int i = 0; i < textBox.TextLines.Count; i++)
         {
-            TextLayout.TextLine line = textBox.TextLines[i];
-            for (int j = 0; j < line.Count; j++)
-            {
-                TextLayout.TextLine.GlyphLayoutData data = line[j];
-                count += data.IsNewLine ? 1 : data.Metrics.Count;
-            }
+            count += CountGlyphLayouts(textBox.TextLines[i]);
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// Counts the laid-out glyph entries emitted from a line.
+    /// </summary>
+    /// <param name="line">The line to inspect.</param>
+    /// <returns>The number of glyph entries that layout will emit.</returns>
+    private static int CountGlyphLayouts(TextLayout.TextLine line)
+    {
+        int count = 0;
+        for (int i = 0; i < line.Count; i++)
+        {
+            TextLayout.TextLine.GlyphLayoutData data = line[i];
+            count += data.IsNewLine ? 1 : data.Metrics.Count;
         }
 
         return count;

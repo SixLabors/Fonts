@@ -25,7 +25,10 @@ public readonly struct LineMetrics
     /// <param name="start">Line start position in the primary layout flow direction after alignment.</param>
     /// <param name="extent">Line extent in the primary layout flow direction.</param>
     /// <param name="stringIndex">The UTF-16 index in the original text where this line begins.</param>
+    /// <param name="graphemeIndex">The grapheme index in the original text where this line begins.</param>
     /// <param name="graphemeCount">The number of graphemes in the line.</param>
+    /// <param name="glyphIndex">The index of the first glyph entry in the measured character collections.</param>
+    /// <param name="glyphCount">The number of glyph entries in the measured character collections for this line.</param>
     public LineMetrics(
         float ascender,
         float baseline,
@@ -34,7 +37,10 @@ public readonly struct LineMetrics
         float start,
         float extent,
         int stringIndex,
-        int graphemeCount)
+        int graphemeIndex,
+        int graphemeCount,
+        int glyphIndex,
+        int glyphCount)
     {
         this.Ascender = ascender;
         this.Baseline = baseline;
@@ -43,7 +49,10 @@ public readonly struct LineMetrics
         this.Start = start;
         this.Extent = extent;
         this.StringIndex = stringIndex;
+        this.GraphemeIndex = graphemeIndex;
         this.GraphemeCount = graphemeCount;
+        this.GlyphIndex = glyphIndex;
+        this.GlyphCount = glyphCount;
     }
 
     /// <summary>
@@ -93,7 +102,22 @@ public readonly struct LineMetrics
     public int StringIndex { get; }
 
     /// <summary>
+    /// Gets the grapheme index in the original text where this line begins.
+    /// </summary>
+    public int GraphemeIndex { get; }
+
+    /// <summary>
     /// Gets the number of graphemes in the line.
     /// </summary>
     public int GraphemeCount { get; }
+
+    /// <summary>
+    /// Gets the index of the first glyph entry in the measured character collections.
+    /// </summary>
+    public int GlyphIndex { get; }
+
+    /// <summary>
+    /// Gets the number of glyph entries in the measured character collections for this line.
+    /// </summary>
+    public int GlyphCount { get; }
 }

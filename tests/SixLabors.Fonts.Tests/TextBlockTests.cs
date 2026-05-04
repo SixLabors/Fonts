@@ -69,17 +69,23 @@ public class TextBlockTests
     }
 
     [Fact]
-    public void GetLineMetrics_IncludesLineStringIndex()
+    public void GetLineMetrics_IncludesSourceAndGlyphMapping()
     {
         const string firstLine = "Hello world\n";
         const string text = firstLine + "Second line";
         TextBlock block = new(text, Options(-1));
 
-        LineMetrics[] metrics = block.GetLineMetrics(-1);
+        TextMetrics textMetrics = block.Measure(-1);
+        IReadOnlyList<LineMetrics> metrics = textMetrics.Lines;
 
-        Assert.Equal(2, metrics.Length);
+        Assert.Equal(2, metrics.Count);
         Assert.Equal(0, metrics[0].StringIndex);
         Assert.Equal(firstLine.Length, metrics[1].StringIndex);
+        Assert.Equal(0, metrics[0].GraphemeIndex);
+        Assert.Equal(metrics[0].GraphemeCount, metrics[1].GraphemeIndex);
+        Assert.Equal(0, metrics[0].GlyphIndex);
+        Assert.Equal(metrics[0].GlyphCount, metrics[1].GlyphIndex);
+        Assert.Equal(textMetrics.CharacterBounds.Count, metrics[0].GlyphCount + metrics[1].GlyphCount);
     }
 
     [Fact]
@@ -197,7 +203,10 @@ public class TextBlockTests
             Assert.Equal(expected[i].Start, actual[i].Start, Comparer);
             Assert.Equal(expected[i].Extent, actual[i].Extent, Comparer);
             Assert.Equal(expected[i].StringIndex, actual[i].StringIndex);
+            Assert.Equal(expected[i].GraphemeIndex, actual[i].GraphemeIndex);
             Assert.Equal(expected[i].GraphemeCount, actual[i].GraphemeCount);
+            Assert.Equal(expected[i].GlyphIndex, actual[i].GlyphIndex);
+            Assert.Equal(expected[i].GlyphCount, actual[i].GlyphCount);
         }
     }
 }

@@ -174,6 +174,11 @@ public class TextMetricsTests
             Assert.Equal(e.LineHeight, a.LineHeight, Comparer);
             Assert.Equal(e.Start, a.Start, Comparer);
             Assert.Equal(e.Extent, a.Extent, Comparer);
+            Assert.Equal(e.StringIndex, a.StringIndex);
+            Assert.Equal(e.GraphemeIndex, a.GraphemeIndex);
+            Assert.Equal(e.GraphemeCount, a.GraphemeCount);
+            Assert.Equal(e.GlyphIndex, a.GlyphIndex);
+            Assert.Equal(e.GlyphCount, a.GlyphCount);
         }
     }
 
