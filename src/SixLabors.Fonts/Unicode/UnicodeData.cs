@@ -12,6 +12,7 @@ internal static class UnicodeData
     private static readonly Lazy<UnicodeTrie> LazyBidiTrie = new(() => GetBidiTrie(), true);
     private static readonly Lazy<UnicodeTrie> LazyBidiMirrorTrie = new(() => GetBidiMirrorTrie(), true);
     private static readonly Lazy<UnicodeTrie> LazyEastAsianWidthTrie = new(() => GetEastAsianWidthTrie(), true);
+    private static readonly Lazy<UnicodeTrie> LazyEmojiTrie = new(() => GetEmojiTrie(), true);
     private static readonly Lazy<UnicodeTrie> LazyGraphemeTrie = new(() => GetGraphemeTrie(), true);
     private static readonly Lazy<UnicodeTrie> LazyLineBreakTrie = new(() => GetLineBreakTrie(), true);
     private static readonly Lazy<UnicodeTrie> LazyScriptTrie = new(() => GetScriptTrie(), true);
@@ -32,6 +33,9 @@ internal static class UnicodeData
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static EastAsianWidthClass GetEastAsianWidthClass(uint codePoint) => (EastAsianWidthClass)LazyEastAsianWidthTrie.Value.Get(codePoint);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static EmojiProperties GetEmojiProperties(uint codePoint) => (EmojiProperties)LazyEmojiTrie.Value.Get(codePoint);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static GraphemeClusterClass GetGraphemeClusterClass(uint codePoint) => (GraphemeClusterClass)LazyGraphemeTrie.Value.Get(codePoint);
@@ -71,6 +75,8 @@ internal static class UnicodeData
     private static UnicodeTrie GetBidiMirrorTrie() => new(BidiMirrorTrie.Data);
 
     private static UnicodeTrie GetEastAsianWidthTrie() => new(EastAsianWidthTrie.Data);
+
+    private static UnicodeTrie GetEmojiTrie() => new(EmojiTrie.Data);
 
     private static UnicodeTrie GetGraphemeTrie() => new(GraphemeTrie.Data);
 

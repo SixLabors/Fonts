@@ -33,7 +33,7 @@ internal sealed class UnicodeTrie
 
         int length = header.DataLength;
         uint[] data = new uint[length / sizeof(uint)];
-        rawData.Slice(rawData.Length - length).CopyTo(MemoryMarshal.AsBytes(data.AsSpan()));
+        rawData[^length..].CopyTo(MemoryMarshal.AsBytes(data.AsSpan()));
 
         if (!BitConverter.IsLittleEndian)
         {
@@ -55,7 +55,7 @@ internal sealed class UnicodeTrie
     public UnicodeTrie(Stream stream)
     {
         // Read the header info
-        using (var br = new BinaryReader(stream, Encoding.UTF8, true))
+        using (BinaryReader br = new(stream, Encoding.UTF8, true))
         {
             this.highStart = br.ReadInt32();
             this.errorValue = br.ReadUInt32();
@@ -63,7 +63,7 @@ internal sealed class UnicodeTrie
         }
 
         // Read the data in compressed format.
-        using (var br = new BinaryReader(stream, Encoding.UTF8, true))
+        using (BinaryReader br = new(stream, Encoding.UTF8, true))
         {
             for (int i = 0; i < this.data.Length; i++)
             {
@@ -146,7 +146,7 @@ internal sealed class UnicodeTrie
     public void Save(Stream stream)
     {
         // Write the header info
-        using (var bw = new BinaryWriter(stream, Encoding.UTF8, true))
+        using (BinaryWriter bw = new(stream, Encoding.UTF8, true))
         {
             bw.Write(this.highStart);
             bw.Write(this.errorValue);
@@ -154,7 +154,7 @@ internal sealed class UnicodeTrie
         }
 
         // Write the data.
-        using (var bw = new BinaryWriter(stream, Encoding.UTF8, true))
+        using (BinaryWriter bw = new(stream, Encoding.UTF8, true))
         {
             for (int i = 0; i < this.data.Length; i++)
             {

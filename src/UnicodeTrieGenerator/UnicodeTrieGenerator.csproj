@@ -25,6 +25,7 @@
     <Compile Include="..\SixLabors.Fonts\Unicode\BidiCharacterType.cs" Link="BidiCharacterType.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\BidiPairedBracketType.cs" Link="BidiPairedBracketType.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\EastAsianWidthClass.cs" Link="EastAsianWidthClass.cs" />
+    <Compile Include="..\SixLabors.Fonts\Unicode\EmojiProperties.cs" Link="EmojiProperties.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\GraphemeClusterClass.cs" Link="GraphemeClusterClass.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\IndicConjunctBreakClass.cs" Link="IndicConjunctBreakClass.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\ArabicJoiningGroup.cs" Link="ArabicJoiningGroup.cs" />

@@ -1150,7 +1150,8 @@ internal static partial class TextLayout
         SpanGraphemeEnumerator graphemeEnumerator = new(text);
         while (graphemeEnumerator.MoveNext())
         {
-            int graphemeMax = graphemeEnumerator.Current.Length - 1;
+            ReadOnlySpan<char> grapheme = graphemeEnumerator.Current.Span;
+            int graphemeMax = grapheme.Length - 1;
             int graphemeCodePointIndex = 0;
             int charIndex = 0;
 
@@ -1161,7 +1162,7 @@ internal static partial class TextLayout
 
             // Now enumerate through each codepoint in the grapheme.
             bool skipNextCodePoint = false;
-            SpanCodePointEnumerator codePointEnumerator = new(graphemeEnumerator.Current);
+            SpanCodePointEnumerator codePointEnumerator = new(grapheme);
             while (codePointEnumerator.MoveNext())
             {
                 if (codePointIndex == bidiRuns[bidiRunIndex].End)
@@ -1182,7 +1183,7 @@ internal static partial class TextLayout
                 CodePoint current = codePointEnumerator.Current;
                 charIndex += current.Utf16SequenceLength;
                 CodePoint? next = graphemeCodePointIndex < graphemeMax
-                    ? CodePoint.DecodeFromUtf16At(graphemeEnumerator.Current, charIndex, out charsConsumed)
+                    ? CodePoint.DecodeFromUtf16At(grapheme, charIndex, out charsConsumed)
                     : null;
 
                 charIndex += charsConsumed;

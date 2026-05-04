@@ -59,7 +59,7 @@ public class TextRun
                 start = chars;
             }
 
-            SpanCodePointEnumerator codePointEnumerator = new(graphemeEnumerator.Current);
+            SpanCodePointEnumerator codePointEnumerator = new(graphemeEnumerator.Current.Span);
             while (codePointEnumerator.MoveNext())
             {
                 chars += codePointEnumerator.Current.Utf16SequenceLength;
