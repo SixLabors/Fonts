@@ -4,16 +4,16 @@
 namespace SixLabors.Fonts.Unicode;
 
 /// <summary>
-/// Contains extensions methods for memory types.
+/// Contains extension methods for memory types.
 /// </summary>
 public static class MemoryExtensions
 {
     /// <summary>
     /// Returns an enumeration of <see cref="CodePoint"/> from the provided span.
     /// </summary>
-    /// <param name="span">The readonly span of char elements representing the text to enumerate.</param>
+    /// <param name="span">The read-only span of char elements representing the text to enumerate.</param>
     /// <remarks>
-    /// Invalid sequences will be represented in the enumeration by <see cref="CodePoint.ReplacementChar"/>.
+    /// Invalid UTF-16 sequences will be represented in the enumeration by <see cref="CodePoint.ReplacementChar"/>.
     /// </remarks>
     /// <returns>The <see cref="SpanCodePointEnumerator"/>.</returns>
     public static SpanCodePointEnumerator EnumerateCodePoints(this ReadOnlySpan<char> span)
@@ -24,7 +24,7 @@ public static class MemoryExtensions
     /// </summary>
     /// <param name="span">The span of char elements representing the text to enumerate.</param>
     /// <remarks>
-    /// Invalid sequences will be represented in the enumeration by <see cref="CodePoint.ReplacementChar"/>.
+    /// Invalid UTF-16 sequences will be represented in the enumeration by <see cref="CodePoint.ReplacementChar"/>.
     /// </remarks>
     /// <returns>The <see cref="SpanCodePointEnumerator"/>.</returns>
     public static SpanCodePointEnumerator EnumerateCodePoints(this Span<char> span)
@@ -34,27 +34,27 @@ public static class MemoryExtensions
     /// Returns the number of code points in the provided text.
     /// </summary>
     /// <param name="text">The text to enumerate.</param>
-    /// <returns>The <see cref="int"/> count.</returns>
+    /// <returns>The number of code points.</returns>
     public static int GetCodePointCount(this string text) => text.AsSpan().GetCodePointCount();
 
     /// <summary>
     /// Returns the number of code points in the provided span.
     /// </summary>
-    /// <param name="span">The readonly span of char elements representing the text to enumerate.</param>
-    /// <returns>The <see cref="int"/> count.</returns>
+    /// <param name="span">The read-only span of char elements representing the text to enumerate.</param>
+    /// <returns>The number of code points.</returns>
     public static int GetCodePointCount(this ReadOnlySpan<char> span) => CodePoint.GetCodePointCount(span);
 
     /// <summary>
     /// Returns the number of code points in the provided span.
     /// </summary>
     /// <param name="span">The span of char elements representing the text to enumerate.</param>
-    /// <returns>The <see cref="int"/> count.</returns>
+    /// <returns>The number of code points.</returns>
     public static int GetCodePointCount(this Span<char> span) => CodePoint.GetCodePointCount(span);
 
     /// <summary>
-    /// Returns an enumeration of Grapheme instances from the provided span.
+    /// Returns an enumeration of grapheme clusters from the provided span.
     /// </summary>
-    /// <param name="span">The readonly span of char elements representing the text to enumerate.</param>
+    /// <param name="span">The read-only span of char elements representing the text to enumerate.</param>
     /// <remarks>
     /// Invalid UTF-16 sequences are treated as <see cref="CodePoint.ReplacementChar"/> while determining grapheme boundaries.
     /// </remarks>
@@ -63,19 +63,22 @@ public static class MemoryExtensions
         => new(span);
 
     /// <summary>
-    /// Returns an enumeration of Grapheme instances from the provided span.
+    /// Returns an enumeration of grapheme clusters from the provided span with terminal-width metadata.
     /// </summary>
-    /// <param name="span">The readonly span of char elements representing the text to enumerate.</param>
-    /// <param name="terminalWidthOptions">The terminal width options to apply while enumerating.</param>
+    /// <param name="span">The read-only span of char elements representing the text to enumerate.</param>
+    /// <param name="terminalWidthOptions">
+    /// The terminal width options used to resolve <see cref="GraphemeCluster.TerminalCellWidth"/>.
+    /// </param>
     /// <remarks>
     /// Invalid UTF-16 sequences are treated as <see cref="CodePoint.ReplacementChar"/> while determining grapheme boundaries.
+    /// Terminal width options affect only the width metadata on each returned cluster; they do not affect grapheme segmentation.
     /// </remarks>
     /// <returns>The <see cref="SpanGraphemeEnumerator"/>.</returns>
     public static SpanGraphemeEnumerator EnumerateGraphemes(this ReadOnlySpan<char> span, TerminalWidthOptions terminalWidthOptions)
         => new(span, terminalWidthOptions);
 
     /// <summary>
-    /// Returns an enumeration of Grapheme instances from the provided span.
+    /// Returns an enumeration of grapheme clusters from the provided span.
     /// </summary>
     /// <param name="span">The span of char elements representing the text to enumerate.</param>
     /// <remarks>
@@ -86,12 +89,15 @@ public static class MemoryExtensions
         => new(span);
 
     /// <summary>
-    /// Returns an enumeration of Grapheme instances from the provided span.
+    /// Returns an enumeration of grapheme clusters from the provided span with terminal-width metadata.
     /// </summary>
     /// <param name="span">The span of char elements representing the text to enumerate.</param>
-    /// <param name="terminalWidthOptions">The terminal width options to apply while enumerating.</param>
+    /// <param name="terminalWidthOptions">
+    /// The terminal width options used to resolve <see cref="GraphemeCluster.TerminalCellWidth"/>.
+    /// </param>
     /// <remarks>
     /// Invalid UTF-16 sequences are treated as <see cref="CodePoint.ReplacementChar"/> while determining grapheme boundaries.
+    /// Terminal width options affect only the width metadata on each returned cluster; they do not affect grapheme segmentation.
     /// </remarks>
     /// <returns>The <see cref="SpanGraphemeEnumerator"/>.</returns>
     public static SpanGraphemeEnumerator EnumerateGraphemes(this Span<char> span, TerminalWidthOptions terminalWidthOptions)
@@ -122,7 +128,7 @@ public static class MemoryExtensions
     /// <summary>
     /// Returns the terminal cell width of the provided span.
     /// </summary>
-    /// <param name="span">The readonly span of char elements representing the text to measure.</param>
+    /// <param name="span">The read-only span of char elements representing the text to measure.</param>
     /// <returns>
     /// The terminal cell width, or <c>-1</c> when the configured control-character policy treats
     /// any grapheme cluster in the text as non-printable.
@@ -133,7 +139,7 @@ public static class MemoryExtensions
     /// <summary>
     /// Returns the terminal cell width of the provided span.
     /// </summary>
-    /// <param name="span">The readonly span of char elements representing the text to measure.</param>
+    /// <param name="span">The read-only span of char elements representing the text to measure.</param>
     /// <param name="terminalWidthOptions">The terminal width options to apply while measuring.</param>
     /// <returns>
     /// The terminal cell width, or <c>-1</c> when the configured control-character policy treats
@@ -182,17 +188,17 @@ public static class MemoryExtensions
         => ((ReadOnlySpan<char>)span).GetTerminalCellWidth(terminalWidthOptions);
 
     /// <summary>
-    /// Returns the number of graphemes in the provided text.
+    /// Returns the number of grapheme clusters in the provided text.
     /// </summary>
     /// <param name="text">The text to enumerate.</param>
-    /// <returns>The <see cref="int"/> count.</returns>
+    /// <returns>The number of grapheme clusters.</returns>
     public static int GetGraphemeCount(this string text) => text.AsSpan().GetGraphemeCount();
 
     /// <summary>
-    /// Returns the number of graphemes in the provided span.
+    /// Returns the number of grapheme clusters in the provided span.
     /// </summary>
-    /// <param name="span">The readonly span of char elements representing the text to enumerate.</param>
-    /// <returns>The <see cref="int"/> count.</returns>
+    /// <param name="span">The read-only span of char elements representing the text to enumerate.</param>
+    /// <returns>The number of grapheme clusters.</returns>
     public static int GetGraphemeCount(this ReadOnlySpan<char> span)
     {
         int count = 0;
@@ -206,10 +212,10 @@ public static class MemoryExtensions
     }
 
     /// <summary>
-    /// Returns the number of graphemes in the provided span.
+    /// Returns the number of grapheme clusters in the provided span.
     /// </summary>
     /// <param name="span">The span of char elements representing the text to enumerate.</param>
-    /// <returns>The <see cref="int"/> count.</returns>
+    /// <returns>The number of grapheme clusters.</returns>
     public static int GetGraphemeCount(this Span<char> span)
     {
         int count = 0;
