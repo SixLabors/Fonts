@@ -23,6 +23,68 @@ public sealed partial class TextBlock
     }
 
     /// <summary>
+    /// Accumulates the union of rendered glyph bounds as glyphs stream from layout.
+    /// </summary>
+    private struct GlyphBoundsAccumulator : TextLayout.IGlyphLayoutVisitor
+    {
+        private readonly float dpi;
+        private float left;
+        private float top;
+        private float right;
+        private float bottom;
+        private bool any;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GlyphBoundsAccumulator"/> struct.
+        /// </summary>
+        /// <param name="dpi">The target DPI.</param>
+        public GlyphBoundsAccumulator(float dpi)
+        {
+            this.dpi = dpi;
+            this.left = float.MaxValue;
+            this.top = float.MaxValue;
+            this.right = float.MinValue;
+            this.bottom = float.MinValue;
+            this.any = false;
+        }
+
+        /// <inheritdoc/>
+        public void Visit(in GlyphLayout glyph)
+        {
+            FontRectangle box = glyph.BoundingBox(this.dpi);
+
+            if (box.Left < this.left)
+            {
+                this.left = box.Left;
+            }
+
+            if (box.Top < this.top)
+            {
+                this.top = box.Top;
+            }
+
+            if (box.Right > this.right)
+            {
+                this.right = box.Right;
+            }
+
+            if (box.Bottom > this.bottom)
+            {
+                this.bottom = box.Bottom;
+            }
+
+            this.any = true;
+        }
+
+        /// <summary>
+        /// Returns the accumulated rendered bounds.
+        /// </summary>
+        /// <returns>The rendered bounds of all visited glyphs.</returns>
+        public readonly FontRectangle Result()
+            => this.any ? FontRectangle.FromLTRB(this.left, this.top, this.right, this.bottom) : FontRectangle.Empty;
+    }
+
+    /// <summary>
     /// Builds the full <see cref="TextMetrics"/> per-glyph arrays while glyphs stream from layout.
     /// </summary>
     private struct TextMetricsVisitor : TextLayout.IGlyphLayoutVisitor

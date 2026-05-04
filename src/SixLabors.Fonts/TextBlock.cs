@@ -2,7 +2,6 @@
 // Licensed under the Six Labors Split License.
 
 using SixLabors.Fonts.Rendering;
-using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts;
 
@@ -58,14 +57,6 @@ public sealed partial class TextBlock
     /// <returns>The line-broken text box.</returns>
     internal TextLayout.TextBox BreakLines(float wrappingLength)
         => TextLayout.BreakLines(this.LogicalLine, this.Options, wrappingLength);
-
-    /// <summary>
-    /// Lays out this block at the supplied wrapping length.
-    /// </summary>
-    /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
-    /// <returns>The laid-out glyphs in layout order.</returns>
-    internal IReadOnlyList<GlyphLayout> LayoutText(float wrappingLength)
-        => TextLayout.LayoutText(this.BreakLines(wrappingLength), this.Options, wrappingLength);
 
     /// <summary>
     /// Measures the full set of layout metrics for this block at the supplied wrapping length.
@@ -143,7 +134,7 @@ public sealed partial class TextBlock
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
     /// <returns>The rendered glyph bounds.</returns>
     public FontRectangle MeasureBounds(float wrappingLength)
-        => TextLayout.GetBounds(this.BreakLines(wrappingLength), this.Options, wrappingLength);
+        => GetBounds(this.BreakLines(wrappingLength), this.Options, wrappingLength);
 
     /// <summary>
     /// Measures the union of logical advance and rendered glyph bounds at the supplied wrapping length.
@@ -155,7 +146,7 @@ public sealed partial class TextBlock
         TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
         FontRectangle advance = GetAdvance(textBox, this.Options.Dpi, this.Options.LayoutMode.IsHorizontal());
         FontRectangle absoluteAdvance = new(this.Options.Origin.X, this.Options.Origin.Y, advance.Width, advance.Height);
-        FontRectangle bounds = TextLayout.GetBounds(textBox, this.Options, wrappingLength);
+        FontRectangle bounds = GetBounds(textBox, this.Options, wrappingLength);
         return FontRectangle.Union(absoluteAdvance, bounds);
     }
 
@@ -231,7 +222,7 @@ public sealed partial class TextBlock
     public void RenderTo(IGlyphRenderer renderer, float wrappingLength)
     {
         TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
-        FontRectangle rect = TextLayout.GetBounds(textBox, this.Options, wrappingLength);
+        FontRectangle rect = GetBounds(textBox, this.Options, wrappingLength);
 
         renderer.BeginText(in rect);
 
@@ -239,6 +230,25 @@ public sealed partial class TextBlock
         TextLayout.LayoutText(textBox, this.Options, wrappingLength, ref visitor);
 
         renderer.EndText();
+    }
+
+    /// <summary>
+    /// Measures the rendered glyph bounds of an already line-broken text box.
+    /// </summary>
+    /// <param name="textBox">The shaped and line-broken text box.</param>
+    /// <param name="options">The text options used for layout.</param>
+    /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
+    /// <returns>The union of the rendered glyph bounds.</returns>
+    private static FontRectangle GetBounds(TextLayout.TextBox textBox, TextOptions options, float wrappingLength)
+    {
+        if (textBox.TextLines.Count == 0)
+        {
+            return FontRectangle.Empty;
+        }
+
+        GlyphBoundsAccumulator visitor = new(options.Dpi);
+        TextLayout.LayoutText(textBox, options, wrappingLength, ref visitor);
+        return visitor.Result();
     }
 
     /// <summary>

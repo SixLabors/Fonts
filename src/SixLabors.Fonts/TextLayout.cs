@@ -214,54 +214,6 @@ internal static partial class TextLayout
     }
 
     /// <summary>
-    /// Lays out the supplied <see cref="TextBox"/> and materializes every glyph into a
-    /// <see cref="List{T}"/> using the supplied wrapping length for alignment.
-    /// </summary>
-    /// <param name="textBox">The shaped and line-broken text.</param>
-    /// <param name="options">The text options used to lay out <paramref name="textBox"/>.</param>
-    /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
-    /// <returns>The laid-out glyphs in layout order.</returns>
-    public static List<GlyphLayout> LayoutText(TextBox textBox, TextOptions options, float wrappingLength)
-    {
-        if (textBox.TextLines.Count == 0)
-        {
-            return [];
-        }
-
-        GlyphLayoutCollector visitor = new([]);
-        LayoutText(textBox, options, wrappingLength, ref visitor);
-        return visitor.Glyphs;
-    }
-
-    /// <summary>
-    /// Lays out the supplied <see cref="TextBox"/> and returns the union of the ink bounds of
-    /// every emitted glyph in a single streaming pass using the supplied wrapping length for alignment.
-    /// </summary>
-    /// <remarks>
-    /// Equivalent to iterating <see cref="LayoutText(TextBox, TextOptions, float)"/> and unioning each
-    /// glyph's <see cref="GlyphLayout.BoundingBox"/>, but avoids materializing the glyph list and
-    /// the second iteration pass.
-    /// </remarks>
-    /// <param name="textBox">The shaped and line-broken text.</param>
-    /// <param name="options">The text options used to lay out <paramref name="textBox"/>.</param>
-    /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
-    /// <returns>
-    /// The union of the ink bounds of every laid-out glyph, or <see cref="FontRectangle.Empty"/>
-    /// if no glyphs were emitted.
-    /// </returns>
-    public static FontRectangle GetBounds(TextBox textBox, TextOptions options, float wrappingLength)
-    {
-        if (textBox.TextLines.Count == 0)
-        {
-            return FontRectangle.Empty;
-        }
-
-        GlyphBoundsAccumulator visitor = new(options.Dpi);
-        LayoutText(textBox, options, wrappingLength, ref visitor);
-        return visitor.Result();
-    }
-
-    /// <summary>
     /// Lays out the supplied <see cref="TextBox"/>, streaming each laid-out glyph through the
     /// supplied <paramref name="visitor"/> in layout order using the supplied wrapping length for alignment.
     /// </summary>
