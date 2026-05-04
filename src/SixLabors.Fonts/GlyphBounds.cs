@@ -6,17 +6,17 @@ using SixLabors.Fonts.Unicode;
 namespace SixLabors.Fonts;
 
 /// <summary>
-/// Represents the bounds of a <see cref="Glyph"/> for a given <see cref="CodePoint"/>.
+/// Represents measured bounds for a laid-out glyph entry.
 /// </summary>
 public readonly struct GlyphBounds
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="GlyphBounds"/> struct.
     /// </summary>
-    /// <param name="codePoint">The Unicode codepoint for the glyph.</param>
-    /// <param name="bounds">The glyph bounds.</param>
-    /// <param name="graphemeIndex">The index of the grapheme in original text.</param>
-    /// <param name="stringIndex">The index of the codepoint in original text..</param>
+    /// <param name="codePoint">The Unicode code point represented by the glyph entry.</param>
+    /// <param name="bounds">The measured bounds.</param>
+    /// <param name="graphemeIndex">The grapheme index in the original text.</param>
+    /// <param name="stringIndex">The UTF-16 index in the original text where the glyph entry begins.</param>
     public GlyphBounds(CodePoint codePoint, in FontRectangle bounds, int graphemeIndex, int stringIndex)
     {
         this.Codepoint = codePoint;
@@ -26,22 +26,22 @@ public readonly struct GlyphBounds
     }
 
     /// <summary>
-    /// Gets the Unicode codepoint of the glyph.
+    /// Gets the Unicode code point represented by the glyph entry.
     /// </summary>
     public CodePoint Codepoint { get; }
 
     /// <summary>
-    /// Gets the glyph bounds.
+    /// Gets the measured bounds.
     /// </summary>
     public FontRectangle Bounds { get; }
 
     /// <summary>
-    /// Gets grapheme index of glyph in original text.
+    /// Gets the grapheme index in the original text.
     /// </summary>
     public int GraphemeIndex { get; }
 
     /// <summary>
-    /// Gets string index of glyph in original text.
+    /// Gets the UTF-16 index in the original text where the glyph entry begins.
     /// </summary>
     public int StringIndex { get; }
 

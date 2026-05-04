@@ -318,6 +318,14 @@ public sealed partial class TextBlock
             // Descender line position relative to the same origin.
             float descender = baseline + line.ScaledMaxDescender + delta;
 
+            // Bidi reordering mutates entries into visual order, so the source
+            // start is the minimum original string index rather than line[0].
+            int stringIndex = line[0].StringIndex;
+            for (int j = 1; j < line.Count; j++)
+            {
+                stringIndex = Math.Min(stringIndex, line[j].StringIndex);
+            }
+
             metrics[i] = new LineMetrics(
                 ascender * options.Dpi,
                 baseline * options.Dpi,
@@ -325,6 +333,7 @@ public sealed partial class TextBlock
                 line.ScaledMaxLineHeight * options.Dpi,
                 offset * options.Dpi,
                 line.ScaledLineAdvance * options.Dpi,
+                stringIndex,
                 line.GraphemeCount);
         }
 

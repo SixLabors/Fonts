@@ -24,6 +24,7 @@ public readonly struct LineMetrics
     /// <param name="lineHeight">Total line-box size (includes effective line spacing).</param>
     /// <param name="start">Line start position in the primary layout flow direction after alignment.</param>
     /// <param name="extent">Line extent in the primary layout flow direction.</param>
+    /// <param name="stringIndex">The UTF-16 index in the original text where this line begins.</param>
     /// <param name="graphemeCount">The number of graphemes in the line.</param>
     public LineMetrics(
         float ascender,
@@ -32,6 +33,7 @@ public readonly struct LineMetrics
         float lineHeight,
         float start,
         float extent,
+        int stringIndex,
         int graphemeCount)
     {
         this.Ascender = ascender;
@@ -40,6 +42,7 @@ public readonly struct LineMetrics
         this.LineHeight = lineHeight;
         this.Start = start;
         this.Extent = extent;
+        this.StringIndex = stringIndex;
         this.GraphemeCount = graphemeCount;
     }
 
@@ -83,6 +86,11 @@ public readonly struct LineMetrics
     /// Gets the line extent in the primary layout flow direction.
     /// </summary>
     public float Extent { get; }
+
+    /// <summary>
+    /// Gets the UTF-16 index in the original text where this line begins.
+    /// </summary>
+    public int StringIndex { get; }
 
     /// <summary>
     /// Gets the number of graphemes in the line.
