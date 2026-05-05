@@ -17,14 +17,9 @@ public static class TextMeasurer
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
-    /// <returns>A <see cref="TextMetrics"/> value containing every measurement for the laid-out text.</returns>
+    /// <returns>A <see cref="TextMetrics"/> instance containing every measurement for the laid-out text.</returns>
     public static TextMetrics Measure(ReadOnlySpan<char> text, TextOptions options)
     {
-        if (text.IsEmpty)
-        {
-            return TextMetrics.Empty;
-        }
-
         TextBlock block = new(text, options);
         return block.Measure(options.WrappingLength);
     }
@@ -48,27 +43,6 @@ public static class TextMeasurer
 
         TextBlock block = new(text, options);
         return block.MeasureAdvance(options.WrappingLength);
-    }
-
-    /// <inheritdoc cref="MeasureSize(ReadOnlySpan{char}, TextOptions)"/>
-    public static FontRectangle MeasureSize(string text, TextOptions options)
-        => MeasureSize(text.AsSpan(), options);
-
-    /// <summary>
-    /// Measures the normalized rendered size of the text in pixel units.
-    /// </summary>
-    /// <param name="text">The text.</param>
-    /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
-    /// <returns>The rendered size of the text with the origin normalized to <c>(0, 0)</c>.</returns>
-    public static FontRectangle MeasureSize(ReadOnlySpan<char> text, TextOptions options)
-    {
-        if (text.IsEmpty)
-        {
-            return FontRectangle.Empty;
-        }
-
-        TextBlock block = new(text, options);
-        return block.MeasureSize(options.WrappingLength);
     }
 
     /// <inheritdoc cref="MeasureBounds(ReadOnlySpan{char}, TextOptions)"/>
@@ -115,96 +89,88 @@ public static class TextMeasurer
         return block.MeasureRenderableBounds(options.WrappingLength);
     }
 
-    /// <inheritdoc cref="TryMeasureCharacterAdvances(ReadOnlySpan{char}, TextOptions, out ReadOnlySpan{GlyphBounds})"/>
-    public static bool TryMeasureCharacterAdvances(string text, TextOptions options, out ReadOnlySpan<GlyphBounds> advances)
-        => TryMeasureCharacterAdvances(text.AsSpan(), options, out advances);
+    /// <inheritdoc cref="MeasureGlyphAdvances(ReadOnlySpan{char}, TextOptions)"/>
+    public static ReadOnlySpan<GlyphBounds> MeasureGlyphAdvances(string text, TextOptions options)
+        => MeasureGlyphAdvances(text.AsSpan(), options);
 
     /// <summary>
-    /// Measures the logical advance of each laid-out character entry in pixel units.
+    /// Measures the positioned logical advance bounds of each laid-out glyph entry in pixel units.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
-    /// <param name="advances">The list of per-entry logical advances of the text if it was to be rendered.</param>
-    /// <returns>Whether any of the entries had non-empty advances.</returns>
-    public static bool TryMeasureCharacterAdvances(ReadOnlySpan<char> text, TextOptions options, out ReadOnlySpan<GlyphBounds> advances)
+    /// <returns>The list of per-entry positioned logical advance bounds of the text if it was to be rendered.</returns>
+    public static ReadOnlySpan<GlyphBounds> MeasureGlyphAdvances(ReadOnlySpan<char> text, TextOptions options)
     {
         if (text.IsEmpty)
         {
-            advances = [];
-            return false;
+            return [];
         }
 
         TextBlock block = new(text, options);
-        return block.TryMeasureCharacterAdvances(options.WrappingLength, out advances);
+        return block.MeasureGlyphAdvances(options.WrappingLength);
     }
 
-    /// <inheritdoc cref="TryMeasureCharacterSizes(ReadOnlySpan{char}, TextOptions, out ReadOnlySpan{GlyphBounds})"/>
-    public static bool TryMeasureCharacterSizes(string text, TextOptions options, out ReadOnlySpan<GlyphBounds> sizes)
-        => TryMeasureCharacterSizes(text.AsSpan(), options, out sizes);
+    /// <inheritdoc cref="MeasureGlyphBounds(ReadOnlySpan{char}, TextOptions)"/>
+    public static ReadOnlySpan<GlyphBounds> MeasureGlyphBounds(string text, TextOptions options)
+        => MeasureGlyphBounds(text.AsSpan(), options);
+
+    /// <inheritdoc cref="MeasureGlyphRenderableBounds(ReadOnlySpan{char}, TextOptions)"/>
+    public static ReadOnlySpan<GlyphBounds> MeasureGlyphRenderableBounds(string text, TextOptions options)
+        => MeasureGlyphRenderableBounds(text.AsSpan(), options);
 
     /// <summary>
-    /// Measures the normalized rendered size of each laid-out character entry in pixel units.
+    /// Measures the rendered glyph bounds of each laid-out glyph entry in pixel units.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
-    /// <param name="sizes">The list of per-entry rendered sizes with the origin normalized to <c>(0, 0)</c>.</param>
-    /// <returns>Whether any of the entries had non-empty dimensions.</returns>
-    public static bool TryMeasureCharacterSizes(ReadOnlySpan<char> text, TextOptions options, out ReadOnlySpan<GlyphBounds> sizes)
+    /// <returns>The list of per-entry rendered glyph bounds of the text if it was to be rendered.</returns>
+    public static ReadOnlySpan<GlyphBounds> MeasureGlyphBounds(ReadOnlySpan<char> text, TextOptions options)
     {
         if (text.IsEmpty)
         {
-            sizes = [];
-            return false;
+            return [];
         }
 
         TextBlock block = new(text, options);
-        return block.TryMeasureCharacterSizes(options.WrappingLength, out sizes);
-    }
-
-    /// <inheritdoc cref="TryMeasureCharacterBounds(ReadOnlySpan{char}, TextOptions, out ReadOnlySpan{GlyphBounds})"/>
-    public static bool TryMeasureCharacterBounds(string text, TextOptions options, out ReadOnlySpan<GlyphBounds> bounds)
-        => TryMeasureCharacterBounds(text.AsSpan(), options, out bounds);
-
-    /// <inheritdoc cref="TryMeasureCharacterRenderableBounds(ReadOnlySpan{char}, TextOptions, out ReadOnlySpan{GlyphBounds})"/>
-    public static bool TryMeasureCharacterRenderableBounds(string text, TextOptions options, out ReadOnlySpan<GlyphBounds> bounds)
-        => TryMeasureCharacterRenderableBounds(text.AsSpan(), options, out bounds);
-
-    /// <summary>
-    /// Measures the rendered glyph bounds of each laid-out character entry in pixel units.
-    /// </summary>
-    /// <param name="text">The text.</param>
-    /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
-    /// <param name="bounds">The list of per-entry rendered glyph bounds of the text if it was to be rendered.</param>
-    /// <returns>Whether any of the entries had non-empty bounds.</returns>
-    public static bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, TextOptions options, out ReadOnlySpan<GlyphBounds> bounds)
-    {
-        if (text.IsEmpty)
-        {
-            bounds = [];
-            return false;
-        }
-
-        TextBlock block = new(text, options);
-        return block.TryMeasureCharacterBounds(options.WrappingLength, out bounds);
+        return block.MeasureGlyphBounds(options.WrappingLength);
     }
 
     /// <summary>
-    /// Measures the full renderable bounds of each laid-out character entry in pixel units.
+    /// Measures the full renderable bounds of each laid-out glyph entry in pixel units.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
-    /// <param name="bounds">The list of per-entry renderable bounds of the text if it was to be rendered.</param>
-    /// <returns>Whether any of the entries had non-empty bounds.</returns>
-    public static bool TryMeasureCharacterRenderableBounds(ReadOnlySpan<char> text, TextOptions options, out ReadOnlySpan<GlyphBounds> bounds)
+    /// <returns>The list of per-entry renderable bounds of the text if it was to be rendered.</returns>
+    public static ReadOnlySpan<GlyphBounds> MeasureGlyphRenderableBounds(ReadOnlySpan<char> text, TextOptions options)
     {
         if (text.IsEmpty)
         {
-            bounds = [];
-            return false;
+            return [];
         }
 
         TextBlock block = new(text, options);
-        return block.TryMeasureCharacterRenderableBounds(options.WrappingLength, out bounds);
+        return block.MeasureGlyphRenderableBounds(options.WrappingLength);
+    }
+
+    /// <inheritdoc cref="GetGraphemeMetrics(ReadOnlySpan{char}, TextOptions)"/>
+    public static ReadOnlySpan<GraphemeMetrics> GetGraphemeMetrics(string text, TextOptions options)
+        => GetGraphemeMetrics(text.AsSpan(), options);
+
+    /// <summary>
+    /// Gets the positioned metrics of each laid-out grapheme in pixel units.
+    /// </summary>
+    /// <param name="text">The text.</param>
+    /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
+    /// <returns>The list of per-grapheme metrics entries of the text if it was to be rendered.</returns>
+    public static ReadOnlySpan<GraphemeMetrics> GetGraphemeMetrics(ReadOnlySpan<char> text, TextOptions options)
+    {
+        if (text.IsEmpty)
+        {
+            return [];
+        }
+
+        TextBlock block = new(text, options);
+        return block.GetGraphemeMetrics(options.WrappingLength);
     }
 
     /// <inheritdoc cref="CountLines(ReadOnlySpan{char}, TextOptions)"/>
@@ -229,7 +195,7 @@ public static class TextMeasurer
     }
 
     /// <inheritdoc cref="GetLineMetrics(ReadOnlySpan{char}, TextOptions)"/>
-    public static LineMetrics[] GetLineMetrics(string text, TextOptions options)
+    public static ReadOnlySpan<LineMetrics> GetLineMetrics(string text, TextOptions options)
         => GetLineMetrics(text.AsSpan(), options);
 
     /// <summary>
@@ -238,9 +204,9 @@ public static class TextMeasurer
     /// <param name="text">The text to measure.</param>
     /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
     /// <returns>
-    /// An array of <see cref="LineMetrics"/> in pixel units, one entry per laid-out line.
+    /// A collection of <see cref="LineMetrics"/> in pixel units, one entry per laid-out line.
     /// </returns>
-    public static LineMetrics[] GetLineMetrics(ReadOnlySpan<char> text, TextOptions options)
+    public static ReadOnlySpan<LineMetrics> GetLineMetrics(ReadOnlySpan<char> text, TextOptions options)
     {
         if (text.IsEmpty)
         {

@@ -7,7 +7,7 @@ using SixLabors.Fonts.Unicode;
 namespace SixLabors.Fonts;
 
 /// <summary>
-/// Represents the layout and render positions of a glyph entry.
+/// Represents the layout positions of a glyph entry emitted from a laid-out <see cref="TextBlock"/>.
 /// </summary>
 internal readonly struct GlyphLayout
 {
@@ -47,28 +47,43 @@ internal readonly struct GlyphLayout
     public CodePoint CodePoint { get; }
 
     /// <summary>
-    /// Gets the origin of the logical advance box.
+    /// Gets the origin of the logical advance box in DPI-normalized layout units.
     /// </summary>
+    /// <remarks>
+    /// Multiply by the target DPI to convert to device pixels.
+    /// </remarks>
     public Vector2 AdvanceOrigin { get; }
 
     /// <summary>
-    /// Gets the origin used to render the glyph outline.
+    /// Gets the origin used to render the glyph outline in DPI-normalized layout units.
     /// </summary>
+    /// <remarks>
+    /// Multiply by the target DPI to convert to device pixels.
+    /// </remarks>
     public Vector2 GlyphOrigin { get; }
 
     /// <summary>
-    /// Gets the origin used to render text decorations.
+    /// Gets the origin used to render text decorations in DPI-normalized layout units.
     /// </summary>
+    /// <remarks>
+    /// Multiply by the target DPI to convert to device pixels.
+    /// </remarks>
     public Vector2 DecorationOrigin { get; }
 
     /// <summary>
-    /// Gets the advance in the x direction.
+    /// Gets the advance in the x direction in DPI-normalized layout units.
     /// </summary>
+    /// <remarks>
+    /// Multiply by the target DPI to convert to device pixels.
+    /// </remarks>
     public float AdvanceX { get; }
 
     /// <summary>
-    /// Gets the advance in the y direction.
+    /// Gets the advance in the y direction in DPI-normalized layout units.
     /// </summary>
+    /// <remarks>
+    /// Multiply by the target DPI to convert to device pixels.
+    /// </remarks>
     public float AdvanceY { get; }
 
     /// <summary>
@@ -97,16 +112,33 @@ internal readonly struct GlyphLayout
     /// <returns>The <see cref="bool"/>.</returns>
     public bool IsWhiteSpace() => UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint);
 
-    internal FontRectangle BoundingBox(float dpi)
+    /// <summary>
+    /// Measures the positioned logical advance rectangle in pixel units.
+    /// </summary>
+    /// <param name="dpi">The target DPI.</param>
+    /// <returns>The measured advance rectangle.</returns>
+    internal FontRectangle MeasureAdvance(float dpi)
+        => new(
+            this.AdvanceOrigin.X * dpi,
+            this.AdvanceOrigin.Y * dpi,
+            this.AdvanceX * dpi,
+            this.AdvanceY * dpi);
+
+    /// <summary>
+    /// Measures the rendered glyph bounds in pixel units.
+    /// </summary>
+    /// <param name="dpi">The target DPI.</param>
+    /// <returns>The measured rendered bounds.</returns>
+    internal FontRectangle MeasureBounds(float dpi)
     {
-        // Same logic as in GlyphMetrics.RenderTo
+        // Same logic as in GlyphMetrics.RenderTo.
         Vector2 glyphOrigin = this.GlyphOrigin * dpi;
         FontRectangle box = this.Glyph.BoundingBox(this.LayoutMode, glyphOrigin, dpi);
 
+        // Whitespace uses the layout advance because it occupies measurable
+        // text space even though the renderer suppresses its outline.
         if (this.IsWhiteSpace())
         {
-            // Take the layout advance width/height to account for advance multipliers that can cause
-            // the glyph to extend beyond the box. For example '\t'.
             if (this.LayoutMode == GlyphLayoutMode.Vertical)
             {
                 return new FontRectangle(

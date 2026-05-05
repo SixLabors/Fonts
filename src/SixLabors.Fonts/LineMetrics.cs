@@ -27,8 +27,6 @@ public readonly struct LineMetrics
     /// <param name="stringIndex">The UTF-16 index in the original text where this line begins.</param>
     /// <param name="graphemeIndex">The grapheme index in the original text where this line begins.</param>
     /// <param name="graphemeCount">The number of graphemes in the line.</param>
-    /// <param name="glyphIndex">The index of the first glyph entry in the measured character collections.</param>
-    /// <param name="glyphCount">The number of glyph entries in the measured character collections for this line.</param>
     public LineMetrics(
         float ascender,
         float baseline,
@@ -38,9 +36,7 @@ public readonly struct LineMetrics
         float extent,
         int stringIndex,
         int graphemeIndex,
-        int graphemeCount,
-        int glyphIndex,
-        int glyphCount)
+        int graphemeCount)
     {
         this.Ascender = ascender;
         this.Baseline = baseline;
@@ -51,8 +47,6 @@ public readonly struct LineMetrics
         this.StringIndex = stringIndex;
         this.GraphemeIndex = graphemeIndex;
         this.GraphemeCount = graphemeCount;
-        this.GlyphIndex = glyphIndex;
-        this.GlyphCount = glyphCount;
     }
 
     /// <summary>
@@ -110,14 +104,4 @@ public readonly struct LineMetrics
     /// Gets the number of graphemes in the line.
     /// </summary>
     public int GraphemeCount { get; }
-
-    /// <summary>
-    /// Gets the index of the first glyph entry in the measured character collections.
-    /// </summary>
-    public int GlyphIndex { get; }
-
-    /// <summary>
-    /// Gets the number of glyph entries in the measured character collections for this line.
-    /// </summary>
-    public int GlyphCount { get; }
 }

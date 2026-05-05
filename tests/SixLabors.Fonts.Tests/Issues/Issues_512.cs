@@ -16,7 +16,7 @@ public class Issues_512
 
         TextOptions options = new(font);
 
-        InvalidFontFileException exception = Assert.Throws<InvalidFontFileException>(() => TextMeasurer.MeasureSize(text, options));
+        InvalidFontFileException exception = Assert.Throws<InvalidFontFileException>(() => TextMeasurer.MeasureBounds(text, options));
         Assert.Equal("Missing required CFF table.", exception.Message);
     }
 }

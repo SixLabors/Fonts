@@ -57,11 +57,9 @@ public class Issues_429
             };
 
             FontRectangle bounds = TextMeasurer.MeasureBounds(text, options);
-            FontRectangle size = TextMeasurer.MeasureSize(text, options);
             FontRectangle renderable = TextMeasurer.MeasureRenderableBounds(text, options);
 
             Assert.Equal(new FontRectangle(0.83496094F, 2.8417969F, 28.31543F, 834.9464F), bounds, Comparer);
-            Assert.Equal(new FontRectangle(0, 0, 28.31543F, 834.9464F), size, Comparer);
             Assert.Equal(new FontRectangle(0, 0, 30F, 839.3556F), renderable, Comparer);
         }
     }

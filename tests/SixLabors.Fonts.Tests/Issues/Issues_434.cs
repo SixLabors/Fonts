@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests.Issues;
 
@@ -26,7 +27,11 @@ public class Issues_434
             Assert.Equal(expectedLineCount, lineCount);
 
             TextMetrics metrics = TextMeasurer.Measure(text, options);
-            Assert.Equal(47, metrics.CharacterAdvances.Count);
+
+            // The collection contains laid-out glyph entries. This fixture shapes one glyph per source
+            // code point, so preserved hard breaks raise the count from the old trimmed 47.
+            Assert.Equal(50, metrics.MeasureGlyphAdvances().Length);
+            AssertPreservedLineBreakAdvances(metrics.MeasureGlyphAdvances(), 16, 17, 32);
         }
     }
 
@@ -49,7 +54,30 @@ public class Issues_434
             Assert.Equal(expectedLineCount, lineCount);
 
             TextMetrics metrics = TextMeasurer.Measure(text, options);
-            Assert.Equal(48, metrics.CharacterAdvances.Count);
+
+            // The collection contains laid-out glyph entries. This fixture shapes one glyph per source
+            // code point, so preserved hard breaks raise the count from the old trimmed 48.
+            Assert.Equal(51, metrics.MeasureGlyphAdvances().Length);
+            AssertPreservedLineBreakAdvances(metrics.MeasureGlyphAdvances(), 16, 17, 18, 33);
         }
+    }
+
+    private static void AssertPreservedLineBreakAdvances(ReadOnlySpan<GlyphBounds> advances, params int[] expectedStringIndices)
+    {
+        int lineBreakIndex = 0;
+        for (int i = 0; i < advances.Length; i++)
+        {
+            GlyphBounds advance = advances[i];
+            if (!CodePoint.IsNewLine(advance.Codepoint))
+            {
+                continue;
+            }
+
+            Assert.Equal(expectedStringIndices[lineBreakIndex], advance.StringIndex);
+            Assert.True(advance.Bounds.Width > 0 || advance.Bounds.Height > 0);
+            lineBreakIndex++;
+        }
+
+        Assert.Equal(expectedStringIndices.Length, lineBreakIndex);
     }
 }

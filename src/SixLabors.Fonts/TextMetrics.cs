@@ -6,56 +6,37 @@ namespace SixLabors.Fonts;
 /// <summary>
 /// Encapsulates the full set of measurement results for laid-out text.
 /// </summary>
-/// <remarks>
-/// <para>
-/// This type aggregates every measurement exposed by the granular <see cref="TextMeasurer"/> overloads.
-/// Producing one <see cref="TextMetrics"/> instance is cheaper than calling multiple granular overloads
-/// back-to-back because the text is shaped and laid out only once.
-/// </para>
-/// <para>
-/// For callers that only require one or two values, the granular overloads on <see cref="TextMeasurer"/>
-/// remain the most efficient choice because they avoid materializing the per-character and per-line arrays.
-/// </para>
-/// </remarks>
-public readonly struct TextMetrics
+public sealed class TextMetrics
 {
-    /// <summary>
-    /// Represents an empty <see cref="TextMetrics"/> instance with zeroed rectangles and empty collections.
-    /// </summary>
-    public static readonly TextMetrics Empty = new(
-        FontRectangle.Empty,
-        FontRectangle.Empty,
-        FontRectangle.Empty,
-        FontRectangle.Empty,
-        0,
-        [],
-        [],
-        [],
-        [],
-        []);
+    private readonly TextBlock textBlock;
+    private readonly TextLayout.TextBox textBox;
+    private readonly float wrappingLength;
+    private readonly GraphemeMetrics[] graphemeMetrics;
+    private readonly LineMetrics[] lineMetrics;
+    private GlyphBounds[]? glyphAdvances;
+    private GlyphBounds[]? glyphBounds;
+    private GlyphBounds[]? glyphRenderableBounds;
 
     internal TextMetrics(
+        TextBlock textBlock,
+        TextLayout.TextBox textBox,
+        float wrappingLength,
         FontRectangle advance,
         FontRectangle bounds,
-        FontRectangle size,
         FontRectangle renderableBounds,
         int lineCount,
-        GlyphBounds[] characterAdvances,
-        GlyphBounds[] characterSizes,
-        GlyphBounds[] characterBounds,
-        GlyphBounds[] characterRenderableBounds,
+        GraphemeMetrics[] graphemes,
         LineMetrics[] lines)
     {
+        this.textBlock = textBlock;
+        this.textBox = textBox;
+        this.wrappingLength = wrappingLength;
         this.Advance = advance;
         this.Bounds = bounds;
-        this.Size = size;
         this.RenderableBounds = renderableBounds;
         this.LineCount = lineCount;
-        this.CharacterAdvances = characterAdvances;
-        this.CharacterSizes = characterSizes;
-        this.CharacterBounds = characterBounds;
-        this.CharacterRenderableBounds = characterRenderableBounds;
-        this.Lines = lines;
+        this.graphemeMetrics = graphemes;
+        this.lineMetrics = lines;
     }
 
     /// <summary>
@@ -77,16 +58,8 @@ public readonly struct TextMetrics
     public FontRectangle Bounds { get; }
 
     /// <summary>
-    /// Gets the normalized rendered size of the text in pixel units with the origin at <c>(0, 0)</c>.
-    /// </summary>
-    /// <remarks>
-    /// Equivalent to <see cref="Bounds"/> with a zeroed origin.
-    /// </remarks>
-    public FontRectangle Size { get; }
-
-    /// <summary>
     /// Gets the union of the logical advance rectangle (positioned at the text options origin)
-    /// and the rendered glyph bounds.
+    /// and the rendered glyph bounds in pixel units.
     /// </summary>
     /// <remarks>
     /// Use this rectangle when both typographic advance and rendered glyph overshoot
@@ -100,41 +73,36 @@ public readonly struct TextMetrics
     public int LineCount { get; }
 
     /// <summary>
-    /// Gets the logical advance of each laid-out character in pixel units.
+    /// Gets the grapheme metrics entries in final layout order.
     /// </summary>
-    /// <remarks>
-    /// Each entry reflects the typographic advance width and height for one character,
-    /// with an origin of <c>(0, 0)</c>.
-    /// </remarks>
-    public IReadOnlyList<GlyphBounds> CharacterAdvances { get; }
-
-    /// <summary>
-    /// Gets the normalized rendered size of each laid-out character in pixel units.
-    /// </summary>
-    /// <remarks>
-    /// Each entry is the tight ink bounds of one glyph with the origin normalized to <c>(0, 0)</c>.
-    /// </remarks>
-    public IReadOnlyList<GlyphBounds> CharacterSizes { get; }
-
-    /// <summary>
-    /// Gets the rendered glyph bounds of each laid-out character in pixel units.
-    /// </summary>
-    /// <remarks>
-    /// Each entry reflects the tight ink bounds of one rendered glyph.
-    /// </remarks>
-    public IReadOnlyList<GlyphBounds> CharacterBounds { get; }
-
-    /// <summary>
-    /// Gets the full renderable bounds of each laid-out character in pixel units.
-    /// </summary>
-    /// <remarks>
-    /// Each entry is the union of the logical advance rectangle and the rendered glyph bounds
-    /// for the corresponding laid-out character.
-    /// </remarks>
-    public IReadOnlyList<GlyphBounds> CharacterRenderableBounds { get; }
+    public ReadOnlySpan<GraphemeMetrics> GraphemeMetrics => this.graphemeMetrics;
 
     /// <summary>
     /// Gets the per-line layout metrics for the text.
     /// </summary>
-    public IReadOnlyList<LineMetrics> Lines { get; }
+    public ReadOnlySpan<LineMetrics> LineMetrics => this.lineMetrics;
+
+    /// <inheritdoc cref="TextBlock.MeasureGlyphAdvances(float)"/>
+    public ReadOnlySpan<GlyphBounds> MeasureGlyphAdvances()
+        => this.glyphAdvances ??= TextBlock.MeasureGlyphBoundsArray(
+            this.textBox,
+            this.textBlock.Options,
+            this.wrappingLength,
+            TextBlock.GlyphBoundsMeasurement.Advance);
+
+    /// <inheritdoc cref="TextBlock.MeasureGlyphBounds(float)"/>
+    public ReadOnlySpan<GlyphBounds> MeasureGlyphBounds()
+        => this.glyphBounds ??= TextBlock.MeasureGlyphBoundsArray(
+            this.textBox,
+            this.textBlock.Options,
+            this.wrappingLength,
+            TextBlock.GlyphBoundsMeasurement.Bounds);
+
+    /// <inheritdoc cref="TextBlock.MeasureGlyphRenderableBounds(float)"/>
+    public ReadOnlySpan<GlyphBounds> MeasureGlyphRenderableBounds()
+        => this.glyphRenderableBounds ??= TextBlock.MeasureGlyphBoundsArray(
+            this.textBox,
+            this.textBlock.Options,
+            this.wrappingLength,
+            TextBlock.GlyphBoundsMeasurement.RenderableBounds);
 }

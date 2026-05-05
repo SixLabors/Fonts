@@ -257,6 +257,7 @@ internal static partial class TextLayout
         {
             for (int i = 0; i < textBox.TextLines.Count; i++)
             {
+                visitor.BeginLine(i);
                 LayoutLineHorizontal(
                     textBox,
                     textBox.TextLines[i],
@@ -267,6 +268,8 @@ internal static partial class TextLayout
                     ref boxLocation,
                     ref penLocation,
                     ref visitor);
+
+                visitor.EndLine();
             }
         }
         else if (layoutMode == LayoutMode.HorizontalBottomTop)
@@ -274,6 +277,7 @@ internal static partial class TextLayout
             int index = 0;
             for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
             {
+                visitor.BeginLine(i);
                 LayoutLineHorizontal(
                     textBox,
                     textBox.TextLines[i],
@@ -284,12 +288,15 @@ internal static partial class TextLayout
                     ref boxLocation,
                     ref penLocation,
                     ref visitor);
+
+                visitor.EndLine();
             }
         }
         else if (layoutMode is LayoutMode.VerticalLeftRight)
         {
             for (int i = 0; i < textBox.TextLines.Count; i++)
             {
+                visitor.BeginLine(i);
                 LayoutLineVertical(
                     textBox,
                     textBox.TextLines[i],
@@ -300,6 +307,8 @@ internal static partial class TextLayout
                     ref boxLocation,
                     ref penLocation,
                     ref visitor);
+
+                visitor.EndLine();
             }
         }
         else if (layoutMode is LayoutMode.VerticalRightLeft)
@@ -307,6 +316,7 @@ internal static partial class TextLayout
             int index = 0;
             for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
             {
+                visitor.BeginLine(i);
                 LayoutLineVertical(
                     textBox,
                     textBox.TextLines[i],
@@ -317,12 +327,15 @@ internal static partial class TextLayout
                     ref boxLocation,
                     ref penLocation,
                     ref visitor);
+
+                visitor.EndLine();
             }
         }
         else if (layoutMode is LayoutMode.VerticalMixedLeftRight)
         {
             for (int i = 0; i < textBox.TextLines.Count; i++)
             {
+                visitor.BeginLine(i);
                 LayoutLineVerticalMixed(
                     textBox,
                     textBox.TextLines[i],
@@ -333,6 +346,8 @@ internal static partial class TextLayout
                     ref boxLocation,
                     ref penLocation,
                     ref visitor);
+
+                visitor.EndLine();
             }
         }
         else
@@ -340,6 +355,7 @@ internal static partial class TextLayout
             int index = 0;
             for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
             {
+                visitor.BeginLine(i);
                 LayoutLineVerticalMixed(
                     textBox,
                     textBox.TextLines[i],
@@ -350,6 +366,8 @@ internal static partial class TextLayout
                     ref boxLocation,
                     ref penLocation,
                     ref visitor);
+
+                visitor.EndLine();
             }
         }
     }
@@ -473,40 +491,66 @@ internal static partial class TextLayout
         }
 
         penLocation.X += offsetX;
+        Vector2 boundsLocation = boxLocation;
+        Vector2 boundsPenLocation = penLocation;
 
         bool emitted = false;
         for (int i = 0; i < textLine.Count; i++)
         {
             TextLine.GlyphLayoutData data = textLine[i];
+            float layoutAdvance = data.ContributesToMeasurement ? data.ScaledAdvance : 0;
+
             if (data.IsNewLine)
             {
-                visitor.Visit(new GlyphLayout(
-                    new Glyph(data.Metrics[0], data.PointSize),
-                    boxLocation,
-                    penLocation,
-                    penLocation,
+                GlyphMetrics metric = data.Metrics[0];
+
+                // Hard breaks bypass the normal glyph loop, but still need the
+                // current pen position plus the same baseline origin used by glyphs.
+                Vector2 hardBreakPenLocation = data.ContributesToMeasurement ? penLocation : boundsPenLocation;
+                Vector2 hardBreakGlyphOrigin = hardBreakPenLocation + new Vector2(0, textLine.ScaledMaxAscender);
+
+                visitor.Visit(
+                    new GlyphLayout(
+                    new Glyph(metric, data.PointSize),
+                    boundsLocation,
+                    hardBreakGlyphOrigin,
+                    hardBreakPenLocation,
                     data.ScaledAdvance,
                     yLineAdvance,
                     GlyphLayoutMode.Horizontal,
                     true,
                     data.GraphemeIndex,
-                    data.StringIndex));
+                    data.StringIndex),
+                    data.ContributesToMeasurement);
+
+                if (!data.ContributesToMeasurement)
+                {
+                    boundsLocation.X += data.ScaledAdvance;
+                    boundsPenLocation.X += data.ScaledAdvance;
+                    continue;
+                }
 
                 penLocation.X = originX;
                 penLocation.Y += yLineAdvance;
                 boxLocation.X = originX;
                 boxLocation.Y += advanceY;
+                boundsLocation.X = originX;
+                boundsLocation.Y += advanceY;
+                boundsPenLocation.X = originX;
+                boundsPenLocation.Y += yLineAdvance;
                 return;
             }
 
             int j = 0;
             foreach (GlyphMetrics metric in data.Metrics)
             {
-                Vector2 glyphOrigin = penLocation + new Vector2(0, textLine.ScaledMaxAscender);
+                Vector2 glyphPenLocation = data.ContributesToMeasurement ? penLocation : boundsPenLocation;
+                Vector2 glyphOrigin = glyphPenLocation + new Vector2(0, textLine.ScaledMaxAscender);
 
-                visitor.Visit(new GlyphLayout(
+                visitor.Visit(
+                    new GlyphLayout(
                     new Glyph(metric, data.PointSize),
-                    boxLocation,
+                    boundsLocation,
                     glyphOrigin,
                     glyphOrigin,
                     data.ScaledAdvance,
@@ -514,14 +558,17 @@ internal static partial class TextLayout
                     GlyphLayoutMode.Horizontal,
                     i == 0 && j == 0,
                     data.GraphemeIndex,
-                    data.StringIndex));
+                    data.StringIndex),
+                    data.ContributesToMeasurement);
 
                 emitted = true;
                 j++;
             }
 
-            boxLocation.X += data.ScaledAdvance;
-            penLocation.X += data.ScaledAdvance;
+            boxLocation.X += layoutAdvance;
+            penLocation.X += layoutAdvance;
+            boundsLocation.X += data.ScaledAdvance;
+            boundsPenLocation.X += data.ScaledAdvance;
         }
 
         boxLocation.X = originX;
@@ -561,7 +608,6 @@ internal static partial class TextLayout
         ref TVisitor visitor)
         where TVisitor : struct, IGlyphLayoutVisitor
     {
-        float originX = penLocation.X;
         float originY = penLocation.Y;
         float offsetY = 0;
 
@@ -647,6 +693,9 @@ internal static partial class TextLayout
         penLocation.X += offsetX;
 
         float lineOriginX = penLocation.X;
+        Vector2 boundsLocation = boxLocation;
+        Vector2 boundsPenLocation = penLocation;
+        float boundsLineOriginX = boundsLocation.X;
 
         bool emitted = false;
 
@@ -667,24 +716,48 @@ internal static partial class TextLayout
         for (int i = 0; i < textLine.Count; i++)
         {
             TextLine.GlyphLayoutData data = textLine[i];
+            float layoutAdvance = data.ContributesToMeasurement ? data.ScaledAdvance : 0;
+
             if (data.IsNewLine)
             {
-                visitor.Visit(new GlyphLayout(
-                    new Glyph(data.Metrics[0], data.PointSize),
-                    boxLocation,
-                    penLocation,
-                    penLocation,
+                GlyphMetrics metric = data.Metrics[0];
+                Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
+
+                // Hard breaks bypass the normal glyph loop, but still need the
+                // current pen position plus the same vertical glyph origin adjustment.
+                Vector2 hardBreakPenLocation = data.ContributesToMeasurement ? penLocation : boundsPenLocation;
+                Vector2 hardBreakDecorationOrigin = hardBreakPenLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0);
+                Vector2 hardBreakGlyphOrigin = hardBreakDecorationOrigin + new Vector2(0, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
+
+                visitor.Visit(
+                    new GlyphLayout(
+                    new Glyph(metric, data.PointSize),
+                    boundsLocation,
+                    hardBreakGlyphOrigin,
+                    hardBreakDecorationOrigin,
                     xLineAdvance,
                     data.ScaledAdvance,
                     GlyphLayoutMode.Vertical,
                     true,
                     data.GraphemeIndex,
-                    data.StringIndex));
+                    data.StringIndex),
+                    data.ContributesToMeasurement);
+
+                if (!data.ContributesToMeasurement)
+                {
+                    boundsLocation.Y += data.ScaledAdvance;
+                    boundsPenLocation.Y += data.ScaledAdvance;
+                    continue;
+                }
 
                 boxLocation.X += advanceX;
                 boxLocation.Y = originY;
                 penLocation.X += xLineAdvance;
                 penLocation.Y = originY;
+                boundsLocation.X += advanceX;
+                boundsLocation.Y = originY;
+                boundsPenLocation.X += xLineAdvance;
+                boundsPenLocation.Y = originY;
                 return;
             }
 
@@ -794,7 +867,8 @@ internal static partial class TextLayout
 
                 // Move the glyph origin without changing the advance or decoration origin.
                 Vector2 glyphOffset = new(alignX, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
-                Vector2 decorationOrigin = penLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0);
+                Vector2 glyphPenLocation = data.ContributesToMeasurement ? penLocation : boundsPenLocation;
+                Vector2 decorationOrigin = glyphPenLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0);
                 Vector2 glyphOrigin = decorationOrigin + glyphOffset;
 
                 float advanceW = advanceX;
@@ -807,9 +881,10 @@ internal static partial class TextLayout
                     advanceW = scale.X * metric.AdvanceWidth;
                 }
 
-                visitor.Visit(new GlyphLayout(
+                visitor.Visit(
+                    new GlyphLayout(
                     new Glyph(metric, data.PointSize),
-                    boxLocation,
+                    boundsLocation,
                     glyphOrigin,
                     decorationOrigin,
                     advanceW,
@@ -817,24 +892,35 @@ internal static partial class TextLayout
                     GlyphLayoutMode.Vertical,
                     i == 0 && j == 0,
                     data.GraphemeIndex,
-                    data.StringIndex));
+                    data.StringIndex),
+                    data.ContributesToMeasurement);
 
                 emitted = true;
                 j++;
             }
 
-            if (currentGraphemeIsTransformed)
+            if (data.ContributesToMeasurement && currentGraphemeIsTransformed)
             {
                 // Advance horizontally between entries inside the transformed grapheme.
                 boxLocation.X += entryScaledAdvanceWidth;
                 penLocation.X += entryScaledAdvanceWidth;
             }
 
+            if (currentGraphemeIsTransformed)
+            {
+                boundsLocation.X += entryScaledAdvanceWidth;
+                boundsPenLocation.X += entryScaledAdvanceWidth;
+            }
+
             if (data.IsLastInGrapheme)
             {
-                penLocation.Y += data.ScaledAdvance;
+                penLocation.Y += layoutAdvance;
                 boxLocation.X = lineOriginX;
                 penLocation.X = lineOriginX;
+                boundsLocation.Y += data.ScaledAdvance;
+                boundsLocation.X = boundsLineOriginX;
+                boundsPenLocation.Y += data.ScaledAdvance;
+                boundsPenLocation.X = lineOriginX;
             }
         }
 
@@ -958,29 +1044,55 @@ internal static partial class TextLayout
 
         penLocation.Y += offsetY;
         penLocation.X += offsetX;
+        Vector2 boundsLocation = boxLocation;
+        Vector2 boundsPenLocation = penLocation;
 
         bool emitted = false;
         for (int i = 0; i < textLine.Count; i++)
         {
             TextLine.GlyphLayoutData data = textLine[i];
+            float layoutAdvance = data.ContributesToMeasurement ? data.ScaledAdvance : 0;
+
             if (data.IsNewLine)
             {
-                visitor.Visit(new GlyphLayout(
-                    new Glyph(data.Metrics[0], data.PointSize),
-                    boxLocation,
-                    penLocation,
-                    penLocation,
+                GlyphMetrics metric = data.Metrics[0];
+                Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
+
+                // Hard breaks bypass the normal glyph loop, but still need the
+                // current pen position plus the same vertical glyph origin adjustment.
+                Vector2 hardBreakPenLocation = data.ContributesToMeasurement ? penLocation : boundsPenLocation;
+                Vector2 hardBreakDecorationOrigin = hardBreakPenLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0);
+                Vector2 hardBreakGlyphOrigin = hardBreakDecorationOrigin + new Vector2(0, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
+
+                visitor.Visit(
+                    new GlyphLayout(
+                    new Glyph(metric, data.PointSize),
+                    boundsLocation,
+                    hardBreakGlyphOrigin,
+                    hardBreakDecorationOrigin,
                     xLineAdvance,
                     data.ScaledAdvance,
                     GlyphLayoutMode.Vertical,
                     true,
                     data.GraphemeIndex,
-                    data.StringIndex));
+                    data.StringIndex),
+                    data.ContributesToMeasurement);
+
+                if (!data.ContributesToMeasurement)
+                {
+                    boundsLocation.Y += data.ScaledAdvance;
+                    boundsPenLocation.Y += data.ScaledAdvance;
+                    continue;
+                }
 
                 boxLocation.X += advanceX;
                 boxLocation.Y = originY;
                 penLocation.X += xLineAdvance;
                 penLocation.Y = originY;
+                boundsLocation.X += advanceX;
+                boundsLocation.Y = originY;
+                boundsPenLocation.X += xLineAdvance;
+                boundsPenLocation.Y = originY;
                 return;
             }
 
@@ -1004,11 +1116,13 @@ internal static partial class TextLayout
                     float descenderDelta = (Math.Abs(textLine.ScaledMaxDescender) - descenderAbs) * .5F;
 
                     float centerOffsetX = baselineDelta + descenderAbs + descenderDelta;
-                    Vector2 glyphOrigin = penLocation + new Vector2(centerOffsetX, 0);
+                    Vector2 glyphPenLocation = data.ContributesToMeasurement ? penLocation : boundsPenLocation;
+                    Vector2 glyphOrigin = glyphPenLocation + new Vector2(centerOffsetX, 0);
 
-                    visitor.Visit(new GlyphLayout(
+                    visitor.Visit(
+                        new GlyphLayout(
                         new Glyph(metric, data.PointSize),
-                        boxLocation,
+                        boundsLocation,
                         glyphOrigin,
                         glyphOrigin,
                         advanceX,
@@ -1016,7 +1130,8 @@ internal static partial class TextLayout
                         GlyphLayoutMode.VerticalRotated,
                         i == 0 && j == 0,
                         data.GraphemeIndex,
-                        data.StringIndex));
+                        data.StringIndex),
+                        data.ContributesToMeasurement);
 
                     emitted = true;
                     j++;
@@ -1030,12 +1145,14 @@ internal static partial class TextLayout
                     // Align the glyph horizontally and vertically centering vertically around the baseline.
                     Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
                     Vector2 glyphOffset = new(0, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
-                    Vector2 decorationOrigin = penLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0);
+                    Vector2 glyphPenLocation = data.ContributesToMeasurement ? penLocation : boundsPenLocation;
+                    Vector2 decorationOrigin = glyphPenLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0);
                     Vector2 glyphOrigin = decorationOrigin + glyphOffset;
 
-                    visitor.Visit(new GlyphLayout(
+                    visitor.Visit(
+                        new GlyphLayout(
                         new Glyph(metric, data.PointSize),
-                        boxLocation,
+                        boundsLocation,
                         glyphOrigin,
                         decorationOrigin,
                         advanceX,
@@ -1043,14 +1160,17 @@ internal static partial class TextLayout
                         GlyphLayoutMode.Vertical,
                         i == 0 && j == 0,
                         data.GraphemeIndex,
-                        data.StringIndex));
+                        data.StringIndex),
+                        data.ContributesToMeasurement);
 
                     emitted = true;
                     j++;
                 }
             }
 
-            penLocation.Y += data.ScaledAdvance;
+            penLocation.Y += layoutAdvance;
+            boundsLocation.Y += data.ScaledAdvance;
+            boundsPenLocation.Y += data.ScaledAdvance;
         }
 
         boxLocation.Y = originY;
@@ -1378,6 +1498,10 @@ internal static partial class TextLayout
 
         private float? minY;
 
+        private int glyphLayoutCount;
+
+        private bool hasGlyphLayoutCounts;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TextBox"/> class.
         /// </summary>
@@ -1405,6 +1529,30 @@ internal static partial class TextLayout
         /// <returns>The smallest scaled Y position in the text box.</returns>
         public float ScaledMinY()
             => this.minY ??= this.TextLines.Min(x => x.ScaledMinY);
+
+        /// <summary>
+        /// Counts all glyph entries emitted from this text box. The result is memoized.
+        /// </summary>
+        /// <returns>The number of glyph entries that layout will emit.</returns>
+        public int CountGlyphLayouts()
+            => this.hasGlyphLayoutCounts ? this.glyphLayoutCount : this.CountGlyphLayoutsCore();
+
+        /// <summary>
+        /// Computes the glyph-layout count in one pass.
+        /// </summary>
+        /// <returns>The number of glyph entries that layout will emit.</returns>
+        private int CountGlyphLayoutsCore()
+        {
+            int count = 0;
+            for (int i = 0; i < this.TextLines.Count; i++)
+            {
+                count += this.TextLines[i].CountGlyphLayouts();
+            }
+
+            this.glyphLayoutCount = count;
+            this.hasGlyphLayoutCounts = true;
+            return count;
+        }
 
         /// <summary>
         /// Returns the resolved text direction of the first glyph in the first line. Used as the
@@ -1489,7 +1637,7 @@ internal static partial class TextLayout
         public bool SkipJustification { get; private set; }
 
         /// <summary>
-        /// Gets the sum of scaled advances across all entries in this line.
+        /// Gets the scaled advance contributed to line layout and measurement.
         /// </summary>
         public float ScaledLineAdvance { get; private set; }
 
@@ -1529,6 +1677,21 @@ internal static partial class TextLayout
         /// <param name="index">The zero-based index into this line.</param>
         /// <returns>The entry at the given index.</returns>
         public GlyphLayoutData this[int index] => this.data[index];
+
+        /// <summary>
+        /// Counts the glyph entries emitted from this line.
+        /// </summary>
+        /// <returns>The number of glyph entries that layout will emit for this line.</returns>
+        public int CountGlyphLayouts()
+        {
+            int count = 0;
+            for (int i = 0; i < this.data.Count; i++)
+            {
+                count += this.data[i].Metrics.Count;
+            }
+
+            return count;
+        }
 
         /// <summary>
         /// Appends a shaped entry to this line, updating the aggregated line-level metrics.
@@ -1813,10 +1976,11 @@ internal static partial class TextLayout
                 or LineBreakClass.Ideographic;
 
         /// <summary>
-        /// Removes trailing breaking-whitespace entries from this line. Non-breaking spaces are
-        /// preserved and the first entry is always kept even when whitespace.
+        /// Marks trailing breaking-whitespace entries so they remain part of the line but do not
+        /// contribute to line metrics. Non-breaking spaces are preserved and the first entry always
+        /// contributes, matching the previous trimming behavior for blank lines.
         /// </summary>
-        private void TrimTrailingWhitespace()
+        private void MarkTrailingWhitespaceAsNonMetric()
         {
             int count = this.data.Count;
             int index = count;
@@ -1834,12 +1998,17 @@ internal static partial class TextLayout
 
             if (index < count)
             {
-                this.data.RemoveRange(index, count - index);
+                for (int i = index; i < count; i++)
+                {
+                    GlyphLayoutData glyph = this.data[i];
+                    glyph.ContributesToMeasurement = false;
+                    this.data[i] = glyph;
+                }
             }
         }
 
         /// <summary>
-        /// Finalizes this line after line-breaking: trims trailing breaking whitespace, applies
+        /// Finalizes this line after line-breaking: marks trailing breaking whitespace as non-metric, applies
         /// bidi reordering so entries are in visual order, and recomputes aggregated metrics.
         /// </summary>
         /// <param name="skipJustification">
@@ -1850,7 +2019,7 @@ internal static partial class TextLayout
         public TextLine Finalize(bool skipJustification = false)
         {
             this.SkipJustification = skipJustification;
-            this.TrimTrailingWhitespace();
+            this.MarkTrailingWhitespaceAsNonMetric();
             this.BidiReOrder();
             RecalculateLineMetrics(this);
             return this;
@@ -1889,28 +2058,35 @@ internal static partial class TextLayout
             if (options.TextJustification == TextJustification.InterCharacter)
             {
                 int nonZeroCount = 0;
-                for (int i = 0; i < this.data.Count - 1; i++)
+                for (int i = 0; i < this.data.Count; i++)
                 {
                     GlyphLayoutData glyph = this.data[i];
-                    if (!CodePoint.IsZeroWidthJoiner(glyph.CodePoint) && !CodePoint.IsZeroWidthNonJoiner(glyph.CodePoint))
+                    if (glyph.ContributesToMeasurement
+                        && !CodePoint.IsZeroWidthJoiner(glyph.CodePoint)
+                        && !CodePoint.IsZeroWidthNonJoiner(glyph.CodePoint))
                     {
                         nonZeroCount++;
                     }
                 }
 
-                if (nonZeroCount == 0)
+                int opportunityCount = nonZeroCount - 1;
+                if (opportunityCount == 0)
                 {
                     return;
                 }
 
-                float padding = delta / nonZeroCount;
-                for (int i = 0; i < this.data.Count - 1; i++)
+                float padding = delta / opportunityCount;
+                int remainingOpportunities = opportunityCount;
+                for (int i = 0; i < this.data.Count && remainingOpportunities > 0; i++)
                 {
                     GlyphLayoutData glyph = this.data[i];
-                    if (!CodePoint.IsZeroWidthJoiner(glyph.CodePoint) && !CodePoint.IsZeroWidthNonJoiner(glyph.CodePoint))
+                    if (glyph.ContributesToMeasurement
+                        && !CodePoint.IsZeroWidthJoiner(glyph.CodePoint)
+                        && !CodePoint.IsZeroWidthNonJoiner(glyph.CodePoint))
                     {
                         glyph.ScaledAdvance += padding;
                         this.data[i] = glyph;
+                        remainingOpportunities--;
                     }
                 }
 
@@ -1923,10 +2099,10 @@ internal static partial class TextLayout
             {
                 // Count all the whitespace characters.
                 int whiteSpaceCount = 0;
-                for (int i = 0; i < this.data.Count - 1; i++)
+                for (int i = 0; i < this.data.Count; i++)
                 {
                     GlyphLayoutData glyph = this.data[i];
-                    if (CodePoint.IsWhiteSpace(glyph.CodePoint))
+                    if (glyph.ContributesToMeasurement && CodePoint.IsWhiteSpace(glyph.CodePoint))
                     {
                         whiteSpaceCount++;
                     }
@@ -1938,10 +2114,10 @@ internal static partial class TextLayout
                 }
 
                 float padding = delta / whiteSpaceCount;
-                for (int i = 0; i < this.data.Count - 1; i++)
+                for (int i = 0; i < this.data.Count; i++)
                 {
                     GlyphLayoutData glyph = this.data[i];
-                    if (CodePoint.IsWhiteSpace(glyph.CodePoint))
+                    if (glyph.ContributesToMeasurement && CodePoint.IsWhiteSpace(glyph.CodePoint))
                     {
                         glyph.ScaledAdvance += padding;
                         this.data[i] = glyph;
@@ -2054,6 +2230,11 @@ internal static partial class TextLayout
             for (int i = 0; i < textLine.Count; i++)
             {
                 GlyphLayoutData glyph = textLine[i];
+                if (!glyph.ContributesToMeasurement)
+                {
+                    continue;
+                }
+
                 advance += glyph.ScaledAdvance;
                 ascender = MathF.Max(ascender, glyph.ScaledAscender);
                 descender = MathF.Max(descender, glyph.ScaledDescender);
@@ -2194,6 +2375,7 @@ internal static partial class TextLayout
                 this.IsTransformed = isTransformed;
                 this.IsDecomposed = isDecomposed;
                 this.StringIndex = stringIndex;
+                this.ContributesToMeasurement = true;
             }
 
             /// <summary>Gets the source codepoint for this entry.</summary>
@@ -2249,6 +2431,9 @@ internal static partial class TextLayout
 
             /// <summary>Gets the UTF-16 character index in the source string.</summary>
             public int StringIndex { get; }
+
+            /// <summary>Gets or sets a value indicating whether this entry contributes to line metrics and measurements.</summary>
+            public bool ContributesToMeasurement { get; set; }
 
             /// <summary>Gets a value indicating whether the codepoint is a line-break character.</summary>
             public readonly bool IsNewLine => CodePoint.IsNewLine(this.CodePoint);

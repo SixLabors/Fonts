@@ -21,14 +21,12 @@ public class Issues_47
             HorizontalAlignment = HorizontalAlignment.Left
         });
 
-        int glyphIndex = 0;
-        for (int lineIndex = 0; lineIndex < metrics.Lines.Count; lineIndex++)
+        for (int lineIndex = 0; lineIndex < metrics.LineMetrics.Length; lineIndex++)
         {
-            int startGlyphIndex = glyphIndex;
-            glyphIndex = AdvanceGlyphIndex(metrics.CharacterAdvances, glyphIndex, metrics.Lines[lineIndex].GraphemeCount);
             if (lineIndex > 0)
             {
-                Assert.False(CodePoint.IsWhiteSpace(metrics.CharacterAdvances[startGlyphIndex].Codepoint));
+                CodePoint lineStart = CodePoint.DecodeFromUtf16At(text.AsSpan(), metrics.LineMetrics[lineIndex].StringIndex);
+                Assert.False(CodePoint.IsWhiteSpace(lineStart));
             }
         }
     }
@@ -38,7 +36,7 @@ public class Issues_47
     [InlineData("hello world hello world hello world hello world", HorizontalAlignment.Right)]
     [InlineData("hello world hello world hello world hello world", HorizontalAlignment.Center)]
     [InlineData("hello   world   hello   world   hello   hello   world", HorizontalAlignment.Left)]
-    public void NewWrappedLinesShouldNotStartOrEndWithWhiteSpace(string text, HorizontalAlignment horizontalAlignment)
+    public void NewWrappedLineMetricsShouldNotStartWithWhiteSpace(string text, HorizontalAlignment horizontalAlignment)
     {
         Font font = CreateFont("\t x");
 
@@ -48,15 +46,12 @@ public class Issues_47
             HorizontalAlignment = horizontalAlignment
         });
 
-        int glyphIndex = 0;
-        for (int lineIndex = 0; lineIndex < metrics.Lines.Count; lineIndex++)
+        for (int lineIndex = 0; lineIndex < metrics.LineMetrics.Length; lineIndex++)
         {
-            int startGlyphIndex = glyphIndex;
-            glyphIndex = AdvanceGlyphIndex(metrics.CharacterAdvances, glyphIndex, metrics.Lines[lineIndex].GraphemeCount);
             if (lineIndex > 0)
             {
-                Assert.False(CodePoint.IsWhiteSpace(metrics.CharacterAdvances[startGlyphIndex].Codepoint));
-                Assert.False(CodePoint.IsWhiteSpace(metrics.CharacterAdvances[startGlyphIndex - 1].Codepoint));
+                CodePoint lineStart = CodePoint.DecodeFromUtf16At(text.AsSpan(), metrics.LineMetrics[lineIndex].StringIndex);
+                Assert.False(CodePoint.IsWhiteSpace(lineStart));
             }
         }
     }
@@ -72,54 +67,37 @@ public class Issues_47
             WrappingLength = 350
         });
 
-        Assert.True(CodePoint.IsWhiteSpace(metrics.CharacterAdvances[0].Codepoint));
-        Assert.True(CodePoint.IsWhiteSpace(metrics.CharacterAdvances[1].Codepoint));
-        Assert.True(CodePoint.IsWhiteSpace(metrics.CharacterAdvances[2].Codepoint));
+        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances()[0].Codepoint));
+        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances()[1].Codepoint));
+        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances()[2].Codepoint));
     }
 
     [Fact]
-    public void WhiteSpaceAtTheEndOfTextShouldBeTrimmed()
+    public void WhiteSpaceAtTheEndOfTextShouldNotContributeToMeasurement()
     {
         Font font = CreateFont("\t x");
         string text = "hello world hello world hello world   ";
+        string trimmed = "hello world hello world hello world";
 
-        TextMetrics metrics = TextMeasurer.Measure(text, new TextOptions(new Font(font, 30))
+        TextOptions options = new(new Font(font, 30))
         {
             WrappingLength = 350
-        });
+        };
 
-        Assert.False(CodePoint.IsWhiteSpace(metrics.CharacterAdvances[^1].Codepoint));
-        Assert.False(CodePoint.IsWhiteSpace(metrics.CharacterAdvances[^2].Codepoint));
-        Assert.False(CodePoint.IsWhiteSpace(metrics.CharacterAdvances[^3].Codepoint));
-    }
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+        TextMetrics trimmedMetrics = TextMeasurer.Measure(trimmed, options);
 
-    private static int AdvanceGlyphIndex(IReadOnlyList<GlyphBounds> glyphs, int glyphIndex, int graphemeCount)
-    {
-        int consumed = 0;
-        int lastGraphemeIndex = -1;
-        while (glyphIndex < glyphs.Count && consumed < graphemeCount)
-        {
-            int graphemeIndex = glyphs[glyphIndex].GraphemeIndex;
-            if (graphemeIndex != lastGraphemeIndex)
-            {
-                consumed++;
-                lastGraphemeIndex = graphemeIndex;
-            }
+        Assert.Equal(trimmedMetrics.Advance, metrics.Advance);
+        Assert.Equal(trimmedMetrics.Bounds, metrics.Bounds);
 
-            glyphIndex++;
-        }
-
-        while (glyphIndex < glyphs.Count && glyphs[glyphIndex].GraphemeIndex == lastGraphemeIndex)
-        {
-            glyphIndex++;
-        }
-
-        return glyphIndex;
+        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances()[^1].Codepoint));
+        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances()[^2].Codepoint));
+        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances()[^3].Codepoint));
     }
 
     public static Font CreateFont(string text)
     {
-        IFontMetricsCollection fc = (IFontMetricsCollection)new FontCollection();
+        IFontMetricsCollection fc = new FontCollection();
         Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
         return new Font(d, 1F);
     }

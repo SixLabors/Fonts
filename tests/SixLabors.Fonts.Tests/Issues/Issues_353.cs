@@ -22,7 +22,7 @@ public class Issues_353
             LineSpacing = 1.6f
         };
 
-        LineMetrics[] l = TextMeasurer.GetLineMetrics(text, options);
+        LineMetrics[] l = TextMeasurer.GetLineMetrics(text, options).ToArray();
 
         // Numeric assertions for line metrics to complement the visual test.
         Assert.NotEmpty(l);
@@ -42,7 +42,7 @@ public class Issues_353
             Assert.True(m.Extent > m.Start, "Extent should be greater than Start.");
         }
 
-        void DrawLines(Image<Rgba32> image)
+        void DrawLineMetrics(Image<Rgba32> image)
         {
             // Draw four separate lines for ascender(orange), baseline (red), descender (blue),
             // and line bottom (green).
@@ -73,6 +73,6 @@ public class Issues_353
             text,
             options,
             includeGeometry: false,
-            beforeAction: DrawLines);
+            beforeAction: DrawLineMetrics);
     }
 }

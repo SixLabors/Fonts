@@ -10,7 +10,7 @@ public class Issues_514
     {
         Font font = TestFonts.GetFont(TestFonts.Issues.Issue514, 12);
 
-        FontRectangle size = TextMeasurer.MeasureSize("ABCabc123", new TextOptions(font));
+        FontRectangle size = TextMeasurer.MeasureBounds("ABCabc123", new TextOptions(font));
 
         Assert.NotEqual(FontRectangle.Empty, size);
     }

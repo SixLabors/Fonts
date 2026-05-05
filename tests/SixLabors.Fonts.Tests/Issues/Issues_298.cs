@@ -21,7 +21,7 @@ public class Issues_298
             KerningMode = KerningMode.Auto
         };
 
-        FontRectangle bounds = TextMeasurer.MeasureSize(content.AsSpan(), renderOptions);
+        FontRectangle bounds = TextMeasurer.MeasureBounds(content.AsSpan(), renderOptions);
         Assert.NotEqual(default, bounds);
     }
 }

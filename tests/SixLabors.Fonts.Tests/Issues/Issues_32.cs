@@ -13,7 +13,7 @@ public class Issues_32
     {
         const string text = "Hello\tworld";
         Font font = CreateFont(text);
-        FontRectangle size = TextMeasurer.MeasureSize(text, new TextOptions(font)
+        FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font)
         {
             Dpi = font.FontMetrics.ScaleFactor,
             TabWidth = 0

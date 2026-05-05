@@ -16,9 +16,21 @@ internal static partial class TextLayout
     internal interface IGlyphLayoutVisitor
     {
         /// <summary>
+        /// Invoked before glyphs are streamed for a laid-out line.
+        /// </summary>
+        /// <param name="lineIndex">The zero-based index of the line in the line-broken text box.</param>
+        public void BeginLine(int lineIndex);
+
+        /// <summary>
         /// Invoked once for each laid-out glyph in layout order.
         /// </summary>
         /// <param name="glyph">The laid-out glyph.</param>
-        public void Visit(in GlyphLayout glyph);
+        /// <param name="contributesToMeasurement">Whether the glyph contributes to line metrics and measurements.</param>
+        public void Visit(in GlyphLayout glyph, bool contributesToMeasurement);
+
+        /// <summary>
+        /// Invoked after glyphs have been streamed for a laid-out line.
+        /// </summary>
+        public void EndLine();
     }
 }

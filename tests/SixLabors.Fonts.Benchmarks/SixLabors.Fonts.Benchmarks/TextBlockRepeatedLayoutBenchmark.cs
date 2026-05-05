@@ -58,13 +58,13 @@ public class TextBlockRepeatedLayoutBenchmark
     /// </summary>
     /// <returns>An aggregate value that keeps the measured work observable.</returns>
     [Benchmark(Baseline = true)]
-    public float TextMeasurerMeasureSizeRepeatedWrappingLengths()
+    public float TextMeasurerMeasureBoundsRepeatedWrappingLengths()
     {
         float result = 0;
         for (int i = 0; i < this.wrappingLengths.Length; i++)
         {
             this.textMeasurerOptions.WrappingLength = this.wrappingLengths[i];
-            FontRectangle size = TextMeasurer.MeasureSize(this.text, this.textMeasurerOptions);
+            FontRectangle size = TextMeasurer.MeasureBounds(this.text, this.textMeasurerOptions);
             result += size.Width + size.Height;
         }
 
@@ -76,12 +76,12 @@ public class TextBlockRepeatedLayoutBenchmark
     /// </summary>
     /// <returns>An aggregate value that keeps the measured work observable.</returns>
     [Benchmark]
-    public float TextBlockMeasureSizeRepeatedWrappingLengths()
+    public float TextBlockMeasureBoundsRepeatedWrappingLengths()
     {
         float result = 0;
         for (int i = 0; i < this.wrappingLengths.Length; i++)
         {
-            FontRectangle size = this.textBlock.MeasureSize(this.wrappingLengths[i]);
+            FontRectangle size = this.textBlock.MeasureBounds(this.wrappingLengths[i]);
             result += size.Width + size.Height;
         }
 

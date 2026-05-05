@@ -65,19 +65,6 @@ public class TextMeasurerReferenceTests
     }
 
     [Theory]
-    [InlineData("A", 7.5762f, 8.6016f)]
-    [InlineData("Hello", 27.0352f, 9.2344f)]
-    [InlineData("Hello, World!", 69.7617f, 10.6641f)]
-    [InlineData("The quick brown fox", 113.168f, 12.0527f)]
-    [InlineData("Hello\nWorld", 32.3672f, 21.2344f)]
-    [InlineData("A\nB\nC", 7.5762f, 32.7188f)]
-    public void MeasureSize_Pinned(string text, float ew, float eh)
-    {
-        FontRectangle actual = TextMeasurer.MeasureSize(text, Options());
-        Assert.Equal(new FontRectangle(0, 0, ew, eh), actual, Comparer);
-    }
-
-    [Theory]
     [InlineData("A", 0f, 0f, 7.5879f, 12f)]
     [InlineData("Hello", 0f, 0f, 28.8633f, 12f)]
     // "Hello, World!" has comma descender — renderable height (12.2022) exceeds advance height (12).
@@ -152,18 +139,18 @@ public class TextMeasurerReferenceTests
     [InlineData("Hello", 1)]
     [InlineData("Hello\nWorld", 2)]
     [InlineData("A\nB\nC\nD", 4)]
-    public void GetLineMetrics_Count_MatchesCountLines(string text, int expectedLines)
+    public void GetLineMetrics_Count_MatchesCountLines(string text, int expectedLineMetrics)
     {
-        LineMetrics[] metrics = TextMeasurer.GetLineMetrics(text, Options());
-        Assert.Equal(expectedLines, metrics.Length);
-        Assert.Equal(expectedLines, TextMeasurer.CountLines(text, Options()));
+        ReadOnlySpan<LineMetrics> metrics = TextMeasurer.GetLineMetrics(text, Options());
+        Assert.Equal(expectedLineMetrics, metrics.Length);
+        Assert.Equal(expectedLineMetrics, TextMeasurer.CountLines(text, Options()));
     }
 
     [Fact]
     public void GetLineMetrics_PerLineExtent_MatchesLineAdvance()
     {
         const string text = "Hello\nWorld world";
-        LineMetrics[] metrics = TextMeasurer.GetLineMetrics(text, Options());
+        ReadOnlySpan<LineMetrics> metrics = TextMeasurer.GetLineMetrics(text, Options());
         Assert.Equal(2, metrics.Length);
 
         FontRectangle line1Advance = TextMeasurer.MeasureAdvance("Hello", Options());
@@ -175,8 +162,8 @@ public class TextMeasurerReferenceTests
     [Fact]
     public void GetLineMetrics_AscenderBaselineDescender_AreOrdered()
     {
-        LineMetrics[] metrics = TextMeasurer.GetLineMetrics("Hello", Options());
-        Assert.Single(metrics);
+        ReadOnlySpan<LineMetrics> metrics = TextMeasurer.GetLineMetrics("Hello", Options());
+        Assert.Equal(1, metrics.Length);
         LineMetrics m = metrics[0];
         Assert.True(m.Ascender < m.Baseline, $"Ascender ({m.Ascender}) should be < Baseline ({m.Baseline})");
         Assert.True(m.Baseline < m.Descender, $"Baseline ({m.Baseline}) should be < Descender ({m.Descender})");
@@ -185,16 +172,16 @@ public class TextMeasurerReferenceTests
 
     [Fact]
     public void GetLineMetrics_EmptyText_ReturnsEmpty()
-        => Assert.Empty(TextMeasurer.GetLineMetrics(string.Empty, Options()));
+        => Assert.True(TextMeasurer.GetLineMetrics(string.Empty, Options()).IsEmpty);
 
     // ======================================================================
     // Per-character metadata (codepoints, indices) — character content pinned
     // ======================================================================
     [Fact]
-    public void TryMeasureCharacterBounds_Hi_Pinned()
+    public void MeasureGlyphBounds_Hi_Pinned()
     {
         const string text = "Hi!";
-        Assert.True(TextMeasurer.TryMeasureCharacterBounds(text, Options(), out ReadOnlySpan<GlyphBounds> bounds));
+        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, Options());
 
         GlyphBounds[] expected =
         [
@@ -206,40 +193,25 @@ public class TextMeasurerReferenceTests
     }
 
     [Fact]
-    public void TryMeasureCharacterAdvances_Hi_Pinned()
+    public void MeasureGlyphAdvances_Hi_Pinned()
     {
         const string text = "Hi!";
-        Assert.True(TextMeasurer.TryMeasureCharacterAdvances(text, Options(), out ReadOnlySpan<GlyphBounds> advances));
+        ReadOnlySpan<GlyphBounds> advances = TextMeasurer.MeasureGlyphAdvances(text, Options());
 
         GlyphBounds[] expected =
         [
             new(new CodePoint('H'), new FontRectangle(0, 0, 8.8477f, 12f), 0, 0),
-            new(new CodePoint('i'), new FontRectangle(0, 0, 3.0293f, 12f), 1, 1),
-            new(new CodePoint('!'), new FontRectangle(0, 0, 3.1699f, 12f), 2, 2),
+            new(new CodePoint('i'), new FontRectangle(8.8477f, 0, 3.0293f, 12f), 1, 1),
+            new(new CodePoint('!'), new FontRectangle(11.877f, 0, 3.1699f, 12f), 2, 2),
         ];
         AssertGlyphBoundsEqual(expected, advances);
     }
 
     [Fact]
-    public void TryMeasureCharacterSizes_Hi_Pinned()
+    public void MeasureGlyphRenderableBounds_Hi_Pinned()
     {
         const string text = "Hi!";
-        Assert.True(TextMeasurer.TryMeasureCharacterSizes(text, Options(), out ReadOnlySpan<GlyphBounds> sizes));
-
-        GlyphBounds[] expected =
-        [
-            new(new CodePoint('H'), new FontRectangle(0, 0, 6.4922f, 8.5664f), 0, 0),
-            new(new CodePoint('i'), new FontRectangle(0, 0, 1.1719f, 8.8242f), 1, 1),
-            new(new CodePoint('!'), new FontRectangle(0, 0, 1.3945f, 8.7305f), 2, 2),
-        ];
-        AssertGlyphBoundsEqual(expected, sizes);
-    }
-
-    [Fact]
-    public void TryMeasureCharacterRenderableBounds_Hi_Pinned()
-    {
-        const string text = "Hi!";
-        Assert.True(TextMeasurer.TryMeasureCharacterRenderableBounds(text, Options(), out ReadOnlySpan<GlyphBounds> renderable));
+        ReadOnlySpan<GlyphBounds> renderable = TextMeasurer.MeasureGlyphRenderableBounds(text, Options());
 
         GlyphBounds[] expected =
         [
@@ -251,10 +223,40 @@ public class TextMeasurerReferenceTests
     }
 
     [Fact]
-    public void TryMeasureCharacterBounds_Codepoints_PreserveSourceOrder()
+    public void GetGraphemeMetrics_Hi_Pinned()
     {
         const string text = "Hi!";
-        Assert.True(TextMeasurer.TryMeasureCharacterBounds(text, Options(), out ReadOnlySpan<GlyphBounds> bounds));
+        ReadOnlySpan<GraphemeMetrics> graphemes = TextMeasurer.GetGraphemeMetrics(text, Options());
+
+        GraphemeMetrics[] expected =
+        [
+            new(
+                new FontRectangle(0, 0, 8.8477f, 12f),
+                new FontRectangle(1.1719f, 2.0889f, 6.4922f, 8.5664f),
+                new FontRectangle(0, 0, 8.8477f, 12f),
+                0,
+                0),
+            new(
+                new FontRectangle(8.8477f, 0, 3.0293f, 12f),
+                new FontRectangle(9.7852f, 1.8311f, 1.1719f, 8.8242f),
+                new FontRectangle(8.8477f, 0, 3.0293f, 12f),
+                1,
+                1),
+            new(
+                new FontRectangle(11.877f, 0, 3.1699f, 12f),
+                new FontRectangle(12.7559f, 2.0889f, 1.3945f, 8.7305f),
+                new FontRectangle(11.877f, 0, 3.1699f, 12f),
+                2,
+                2),
+        ];
+        AssertGraphemeMetricsEqual(expected, graphemes);
+    }
+
+    [Fact]
+    public void MeasureGlyphBounds_Codepoints_PreserveSourceOrder()
+    {
+        const string text = "Hi!";
+        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, Options());
 
         Assert.Equal(3, bounds.Length);
         Assert.Equal(new CodePoint('H'), bounds[0].Codepoint);
@@ -266,32 +268,47 @@ public class TextMeasurerReferenceTests
     }
 
     [Fact]
-    public void TryMeasureCharacterBounds_Newline_IsSkippedButAdvancesIndices()
+    public void MeasureGlyphBounds_Newline_IsPreservedAndAdvancesIndices()
     {
         const string text = "A\nB";
-        Assert.True(TextMeasurer.TryMeasureCharacterBounds(text, Options(), out ReadOnlySpan<GlyphBounds> bounds));
+        TextOptions options = Options();
+        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, options);
 
-        Assert.Equal(2, bounds.Length);
+        Assert.Equal(3, bounds.Length);
         Assert.Equal(new CodePoint('A'), bounds[0].Codepoint);
         Assert.Equal(0, bounds[0].StringIndex);
-        Assert.Equal(new CodePoint('B'), bounds[1].Codepoint);
-        Assert.Equal(2, bounds[1].StringIndex);
+
+        Assert.True(CodePoint.IsNewLine(bounds[1].Codepoint));
+        Assert.Equal(1, bounds[1].StringIndex);
+        Assert.True(bounds[1].Bounds.Width > 0 || bounds[1].Bounds.Height > 0);
+
+        Assert.Equal(new CodePoint('B'), bounds[2].Codepoint);
+        Assert.Equal(2, bounds[2].StringIndex);
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        // The newline entry has real glyph bounds above, but it is the hard break
+        // that ended the previous line. It remains addressable by StringIndex while
+        // being excluded from aggregate text bounds because it contributes no ink
+        // to the laid-out line.
+        FontRectangle expectedBounds = FontRectangle.Union(bounds[0].Bounds, bounds[2].Bounds);
+        Assert.Equal(expectedBounds, metrics.Bounds, Comparer);
     }
 
     [Fact]
-    public void TryMeasureCharacterAdvances_EmptyText_ReturnsFalse()
+    public void MeasureGlyphAdvances_EmptyText_ReturnsEmpty()
     {
-        Assert.False(TextMeasurer.TryMeasureCharacterAdvances(string.Empty, Options(), out ReadOnlySpan<GlyphBounds> advances));
+        ReadOnlySpan<GlyphBounds> advances = TextMeasurer.MeasureGlyphAdvances(string.Empty, Options());
         Assert.Equal(0, advances.Length);
     }
 
     [Fact]
-    public void TryMeasureCharacterBounds_ShiftsWithOrigin()
+    public void MeasureGlyphBounds_ShiftsWithOrigin()
     {
         const string text = "Hi!";
-        Assert.True(TextMeasurer.TryMeasureCharacterBounds(text, Options(), out ReadOnlySpan<GlyphBounds> atZero));
+        ReadOnlySpan<GlyphBounds> atZero = TextMeasurer.MeasureGlyphBounds(text, Options());
         GlyphBounds[] zeroCopy = atZero.ToArray();
-        Assert.True(TextMeasurer.TryMeasureCharacterBounds(text, Options(100, 50), out ReadOnlySpan<GlyphBounds> atOffset));
+        ReadOnlySpan<GlyphBounds> atOffset = TextMeasurer.MeasureGlyphBounds(text, Options(100, 50));
 
         Assert.Equal(zeroCopy.Length, atOffset.Length);
         for (int i = 0; i < zeroCopy.Length; i++)
@@ -303,41 +320,9 @@ public class TextMeasurerReferenceTests
         }
     }
 
-    [Fact]
-    public void TryMeasureCharacterSizes_IsOriginIndependent()
-    {
-        const string text = "Hi!";
-        Assert.True(TextMeasurer.TryMeasureCharacterSizes(text, Options(), out ReadOnlySpan<GlyphBounds> atZero));
-        GlyphBounds[] zeroCopy = atZero.ToArray();
-        Assert.True(TextMeasurer.TryMeasureCharacterSizes(text, Options(100, 50), out ReadOnlySpan<GlyphBounds> atOffset));
-
-        Assert.Equal(zeroCopy.Length, atOffset.Length);
-        for (int i = 0; i < zeroCopy.Length; i++)
-        {
-            Assert.Equal(zeroCopy[i].Bounds, atOffset[i].Bounds, Comparer);
-        }
-    }
-
     // ======================================================================
     // Invariants — hold regardless of font or text
     // ======================================================================
-    [Theory]
-    [InlineData("Hello", 0f, 0f)]
-    [InlineData("Hello, World!", 100, 50)]
-    [InlineData("Hello\nWorld", 10, 20)]
-    [InlineData("A\nB\nC", -20, 30)]
-    public void Invariant_SizeEqualsBoundsWithZeroedOrigin(string text, float ox, float oy)
-    {
-        TextOptions options = Options(ox, oy);
-        FontRectangle bounds = TextMeasurer.MeasureBounds(text, options);
-        FontRectangle size = TextMeasurer.MeasureSize(text, options);
-
-        Assert.Equal(0, size.X, Comparer);
-        Assert.Equal(0, size.Y, Comparer);
-        Assert.Equal(bounds.Width, size.Width, Comparer);
-        Assert.Equal(bounds.Height, size.Height, Comparer);
-    }
-
     [Theory]
     [InlineData("Hello", 0f, 0f)]
     [InlineData("Hello, World!", 100, 50)]
@@ -364,13 +349,11 @@ public class TextMeasurerReferenceTests
     public void Invariant_AllPerCharArraysHaveSameLength(string text)
     {
         TextOptions options = Options();
-        TextMeasurer.TryMeasureCharacterAdvances(text, options, out ReadOnlySpan<GlyphBounds> advances);
-        TextMeasurer.TryMeasureCharacterBounds(text, options, out ReadOnlySpan<GlyphBounds> bounds);
-        TextMeasurer.TryMeasureCharacterSizes(text, options, out ReadOnlySpan<GlyphBounds> sizes);
-        TextMeasurer.TryMeasureCharacterRenderableBounds(text, options, out ReadOnlySpan<GlyphBounds> renderable);
+        ReadOnlySpan<GlyphBounds> advances = TextMeasurer.MeasureGlyphAdvances(text, options);
+        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, options);
+        ReadOnlySpan<GlyphBounds> renderable = TextMeasurer.MeasureGlyphRenderableBounds(text, options);
 
         Assert.Equal(advances.Length, bounds.Length);
-        Assert.Equal(advances.Length, sizes.Length);
         Assert.Equal(advances.Length, renderable.Length);
     }
 
@@ -381,20 +364,16 @@ public class TextMeasurerReferenceTests
     public void Invariant_PerCharMetadataMatchAcrossArrays(string text)
     {
         TextOptions options = Options();
-        TextMeasurer.TryMeasureCharacterAdvances(text, options, out ReadOnlySpan<GlyphBounds> advances);
-        TextMeasurer.TryMeasureCharacterBounds(text, options, out ReadOnlySpan<GlyphBounds> bounds);
-        TextMeasurer.TryMeasureCharacterSizes(text, options, out ReadOnlySpan<GlyphBounds> sizes);
-        TextMeasurer.TryMeasureCharacterRenderableBounds(text, options, out ReadOnlySpan<GlyphBounds> renderable);
+        ReadOnlySpan<GlyphBounds> advances = TextMeasurer.MeasureGlyphAdvances(text, options);
+        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, options);
+        ReadOnlySpan<GlyphBounds> renderable = TextMeasurer.MeasureGlyphRenderableBounds(text, options);
 
         for (int i = 0; i < advances.Length; i++)
         {
             Assert.Equal(advances[i].Codepoint, bounds[i].Codepoint);
-            Assert.Equal(advances[i].Codepoint, sizes[i].Codepoint);
             Assert.Equal(advances[i].Codepoint, renderable[i].Codepoint);
             Assert.Equal(advances[i].GraphemeIndex, bounds[i].GraphemeIndex);
             Assert.Equal(advances[i].StringIndex, bounds[i].StringIndex);
-            Assert.Equal(advances[i].GraphemeIndex, sizes[i].GraphemeIndex);
-            Assert.Equal(advances[i].StringIndex, sizes[i].StringIndex);
             Assert.Equal(advances[i].GraphemeIndex, renderable[i].GraphemeIndex);
             Assert.Equal(advances[i].StringIndex, renderable[i].StringIndex);
         }
@@ -417,10 +396,6 @@ public class TextMeasurerReferenceTests
             TextMeasurer.MeasureBounds(text.AsSpan(), options),
             Comparer);
         Assert.Equal(
-            TextMeasurer.MeasureSize(text, options),
-            TextMeasurer.MeasureSize(text.AsSpan(), options),
-            Comparer);
-        Assert.Equal(
             TextMeasurer.MeasureRenderableBounds(text, options),
             TextMeasurer.MeasureRenderableBounds(text.AsSpan(), options),
             Comparer);
@@ -437,11 +412,10 @@ public class TextMeasurerReferenceTests
         Assert.Equal(FontRectangle.Empty, TextMeasurer.MeasureAdvance(string.Empty, options), Comparer);
         Assert.Equal(FontRectangle.Empty, TextMeasurer.MeasureRenderableBounds(string.Empty, options), Comparer);
         Assert.Equal(0, TextMeasurer.CountLines(string.Empty, options));
-        Assert.Empty(TextMeasurer.GetLineMetrics(string.Empty, options));
-        Assert.False(TextMeasurer.TryMeasureCharacterAdvances(string.Empty, options, out _));
-        Assert.False(TextMeasurer.TryMeasureCharacterBounds(string.Empty, options, out _));
-        Assert.False(TextMeasurer.TryMeasureCharacterSizes(string.Empty, options, out _));
-        Assert.False(TextMeasurer.TryMeasureCharacterRenderableBounds(string.Empty, options, out _));
+        Assert.True(TextMeasurer.GetLineMetrics(string.Empty, options).IsEmpty);
+        Assert.True(TextMeasurer.MeasureGlyphAdvances(string.Empty, options).IsEmpty);
+        Assert.True(TextMeasurer.MeasureGlyphBounds(string.Empty, options).IsEmpty);
+        Assert.True(TextMeasurer.MeasureGlyphRenderableBounds(string.Empty, options).IsEmpty);
     }
 
     [Theory]
@@ -477,6 +451,21 @@ public class TextMeasurerReferenceTests
             Assert.Equal(e.GraphemeIndex, a.GraphemeIndex);
             Assert.Equal(e.StringIndex, a.StringIndex);
             Assert.Equal(e.Bounds, a.Bounds, Comparer);
+        }
+    }
+
+    private static void AssertGraphemeMetricsEqual(GraphemeMetrics[] expected, ReadOnlySpan<GraphemeMetrics> actual)
+    {
+        Assert.Equal(expected.Length, actual.Length);
+        for (int i = 0; i < expected.Length; i++)
+        {
+            GraphemeMetrics e = expected[i];
+            GraphemeMetrics a = actual[i];
+            Assert.Equal(e.Advance, a.Advance, Comparer);
+            Assert.Equal(e.Bounds, a.Bounds, Comparer);
+            Assert.Equal(e.RenderableBounds, a.RenderableBounds, Comparer);
+            Assert.Equal(e.GraphemeIndex, a.GraphemeIndex);
+            Assert.Equal(e.StringIndex, a.StringIndex);
         }
     }
 }
