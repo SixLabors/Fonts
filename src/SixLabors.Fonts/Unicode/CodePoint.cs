@@ -559,6 +559,14 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
         => UnicodeData.GetLineBreakClass(codePoint.value);
 
     /// <summary>
+    /// Gets the <see cref="WordBreakClass"/> for the given codepoint.
+    /// </summary>
+    /// <param name="codePoint">The codepoint.</param>
+    /// <returns>The <see cref="WordBreakClass"/>.</returns>
+    public static WordBreakClass GetWordBreakClass(in CodePoint codePoint)
+        => UnicodeData.GetWordBreakClass(codePoint.value);
+
+    /// <summary>
     /// Gets the <see cref="GraphemeClusterClass"/> for the given codepoint.
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
