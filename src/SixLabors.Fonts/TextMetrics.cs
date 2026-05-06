@@ -11,7 +11,7 @@ namespace SixLabors.Fonts;
 public sealed class TextMetrics
 {
     private readonly TextBlock textBlock;
-    private readonly TextLayout.TextBox textBox;
+    private readonly TextBox textBox;
     private readonly float wrappingLength;
     private readonly LayoutMode layoutMode;
     private readonly GraphemeMetrics[] graphemeMetrics;
@@ -23,7 +23,7 @@ public sealed class TextMetrics
 
     internal TextMetrics(
         TextBlock textBlock,
-        TextLayout.TextBox textBox,
+        TextBox textBox,
         float wrappingLength,
         FontRectangle advance,
         FontRectangle bounds,

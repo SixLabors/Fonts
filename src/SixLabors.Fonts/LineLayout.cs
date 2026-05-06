@@ -10,7 +10,7 @@ namespace SixLabors.Fonts;
 /// </summary>
 public sealed class LineLayout
 {
-    private readonly TextLayout.TextBox textBox;
+    private readonly TextBox textBox;
     private readonly TextOptions options;
     private readonly float wrappingLength;
     private readonly int lineIndex;
@@ -22,7 +22,7 @@ public sealed class LineLayout
     private GlyphBounds[]? glyphRenderableBounds;
 
     internal LineLayout(
-        TextLayout.TextBox textBox,
+        TextBox textBox,
         TextOptions options,
         float wrappingLength,
         int lineIndex,

@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Numerics;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts;
@@ -10,6 +11,9 @@ namespace SixLabors.Fonts;
 /// </content>
 internal static partial class TextLayout
 {
+    private const int SoftHyphen = 0x00AD;
+    private const int StandardHyphen = 0x2010;
+
     /// <summary>
     /// Composes the logical <see cref="TextLine"/> from shaped glyph data before width-dependent line breaking.
     /// </summary>
@@ -32,6 +36,8 @@ internal static partial class TextLayout
         TextLine textLine = new();
         int stringIndex = 0;
         List<WordSegmentRun> wordSegments = [];
+        List<GlyphLayoutData> hyphenationMarkers = [];
+        CodePoint? hyphenationMarkerCodePoint = GetHyphenationMarkerCodePoint(options);
 
         // No glyph should contain more than 64 metrics.
         // We do a sanity check below just in case.
@@ -127,7 +133,13 @@ internal static partial class TextLayout
 
                     decomposedAdvances[0] = glyphAdvance;
 
-                    if (CodePoint.IsTabulation(codePoint))
+                    bool isSoftHyphen = codePoint.Value == SoftHyphen;
+                    if (isSoftHyphen)
+                    {
+                        glyphAdvance = 0;
+                        decomposedAdvances[0] = 0;
+                    }
+                    else if (CodePoint.IsTabulation(codePoint))
                     {
                         if (options.TabWidth > -1F)
                         {
@@ -295,6 +307,116 @@ internal static partial class TextLayout
                             mode = shouldRotate ? GlyphLayoutMode.VerticalRotated : GlyphLayoutMode.Vertical;
                         }
 
+                        int hyphenationMarkerIndex = -1;
+                        if (isSoftHyphen && hyphenationMarkerCodePoint.HasValue)
+                        {
+                            // U+00AD is shaped as an invisible source entry, but if this exact
+                            // discretionary break is later selected we need a visible marker with
+                            // the same run, font attributes, bidi mapping, and source mapping. Build
+                            // that marker here while those values are already in hand; BreakLines can
+                            // then account for its advance without rescanning or reshaping the line.
+                            CodePoint markerCodePoint = hyphenationMarkerCodePoint.Value;
+                            glyph.FontMetrics.TryGetGlyphId(markerCodePoint, out ushort markerGlyphId);
+
+                            GlyphMetrics markerMetric = glyph.FontMetrics.GetGlyphMetrics(
+                                markerCodePoint,
+                                markerGlyphId,
+                                glyph.TextAttributes,
+                                glyph.TextDecorations,
+                                shapedText.LayoutMode,
+                                options.ColorFontSupport);
+
+                            // GetGlyphMetrics returns the cached font-level metric. Clone it with the
+                            // source run so renderers see the same font, decorations, and attributes
+                            // that the invisible soft hyphen would have used.
+                            markerMetric = markerMetric.CloneForRendering(glyph.TextRun);
+
+                            // The marker is a normal glyph entry once selected, so it must use the
+                            // same orientation and CSS line-box calculations as the source glyphs.
+                            // This intentionally mirrors the calculations above instead of sharing
+                            // state from the invisible soft hyphen, whose advance and bounds are zero.
+                            bool markerShouldRotate = isVerticalMixedLayout &&
+                                !isVerticalSubstitution &&
+                                CodePoint.GetVerticalOrientationType(markerCodePoint) is
+                                            VerticalOrientationType.Rotate or
+                                            VerticalOrientationType.TransformRotate;
+
+                            bool markerShouldOffset = isVerticalLayout &&
+                                !isVerticalSubstitution &&
+                                CodePoint.GetVerticalOrientationType(markerCodePoint) is
+                                            VerticalOrientationType.Rotate or
+                                            VerticalOrientationType.TransformRotate;
+
+                            GlyphLayoutMode markerMode = GlyphLayoutMode.Horizontal;
+                            if (isVerticalLayout)
+                            {
+                                markerMode = GlyphLayoutMode.Vertical;
+                            }
+                            else if (isVerticalMixedLayout)
+                            {
+                                markerMode = markerShouldRotate ? GlyphLayoutMode.VerticalRotated : GlyphLayoutMode.Vertical;
+                            }
+
+                            // Calculate the marker advance and scale it to pixels. Hyphenation
+                            // marker measurement must happen here so line fitting can include the
+                            // marker advance before deciding whether this break actually fits.
+                            float markerAdvance = isHorizontalLayout || markerShouldRotate
+                                ? markerMetric.AdvanceWidth * (pointSize / markerMetric.ScaleFactor.X)
+                                : markerMetric.AdvanceHeight * (pointSize / markerMetric.ScaleFactor.Y);
+
+                            // Convert design-space units to pixels based on the target point size.
+                            // ScaleFactor.Y represents the vertical UPEM scaling factor for this glyph.
+                            float markerScaleY = pointSize / markerMetric.ScaleFactor.Y;
+
+                            // Choose which metrics table to use based on layout orientation.
+                            // Horizontal is the default; vertical fonts use VMTX if available.
+                            IMetricsHeader markerMetricsHeader = isHorizontalLayout || markerShouldRotate
+                                ? markerMetric.FontMetrics.HorizontalMetrics
+                                : markerMetric.FontMetrics.VerticalMetrics;
+
+                            // Ascender and descender are stored in font design units, so scale them to pixels.
+                            float markerAscender = markerMetricsHeader.Ascender * markerScaleY;
+
+                            // Match browser line-height calculation logic.
+                            // Reference: https://www.w3.org/TR/CSS2/visudet.html#propdef-line-height
+                            // The line height in CSS is based on a multiple of the font-size (pointSize),
+                            // but fonts may define a custom LineHeight in their metrics that differs from UPEM.
+                            float markerDescender = Math.Abs(markerMetricsHeader.Descender * markerScaleY);
+                            float markerLineHeight = markerMetric.UnitsPerEm * markerScaleY;
+
+                            // The delta centers the font's line box within the CSS line box when
+                            // LineHeight differs from the nominal font size.
+                            float markerDelta = ((markerMetricsHeader.LineHeight * markerScaleY) - markerLineHeight) * 0.5F;
+
+                            // Adjust ascender and descender symmetrically by delta to preserve visual balance.
+                            markerAscender -= markerDelta;
+                            markerDescender -= markerDelta;
+
+                            // Track the true top of the marker ink in device space (Y down, baseline at 0).
+                            FontRectangle markerBox = GlyphMetrics.ShouldSkipGlyphRendering(markerMetric.CodePoint)
+                                ? FontRectangle.Empty
+                                : markerMetric.GetBoundingBox(markerMode, Vector2.Zero, pointSize);
+
+                            hyphenationMarkerIndex = hyphenationMarkers.Count;
+                            hyphenationMarkers.Add(new GlyphLayoutData(
+                                new GlyphMetrics[] { markerMetric },
+                                pointSize,
+                                markerAdvance,
+                                markerLineHeight * options.LineSpacing,
+                                markerAscender,
+                                markerDescender,
+                                markerDelta,
+                                MathF.Min(0, markerBox.Y),
+                                shapedText.BidiRuns[shapedText.BidiMap[codePointIndex]],
+                                graphemeIndex,
+                                isLastInGrapheme,
+                                codePointIndex,
+                                graphemeCodePointIndex,
+                                markerShouldRotate || markerShouldOffset,
+                                false,
+                                stringIndex));
+                        }
+
                         // Add our metrics to the line.
                         textLine.Add(
                             isDecomposed ? new GlyphMetrics[] { metric } : metrics,
@@ -313,7 +435,9 @@ internal static partial class TextLayout
                             isDecomposed,
                             stringIndex,
                             mode,
-                            options.LineSpacing);
+                            options.LineSpacing,
+                            !isSoftHyphen,
+                            hyphenationMarkerIndex);
                     }
 
                     codePointIndex++;
@@ -332,9 +456,9 @@ internal static partial class TextLayout
         }
 
         // Line break candidates are width-independent and belong with the composed logical line.
-        List<LineBreak> lineBreaks = CollectLineBreaks(text);
+        List<LineBreak> lineBreaks = CollectLineBreaks(text, hyphenationMarkerCodePoint.HasValue);
 
-        return new LogicalTextLine(textLine, lineBreaks, wordSegments);
+        return new LogicalTextLine(textLine, lineBreaks, wordSegments, hyphenationMarkers);
     }
 
     /// <summary>
@@ -378,8 +502,16 @@ internal static partial class TextLayout
                     continue;
                 }
 
-                // Measure the text up to the adjusted break point
-                float advance = textLine.MeasureAt(lineBreak.PositionMeasure - processed);
+                // Measure the text up to the adjusted break point.
+                int measureIndex = lineBreak.PositionMeasure - processed;
+                float advance = textLine.MeasureAt(measureIndex);
+                if (lineBreak.IsHyphenationBreak)
+                {
+                    advance += textLine.GetHyphenationMarkerAdvance(
+                        measureIndex - 1,
+                        logicalLine.HyphenationMarkers);
+                }
+
                 if (advance >= scaledWrappingLength)
                 {
                     bestBreak ??= lineBreak;
@@ -428,9 +560,18 @@ internal static partial class TextLayout
                 }
                 else
                 {
+                    int hyphenationMarkerIndex = breakAt.PositionMeasure - processed - 1;
+
                     // Split the current line at the adjusted break index
                     if (textLine.TrySplitAt(breakAt, keepAll, out TextLine? remaining))
                     {
+                        if (breakAt.IsHyphenationBreak)
+                        {
+                            textLine.ApplyHyphenationMarker(
+                                hyphenationMarkerIndex,
+                                logicalLine.HyphenationMarkers);
+                        }
+
                         // If 'keepAll' is true then the break could be later than expected.
                         processed = keepAll
                             ? processed + Math.Max(textLine.Count, breakAt.PositionWrap - processed)
@@ -521,16 +662,31 @@ internal static partial class TextLayout
     /// </para>
     /// </remarks>
     /// <param name="text">The original source text being laid out.</param>
+    /// <param name="includeHyphenationBreaks">Whether soft-hyphen break opportunities should be included.</param>
     /// <returns>The ordered line break opportunities after layout-level tailoring.</returns>
-    private static List<LineBreak> CollectLineBreaks(ReadOnlySpan<char> text)
+    private static List<LineBreak> CollectLineBreaks(ReadOnlySpan<char> text, bool includeHyphenationBreaks)
     {
         LineBreakEnumerator lineBreakEnumerator = new(text, tailorUrls: true);
         List<LineBreak> lineBreaks = [];
         while (lineBreakEnumerator.MoveNext())
         {
-            lineBreaks.Add(lineBreakEnumerator.Current);
+            LineBreak lineBreak = lineBreakEnumerator.Current;
+            if (lineBreak.IsHyphenationBreak && !includeHyphenationBreaks)
+            {
+                continue;
+            }
+
+            lineBreaks.Add(lineBreak);
         }
 
         return lineBreaks;
     }
+
+    private static CodePoint? GetHyphenationMarkerCodePoint(TextOptions options)
+        => options.TextHyphenation switch
+        {
+            TextHyphenation.Standard => new CodePoint(StandardHyphen),
+            TextHyphenation.Custom => options.CustomHyphen,
+            _ => null
+        };
 }

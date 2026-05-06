@@ -636,7 +636,7 @@ public sealed partial class TextBlock
     /// </summary>
     private struct LineLayoutVisitor : TextLayout.IGlyphLayoutVisitor
     {
-        private readonly TextLayout.TextBox textBox;
+        private readonly TextBox textBox;
         private readonly TextOptions options;
         private readonly float wrappingLength;
         private readonly LineMetrics[] metrics;
@@ -661,7 +661,7 @@ public sealed partial class TextBlock
         /// <param name="wordMetrics">The word metrics for the source text.</param>
         /// <param name="dpi">The target DPI.</param>
         public LineLayoutVisitor(
-            TextLayout.TextBox textBox,
+            TextBox textBox,
             TextOptions options,
             float wrappingLength,
             GraphemeMetrics[] graphemes,

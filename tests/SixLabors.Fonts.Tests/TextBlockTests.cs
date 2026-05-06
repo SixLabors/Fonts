@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests;
 
@@ -142,6 +143,92 @@ public class TextBlockTests
         ReadOnlySpan<GraphemeMetrics> actualGraphemeMetrics = block.GetGraphemeMetrics(wrappingLength).Span;
 
         AssertGraphemeMetricsEqual(expectedGraphemeMetrics, actualGraphemeMetrics);
+    }
+
+    [Fact]
+    public void TextHyphenation_None_IgnoresSoftHyphenBreak()
+    {
+        const string text = "extra\u00ADordinary";
+        TextOptions measureOptions = Options(-1);
+        float markerBreakAdvance = TextMeasurer.MeasureAdvance("extra-", measureOptions).Width;
+        float fullAdvance = TextMeasurer.MeasureAdvance("extraordinary", measureOptions).Width;
+
+        TextOptions options = Options(markerBreakAdvance + ((fullAdvance - markerBreakAdvance) * 0.5F));
+        options.TextHyphenation = TextHyphenation.None;
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        // The wrapping width is deliberately narrow enough that "extra-" would fit and the
+        // full word would not. With hyphenation disabled, U+00AD remains source-mapping data
+        // only and must not become a line break or a visible marker.
+        Assert.Equal(1, metrics.LineCount);
+        Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('-')));
+    }
+
+    [Fact]
+    public void TextHyphenation_Custom_InsertsMarkerWhenSoftHyphenBreakIsSelected()
+    {
+        const string text = "extra\u00ADordinary";
+        TextOptions measureOptions = Options(-1);
+        float markerBreakAdvance = TextMeasurer.MeasureAdvance("extra*", measureOptions).Width;
+        float fullAdvance = TextMeasurer.MeasureAdvance("extraordinary", measureOptions).Width;
+
+        TextOptions options = Options(markerBreakAdvance + ((fullAdvance - markerBreakAdvance) * 0.5F));
+        options.TextHyphenation = TextHyphenation.Custom;
+        options.CustomHyphen = new('*');
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+        GraphemeMetrics softHyphen = FindGrapheme(metrics.GraphemeMetrics, 5);
+
+        // The source soft hyphen is a real grapheme at index 5, but it is only rendered
+        // when its discretionary break is selected. The generated marker uses the caller's
+        // custom codepoint while keeping that same source mapping, so selection and caret
+        // APIs still see one grapheme.
+        Assert.Equal(2, metrics.LineCount);
+        Assert.Equal(1, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('*')));
+        Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('-')));
+        Assert.Equal(5, softHyphen.StringIndex);
+        Assert.True(softHyphen.ContributesToMeasurement);
+    }
+
+    [Fact]
+    public void TextHyphenation_Custom_DoesNotInsertMarkerBeforeHardBreak()
+    {
+        const string text = "extra\u00AD\nordinary";
+        TextOptions options = Options(1000);
+        options.TextHyphenation = TextHyphenation.Custom;
+        options.CustomHyphen = new('*');
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        // The required newline is the selected break. A preceding U+00AD that was not
+        // selected must stay invisible; otherwise hard-break layout would grow a marker
+        // that the source text did not ask to display at that point.
+        Assert.Equal(2, metrics.LineCount);
+        Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('*')));
+    }
+
+    [Fact]
+    public void TextHyphenation_Custom_AccountsForMarkerAdvanceWhenChoosingBreak()
+    {
+        const string text = "a extra\u00ADordinary";
+        TextOptions measureOptions = Options(-1);
+        float softBreakWithoutMarker = TextMeasurer.MeasureAdvance("a extra", measureOptions).Width;
+        float softBreakWithMarker = TextMeasurer.MeasureAdvance("a extra*", measureOptions).Width;
+
+        TextOptions options = Options(softBreakWithoutMarker + ((softBreakWithMarker - softBreakWithoutMarker) * 0.5F));
+        options.TextHyphenation = TextHyphenation.Custom;
+        options.CustomHyphen = new('*');
+
+        TextBlock block = new(text, options);
+        ReadOnlySpan<LineLayout> lines = block.GetLineLayouts(options.WrappingLength).Span;
+
+        // Without the generated marker advance, the soft-hyphen break after "extra"
+        // would appear to fit. Including that advance keeps the earlier space break,
+        // so the second line starts after "a " rather than after the soft hyphen.
+        Assert.True(lines.Length >= 2);
+        Assert.Equal(0, lines[0].LineMetrics.StringIndex);
+        Assert.Equal(2, lines[1].LineMetrics.StringIndex);
     }
 
     [Fact]
@@ -807,6 +894,20 @@ public class TextBlockTests
         }
 
         return false;
+    }
+
+    private static int CountGlyphs(ReadOnlySpan<GlyphBounds> glyphs, CodePoint codePoint)
+    {
+        int count = 0;
+        for (int i = 0; i < glyphs.Length; i++)
+        {
+            if (glyphs[i].Codepoint == codePoint)
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     private static void AssertSelectionBoundsEqual(ReadOnlySpan<FontRectangle> expected, ReadOnlySpan<FontRectangle> actual)

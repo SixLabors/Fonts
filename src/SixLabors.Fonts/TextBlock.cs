@@ -40,7 +40,7 @@ public sealed partial class TextBlock
 
         if (text.IsEmpty)
         {
-            this.LogicalLine = new(new TextLayout.TextLine(), [], []);
+            this.LogicalLine = new(new TextLine(), [], [], []);
             return;
         }
 
@@ -63,7 +63,7 @@ public sealed partial class TextBlock
     /// </summary>
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
     /// <returns>The line-broken text box.</returns>
-    internal TextLayout.TextBox BreakLines(float wrappingLength)
+    internal TextBox BreakLines(float wrappingLength)
         => TextLayout.BreakLines(this.LogicalLine, this.Options, wrappingLength);
 
     /// <summary>
@@ -73,7 +73,7 @@ public sealed partial class TextBlock
     /// <returns>A <see cref="TextMetrics"/> instance containing every measurement for the laid-out text.</returns>
     public TextMetrics Measure(float wrappingLength)
     {
-        TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
+        TextBox textBox = this.BreakLines(wrappingLength);
         float dpi = this.Options.Dpi;
         bool isHorizontal = this.Options.LayoutMode.IsHorizontal();
 
@@ -111,7 +111,7 @@ public sealed partial class TextBlock
     /// <returns>The logical advance rectangle.</returns>
     public FontRectangle MeasureAdvance(float wrappingLength)
     {
-        TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
+        TextBox textBox = this.BreakLines(wrappingLength);
         return GetAdvance(textBox, this.Options.Dpi, this.Options.LayoutMode.IsHorizontal());
     }
 
@@ -130,7 +130,7 @@ public sealed partial class TextBlock
     /// <returns>The full renderable bounds.</returns>
     public FontRectangle MeasureRenderableBounds(float wrappingLength)
     {
-        TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
+        TextBox textBox = this.BreakLines(wrappingLength);
         FontRectangle advance = GetAdvance(textBox, this.Options.Dpi, this.Options.LayoutMode.IsHorizontal());
         FontRectangle absoluteAdvance = new(this.Options.Origin.X, this.Options.Origin.Y, advance.Width, advance.Height);
         FontRectangle bounds = GetBounds(textBox, this.Options, wrappingLength);
@@ -168,7 +168,7 @@ public sealed partial class TextBlock
     /// <returns>A read-only memory region containing per-grapheme metrics entries.</returns>
     public ReadOnlyMemory<GraphemeMetrics> GetGraphemeMetrics(float wrappingLength)
     {
-        TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
+        TextBox textBox = this.BreakLines(wrappingLength);
         return GetGraphemeMetricsArray(textBox, this.Options, wrappingLength);
     }
 
@@ -179,7 +179,7 @@ public sealed partial class TextBlock
     /// <returns>A read-only memory region containing per-word-boundary segment metrics entries.</returns>
     public ReadOnlyMemory<WordMetrics> GetWordMetrics(float wrappingLength)
     {
-        TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
+        TextBox textBox = this.BreakLines(wrappingLength);
         WordMetrics[] wordMetrics = new WordMetrics[this.LogicalLine.WordSegments.Count];
         WordMetricsVisitor visitor = new(this.LogicalLine.WordSegments, wordMetrics, this.Options.Dpi);
         TextLayout.LayoutText(textBox, this.Options, wrappingLength, ref visitor);
@@ -212,7 +212,7 @@ public sealed partial class TextBlock
     /// <returns>A read-only memory region containing <see cref="LineLayout"/> entries in final layout order.</returns>
     public ReadOnlyMemory<LineLayout> GetLineLayouts(float wrappingLength)
     {
-        TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
+        TextBox textBox = this.BreakLines(wrappingLength);
         if (textBox.TextLines.Count == 0)
         {
             return ReadOnlyMemory<LineLayout>.Empty;
@@ -236,7 +236,7 @@ public sealed partial class TextBlock
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
     public void RenderTo(IGlyphRenderer renderer, float wrappingLength)
     {
-        TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
+        TextBox textBox = this.BreakLines(wrappingLength);
         FontRectangle rect = GetBounds(textBox, this.Options, wrappingLength);
 
         renderer.BeginText(in rect);
@@ -254,7 +254,7 @@ public sealed partial class TextBlock
     /// <param name="options">The text options used for layout.</param>
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
     /// <returns>The union of the rendered glyph bounds.</returns>
-    private static FontRectangle GetBounds(TextLayout.TextBox textBox, TextOptions options, float wrappingLength)
+    private static FontRectangle GetBounds(TextBox textBox, TextOptions options, float wrappingLength)
     {
         if (textBox.TextLines.Count == 0)
         {
@@ -273,7 +273,7 @@ public sealed partial class TextBlock
     /// <param name="options">The text options used to calculate line metrics.</param>
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
     /// <returns>An array of <see cref="LineMetrics"/> in pixel units.</returns>
-    private static LineMetrics[] GetLineMetrics(TextLayout.TextBox textBox, TextOptions options, float wrappingLength)
+    private static LineMetrics[] GetLineMetrics(TextBox textBox, TextOptions options, float wrappingLength)
     {
         if (textBox.TextLines.Count == 0)
         {
@@ -305,7 +305,7 @@ public sealed partial class TextBlock
 
         while (i >= 0 && i < textBox.TextLines.Count)
         {
-            TextLayout.TextLine line = textBox.TextLines[i];
+            TextLine line = textBox.TextLines[i];
 
             // Calculate the line start position in the current flow direction.
             float offset = isHorizontalLayout
@@ -383,7 +383,7 @@ public sealed partial class TextBlock
     /// </summary>
     /// <param name="textBox">The shaped and line-broken text box.</param>
     /// <returns>The number of grapheme metrics entries.</returns>
-    private static int CountGraphemeMetrics(TextLayout.TextBox textBox)
+    private static int CountGraphemeMetrics(TextBox textBox)
     {
         int count = 0;
         for (int i = 0; i < textBox.TextLines.Count; i++)
@@ -402,7 +402,7 @@ public sealed partial class TextBlock
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
     /// <returns>The grapheme metrics entries.</returns>
     internal static GraphemeMetrics[] GetGraphemeMetricsArray(
-        TextLayout.TextBox textBox,
+        TextBox textBox,
         TextOptions options,
         float wrappingLength)
     {
@@ -472,7 +472,7 @@ public sealed partial class TextBlock
         float wrappingLength,
         GlyphBoundsMeasurement measurement)
     {
-        TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
+        TextBox textBox = this.BreakLines(wrappingLength);
         return MeasureGlyphBoundsArray(textBox, this.Options, wrappingLength, measurement);
     }
 
@@ -486,7 +486,7 @@ public sealed partial class TextBlock
     /// <param name="lineIndex">The line index to collect, or <c>-1</c> to collect every line.</param>
     /// <returns>The measured glyph bounds.</returns>
     internal static GlyphBounds[] MeasureGlyphBoundsArray(
-        TextLayout.TextBox textBox,
+        TextBox textBox,
         TextOptions options,
         float wrappingLength,
         GlyphBoundsMeasurement measurement,
@@ -511,7 +511,7 @@ public sealed partial class TextBlock
     /// <param name="dpi">The target DPI.</param>
     /// <param name="isHorizontalLayout">Whether the layout direction is horizontal.</param>
     /// <returns>The logical advance rectangle.</returns>
-    private static FontRectangle GetAdvance(TextLayout.TextBox textBox, float dpi, bool isHorizontalLayout)
+    private static FontRectangle GetAdvance(TextBox textBox, float dpi, bool isHorizontalLayout)
     {
         if (textBox.TextLines.Count == 0)
         {
@@ -524,7 +524,7 @@ public sealed partial class TextBlock
             float height = 0;
             for (int i = 0; i < textBox.TextLines.Count; i++)
             {
-                TextLayout.TextLine line = textBox.TextLines[i];
+                TextLine line = textBox.TextLines[i];
                 width = MathF.Max(width, line.ScaledLineAdvance);
                 height += line.ScaledMaxLineHeight;
             }
@@ -536,7 +536,7 @@ public sealed partial class TextBlock
         float verticalHeight = 0;
         for (int i = 0; i < textBox.TextLines.Count; i++)
         {
-            TextLayout.TextLine line = textBox.TextLines[i];
+            TextLine line = textBox.TextLines[i];
             verticalWidth += line.ScaledMaxLineHeight;
             verticalHeight = MathF.Max(verticalHeight, line.ScaledLineAdvance);
         }

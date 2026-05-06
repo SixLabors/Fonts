@@ -134,6 +134,8 @@ internal static class TextLayoutTestUtilities
             Origin = options.Origin,
             WrappingLength = options.WrappingLength,
             WordBreaking = options.WordBreaking,
+            TextHyphenation = options.TextHyphenation,
+            CustomHyphen = options.CustomHyphen,
             TextDirection = options.TextDirection,
             TextAlignment = options.TextAlignment,
             TextJustification = options.TextJustification,

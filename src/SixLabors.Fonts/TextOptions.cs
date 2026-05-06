@@ -3,6 +3,7 @@
 
 using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts;
 
@@ -36,7 +37,12 @@ public class TextOptions
         this.LineSpacing = options.LineSpacing;
         this.Origin = options.Origin;
         this.WrappingLength = options.WrappingLength;
+        this.MaxLines = options.MaxLines;
         this.WordBreaking = options.WordBreaking;
+        this.TextEllipsis = options.TextEllipsis;
+        this.CustomEllipsis = options.CustomEllipsis;
+        this.TextHyphenation = options.TextHyphenation;
+        this.CustomHyphen = options.CustomHyphen;
         this.TextDirection = options.TextDirection;
         this.TextAlignment = options.TextAlignment;
         this.TextJustification = options.TextJustification;
@@ -132,9 +138,37 @@ public class TextOptions
     public float WrappingLength { get; set; } = -1F;
 
     /// <summary>
+    /// Gets or sets the maximum number of lines to lay out.
+    /// </summary>
+    /// <remarks>
+    /// If value is -1 then the number of lines is unlimited.
+    /// </remarks>
+    public int MaxLines { get; set; } = -1;
+
+    /// <summary>
     /// Gets or sets the word breaking mode to use when wrapping text.
     /// </summary>
     public WordBreaking WordBreaking { get; set; }
+
+    /// <summary>
+    /// Gets or sets the ellipsis behavior to use when laid-out text is limited to a maximum number of lines.
+    /// </summary>
+    public TextEllipsis TextEllipsis { get; set; }
+
+    /// <summary>
+    /// Gets or sets the ellipsis marker to use when <see cref="TextEllipsis"/> is <c>Custom</c>.
+    /// </summary>
+    public CodePoint? CustomEllipsis { get; set; }
+
+    /// <summary>
+    /// Gets or sets the hyphenation marker behavior to use when text breaks at hyphenation opportunities.
+    /// </summary>
+    public TextHyphenation TextHyphenation { get; set; }
+
+    /// <summary>
+    /// Gets or sets the hyphenation marker to use when <see cref="TextHyphenation"/> is <c>Custom</c>.
+    /// </summary>
+    public CodePoint? CustomHyphen { get; set; }
 
     /// <summary>
     /// Gets or sets the text direction.

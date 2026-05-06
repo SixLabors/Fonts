@@ -4,6 +4,7 @@
 using System.Numerics;
 using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests;
 
@@ -312,6 +313,11 @@ public class TextOptionsTests
             VerticalAlignment = VerticalAlignment.Bottom,
             DecorationPositioningMode = DecorationPositioningMode.GlyphFont,
             WrappingLength = 42F,
+            MaxLines = 2,
+            TextEllipsis = TextEllipsis.Custom,
+            CustomEllipsis = new CodePoint('*'),
+            TextHyphenation = TextHyphenation.Custom,
+            CustomHyphen = new CodePoint('-'),
             Tracking = 66F,
             FeatureTags = new List<Tag> { KnownFeatureTags.OldstyleFigures }
         };
@@ -325,6 +331,11 @@ public class TextOptionsTests
         Assert.Equal(expected.TabWidth, actual.TabWidth);
         Assert.Equal(expected.VerticalAlignment, actual.VerticalAlignment);
         Assert.Equal(expected.WrappingLength, actual.WrappingLength);
+        Assert.Equal(expected.MaxLines, actual.MaxLines);
+        Assert.Equal(expected.TextEllipsis, actual.TextEllipsis);
+        Assert.Equal(expected.CustomEllipsis, actual.CustomEllipsis);
+        Assert.Equal(expected.TextHyphenation, actual.TextHyphenation);
+        Assert.Equal(expected.CustomHyphen, actual.CustomHyphen);
         Assert.Equal(expected.DecorationPositioningMode, actual.DecorationPositioningMode);
         Assert.Equal(expected.FeatureTags, actual.FeatureTags);
         Assert.Equal(expected.Tracking, actual.Tracking);
@@ -345,6 +356,11 @@ public class TextOptionsTests
             TextJustification = TextJustification.InterCharacter,
             DecorationPositioningMode = DecorationPositioningMode.GlyphFont,
             WrappingLength = 42F,
+            MaxLines = 2,
+            TextEllipsis = TextEllipsis.Custom,
+            CustomEllipsis = new CodePoint('*'),
+            TextHyphenation = TextHyphenation.Custom,
+            CustomHyphen = new CodePoint('-'),
             Tracking = 66F,
         };
 
@@ -355,6 +371,11 @@ public class TextOptionsTests
         Assert.NotEqual(expected.TabWidth, actual.TabWidth);
         Assert.NotEqual(expected.VerticalAlignment, actual.VerticalAlignment);
         Assert.NotEqual(expected.WrappingLength, actual.WrappingLength);
+        Assert.NotEqual(expected.MaxLines, actual.MaxLines);
+        Assert.NotEqual(expected.TextEllipsis, actual.TextEllipsis);
+        Assert.NotEqual(expected.CustomEllipsis, actual.CustomEllipsis);
+        Assert.NotEqual(expected.TextHyphenation, actual.TextHyphenation);
+        Assert.NotEqual(expected.CustomHyphen, actual.CustomHyphen);
         Assert.NotEqual(expected.DecorationPositioningMode, actual.DecorationPositioningMode);
         Assert.NotEqual(expected.TextJustification, actual.TextJustification);
         Assert.NotEqual(expected.Tracking, actual.Tracking);
@@ -365,10 +386,15 @@ public class TextOptionsTests
         Assert.Equal(-1, options.TabWidth);
         Assert.Equal(KerningMode.Standard, options.KerningMode);
         Assert.Equal(-1, options.WrappingLength);
+        Assert.Equal(-1, options.MaxLines);
         Assert.Equal(HorizontalAlignment.Left, options.HorizontalAlignment);
         Assert.Equal(VerticalAlignment.Top, options.VerticalAlignment);
         Assert.Equal(TextAlignment.Start, options.TextAlignment);
         Assert.Equal(TextJustification.None, options.TextJustification);
+        Assert.Equal(TextEllipsis.None, options.TextEllipsis);
+        Assert.Null(options.CustomEllipsis);
+        Assert.Equal(TextHyphenation.None, options.TextHyphenation);
+        Assert.Null(options.CustomHyphen);
         Assert.Equal(TextDirection.Auto, options.TextDirection);
         Assert.Equal(LayoutMode.HorizontalTopBottom, options.LayoutMode);
         Assert.Equal(DecorationPositioningMode.PrimaryFont, options.DecorationPositioningMode);

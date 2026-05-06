@@ -671,6 +671,255 @@ public class TextLayoutTests
     [InlineData(LayoutMode.VerticalRightLeft)]
     [InlineData(LayoutMode.VerticalMixedLeftRight)]
     [InlineData(LayoutMode.VerticalMixedRightLeft)]
+    public void TextHyphenation_Custom_DrawsSelectedSoftHyphenMarker(LayoutMode layoutMode)
+    {
+        const string text = "extra\u00ADordinary next";
+        Font font = TestFonts.GetFont(TestFonts.NotoSansRegular, 30);
+        Vector2 origin = new(24, 28);
+
+        TextOptions measureOptions = new(font)
+        {
+            LayoutMode = layoutMode,
+            Origin = origin,
+            TextHyphenation = TextHyphenation.Custom,
+            CustomHyphen = new('*')
+        };
+
+        TextOptions hyphenMeasureOptions = new(font)
+        {
+            LayoutMode = layoutMode,
+            TextHyphenation = TextHyphenation.Custom,
+            CustomHyphen = new('*')
+        };
+
+        FontRectangle beforeSoftHyphen = TextMeasurer.MeasureAdvance("extra", measureOptions);
+        FontRectangle customHyphen = TextMeasurer.MeasureAdvance("*", hyphenMeasureOptions);
+        float softHyphenBreakAdvance = layoutMode.IsHorizontal()
+            ? beforeSoftHyphen.Width + customHyphen.Width
+            : beforeSoftHyphen.Height + customHyphen.Height;
+
+        TextOptions options = new(font)
+        {
+            LayoutMode = layoutMode,
+            Origin = origin,
+            TextHyphenation = TextHyphenation.Custom,
+            CustomHyphen = new('*'),
+            WrappingLength = softHyphenBreakAdvance + 1F
+        };
+
+        TextLayoutTestUtilities.TestLayout(
+            text,
+            options,
+            includeGeometry: false,
+            properties: layoutMode);
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        // The wrap is based on the soft-hyphen break candidate: source prefix plus
+        // marker. BreakLines rejects exact equality as overflow, so the extra pixel
+        // lets this candidate fit without admitting the following grapheme.
+        Assert.Equal(1, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('*')));
+        Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('-')));
+    }
+
+    [Theory]
+    [InlineData(LayoutMode.HorizontalTopBottom)]
+    [InlineData(LayoutMode.HorizontalBottomTop)]
+    [InlineData(LayoutMode.VerticalLeftRight)]
+    [InlineData(LayoutMode.VerticalRightLeft)]
+    [InlineData(LayoutMode.VerticalMixedLeftRight)]
+    [InlineData(LayoutMode.VerticalMixedRightLeft)]
+    public void TextHyphenation_Custom_DrawsBidiSoftHyphenMarker(LayoutMode layoutMode)
+    {
+        FontCollection fontCollection = new();
+        FontFamily latin = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansRegular);
+        FontFamily hebrew = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansHebrewRegular);
+        FontFamily arabic = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoNaskhArabicRegular);
+
+        Font font = latin.CreateFont(30);
+        const string text = "Tall של\u00ADומשלוםשלוםשלום extra عرب next";
+        Vector2 origin = new(24, 28);
+
+        // Forced vertical layout intentionally does not enable generic horizontal features.
+        // Request cursive positioning explicitly so the Arabic run remains a useful bidi
+        // visual check in every layout mode.
+        Tag[] featureTags = layoutMode.IsVertical()
+            ? [KnownFeatureTags.CursivePositioning]
+            : [];
+
+        TextOptions measureOptions = new(font)
+        {
+            FeatureTags = featureTags,
+            FallbackFontFamilies = [hebrew, arabic],
+            LayoutMode = layoutMode,
+            Origin = origin,
+            TextHyphenation = TextHyphenation.Custom,
+            CustomHyphen = new('*')
+        };
+
+        TextOptions hyphenMeasureOptions = new(font)
+        {
+            FeatureTags = featureTags,
+            FallbackFontFamilies = [hebrew, arabic],
+            LayoutMode = layoutMode,
+            TextHyphenation = TextHyphenation.Custom,
+            CustomHyphen = new('*')
+        };
+
+        FontRectangle beforeSoftHyphen = TextMeasurer.MeasureAdvance("Tall של", measureOptions);
+        FontRectangle customHyphen = TextMeasurer.MeasureAdvance("*", hyphenMeasureOptions);
+        float softHyphenBreakAdvance = layoutMode.IsHorizontal()
+            ? beforeSoftHyphen.Width + customHyphen.Width
+            : beforeSoftHyphen.Height + customHyphen.Height;
+
+        TextOptions options = new(font)
+        {
+            FeatureTags = featureTags,
+            FallbackFontFamilies = [hebrew, arabic],
+            LayoutMode = layoutMode,
+            Origin = origin,
+            TextHyphenation = TextHyphenation.Custom,
+            CustomHyphen = new('*'),
+            WrappingLength = softHyphenBreakAdvance + 1F
+        };
+
+        TextLayoutTestUtilities.TestLayout(
+            text,
+            options,
+            includeGeometry: false,
+            properties: layoutMode);
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        // The line contains LTR Latin, a selected soft-hyphen break inside a long
+        // RTL Hebrew fallback word, and RTL Arabic after the break. The marker
+        // should still materialize exactly once after bidi reordering and fallback shaping.
+        Assert.Equal(1, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('*')));
+        Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('-')));
+    }
+
+    [Theory]
+    [InlineData(LayoutMode.HorizontalTopBottom)]
+    [InlineData(LayoutMode.HorizontalBottomTop)]
+    [InlineData(LayoutMode.VerticalLeftRight)]
+    [InlineData(LayoutMode.VerticalRightLeft)]
+    [InlineData(LayoutMode.VerticalMixedLeftRight)]
+    [InlineData(LayoutMode.VerticalMixedRightLeft)]
+    public void TextHyphenation_Standard_DrawsFallbackSoftHyphenMarker(LayoutMode layoutMode)
+    {
+        FontCollection fontCollection = new();
+        FontFamily latin = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansRegular);
+        FontFamily hebrew = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansHebrewRegular);
+
+        Font font = latin.CreateFont(30);
+        const string text = "Tall של\u00ADומשלוםשלוםשלום extra next";
+        Vector2 origin = new(24, 28);
+
+        TextOptions measureOptions = new(font)
+        {
+            FallbackFontFamilies = [hebrew],
+            LayoutMode = layoutMode,
+            Origin = origin,
+            TextHyphenation = TextHyphenation.Standard
+        };
+
+        TextOptions hyphenMeasureOptions = new(font)
+        {
+            FallbackFontFamilies = [hebrew],
+            LayoutMode = layoutMode,
+            TextHyphenation = TextHyphenation.Standard
+        };
+
+        FontRectangle beforeSoftHyphen = TextMeasurer.MeasureAdvance("Tall של", measureOptions);
+        FontRectangle hardHyphen = TextMeasurer.MeasureAdvance("\u2010", hyphenMeasureOptions);
+        float softHyphenBreakAdvance = layoutMode.IsHorizontal()
+            ? beforeSoftHyphen.Width + hardHyphen.Width
+            : beforeSoftHyphen.Height + hardHyphen.Height;
+
+        TextOptions options = new(font)
+        {
+            FallbackFontFamilies = [hebrew],
+            LayoutMode = layoutMode,
+            Origin = origin,
+            TextHyphenation = TextHyphenation.Standard,
+            WrappingLength = softHyphenBreakAdvance
+        };
+
+        TextLayoutTestUtilities.TestLayout(
+            text,
+            options,
+            includeGeometry: false,
+            properties: layoutMode);
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        // The selected U+00AD break sits inside the Hebrew word, which is drawn
+        // through the fallback family. The standard marker must be visible at
+        // that fallback-run break location, not only in Latin text.
+        Assert.Equal(1, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint(0x2010)));
+    }
+
+    [Theory]
+    [InlineData(LayoutMode.HorizontalTopBottom)]
+    [InlineData(LayoutMode.HorizontalBottomTop)]
+    [InlineData(LayoutMode.VerticalLeftRight)]
+    [InlineData(LayoutMode.VerticalRightLeft)]
+    [InlineData(LayoutMode.VerticalMixedLeftRight)]
+    [InlineData(LayoutMode.VerticalMixedRightLeft)]
+    public void TextHyphenation_None_DoesNotDrawFallbackSoftHyphenMarker(LayoutMode layoutMode)
+    {
+        FontCollection fontCollection = new();
+        FontFamily latin = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansRegular);
+        FontFamily hebrew = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansHebrewRegular);
+
+        Font font = latin.CreateFont(30);
+        const string text = "Tall של\u00ADומשלוםשלוםשלום extra next";
+        Vector2 origin = new(24, 28);
+
+        TextOptions measureOptions = new(font)
+        {
+            FallbackFontFamilies = [hebrew],
+            LayoutMode = layoutMode,
+            Origin = origin,
+            TextHyphenation = TextHyphenation.None
+        };
+
+        FontRectangle firstGraphemeAfterSoftHyphen = TextMeasurer.MeasureAdvance("Tall שלו", measureOptions);
+        float firstGraphemeAdvance = layoutMode.IsHorizontal()
+            ? firstGraphemeAfterSoftHyphen.Width
+            : firstGraphemeAfterSoftHyphen.Height;
+
+        TextOptions options = new(font)
+        {
+            FallbackFontFamilies = [hebrew],
+            LayoutMode = layoutMode,
+            Origin = origin,
+            TextHyphenation = TextHyphenation.None,
+            WrappingLength = firstGraphemeAdvance - 0.5F
+        };
+
+        TextLayoutTestUtilities.TestLayout(
+            text,
+            options,
+            includeGeometry: false,
+            properties: layoutMode);
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        // The source contains U+00AD inside the Hebrew fallback run. With hyphenation
+        // disabled it remains non-rendering source text; no visible hyphen marker
+        // should be emitted at that fallback-script location.
+        Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint(0x2010)));
+        Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('-')));
+    }
+
+    [Theory]
+    [InlineData(LayoutMode.HorizontalTopBottom)]
+    [InlineData(LayoutMode.HorizontalBottomTop)]
+    [InlineData(LayoutMode.VerticalLeftRight)]
+    [InlineData(LayoutMode.VerticalRightLeft)]
+    [InlineData(LayoutMode.VerticalMixedLeftRight)]
+    [InlineData(LayoutMode.VerticalMixedRightLeft)]
     public void LineMetrics_StartAndExtent_DrawsLineBoxes(LayoutMode layoutMode)
     {
         FontCollection fontCollection = new();
@@ -2164,6 +2413,20 @@ public class TextLayoutTests
         }
 
         return glyphIndex;
+    }
+
+    private static int CountGlyphs(ReadOnlySpan<GlyphBounds> glyphs, CodePoint codePoint)
+    {
+        int count = 0;
+        for (int i = 0; i < glyphs.Length; i++)
+        {
+            if (glyphs[i].Codepoint == codePoint)
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
 #if OS_WINDOWS
