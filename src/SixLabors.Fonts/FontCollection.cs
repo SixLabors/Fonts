@@ -61,19 +61,19 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         => this.AddImpl(stream, CultureInfo.InvariantCulture, out description);
 
     /// <inheritdoc/>
-    public IEnumerable<FontFamily> AddCollection(string path)
+    public ReadOnlyMemory<FontFamily> AddCollection(string path)
         => this.AddCollection(path, out _);
 
     /// <inheritdoc/>
-    public IEnumerable<FontFamily> AddCollection(string path, out IEnumerable<FontDescription> descriptions)
+    public ReadOnlyMemory<FontFamily> AddCollection(string path, out ReadOnlyMemory<FontDescription> descriptions)
         => this.AddCollectionImpl(path, CultureInfo.InvariantCulture, out descriptions);
 
     /// <inheritdoc/>
-    public IEnumerable<FontFamily> AddCollection(Stream stream)
+    public ReadOnlyMemory<FontFamily> AddCollection(Stream stream)
         => this.AddCollection(stream, out _);
 
     /// <inheritdoc/>
-    public IEnumerable<FontFamily> AddCollection(Stream stream, out IEnumerable<FontDescription> descriptions)
+    public ReadOnlyMemory<FontFamily> AddCollection(Stream stream, out ReadOnlyMemory<FontDescription> descriptions)
         => this.AddCollectionImpl(stream, CultureInfo.InvariantCulture, out descriptions);
 
     /// <inheritdoc/>
@@ -101,25 +101,25 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         => this.AddImpl(stream, culture, out description);
 
     /// <inheritdoc/>
-    public IEnumerable<FontFamily> AddCollection(string path, CultureInfo culture)
+    public ReadOnlyMemory<FontFamily> AddCollection(string path, CultureInfo culture)
         => this.AddCollection(path, culture, out _);
 
     /// <inheritdoc/>
-    public IEnumerable<FontFamily> AddCollection(
+    public ReadOnlyMemory<FontFamily> AddCollection(
         string path,
         CultureInfo culture,
-        out IEnumerable<FontDescription> descriptions)
+        out ReadOnlyMemory<FontDescription> descriptions)
         => this.AddCollectionImpl(path, culture, out descriptions);
 
     /// <inheritdoc/>
-    public IEnumerable<FontFamily> AddCollection(Stream stream, CultureInfo culture)
+    public ReadOnlyMemory<FontFamily> AddCollection(Stream stream, CultureInfo culture)
         => this.AddCollection(stream, culture, out _);
 
     /// <inheritdoc/>
-    public IEnumerable<FontFamily> AddCollection(
+    public ReadOnlyMemory<FontFamily> AddCollection(
         Stream stream,
         CultureInfo culture,
-        out IEnumerable<FontDescription> descriptions)
+        out ReadOnlyMemory<FontDescription> descriptions)
         => this.AddCollectionImpl(stream, culture, out descriptions);
 
     /// <inheritdoc/>
@@ -178,7 +178,7 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
     }
 
     /// <inheritdoc/>
-    IEnumerable<FontStyle> IReadOnlyFontMetricsCollection.GetAllStyles(string name, CultureInfo culture)
+    ReadOnlyMemory<FontStyle> IReadOnlyFontMetricsCollection.GetAllStyles(string name, CultureInfo culture)
         => ((IReadOnlyFontMetricsCollection)this).GetAllMetrics(name, culture).Select(x => x.Description.Style).ToArray();
 
     /// <inheritdoc/>
@@ -208,47 +208,58 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         return ((IFontMetricsCollection)this).AddMetrics(metrics, culture);
     }
 
-    private HashSet<FontFamily> AddCollectionImpl(
+    private ReadOnlyMemory<FontFamily> AddCollectionImpl(
         string path,
         CultureInfo culture,
-        out IEnumerable<FontDescription> descriptions)
+        out ReadOnlyMemory<FontDescription> descriptions)
     {
-        FileFontMetrics[] fonts = FileFontMetrics.LoadFontCollection(path);
+        ReadOnlyMemory<FileFontMetrics> fontMetrics = FileFontMetrics.LoadFontCollection(path);
+        ReadOnlySpan<FileFontMetrics> fonts = fontMetrics.Span;
 
         FontDescription[] description = new FontDescription[fonts.Length];
-        HashSet<FontFamily> families = [];
+        FontFamily[] families = new FontFamily[fonts.Length];
+        int familyCount = 0;
         for (int i = 0; i < fonts.Length; i++)
         {
             description[i] = fonts[i].Description;
             FontFamily family = ((IFontMetricsCollection)this).AddMetrics(fonts[i], culture);
-            families.Add(family);
+
+            if (!families.AsSpan(0, familyCount).Contains(family))
+            {
+                families[familyCount++] = family;
+            }
         }
 
         descriptions = description;
-        return families;
+        return new ReadOnlyMemory<FontFamily>(families, 0, familyCount);
     }
 
-    private HashSet<FontFamily> AddCollectionImpl(
+    private ReadOnlyMemory<FontFamily> AddCollectionImpl(
         Stream stream,
         CultureInfo culture,
-        out IEnumerable<FontDescription> descriptions)
+        out ReadOnlyMemory<FontDescription> descriptions)
     {
         long startPos = stream.Position;
         using BigEndianBinaryReader reader = new(stream, true);
         TtcHeader ttcHeader = TtcHeader.Read(reader);
-        List<FontDescription> result = new((int)ttcHeader.NumFonts);
-        HashSet<FontFamily> installedFamilies = [];
+        FontDescription[] result = new FontDescription[(int)ttcHeader.NumFonts];
+        FontFamily[] installedFamilies = new FontFamily[(int)ttcHeader.NumFonts];
+        int familyCount = 0;
         for (int i = 0; i < ttcHeader.NumFonts; ++i)
         {
             stream.Position = startPos + ttcHeader.OffsetTable[i];
             StreamFontMetrics instance = StreamFontMetrics.LoadFont(stream);
-            installedFamilies.Add(((IFontMetricsCollection)this).AddMetrics(instance, culture));
-            FontDescription fontDescription = instance.Description;
-            result.Add(fontDescription);
+            FontFamily family = ((IFontMetricsCollection)this).AddMetrics(instance, culture);
+            result[i] = instance.Description;
+
+            if (!installedFamilies.AsSpan(0, familyCount).Contains(family))
+            {
+                installedFamilies[familyCount++] = family;
+            }
         }
 
         descriptions = result;
-        return installedFamilies;
+        return new ReadOnlyMemory<FontFamily>(installedFamilies, 0, familyCount);
     }
 
     private FontFamily[] FamiliesByCultureImpl(CultureInfo culture)

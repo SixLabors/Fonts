@@ -64,8 +64,10 @@ public class TextMeasurerReferenceTests
     [Theory]
     [InlineData("A", 0f, 0f, 7.5879f, 12f)]
     [InlineData("Hello", 0f, 0f, 28.8633f, 12f)]
+
     // "Hello, World!" has comma descender — renderable height (12.2022) exceeds advance height (12).
     [InlineData("Hello, World!", 0f, 0f, 71.8301f, 12.2022f)]
+
     // "The quick brown fox" has q, p descenders — renderable height (13.5264) exceeds advance (12).
     [InlineData("The quick brown fox", 0f, 0f, 113.502f, 13.5264f)]
     [InlineData("Hello\nWorld", 0f, 0f, 33.5742f, 24f)]

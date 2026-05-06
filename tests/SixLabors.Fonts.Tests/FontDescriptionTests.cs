@@ -115,17 +115,19 @@ public class FontDescriptionTests
     [Fact]
     public void CanLoadFontCollectionDescriptionsFromPath()
     {
-        FontDescription[] descriptions = FontDescription.LoadFontCollectionDescriptions(TestFonts.SimpleTrueTypeCollection);
-        Assert.NotNull(descriptions);
-        Assert.Equal(2, descriptions.Length);
+        ReadOnlyMemory<FontDescription> descriptions = FontDescription.LoadFontCollectionDescriptions(TestFonts.SimpleTrueTypeCollection);
+        ReadOnlySpan<FontDescription> descriptionSpan = descriptions.Span;
 
-        FontDescription description = descriptions[0];
+        Assert.False(descriptions.IsEmpty);
+        Assert.Equal(2, descriptionSpan.Length);
+
+        FontDescription description = descriptionSpan[0];
         Assert.Equal("SixLaborsSampleAB", description.FontFamilyInvariantCulture);
         Assert.Equal("SixLaborsSampleAB regular", description.FontNameInvariantCulture);
         Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
         Assert.Equal(FontStyle.Regular, description.Style);
 
-        description = descriptions[1];
+        description = descriptionSpan[1];
         Assert.Equal("Open Sans", description.FontFamilyInvariantCulture);
         Assert.Equal("Open Sans", description.FontNameInvariantCulture);
         Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);

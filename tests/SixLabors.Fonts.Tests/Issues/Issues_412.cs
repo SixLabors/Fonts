@@ -19,6 +19,7 @@ public class Issues_412
         };
 
         IReadOnlyList<TextRun> runs = TextLayout.BuildTextRuns("abcde", options);
+
         Assert.Equal(2, runs.Count);
 
         TextRun run = runs[0];

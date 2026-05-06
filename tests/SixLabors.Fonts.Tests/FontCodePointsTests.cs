@@ -12,11 +12,12 @@ public class FontCodePointsTests
     {
         Font font = TestFonts.GetFont(TestFonts.SimpleFontFile, 12);
 
-        IReadOnlyList<CodePoint> codePoints = font.FontMetrics.GetAvailableCodePoints();
-        IEnumerable<int> codePointValues = codePoints.Select(x => x.Value);
+        ReadOnlyMemory<CodePoint> codePoints = font.FontMetrics.GetAvailableCodePoints();
+        CodePoint[] codePointArray = codePoints.ToArray();
+        IEnumerable<int> codePointValues = codePointArray.Select(x => x.Value);
 
         // Compare with https://everythingfonts.com/ttfdump
-        Assert.Equal(257, codePoints.Count);
+        Assert.Equal(257, codePoints.Length);
 
         // Compare with https://fontdrop.info/
         Assert.Contains(0x0000, codePointValues);
@@ -29,7 +30,7 @@ public class FontCodePointsTests
         Assert.Contains(0xFFFF, codePointValues);
 
         HashSet<int> glyphIds = [];
-        foreach (CodePoint codePoint in codePoints)
+        foreach (CodePoint codePoint in codePoints.Span)
         {
             Assert.True(font.TryGetGlyphs(codePoint, out Glyph? glyph));
             glyphIds.Add(glyph.Value.GlyphMetrics.GlyphId);
@@ -44,11 +45,12 @@ public class FontCodePointsTests
     {
         Font font = TestFonts.GetFont(TestFonts.SimpleFontFileWoff, 12);
 
-        IReadOnlyList<CodePoint> codePoints = font.FontMetrics.GetAvailableCodePoints();
-        IEnumerable<int> codePointValues = codePoints.Select(x => x.Value);
+        ReadOnlyMemory<CodePoint> codePoints = font.FontMetrics.GetAvailableCodePoints();
+        CodePoint[] codePointArray = codePoints.ToArray();
+        IEnumerable<int> codePointValues = codePointArray.Select(x => x.Value);
 
         // Compare with https://everythingfonts.com/ttfdump
-        Assert.Equal(257, codePoints.Count);
+        Assert.Equal(257, codePoints.Length);
 
         // Compare with https://fontdrop.info/
         Assert.Contains(0x0000, codePointValues);
@@ -61,7 +63,7 @@ public class FontCodePointsTests
         Assert.Contains(0xFFFF, codePointValues);
 
         HashSet<int> glyphIds = [];
-        foreach (CodePoint codePoint in codePoints)
+        foreach (CodePoint codePoint in codePoints.Span)
         {
             Assert.True(font.TryGetGlyphs(codePoint, out Glyph? glyph));
             glyphIds.Add(glyph.Value.GlyphMetrics.GlyphId);

@@ -142,8 +142,8 @@ internal sealed class CMapTable : Table
     /// <summary>
     /// Gets the unicode codepoints for which a glyph exists in the font.
     /// </summary>
-    /// <returns>The <see cref="IReadOnlyList{CodePoint}"/>.</returns>
-    public IReadOnlyList<CodePoint> GetAvailableCodePoints()
+    /// <returns>A read-only memory region containing the available codepoints.</returns>
+    public ReadOnlyMemory<CodePoint> GetAvailableCodePoints()
     {
         if (this.codepoints is not null)
         {

@@ -134,8 +134,8 @@ public struct FontFamily : IEquatable<FontFamily>
     /// <summary>
     /// Gets the collection of <see cref="FontStyle" /> that are currently available.
     /// </summary>
-    /// <returns>The <see cref="IEnumerable{T}" />.</returns>
-    public readonly IEnumerable<FontStyle> GetAvailableStyles()
+    /// <returns>A read-only memory region containing the available font styles.</returns>
+    public readonly ReadOnlyMemory<FontStyle> GetAvailableStyles()
     {
         if (this == default)
         {
@@ -150,31 +150,38 @@ public struct FontFamily : IEquatable<FontFamily>
     /// </summary>
     /// <param name="paths">
     /// When this method returns, contains the filesystem paths to the font family sources,
-    /// if the path exists; otherwise, an empty value for the type of the paths parameter.
+    /// if the path exists; otherwise, an empty memory region.
     /// This parameter is passed uninitialized.
     /// </param>
     /// <returns>
     /// <see langword="true" /> if the <see cref="FontFamily" /> was created via filesystem paths; otherwise, <see langword="false" />.
     /// </returns>
-    public bool TryGetPaths(out IEnumerable<string> paths)
+    public bool TryGetPaths(out ReadOnlyMemory<string> paths)
     {
         if (this == default)
         {
             FontsThrowHelper.ThrowDefaultInstance();
         }
 
-        var filePaths = new List<string>();
-        foreach (FontStyle style in this.GetAvailableStyles())
+        ReadOnlySpan<FontStyle> styles = this.GetAvailableStyles().Span;
+        string[]? filePaths = null;
+        int pathCount = 0;
+
+        foreach (FontStyle style in styles)
         {
             if (this.collection.TryGetMetrics(this.Name, this.Culture, style, out FontMetrics? metrics)
                 && metrics is FileFontMetrics fileMetrics)
             {
-                filePaths.Add(fileMetrics.Path);
+                filePaths ??= new string[styles.Length];
+                filePaths[pathCount++] = fileMetrics.Path;
             }
         }
 
-        paths = filePaths;
-        return filePaths.Count > 0;
+        paths = pathCount > 0
+            ? new ReadOnlyMemory<string>(filePaths!, 0, pathCount)
+            : ReadOnlyMemory<string>.Empty;
+
+        return !paths.IsEmpty;
     }
 
     /// <summary>

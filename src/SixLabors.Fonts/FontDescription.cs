@@ -135,8 +135,8 @@ public class FontDescription
     /// Reads all the <see cref="FontDescription"/>s from the file at the specified path (typically a .ttc file like simsun.ttc).
     /// </summary>
     /// <param name="path">The file path.</param>
-    /// <returns>a <see cref="FontDescription"/>.</returns>
-    public static FontDescription[] LoadFontCollectionDescriptions(string path)
+    /// <returns>A read-only memory region containing the font descriptions.</returns>
+    public static ReadOnlyMemory<FontDescription> LoadFontCollectionDescriptions(string path)
     {
         Guard.NotNullOrWhiteSpace(path, nameof(path));
 
@@ -148,8 +148,8 @@ public class FontDescription
     /// Reads all the <see cref="FontDescription"/>s from the specified stream (typically a .ttc file like simsun.ttc).
     /// </summary>
     /// <param name="stream">The stream to read the font collection from.</param>
-    /// <returns>a <see cref="FontDescription"/>.</returns>
-    public static FontDescription[] LoadFontCollectionDescriptions(Stream stream)
+    /// <returns>A read-only memory region containing the font descriptions.</returns>
+    public static ReadOnlyMemory<FontDescription> LoadFontCollectionDescriptions(Stream stream)
     {
         long startPos = stream.Position;
         using var reader = new BigEndianBinaryReader(stream, true);

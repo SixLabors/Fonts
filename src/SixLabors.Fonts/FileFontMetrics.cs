@@ -126,7 +126,7 @@ internal sealed class FileFontMetrics : FontMetrics
         => this.fontMetrics.Value.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass);
 
     /// <inheritdoc/>
-    public override bool TryGetVariationAxes(out VariationAxis[]? variationAxes)
+    public override bool TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> variationAxes)
         => this.fontMetrics.Value.TryGetVariationAxes(out variationAxes);
 
     /// <inheritdoc/>
@@ -154,7 +154,7 @@ internal sealed class FileFontMetrics : FontMetrics
         => this.fontMetrics.Value.GetGlyphMetrics(codePoint, glyphId, textAttributes, textDecorations, layoutMode, support);
 
     /// <inheritdoc />
-    public override IReadOnlyList<CodePoint> GetAvailableCodePoints()
+    public override ReadOnlyMemory<CodePoint> GetAvailableCodePoints()
         => this.fontMetrics.Value.GetAvailableCodePoints();
 
     /// <inheritdoc/>
@@ -185,8 +185,8 @@ internal sealed class FileFontMetrics : FontMetrics
     /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
     /// </summary>
     /// <param name="path">The file path.</param>
-    /// <returns>a <see cref="StreamFontMetrics"/>.</returns>
-    public static FileFontMetrics[] LoadFontCollection(string path)
+    /// <returns>A read-only memory region containing the font metrics.</returns>
+    public static ReadOnlyMemory<FileFontMetrics> LoadFontCollection(string path)
     {
         using FileStream fs = File.OpenRead(path);
         long startPos = fs.Position;

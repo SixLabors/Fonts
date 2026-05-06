@@ -28,7 +28,7 @@
     Comment out this constant declaration to disable all tests based upon image generation.
     This allows us to make breaking changes to the Fonts API without breaking the tests.
     -->
-    <DefineConstants>$(DefineConstants);SUPPORTS_DRAWING</DefineConstants>
+    <!--<DefineConstants>$(DefineConstants);SUPPORTS_DRAWING</DefineConstants>-->
     <HasSupportForDrawing Condition="$(DefineConstants.Contains('SUPPORTS_DRAWING'))">true</HasSupportForDrawing>
   </PropertyGroup>
 

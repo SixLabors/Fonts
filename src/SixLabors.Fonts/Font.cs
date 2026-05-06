@@ -357,10 +357,16 @@ public sealed class Font
         }
 
         // Can't find style requested so let's just try returning the default.
-        IEnumerable<FontStyle>? styles = this.Family.GetAvailableStyles();
-        FontStyle defaultStyle = styles.Contains(FontStyle.Regular)
-        ? FontStyle.Regular
-        : styles.First();
+        ReadOnlySpan<FontStyle> styles = this.Family.GetAvailableStyles().Span;
+        FontStyle defaultStyle = styles[0];
+        foreach (FontStyle style in styles)
+        {
+            if (style == FontStyle.Regular)
+            {
+                defaultStyle = FontStyle.Regular;
+                break;
+            }
+        }
 
         this.Family.TryGetMetrics(defaultStyle, out metrics);
         return metrics;

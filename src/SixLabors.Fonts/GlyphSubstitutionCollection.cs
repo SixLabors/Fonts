@@ -218,9 +218,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
             while (j > startIndex && comparer(glyphs[j - 1].Data, glyphs[j].Data) > 0)
             {
                 // Swap Data references between adjacent slots.
-                GlyphShapingData temp = glyphs[j - 1].Data;
-                glyphs[j - 1].Data = glyphs[j].Data;
-                glyphs[j].Data = temp;
+                (glyphs[j].Data, glyphs[j - 1].Data) = (glyphs[j - 1].Data, glyphs[j].Data);
                 j--;
             }
         }

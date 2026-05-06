@@ -177,9 +177,9 @@ public abstract class FontMetrics
     /// Tries to get the variation axes that this font supports.
     /// The font needs to have a fvar table.
     /// </summary>
-    /// <param name="variationAxes">An array with Variation axes.</param>
+    /// <param name="variationAxes">A read-only memory region containing the variation axes.</param>
     /// <returns>True, if fvar table is present.</returns>
-    public abstract bool TryGetVariationAxes(out VariationAxis[]? variationAxes);
+    public abstract bool TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> variationAxes);
 
     /// <summary>
     /// Returns a value indicating whether the specified glyph is in the given mark filtering set.
@@ -218,8 +218,8 @@ public abstract class FontMetrics
     /// <summary>
     /// Gets the unicode codepoints for which a glyph exists in the font.
     /// </summary>
-    /// <returns>The <see cref="IReadOnlyList{CodePoint}"/>.</returns>
-    public abstract IReadOnlyList<CodePoint> GetAvailableCodePoints();
+    /// <returns>A read-only memory region containing the available codepoints.</returns>
+    public abstract ReadOnlyMemory<CodePoint> GetAvailableCodePoints();
 
     /// <summary>
     /// Gets the glyph metrics for a given code point and glyph id.

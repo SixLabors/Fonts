@@ -18,10 +18,10 @@ internal static class TextInteraction
     /// <summary>
     /// Hit tests a point against a complete laid-out text box.
     /// </summary>
-    /// <param name="lines">The laid-out line metrics in visual line order.</param>
-    /// <param name="graphemes">The flattened grapheme metrics in visual line order.</param>
-    /// <param name="point">The point to test in pixel units.</param>
-    /// <param name="layoutMode">The layout mode used when the metrics were produced.</param>
+    /// <param name="lines">All laid-out lines ordered by their visual position.</param>
+    /// <param name="graphemes">The full grapheme metrics buffer flattened in visual order.</param>
+    /// <param name="point">The text-space coordinate to resolve to a grapheme hit.</param>
+    /// <param name="layoutMode">The orientation used to interpret the line and grapheme advances.</param>
     /// <returns>The nearest grapheme hit.</returns>
     public static TextHit HitTest(
         ReadOnlySpan<LineMetrics> lines,
@@ -49,10 +49,10 @@ internal static class TextInteraction
     /// <summary>
     /// Hit tests a point against one laid-out line.
     /// </summary>
-    /// <param name="lineIndex">The zero-based line index.</param>
-    /// <param name="graphemes">The line's grapheme metrics in visual order.</param>
-    /// <param name="point">The point to test in pixel units.</param>
-    /// <param name="layoutMode">The layout mode used when the metrics were produced.</param>
+    /// <param name="lineIndex">The zero-based visual index of the line being hit tested.</param>
+    /// <param name="graphemes">Only the grapheme metrics belonging to the target line.</param>
+    /// <param name="point">The coordinate to compare against the line's primary advance axis.</param>
+    /// <param name="layoutMode">The line orientation that determines which axis is primary.</param>
     /// <returns>The nearest grapheme hit.</returns>
     public static TextHit HitTestLine(
         int lineIndex,
@@ -64,10 +64,10 @@ internal static class TextInteraction
     /// <summary>
     /// Gets a caret position from a complete laid-out text box.
     /// </summary>
-    /// <param name="lines">The laid-out line metrics in visual line order.</param>
-    /// <param name="graphemes">The flattened grapheme metrics in visual line order.</param>
-    /// <param name="graphemeIndex">The grapheme insertion index in the original text.</param>
-    /// <param name="layoutMode">The layout mode used when the metrics were produced.</param>
+    /// <param name="lines">All laid-out lines available for caret placement.</param>
+    /// <param name="graphemes">The flattened grapheme metrics that back the full text box.</param>
+    /// <param name="graphemeIndex">The logical insertion position to convert into a visual caret.</param>
+    /// <param name="layoutMode">The layout orientation used when the caret geometry was calculated.</param>
     /// <returns>The caret position in pixel units.</returns>
     public static CaretPosition GetCaretPosition(
         ReadOnlySpan<LineMetrics> lines,
@@ -94,11 +94,11 @@ internal static class TextInteraction
     /// <summary>
     /// Gets a caret position from one laid-out line.
     /// </summary>
-    /// <param name="lineIndex">The zero-based line index.</param>
-    /// <param name="line">The line metrics.</param>
-    /// <param name="graphemes">The line's grapheme metrics in visual order.</param>
-    /// <param name="graphemeIndex">The grapheme insertion index in the original text.</param>
-    /// <param name="layoutMode">The layout mode used when the metrics were produced.</param>
+    /// <param name="lineIndex">The zero-based visual index of the supplied line.</param>
+    /// <param name="line">The metrics for the single line that will host the caret.</param>
+    /// <param name="graphemes">The visual-order grapheme metrics for that one line.</param>
+    /// <param name="graphemeIndex">The logical insertion position to place within the supplied line.</param>
+    /// <param name="layoutMode">The orientation that determines the caret edge direction.</param>
     /// <returns>The caret position in pixel units.</returns>
     public static CaretPosition GetCaretPositionLine(
         int lineIndex,
@@ -118,11 +118,11 @@ internal static class TextInteraction
     /// <summary>
     /// Moves a caret within a complete laid-out text box.
     /// </summary>
-    /// <param name="lines">The laid-out line metrics.</param>
-    /// <param name="graphemes">The flattened grapheme metrics in visual line order.</param>
-    /// <param name="caret">The current caret position.</param>
-    /// <param name="movement">The movement operation.</param>
-    /// <param name="layoutMode">The layout mode used when the metrics were produced.</param>
+    /// <param name="lines">The visual lines across which the caret may move.</param>
+    /// <param name="graphemes">The flattened grapheme metrics used to resolve movement targets.</param>
+    /// <param name="caret">The starting caret location before applying the movement.</param>
+    /// <param name="movement">The requested caret navigation command.</param>
+    /// <param name="layoutMode">The orientation rules that control horizontal versus vertical motion.</param>
     /// <returns>The moved caret position in pixel units.</returns>
     public static CaretPosition MoveCaret(
         ReadOnlySpan<LineMetrics> lines,
@@ -195,12 +195,12 @@ internal static class TextInteraction
     /// <summary>
     /// Moves a caret within one laid-out line.
     /// </summary>
-    /// <param name="lineIndex">The zero-based line index.</param>
-    /// <param name="line">The line metrics.</param>
-    /// <param name="graphemes">The line's grapheme metrics in visual order.</param>
-    /// <param name="caret">The current caret position.</param>
-    /// <param name="movement">The movement operation.</param>
-    /// <param name="layoutMode">The layout mode used when the metrics were produced.</param>
+    /// <param name="lineIndex">The zero-based visual index of the current line.</param>
+    /// <param name="line">The line metrics that constrain the movement.</param>
+    /// <param name="graphemes">The grapheme metrics available within that line.</param>
+    /// <param name="caret">The caret location to move inside the line.</param>
+    /// <param name="movement">The in-line caret navigation command to execute.</param>
+    /// <param name="layoutMode">The orientation used to choose the caret axis within the line.</param>
     /// <returns>The moved caret position in pixel units.</returns>
     public static CaretPosition MoveCaretLine(
         int lineIndex,
@@ -247,11 +247,11 @@ internal static class TextInteraction
     /// <summary>
     /// Gets selection rectangles from a complete laid-out text box.
     /// </summary>
-    /// <param name="lines">The laid-out line metrics in visual line order.</param>
-    /// <param name="graphemes">The flattened grapheme metrics in visual line order.</param>
-    /// <param name="graphemeStart">The inclusive start grapheme index in the original text.</param>
-    /// <param name="graphemeEnd">The exclusive end grapheme index in the original text.</param>
-    /// <param name="layoutMode">The layout mode used when the metrics were produced.</param>
+    /// <param name="lines">The visual lines that may contribute selection rectangles.</param>
+    /// <param name="graphemes">The flattened grapheme metrics scanned for the selected range.</param>
+    /// <param name="graphemeStart">The inclusive logical start of the selection.</param>
+    /// <param name="graphemeEnd">The exclusive logical end of the selection.</param>
+    /// <param name="layoutMode">The orientation used when converting ranges into rectangles.</param>
     /// <returns>A read-only memory region containing the selection rectangles in visual order.</returns>
     public static ReadOnlyMemory<FontRectangle> GetSelectionBounds(
         ReadOnlySpan<LineMetrics> lines,
@@ -290,11 +290,11 @@ internal static class TextInteraction
     /// <summary>
     /// Gets selection rectangles for one laid-out line.
     /// </summary>
-    /// <param name="line">The line metrics.</param>
-    /// <param name="graphemes">The line's grapheme metrics in visual order.</param>
-    /// <param name="graphemeStart">The inclusive start grapheme index in the original text.</param>
-    /// <param name="graphemeEnd">The exclusive end grapheme index in the original text.</param>
-    /// <param name="layoutMode">The layout mode used when the metrics were produced.</param>
+    /// <param name="line">The single line for which selection rectangles are produced.</param>
+    /// <param name="graphemes">The line-local grapheme metrics scanned in visual order.</param>
+    /// <param name="graphemeStart">The inclusive logical start bound applied to this line.</param>
+    /// <param name="graphemeEnd">The exclusive logical end bound applied to this line.</param>
+    /// <param name="layoutMode">The orientation used to map the selected run onto the line box.</param>
     /// <returns>A read-only memory region containing the line selection rectangles in visual order.</returns>
     public static ReadOnlyMemory<FontRectangle> GetSelectionBoundsLine(
         in LineMetrics line,
@@ -323,9 +323,9 @@ internal static class TextInteraction
     /// <summary>
     /// Finds the visual line nearest to a point.
     /// </summary>
-    /// <param name="lines">The laid-out line metrics in visual line order.</param>
-    /// <param name="point">The point to test in pixel units.</param>
-    /// <param name="isHorizontal">Whether primary advance flows horizontally.</param>
+    /// <param name="lines">The candidate visual lines to compare with the point.</param>
+    /// <param name="point">The coordinate whose cross-axis position selects the nearest line.</param>
+    /// <param name="isHorizontal">Indicates whether line advances are measured along the x-axis.</param>
     /// <returns>The nearest line index.</returns>
     private static int FindLine(
         ReadOnlySpan<LineMetrics> lines,
@@ -350,8 +350,8 @@ internal static class TextInteraction
     /// <summary>
     /// Finds the line that owns the supplied grapheme index.
     /// </summary>
-    /// <param name="lines">The laid-out line metrics in visual line order.</param>
-    /// <param name="graphemeIndex">The grapheme index in the original text.</param>
+    /// <param name="lines">The visual lines whose source ranges are searched.</param>
+    /// <param name="graphemeIndex">The logical grapheme position to locate within those ranges.</param>
     /// <returns>The nearest owning line index.</returns>
     private static int FindLineByGraphemeIndex(ReadOnlySpan<LineMetrics> lines, int graphemeIndex)
     {
@@ -371,10 +371,10 @@ internal static class TextInteraction
     /// <summary>
     /// Hit tests a point against one laid-out line after the layout mode has been normalized.
     /// </summary>
-    /// <param name="lineIndex">The zero-based line index.</param>
-    /// <param name="graphemes">The line's grapheme metrics in visual order.</param>
-    /// <param name="point">The point to test in pixel units.</param>
-    /// <param name="isHorizontal">Whether primary advance flows horizontally.</param>
+    /// <param name="lineIndex">The zero-based visual index of the normalized line.</param>
+    /// <param name="graphemes">The grapheme metrics already isolated for that line.</param>
+    /// <param name="point">The coordinate to compare with each grapheme advance rectangle.</param>
+    /// <param name="isHorizontal">Indicates whether the primary hit-test axis is horizontal.</param>
     /// <returns>The nearest grapheme hit.</returns>
     private static TextHit HitTestLine(
         int lineIndex,
@@ -399,11 +399,11 @@ internal static class TextInteraction
     /// <summary>
     /// Creates a caret line for a grapheme insertion index.
     /// </summary>
-    /// <param name="lineIndex">The zero-based line index.</param>
-    /// <param name="line">The line metrics.</param>
-    /// <param name="graphemes">The line's grapheme metrics in visual order.</param>
-    /// <param name="graphemeIndex">The grapheme insertion index in the original text.</param>
-    /// <param name="isHorizontal">Whether primary advance flows horizontally.</param>
+    /// <param name="lineIndex">The zero-based visual index of the caret's line.</param>
+    /// <param name="line">The line metrics used to size the caret segment.</param>
+    /// <param name="graphemes">The line-local grapheme metrics searched for neighboring edges.</param>
+    /// <param name="graphemeIndex">The logical insertion position to materialize as a caret.</param>
+    /// <param name="isHorizontal">Indicates whether the caret spans vertically or horizontally.</param>
     /// <returns>The caret position in pixel units.</returns>
     private static CaretPosition CreateCaret(
         int lineIndex,
@@ -491,12 +491,12 @@ internal static class TextInteraction
     /// <summary>
     /// Creates one visual caret edge for a grapheme.
     /// </summary>
-    /// <param name="line">The line metrics.</param>
-    /// <param name="grapheme">The grapheme metrics.</param>
-    /// <param name="trailing">Whether to use the logical trailing edge.</param>
-    /// <param name="isHorizontal">Whether primary advance flows horizontally.</param>
-    /// <param name="start">The caret start point.</param>
-    /// <param name="end">The caret end point.</param>
+    /// <param name="line">The containing line that defines the caret span.</param>
+    /// <param name="grapheme">The grapheme whose leading or trailing edge is used.</param>
+    /// <param name="trailing">Specifies whether the logical trailing side should be chosen.</param>
+    /// <param name="isHorizontal">Indicates whether caret edges vary along the x-axis.</param>
+    /// <param name="start">Receives the first endpoint of the caret segment.</param>
+    /// <param name="end">Receives the second endpoint of the caret segment.</param>
     private static void CreateCaretEdge(
         in LineMetrics line,
         in GraphemeMetrics grapheme,
@@ -524,13 +524,13 @@ internal static class TextInteraction
     /// <summary>
     /// Moves the caret to the nearest matching position on an adjacent visual line.
     /// </summary>
-    /// <param name="lines">The laid-out line metrics.</param>
-    /// <param name="graphemes">The flattened grapheme metrics.</param>
-    /// <param name="caret">The current caret position.</param>
-    /// <param name="lineIndex">The current line index.</param>
-    /// <param name="lineDown">Whether to move toward the next visual line.</param>
-    /// <param name="isHorizontal">Whether primary advance flows horizontally.</param>
-    /// <param name="layoutMode">The layout mode used when the metrics were produced.</param>
+    /// <param name="lines">The set of visual lines available for adjacent-line navigation.</param>
+    /// <param name="graphemes">The flattened grapheme metrics used to resolve the new caret target.</param>
+    /// <param name="caret">The caret location before moving to the neighbor line.</param>
+    /// <param name="lineIndex">The visual index of the line that currently contains the caret.</param>
+    /// <param name="lineDown">Specifies whether movement is toward the next visual line.</param>
+    /// <param name="isHorizontal">Indicates whether preserved column data uses the x-axis.</param>
+    /// <param name="layoutMode">The orientation used when reconstructing the destination caret.</param>
     /// <returns>The moved caret position in pixel units.</returns>
     private static CaretPosition MoveCaretToAdjacentLine(
         ReadOnlySpan<LineMetrics> lines,
@@ -571,10 +571,10 @@ internal static class TextInteraction
     /// <summary>
     /// Hit tests a line for keyboard caret navigation.
     /// </summary>
-    /// <param name="lineIndex">The zero-based line index.</param>
-    /// <param name="graphemes">The line's grapheme metrics in visual order.</param>
-    /// <param name="point">The point to test in pixel units.</param>
-    /// <param name="isHorizontal">Whether primary advance flows horizontally.</param>
+    /// <param name="lineIndex">The zero-based visual index of the line being navigated.</param>
+    /// <param name="graphemes">The line-local grapheme metrics considered as navigation targets.</param>
+    /// <param name="point">The projected point used to preserve visual column alignment.</param>
+    /// <param name="isHorizontal">Indicates whether navigation compares x coordinates first.</param>
     /// <returns>The nearest grapheme hit.</returns>
     private static TextHit HitTestLineForCaretNavigation(
         int lineIndex,
@@ -599,9 +599,9 @@ internal static class TextInteraction
     /// <summary>
     /// Finds the nearest grapheme that should participate in keyboard caret navigation.
     /// </summary>
-    /// <param name="graphemes">The line's grapheme metrics in visual order.</param>
-    /// <param name="primary">The primary-axis coordinate in pixel units.</param>
-    /// <param name="isHorizontal">Whether primary advance flows horizontally.</param>
+    /// <param name="graphemes">The visual-order graphemes filtered for caret navigation.</param>
+    /// <param name="primary">The coordinate on the primary advance axis to compare.</param>
+    /// <param name="isHorizontal">Indicates whether the primary axis maps to horizontal movement.</param>
     /// <returns>The nearest grapheme metrics index within <paramref name="graphemes"/>.</returns>
     private static int FindNearestCaretNavigationGrapheme(
         ReadOnlySpan<GraphemeMetrics> graphemes,
@@ -637,10 +637,10 @@ internal static class TextInteraction
     /// <summary>
     /// Finds the adjacent visual line in the requested direction.
     /// </summary>
-    /// <param name="lines">The laid-out line metrics.</param>
-    /// <param name="lineIndex">The current line index.</param>
-    /// <param name="lineDown">Whether to move toward the next visual line.</param>
-    /// <param name="isHorizontal">Whether primary advance flows horizontally.</param>
+    /// <param name="lines">The visual lines among which an adjacent line is searched.</param>
+    /// <param name="lineIndex">The current visual line index.</param>
+    /// <param name="lineDown">Specifies whether the search moves forward in visual order.</param>
+    /// <param name="isHorizontal">Indicates whether cross-axis distances are measured vertically.</param>
     /// <returns>The adjacent line index, or <paramref name="lineIndex"/> when no line exists in that direction.</returns>
     private static int FindAdjacentLine(
         ReadOnlySpan<LineMetrics> lines,
@@ -676,8 +676,8 @@ internal static class TextInteraction
     /// <summary>
     /// Gets a valid line index for the supplied caret.
     /// </summary>
-    /// <param name="lines">The laid-out line metrics.</param>
-    /// <param name="caret">The current caret position.</param>
+    /// <param name="lines">The laid-out lines used to validate the caret's stored line index.</param>
+    /// <param name="caret">The caret whose associated visual line must be resolved.</param>
     /// <returns>The line index.</returns>
     private static int GetCaretLineIndex(ReadOnlySpan<LineMetrics> lines, in CaretPosition caret)
     {
@@ -692,7 +692,7 @@ internal static class TextInteraction
     /// <summary>
     /// Gets the first grapheme insertion index in the laid-out text.
     /// </summary>
-    /// <param name="lines">The laid-out line metrics.</param>
+    /// <param name="lines">The laid-out lines from which the earliest insertion point is derived.</param>
     /// <returns>The text start insertion index.</returns>
     private static int GetTextStart(ReadOnlySpan<LineMetrics> lines)
     {
@@ -708,7 +708,7 @@ internal static class TextInteraction
     /// <summary>
     /// Gets the final grapheme insertion index in the laid-out text.
     /// </summary>
-    /// <param name="lines">The laid-out line metrics.</param>
+    /// <param name="lines">The laid-out lines from which the final insertion point is derived.</param>
     /// <returns>The text end insertion index.</returns>
     private static int GetTextEnd(ReadOnlySpan<LineMetrics> lines)
     {
@@ -724,8 +724,8 @@ internal static class TextInteraction
     /// <summary>
     /// Gets the line end insertion index for caret navigation.
     /// </summary>
-    /// <param name="line">The line metrics.</param>
-    /// <param name="graphemes">The line's grapheme metrics in visual order.</param>
+    /// <param name="line">The line whose logical end position is being computed.</param>
+    /// <param name="graphemes">The line-local grapheme metrics inspected for trailing hidden breaks.</param>
     /// <returns>The line end insertion index.</returns>
     private static int GetLineEndInsertionIndex(in LineMetrics line, ReadOnlySpan<GraphemeMetrics> graphemes)
     {
@@ -747,8 +747,8 @@ internal static class TextInteraction
     /// <summary>
     /// Gets the cross-axis start of a line.
     /// </summary>
-    /// <param name="line">The line metrics.</param>
-    /// <param name="isHorizontal">Whether primary advance flows horizontally.</param>
+    /// <param name="line">The line whose cross-axis origin is requested.</param>
+    /// <param name="isHorizontal">Indicates whether the cross axis corresponds to y coordinates.</param>
     /// <returns>The cross-axis start.</returns>
     private static float GetLineCrossStart(in LineMetrics line, bool isHorizontal)
         => isHorizontal ? line.Start.Y : line.Start.X;
@@ -756,8 +756,8 @@ internal static class TextInteraction
     /// <summary>
     /// Gets the cross-axis end of a line.
     /// </summary>
-    /// <param name="line">The line metrics.</param>
-    /// <param name="isHorizontal">Whether primary advance flows horizontally.</param>
+    /// <param name="line">The line whose cross-axis limit is requested.</param>
+    /// <param name="isHorizontal">Indicates whether the cross axis corresponds to y coordinates.</param>
     /// <returns>The cross-axis end.</returns>
     private static float GetLineCrossEnd(in LineMetrics line, bool isHorizontal)
         => isHorizontal ? line.Start.Y + line.Extent.Y : line.Start.X + line.Extent.X;
@@ -765,8 +765,8 @@ internal static class TextInteraction
     /// <summary>
     /// Gets the coordinate to preserve for repeated visual line movement.
     /// </summary>
-    /// <param name="start">The caret start point.</param>
-    /// <param name="isHorizontal">Whether primary advance flows horizontally.</param>
+    /// <param name="start">The primary caret endpoint used to preserve visual column movement.</param>
+    /// <param name="isHorizontal">Indicates whether the preserved coordinate is taken from x.</param>
     /// <returns>The line navigation position.</returns>
     private static float GetLineNavigationPosition(Vector2 start, bool isHorizontal)
         => isHorizontal ? start.X : start.Y;
@@ -774,8 +774,8 @@ internal static class TextInteraction
     /// <summary>
     /// Creates a copy of the caret with a specific preserved line navigation position.
     /// </summary>
-    /// <param name="caret">The caret position.</param>
-    /// <param name="lineNavigationPosition">The line navigation position.</param>
+    /// <param name="caret">The caret value to clone with updated navigation metadata.</param>
+    /// <param name="lineNavigationPosition">The preserved visual column or row coordinate.</param>
     /// <returns>The caret position.</returns>
     private static CaretPosition WithLineNavigationPosition(
         in CaretPosition caret,
@@ -794,12 +794,12 @@ internal static class TextInteraction
     /// <summary>
     /// Fills one line's selection rectangles from visually contiguous selected grapheme advances.
     /// </summary>
-    /// <param name="line">The line metrics.</param>
-    /// <param name="graphemes">The line's grapheme metrics in visual order.</param>
-    /// <param name="graphemeStart">The inclusive start grapheme index in the original text.</param>
-    /// <param name="graphemeEnd">The exclusive end grapheme index in the original text.</param>
-    /// <param name="isHorizontal">Whether primary advance flows horizontally.</param>
-    /// <param name="result">The target selection rectangles.</param>
+    /// <param name="line">The line that will receive one or more selection rectangles.</param>
+    /// <param name="graphemes">The line-local grapheme metrics grouped into visual runs.</param>
+    /// <param name="graphemeStart">The inclusive logical start bound for the selected range.</param>
+    /// <param name="graphemeEnd">The exclusive logical end bound for the selected range.</param>
+    /// <param name="isHorizontal">Indicates whether rectangles expand primarily along x.</param>
+    /// <param name="result">The destination span that receives the generated rectangles.</param>
     /// <returns>The number of selection rectangles written.</returns>
     private static int FillSelectionBoundsLine(
         in LineMetrics line,
@@ -857,29 +857,27 @@ internal static class TextInteraction
     /// <summary>
     /// Creates a selection rectangle for a contiguous visual run.
     /// </summary>
-    /// <param name="line">The line metrics.</param>
-    /// <param name="start">The selection start on the primary axis.</param>
-    /// <param name="end">The selection end on the primary axis.</param>
-    /// <param name="isHorizontal">Whether primary advance flows horizontally.</param>
+    /// <param name="line">The containing line used to fill the rectangle on the secondary axis.</param>
+    /// <param name="start">The first selected coordinate along the primary layout axis.</param>
+    /// <param name="end">The last selected coordinate along the primary layout axis.</param>
+    /// <param name="isHorizontal">Indicates whether the primary axis runs left to right.</param>
     /// <returns>The selection rectangle in pixel units.</returns>
     private static FontRectangle CreateSelectionBounds(
         in LineMetrics line,
         float start,
         float end,
-        bool isHorizontal)
-    {
-        return isHorizontal
-            ? FontRectangle.FromLTRB(start, line.Start.Y, end, line.Start.Y + line.Extent.Y)
+        bool isHorizontal) =>
+        isHorizontal
+        ? FontRectangle.FromLTRB(start, line.Start.Y, end, line.Start.Y + line.Extent.Y)
             : FontRectangle.FromLTRB(line.Start.X, start, line.Start.X + line.Extent.X, end);
-    }
 
     /// <summary>
     /// Counts how many selection rectangles are required for a grapheme range.
     /// </summary>
-    /// <param name="lines">The laid-out line metrics in visual line order.</param>
-    /// <param name="graphemes">The flattened grapheme metrics in visual line order.</param>
-    /// <param name="graphemeStart">The inclusive start grapheme index in the original text.</param>
-    /// <param name="graphemeEnd">The exclusive end grapheme index in the original text.</param>
+    /// <param name="lines">The visual lines checked for intersection with the selection range.</param>
+    /// <param name="graphemes">The flattened grapheme metrics used to count visual runs.</param>
+    /// <param name="graphemeStart">The inclusive logical selection start used for counting.</param>
+    /// <param name="graphemeEnd">The exclusive logical selection end used for counting.</param>
     /// <returns>The number of selection rectangles.</returns>
     private static int CountSelectionBounds(
         ReadOnlySpan<LineMetrics> lines,
@@ -907,9 +905,9 @@ internal static class TextInteraction
     /// <summary>
     /// Counts visually contiguous selected grapheme runs in one line.
     /// </summary>
-    /// <param name="graphemes">The line's grapheme metrics in visual order.</param>
-    /// <param name="graphemeStart">The inclusive start grapheme index in the original text.</param>
-    /// <param name="graphemeEnd">The exclusive end grapheme index in the original text.</param>
+    /// <param name="graphemes">The visual-order grapheme metrics for the current line.</param>
+    /// <param name="graphemeStart">The inclusive logical selection start applied to that line.</param>
+    /// <param name="graphemeEnd">The exclusive logical selection end applied to that line.</param>
     /// <returns>The number of selected visual runs.</returns>
     private static int CountSelectionBoundsLine(
         ReadOnlySpan<GraphemeMetrics> graphemes,
@@ -944,9 +942,9 @@ internal static class TextInteraction
     /// <summary>
     /// Gets a value indicating whether a line intersects the supplied grapheme range.
     /// </summary>
-    /// <param name="line">The line metrics.</param>
-    /// <param name="graphemeStart">The inclusive start grapheme index in the original text.</param>
-    /// <param name="graphemeEnd">The exclusive end grapheme index in the original text.</param>
+    /// <param name="line">The line whose grapheme range is being compared.</param>
+    /// <param name="graphemeStart">The inclusive logical start of the queried range.</param>
+    /// <param name="graphemeEnd">The exclusive logical end of the queried range.</param>
     /// <returns><see langword="true"/> when the line intersects the range.</returns>
     private static bool LineIntersectsSelection(in LineMetrics line, int graphemeStart, int graphemeEnd)
     {
@@ -958,9 +956,9 @@ internal static class TextInteraction
     /// <summary>
     /// Finds the grapheme whose advance contains the primary coordinate, or the nearest edge grapheme.
     /// </summary>
-    /// <param name="graphemes">The line's grapheme metrics in visual order.</param>
-    /// <param name="primary">The primary-axis coordinate in pixel units.</param>
-    /// <param name="isHorizontal">Whether primary advance flows horizontally.</param>
+    /// <param name="graphemes">The visual-order grapheme metrics searched for a hit target.</param>
+    /// <param name="primary">The coordinate along the primary layout axis.</param>
+    /// <param name="isHorizontal">Indicates whether the primary axis is horizontal.</param>
     /// <returns>The nearest grapheme metrics index within <paramref name="graphemes"/>.</returns>
     private static int FindNearestGrapheme(ReadOnlySpan<GraphemeMetrics> graphemes, float primary, bool isHorizontal)
     {
@@ -983,8 +981,8 @@ internal static class TextInteraction
     /// <summary>
     /// Finds the metrics entry for a source grapheme index within one visual line.
     /// </summary>
-    /// <param name="graphemes">The line's grapheme metrics in visual order.</param>
-    /// <param name="graphemeIndex">The grapheme index in the original text.</param>
+    /// <param name="graphemes">The visual-order grapheme metrics belonging to one line.</param>
+    /// <param name="graphemeIndex">The logical grapheme index to look up directly.</param>
     /// <returns>The grapheme metrics index, or <c>-1</c> when the grapheme is not in the line.</returns>
     private static int FindGraphemeBySourceIndex(ReadOnlySpan<GraphemeMetrics> graphemes, int graphemeIndex)
     {
@@ -1002,8 +1000,8 @@ internal static class TextInteraction
     /// <summary>
     /// Finds the nearest metrics entry for a source grapheme index within one visual line.
     /// </summary>
-    /// <param name="graphemes">The line's grapheme metrics in visual order.</param>
-    /// <param name="graphemeIndex">The grapheme index in the original text.</param>
+    /// <param name="graphemes">The visual-order grapheme metrics used for nearest-index matching.</param>
+    /// <param name="graphemeIndex">The logical grapheme index whose closest visual entry is needed.</param>
     /// <returns>The nearest grapheme metrics index within <paramref name="graphemes"/>.</returns>
     private static int FindNearestGraphemeIndex(ReadOnlySpan<GraphemeMetrics> graphemes, int graphemeIndex)
     {
@@ -1025,7 +1023,7 @@ internal static class TextInteraction
     /// <summary>
     /// Gets a value indicating whether the grapheme advances right-to-left in source order.
     /// </summary>
-    /// <param name="grapheme">The grapheme metrics.</param>
+    /// <param name="grapheme">The grapheme whose resolved bidi level is inspected.</param>
     /// <returns><see langword="true"/> when the resolved bidi level is odd.</returns>
     private static bool IsRightToLeft(in GraphemeMetrics grapheme)
         => (grapheme.BidiLevel & 1) != 0;
@@ -1033,32 +1031,32 @@ internal static class TextInteraction
     /// <summary>
     /// Gets a value indicating whether the grapheme should create visual selection bounds.
     /// </summary>
-    /// <param name="grapheme">The grapheme metrics.</param>
+    /// <param name="grapheme">The grapheme being evaluated for selection rendering.</param>
     /// <returns><see langword="true"/> when the grapheme should contribute to selection bounds.</returns>
     private static bool ContributesToSelectionBounds(in GraphemeMetrics grapheme)
-    {
+        =>
+
         // Hard breaks remain logical graphemes for caret movement and source ranges, but
         // a non-measuring hard break should not create its own painted selection box.
-        return !grapheme.IsLineBreak || grapheme.ContributesToMeasurement;
-    }
+        !grapheme.IsLineBreak || grapheme.ContributesToMeasurement;
 
     /// <summary>
     /// Gets a value indicating whether the grapheme should participate in keyboard caret navigation.
     /// </summary>
-    /// <param name="grapheme">The grapheme metrics.</param>
+    /// <param name="grapheme">The grapheme being evaluated as a keyboard navigation stop.</param>
     /// <returns><see langword="true"/> when the grapheme should be a caret navigation target.</returns>
     private static bool ContributesToCaretNavigation(in GraphemeMetrics grapheme)
-    {
+        =>
+
         // Non-measuring hard breaks still exist as source positions, but Up/Down and LineEnd
         // should target the visible line content rather than snapping after the hidden break.
-        return !grapheme.IsLineBreak || grapheme.ContributesToMeasurement;
-    }
+        !grapheme.IsLineBreak || grapheme.ContributesToMeasurement;
 
     /// <summary>
     /// Gets the offset of a line's graphemes within the flattened metrics array.
     /// </summary>
-    /// <param name="graphemes">The flattened grapheme metrics.</param>
-    /// <param name="line">The line whose source range owns the graphemes.</param>
+    /// <param name="graphemes">The flattened grapheme metrics searched for the line's first entry.</param>
+    /// <param name="line">The line whose logical grapheme range identifies the desired slice.</param>
     /// <returns>The flattened grapheme metrics offset.</returns>
     private static int GetGraphemeOffset(ReadOnlySpan<GraphemeMetrics> graphemes, in LineMetrics line)
     {

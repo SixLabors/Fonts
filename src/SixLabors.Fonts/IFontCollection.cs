@@ -45,31 +45,31 @@ public interface IFontCollection : IReadOnlyFontCollection
     /// Adds a true type font collection (.ttc).
     /// </summary>
     /// <param name="path">The font collection path.</param>
-    /// <returns>The new <see cref="IEnumerable{FontFamily}"/>.</returns>
-    public IEnumerable<FontFamily> AddCollection(string path);
+    /// <returns>A read-only memory region containing the new <see cref="FontFamily"/> values.</returns>
+    public ReadOnlyMemory<FontFamily> AddCollection(string path);
 
     /// <summary>
     /// Adds a true type font collection (.ttc).
     /// </summary>
     /// <param name="path">The font collection path.</param>
     /// <param name="descriptions">The descriptions of the added fonts.</param>
-    /// <returns>The new <see cref="IEnumerable{T}"/>.</returns>
-    public IEnumerable<FontFamily> AddCollection(string path, out IEnumerable<FontDescription> descriptions);
+    /// <returns>A read-only memory region containing the new <see cref="FontFamily"/> values.</returns>
+    public ReadOnlyMemory<FontFamily> AddCollection(string path, out ReadOnlyMemory<FontDescription> descriptions);
 
     /// <summary>
     /// Adds a true type font collection (.ttc).
     /// </summary>
     /// <param name="stream">The font stream.</param>
-    /// <returns>The new <see cref="IEnumerable{T}"/>.</returns>
-    public IEnumerable<FontFamily> AddCollection(Stream stream);
+    /// <returns>A read-only memory region containing the new <see cref="FontFamily"/> values.</returns>
+    public ReadOnlyMemory<FontFamily> AddCollection(Stream stream);
 
     /// <summary>
     /// Adds a true type font collection (.ttc).
     /// </summary>
     /// <param name="stream">The font stream.</param>
     /// <param name="descriptions">The descriptions of the added fonts.</param>
-    /// <returns>The new <see cref="IEnumerable{T}"/>.</returns>
-    public IEnumerable<FontFamily> AddCollection(Stream stream, out IEnumerable<FontDescription> descriptions);
+    /// <returns>A read-only memory region containing the new <see cref="FontFamily"/> values.</returns>
+    public ReadOnlyMemory<FontFamily> AddCollection(Stream stream, out ReadOnlyMemory<FontDescription> descriptions);
 
     /// <summary>
     /// Adds a font to the collection.
@@ -110,8 +110,8 @@ public interface IFontCollection : IReadOnlyFontCollection
     /// </summary>
     /// <param name="path">The font collection path.</param>
     /// <param name="culture">The culture of the fonts to add.</param>
-    /// <returns>The new <see cref="IEnumerable{FontFamily}"/>.</returns>
-    public IEnumerable<FontFamily> AddCollection(string path, CultureInfo culture);
+    /// <returns>A read-only memory region containing the new <see cref="FontFamily"/> values.</returns>
+    public ReadOnlyMemory<FontFamily> AddCollection(string path, CultureInfo culture);
 
     /// <summary>
     /// Adds a true type font collection (.ttc).
@@ -119,19 +119,19 @@ public interface IFontCollection : IReadOnlyFontCollection
     /// <param name="path">The font collection path.</param>
     /// <param name="culture">The culture of the fonts to add.</param>
     /// <param name="descriptions">The descriptions of the added fonts.</param>
-    /// <returns>The new <see cref="IEnumerable{FontFamily}"/>.</returns>
-    public IEnumerable<FontFamily> AddCollection(
+    /// <returns>A read-only memory region containing the new <see cref="FontFamily"/> values.</returns>
+    public ReadOnlyMemory<FontFamily> AddCollection(
         string path,
         CultureInfo culture,
-        out IEnumerable<FontDescription> descriptions);
+        out ReadOnlyMemory<FontDescription> descriptions);
 
     /// <summary>
     /// Adds a true type font collection (.ttc).
     /// </summary>
     /// <param name="stream">The font stream.</param>
     /// <param name="culture">The culture of the fonts to add.</param>
-    /// <returns>The new <see cref="IEnumerable{FontFamily}"/>.</returns>
-    public IEnumerable<FontFamily> AddCollection(Stream stream, CultureInfo culture);
+    /// <returns>A read-only memory region containing the new <see cref="FontFamily"/> values.</returns>
+    public ReadOnlyMemory<FontFamily> AddCollection(Stream stream, CultureInfo culture);
 
     /// <summary>
     /// Adds a true type font collection (.ttc).
@@ -139,9 +139,9 @@ public interface IFontCollection : IReadOnlyFontCollection
     /// <param name="stream">The font stream.</param>
     /// <param name="culture">The culture of the fonts to add.</param>
     /// <param name="descriptions">The descriptions of the added fonts.</param>
-    /// <returns>The new <see cref="IEnumerable{FontFamily}"/>.</returns>
-    public IEnumerable<FontFamily> AddCollection(
+    /// <returns>A read-only memory region containing the new <see cref="FontFamily"/> values.</returns>
+    public ReadOnlyMemory<FontFamily> AddCollection(
         Stream stream,
         CultureInfo culture,
-        out IEnumerable<FontDescription> descriptions);
+        out ReadOnlyMemory<FontDescription> descriptions);
 }

@@ -75,7 +75,7 @@ public sealed class LinearGradientPaint : Paint
     /// <summary>
     /// Gets the ordered gradient stops (ascending by <see cref="GradientStop.Offset"/>).
     /// </summary>
-    public GradientStop[] Stops { get; init; } = [];
+    public ReadOnlyMemory<GradientStop> Stops { get; init; } = ReadOnlyMemory<GradientStop>.Empty;
 }
 
 /// <summary>
@@ -125,7 +125,7 @@ public sealed class RadialGradientPaint : Paint
     /// <summary>
     /// Gets the ordered gradient stops, ascending by <see cref="GradientStop.Offset"/>.
     /// </summary>
-    public GradientStop[] Stops { get; init; } = [];
+    public ReadOnlyMemory<GradientStop> Stops { get; init; } = ReadOnlyMemory<GradientStop>.Empty;
 }
 
 /// <summary>
@@ -161,5 +161,5 @@ public sealed class SweepGradientPaint : Paint
     /// <summary>
     /// Gets the ordered gradient stops (ascending by <see cref="GradientStop.Offset"/>).
     /// </summary>
-    public GradientStop[] Stops { get; init; } = [];
+    public ReadOnlyMemory<GradientStop> Stops { get; init; } = ReadOnlyMemory<GradientStop>.Empty;
 }
