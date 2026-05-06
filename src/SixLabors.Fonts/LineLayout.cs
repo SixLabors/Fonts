@@ -16,6 +16,7 @@ public sealed class LineLayout
     private readonly int lineIndex;
     private readonly LayoutMode layoutMode;
     private readonly ReadOnlyMemory<GraphemeMetrics> graphemeMetrics;
+    private readonly ReadOnlyMemory<WordMetrics> wordMetrics;
     private GlyphBounds[]? glyphAdvances;
     private GlyphBounds[]? glyphBounds;
     private GlyphBounds[]? glyphRenderableBounds;
@@ -26,7 +27,8 @@ public sealed class LineLayout
         float wrappingLength,
         int lineIndex,
         in LineMetrics metrics,
-        ReadOnlyMemory<GraphemeMetrics> graphemeMetrics)
+        ReadOnlyMemory<GraphemeMetrics> graphemeMetrics,
+        ReadOnlyMemory<WordMetrics> wordMetrics)
     {
         this.textBox = textBox;
         this.options = options;
@@ -35,6 +37,7 @@ public sealed class LineLayout
         this.layoutMode = options.LayoutMode;
         this.LineMetrics = metrics;
         this.graphemeMetrics = graphemeMetrics;
+        this.wordMetrics = wordMetrics;
     }
 
     /// <summary>
@@ -87,9 +90,26 @@ public sealed class LineLayout
             this.lineIndex,
             this.LineMetrics,
             this.GraphemeMetrics,
+            this.wordMetrics.Span,
             caret,
             movement,
             this.layoutMode);
+
+    /// <summary>
+    /// Gets the word metrics for the word-boundary segment containing the supplied hit-tested grapheme position.
+    /// </summary>
+    /// <param name="hit">The hit-tested grapheme position.</param>
+    /// <returns>The word metrics containing the hit grapheme.</returns>
+    public WordMetrics GetWordMetrics(TextHit hit)
+        => TextInteraction.GetWordMetrics(this.wordMetrics.Span, hit.GraphemeIndex);
+
+    /// <summary>
+    /// Gets the word metrics for the word-boundary segment containing the supplied caret position.
+    /// </summary>
+    /// <param name="caret">The caret position.</param>
+    /// <returns>The word metrics containing the caret's grapheme insertion index.</returns>
+    public WordMetrics GetWordMetrics(CaretPosition caret)
+        => TextInteraction.GetWordMetrics(this.wordMetrics.Span, caret.GraphemeIndex);
 
     /// <summary>
     /// Gets selection bounds for the supplied grapheme range.
@@ -132,6 +152,14 @@ public sealed class LineLayout
             anchor.GraphemeIndex,
             focus.GraphemeIndex,
             this.layoutMode);
+
+    /// <summary>
+    /// Gets line-local selection bounds for the supplied word metrics.
+    /// </summary>
+    /// <param name="metrics">The word metrics to select.</param>
+    /// <returns>A read-only memory region containing the selection bounds in visual order and pixel units.</returns>
+    public ReadOnlyMemory<FontRectangle> GetSelectionBounds(WordMetrics metrics)
+        => this.GetSelectionBounds(metrics.GraphemeStart, metrics.GraphemeEnd);
 
     /// <inheritdoc cref="TextBlock.MeasureGlyphAdvances(float)"/>
     public ReadOnlyMemory<GlyphBounds> MeasureGlyphAdvances()

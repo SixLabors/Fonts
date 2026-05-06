@@ -49,7 +49,7 @@ public ref struct SpanWordEnumerator
     /// </returns>
     public bool MoveNext()
     {
-        if (this.source.IsEmpty)
+        if (this.sourceOffset >= this.source.Length)
         {
             return false;
         }

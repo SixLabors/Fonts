@@ -953,6 +953,62 @@ public class TextLayoutTests
             beforeAction: DrawSelection);
     }
 
+    [Fact]
+    public void WordMetrics_GetSelectionBounds_DrawsWordSelections()
+    {
+        FontCollection fontCollection = new();
+        FontFamily latin = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansRegular);
+        FontFamily hebrew = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansHebrewRegular);
+        FontFamily arabic = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoNaskhArabicRegular);
+
+        Font font = latin.CreateFont(30);
+        Font largeFont = latin.CreateFont(46);
+        const string text = "can't stop שלום عرب";
+
+        TextOptions options = new(font)
+        {
+            FallbackFontFamilies = [hebrew, arabic],
+            Origin = new(24, 28),
+            LayoutMode = LayoutMode.HorizontalTopBottom,
+            TextRuns =
+            [
+                new() { Start = 0, End = 5, Font = largeFont },
+                new() { Start = 11, End = 15, Font = largeFont }
+            ]
+        };
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        void DrawSelections(Image<Rgba32> image)
+        {
+            foreach (WordMetrics word in metrics.WordMetrics)
+            {
+                ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(word).Span;
+
+                // UAX #29 word segments include separators. Drawing every returned
+                // range with an outline makes the apostrophe in "can't" and the
+                // intervening spaces visible in the rendered output.
+                for (int i = 0; i < selection.Length; i++)
+                {
+                    FontRectangle bounds = selection[i];
+                    RectangularPolygon box = new(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+
+                    image.Mutate(x =>
+                    {
+                        x.Fill(Color.LightBlue, box);
+                        x.Draw(Color.Black, 1, box);
+                    });
+                }
+            }
+        }
+
+        TextLayoutTestUtilities.TestLayout(
+            text,
+            options,
+            includeGeometry: false,
+            beforeAction: DrawSelections);
+    }
+
     [Theory]
     [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 25, 6)]
     [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 50, 4)]

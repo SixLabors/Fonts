@@ -173,6 +173,27 @@ public static class TextMeasurer
         return block.GetGraphemeMetrics(options.WrappingLength);
     }
 
+    /// <inheritdoc cref="GetWordMetrics(ReadOnlySpan{char}, TextOptions)"/>
+    public static ReadOnlyMemory<WordMetrics> GetWordMetrics(string text, TextOptions options)
+        => GetWordMetrics(text.AsSpan(), options);
+
+    /// <summary>
+    /// Gets the positioned metrics of each Unicode word-boundary segment in pixel units.
+    /// </summary>
+    /// <param name="text">The text.</param>
+    /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
+    /// <returns>A read-only memory region containing the per-word-boundary segment metrics entries of the text if it was to be rendered.</returns>
+    public static ReadOnlyMemory<WordMetrics> GetWordMetrics(ReadOnlySpan<char> text, TextOptions options)
+    {
+        if (text.IsEmpty)
+        {
+            return ReadOnlyMemory<WordMetrics>.Empty;
+        }
+
+        TextBlock block = new(text, options);
+        return block.GetWordMetrics(options.WrappingLength);
+    }
+
     /// <inheritdoc cref="CountLines(ReadOnlySpan{char}, TextOptions)"/>
     public static int CountLines(string text, TextOptions options)
         => CountLines(text.AsSpan(), options);

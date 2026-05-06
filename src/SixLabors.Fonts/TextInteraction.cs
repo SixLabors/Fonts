@@ -120,6 +120,7 @@ internal static class TextInteraction
     /// </summary>
     /// <param name="lines">The visual lines across which the caret may move.</param>
     /// <param name="graphemes">The flattened grapheme metrics used to resolve movement targets.</param>
+    /// <param name="wordMetrics">The source-order word-boundary segment metrics used for word movement.</param>
     /// <param name="caret">The starting caret location before applying the movement.</param>
     /// <param name="movement">The requested caret navigation command.</param>
     /// <param name="layoutMode">The orientation rules that control horizontal versus vertical motion.</param>
@@ -127,6 +128,7 @@ internal static class TextInteraction
     public static CaretPosition MoveCaret(
         ReadOnlySpan<LineMetrics> lines,
         ReadOnlySpan<GraphemeMetrics> graphemes,
+        ReadOnlySpan<WordMetrics> wordMetrics,
         CaretPosition caret,
         CaretMovement movement,
         LayoutMode layoutMode)
@@ -150,6 +152,14 @@ internal static class TextInteraction
 
             case CaretMovement.Next:
                 target = Math.Min(GetTextEnd(lines), caret.GraphemeIndex + 1);
+                break;
+
+            case CaretMovement.PreviousWord:
+                target = GetPreviousWordBoundary(wordMetrics, caret.GraphemeIndex, GetTextStart(lines));
+                break;
+
+            case CaretMovement.NextWord:
+                target = GetNextWordBoundary(wordMetrics, caret.GraphemeIndex, GetTextEnd(lines));
                 break;
 
             case CaretMovement.LineStart:
@@ -198,6 +208,7 @@ internal static class TextInteraction
     /// <param name="lineIndex">The zero-based visual index of the current line.</param>
     /// <param name="line">The line metrics that constrain the movement.</param>
     /// <param name="graphemes">The grapheme metrics available within that line.</param>
+    /// <param name="wordMetrics">The source-order word-boundary segment metrics used for word movement.</param>
     /// <param name="caret">The caret location to move inside the line.</param>
     /// <param name="movement">The in-line caret navigation command to execute.</param>
     /// <param name="layoutMode">The orientation used to choose the caret axis within the line.</param>
@@ -206,6 +217,7 @@ internal static class TextInteraction
         int lineIndex,
         in LineMetrics line,
         ReadOnlySpan<GraphemeMetrics> graphemes,
+        ReadOnlySpan<WordMetrics> wordMetrics,
         CaretPosition caret,
         CaretMovement movement,
         LayoutMode layoutMode)
@@ -226,6 +238,19 @@ internal static class TextInteraction
                 target = Math.Min(GetLineEndInsertionIndex(line, graphemes), caret.GraphemeIndex + 1);
                 break;
 
+            case CaretMovement.PreviousWord:
+                target = Math.Max(
+                    line.GraphemeIndex,
+                    GetPreviousWordBoundary(wordMetrics, caret.GraphemeIndex, line.GraphemeIndex));
+                break;
+
+            case CaretMovement.NextWord:
+                int lineEnd = GetLineEndInsertionIndex(line, graphemes);
+                target = Math.Min(
+                    lineEnd,
+                    GetNextWordBoundary(wordMetrics, caret.GraphemeIndex, lineEnd));
+                break;
+
             case CaretMovement.LineStart:
             case CaretMovement.TextStart:
                 target = line.GraphemeIndex;
@@ -242,6 +267,36 @@ internal static class TextInteraction
         }
 
         return GetCaretPositionLine(lineIndex, line, graphemes, target, layoutMode);
+    }
+
+    /// <summary>
+    /// Gets the word-boundary segment metrics containing the supplied grapheme insertion index.
+    /// </summary>
+    /// <param name="wordMetrics">The source-order word metrics to search.</param>
+    /// <param name="graphemeIndex">The grapheme insertion index to locate.</param>
+    /// <returns>The matching word metrics.</returns>
+    public static WordMetrics GetWordMetrics(ReadOnlySpan<WordMetrics> wordMetrics, int graphemeIndex)
+    {
+        if (wordMetrics.IsEmpty)
+        {
+            return default;
+        }
+
+        for (int i = 0; i < wordMetrics.Length; i++)
+        {
+            WordMetrics metrics = wordMetrics[i];
+            if (graphemeIndex >= metrics.GraphemeStart && graphemeIndex < metrics.GraphemeEnd)
+            {
+                return metrics;
+            }
+
+            if (graphemeIndex < metrics.GraphemeStart)
+            {
+                return metrics;
+            }
+        }
+
+        return wordMetrics[^1];
     }
 
     /// <summary>
@@ -687,6 +742,66 @@ internal static class TextInteraction
         }
 
         return FindLineByGraphemeIndex(lines, caret.GraphemeIndex);
+    }
+
+    /// <summary>
+    /// Gets the nearest Unicode word boundary before the supplied grapheme insertion index.
+    /// </summary>
+    /// <param name="wordMetrics">The source-order word metrics to search.</param>
+    /// <param name="graphemeIndex">The grapheme insertion index to move from.</param>
+    /// <param name="limit">The minimum grapheme insertion index that can be returned.</param>
+    /// <returns>The previous word boundary.</returns>
+    private static int GetPreviousWordBoundary(
+        ReadOnlySpan<WordMetrics> wordMetrics,
+        int graphemeIndex,
+        int limit)
+    {
+        int target = limit;
+        for (int i = 0; i < wordMetrics.Length; i++)
+        {
+            WordMetrics metrics = wordMetrics[i];
+            if (metrics.GraphemeStart >= graphemeIndex)
+            {
+                break;
+            }
+
+            target = Math.Max(target, metrics.GraphemeStart);
+            if (metrics.GraphemeEnd < graphemeIndex)
+            {
+                target = Math.Max(target, metrics.GraphemeEnd);
+            }
+        }
+
+        return target;
+    }
+
+    /// <summary>
+    /// Gets the nearest Unicode word boundary after the supplied grapheme insertion index.
+    /// </summary>
+    /// <param name="wordMetrics">The source-order word metrics to search.</param>
+    /// <param name="graphemeIndex">The grapheme insertion index to move from.</param>
+    /// <param name="limit">The maximum grapheme insertion index that can be returned.</param>
+    /// <returns>The next word boundary.</returns>
+    private static int GetNextWordBoundary(
+        ReadOnlySpan<WordMetrics> wordMetrics,
+        int graphemeIndex,
+        int limit)
+    {
+        for (int i = 0; i < wordMetrics.Length; i++)
+        {
+            WordMetrics metrics = wordMetrics[i];
+            if (metrics.GraphemeStart > graphemeIndex)
+            {
+                return Math.Min(limit, metrics.GraphemeStart);
+            }
+
+            if (metrics.GraphemeEnd > graphemeIndex)
+            {
+                return Math.Min(limit, metrics.GraphemeEnd);
+            }
+        }
+
+        return limit;
     }
 
     /// <summary>

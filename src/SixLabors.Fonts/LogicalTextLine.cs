@@ -15,10 +15,15 @@ internal readonly struct LogicalTextLine
     /// </summary>
     /// <param name="textLine">The composed logical text line.</param>
     /// <param name="lineBreaks">The collected line break opportunities.</param>
-    public LogicalTextLine(TextLayout.TextLine textLine, List<LineBreak> lineBreaks)
+    /// <param name="wordSegments">The collected word-boundary segment runs.</param>
+    public LogicalTextLine(
+        TextLayout.TextLine textLine,
+        List<LineBreak> lineBreaks,
+        List<WordSegmentRun> wordSegments)
     {
         this.TextLine = textLine;
         this.LineBreaks = lineBreaks;
+        this.WordSegments = wordSegments;
     }
 
     /// <summary>
@@ -30,4 +35,9 @@ internal readonly struct LogicalTextLine
     /// Gets the collected line break opportunities.
     /// </summary>
     public List<LineBreak> LineBreaks { get; }
+
+    /// <summary>
+    /// Gets the collected word-boundary segment runs.
+    /// </summary>
+    public List<WordSegmentRun> WordSegments { get; }
 }

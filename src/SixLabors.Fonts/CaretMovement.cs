@@ -19,6 +19,16 @@ public enum CaretMovement
     Next,
 
     /// <summary>
+    /// Move to the previous Unicode word boundary.
+    /// </summary>
+    PreviousWord,
+
+    /// <summary>
+    /// Move to the next Unicode word boundary.
+    /// </summary>
+    NextWord,
+
+    /// <summary>
     /// Move to the start of the current line.
     /// </summary>
     LineStart,

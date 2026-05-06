@@ -37,9 +37,10 @@ public sealed partial class TextBlock
     public TextBlock(ReadOnlySpan<char> text, TextOptions options)
     {
         this.Options = options;
+
         if (text.IsEmpty)
         {
-            this.LogicalLine = new(new TextLayout.TextLine(), []);
+            this.LogicalLine = new(new TextLayout.TextLine(), [], []);
             return;
         }
 
@@ -79,8 +80,9 @@ public sealed partial class TextBlock
         FontRectangle advance = GetAdvance(textBox, dpi, isHorizontal);
 
         GraphemeMetrics[] graphemes = new GraphemeMetrics[CountGraphemeMetrics(textBox)];
+        WordMetrics[] wordMetrics = new WordMetrics[this.LogicalLine.WordSegments.Count];
 
-        TextMetricsVisitor visitor = new(dpi, graphemes);
+        GraphemeAndWordMetricsVisitor visitor = new(dpi, graphemes, this.LogicalLine.WordSegments, wordMetrics);
         TextLayout.LayoutText(textBox, this.Options, wrappingLength, ref visitor);
 
         FontRectangle bounds = visitor.Bounds();
@@ -98,7 +100,8 @@ public sealed partial class TextBlock
             renderableBounds,
             textBox.TextLines.Count,
             graphemes,
-            lineMetrics);
+            lineMetrics,
+            wordMetrics);
     }
 
     /// <summary>
@@ -170,6 +173,20 @@ public sealed partial class TextBlock
     }
 
     /// <summary>
+    /// Gets the positioned metrics of each Unicode word-boundary segment.
+    /// </summary>
+    /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
+    /// <returns>A read-only memory region containing per-word-boundary segment metrics entries.</returns>
+    public ReadOnlyMemory<WordMetrics> GetWordMetrics(float wrappingLength)
+    {
+        TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
+        WordMetrics[] wordMetrics = new WordMetrics[this.LogicalLine.WordSegments.Count];
+        WordMetricsVisitor visitor = new(this.LogicalLine.WordSegments, wordMetrics, this.Options.Dpi);
+        TextLayout.LayoutText(textBox, this.Options, wrappingLength, ref visitor);
+        return wordMetrics;
+    }
+
+    /// <summary>
     /// Gets the number of laid-out lines at the supplied wrapping length.
     /// </summary>
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
@@ -186,14 +203,14 @@ public sealed partial class TextBlock
         => GetLineMetrics(this.BreakLines(wrappingLength), this.Options, wrappingLength);
 
     /// <summary>
-    /// Lays out this block into visual lines at the supplied wrapping length.
+    /// Gets visual line layouts for this block at the supplied wrapping length.
     /// </summary>
     /// <remarks>
     /// The returned memory contains every laid-out line, including lines produced by hard line breaks.
     /// </remarks>
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
     /// <returns>A read-only memory region containing <see cref="LineLayout"/> entries in final layout order.</returns>
-    public ReadOnlyMemory<LineLayout> LayoutLines(float wrappingLength)
+    public ReadOnlyMemory<LineLayout> GetLineLayouts(float wrappingLength)
     {
         TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
         if (textBox.TextLines.Count == 0)
@@ -205,8 +222,10 @@ public sealed partial class TextBlock
         LineMetrics[] metrics = GetLineMetrics(textBox, this.Options, wrappingLength);
         LineLayout[] lines = new LineLayout[textBox.TextLines.Count];
 
-        LineLayoutVisitor visitor = new(textBox, this.Options, wrappingLength, graphemes, metrics, lines, this.Options.Dpi);
+        WordMetrics[] wordMetrics = new WordMetrics[this.LogicalLine.WordSegments.Count];
+        LineLayoutVisitor visitor = new(textBox, this.Options, wrappingLength, graphemes, metrics, lines, this.LogicalLine.WordSegments, wordMetrics, this.Options.Dpi);
         TextLayout.LayoutText(textBox, this.Options, wrappingLength, ref visitor);
+
         return lines;
     }
 
@@ -394,9 +413,53 @@ public sealed partial class TextBlock
         }
 
         GraphemeMetrics[] graphemes = new GraphemeMetrics[count];
-        TextMetricsVisitor visitor = new(options.Dpi, graphemes);
+        GraphemeMetricsVisitor visitor = new(options.Dpi, graphemes);
         TextLayout.LayoutText(textBox, options, wrappingLength, ref visitor);
         return graphemes;
+    }
+
+    /// <summary>
+    /// Finds the source-order word-boundary range containing the supplied grapheme index.
+    /// </summary>
+    /// <param name="wordSegments">The source-order word-boundary segments.</param>
+    /// <param name="graphemeIndex">The grapheme index to locate.</param>
+    /// <returns>The matching word metrics index, or <c>-1</c> when no range contains the grapheme.</returns>
+    private static int FindWordMetricIndex(List<WordSegmentRun> wordSegments, int graphemeIndex)
+    {
+        int min = 0;
+        int max = wordSegments.Count - 1;
+        while (min <= max)
+        {
+            int mid = (min + max) >> 1;
+            WordSegmentRun segment = wordSegments[mid];
+            if (graphemeIndex < segment.GraphemeStart)
+            {
+                max = mid - 1;
+                continue;
+            }
+
+            if (graphemeIndex >= segment.GraphemeEnd)
+            {
+                min = mid + 1;
+                continue;
+            }
+
+            return mid;
+        }
+
+        return -1;
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether positioned metrics have been added to a word segment.
+    /// </summary>
+    /// <param name="metrics">The word metrics to inspect.</param>
+    /// <returns><see langword="true"/> when a grapheme has been accumulated for the segment.</returns>
+    private static bool HasWordMetrics(in WordMetrics metrics)
+    {
+        // Default WordMetrics has no source range. Any real word segment has an exclusive end
+        // index, so the range is the sentinel that avoids treating FontRectangle.Empty as geometry.
+        return metrics.GraphemeEnd != 0 || metrics.StringEnd != 0;
     }
 
     /// <summary>

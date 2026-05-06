@@ -82,13 +82,13 @@ public class TextBlockTests
     }
 
     [Fact]
-    public void LayoutLines_ReturnsMetricsAndGraphemeMetricsPerLine()
+    public void GetLineLayouts_ReturnsMetricsAndGraphemeMetricsPerLine()
     {
         const string firstLine = "Hello world\n";
         const string text = firstLine + "Second line";
         TextBlock block = new(text, Options(-1));
 
-        ReadOnlySpan<LineLayout> lines = block.LayoutLines(-1).Span;
+        ReadOnlySpan<LineLayout> lines = block.GetLineLayouts(-1).Span;
         ReadOnlySpan<LineMetrics> metrics = block.GetLineMetrics(-1).Span;
 
         Assert.Equal(2, lines.Length);
@@ -102,12 +102,12 @@ public class TextBlockTests
     }
 
     [Fact]
-    public void LayoutLines_LeadingHardBreak_IncludesHardBreakGrapheme()
+    public void GetLineLayouts_LeadingHardBreak_IncludesHardBreakGrapheme()
     {
         const string text = "\n\tHelloworld";
         TextBlock block = new(text, Options(-1));
 
-        ReadOnlySpan<LineLayout> lines = block.LayoutLines(-1).Span;
+        ReadOnlySpan<LineLayout> lines = block.GetLineLayouts(-1).Span;
 
         Assert.Equal(2, lines.Length);
         Assert.Equal(1, lines[0].GraphemeMetrics.Length);
@@ -145,12 +145,12 @@ public class TextBlockTests
     }
 
     [Fact]
-    public void LayoutLines_MeasureGlyphBounds_MatchBlockSlices()
+    public void GetLineLayouts_MeasureGlyphBounds_MatchBlockSlices()
     {
         const string text = "Hello\nWorld";
         TextBlock block = new(text, Options(-1));
 
-        ReadOnlySpan<LineLayout> lines = block.LayoutLines(-1).Span;
+        ReadOnlySpan<LineLayout> lines = block.GetLineLayouts(-1).Span;
         ReadOnlySpan<GlyphBounds> expectedAdvances = block.MeasureGlyphAdvances(-1).Span;
         ReadOnlySpan<GlyphBounds> expectedBounds = block.MeasureGlyphBounds(-1).Span;
         ReadOnlySpan<GlyphBounds> expectedRenderableBounds = block.MeasureGlyphRenderableBounds(-1).Span;
@@ -221,6 +221,159 @@ public class TextBlockTests
 
         Assert.Equal(0, metrics.MoveCaret(caret, CaretMovement.Previous).GraphemeIndex);
         Assert.Equal(2, metrics.MoveCaret(caret, CaretMovement.Next).GraphemeIndex);
+    }
+
+    [Fact]
+    public void GetWordMetrics_UsesUnicodeWordBoundarySegments()
+    {
+        const string text = "can't stop";
+        TextBlock block = new(text, Options(-1));
+        TextMetrics metrics = block.Measure(-1);
+
+        ReadOnlySpan<WordMetrics> blockMetrics = block.GetWordMetrics(-1).Span;
+        ReadOnlySpan<WordMetrics> metricWords = metrics.WordMetrics;
+
+        // UAX #29 keeps the apostrophe inside "can't", but the space remains its own
+        // word-boundary segment. That matters because browser-style double-click and
+        // word navigation can land on separator segments as well as letter segments.
+        Assert.Equal(3, blockMetrics.Length);
+        AssertWordMetrics(blockMetrics[0], 0, 5, 0, 5);
+        AssertWordMetrics(blockMetrics[1], 5, 6, 5, 6);
+        AssertWordMetrics(blockMetrics[2], 6, 10, 6, 10);
+
+        // TextBlock.GetWordMetrics uses the direct word-only path, while Measure exposes
+        // the word metrics gathered alongside full grapheme metrics. The public rectangles
+        // and source ranges must match so callers can choose either entry point freely.
+        AssertWordMetrics(blockMetrics[0], metricWords[0]);
+        AssertWordMetrics(blockMetrics[1], metricWords[1]);
+        AssertWordMetrics(blockMetrics[2], metricWords[2]);
+
+        // Whitespace is a word-boundary segment and it has measurable advance/bounds in
+        // this API, so the space word metrics should be exactly the space grapheme metrics.
+        GraphemeMetrics space = FindGrapheme(metrics.GraphemeMetrics, 5);
+        Assert.Equal(space.Advance, metricWords[1].Advance, Comparer);
+        Assert.Equal(space.Bounds, metricWords[1].Bounds, Comparer);
+        Assert.Equal(space.RenderableBounds, metricWords[1].RenderableBounds, Comparer);
+    }
+
+    [Theory]
+    [InlineData(LayoutMode.HorizontalTopBottom)]
+    [InlineData(LayoutMode.HorizontalBottomTop)]
+    [InlineData(LayoutMode.VerticalLeftRight)]
+    [InlineData(LayoutMode.VerticalMixedRightLeft)]
+    public void GetWordMetrics_MatchesMeasureWordMetrics_ForComplexLayout(LayoutMode layoutMode)
+    {
+        const string text = "can't e\u0301 שלום\nwrap אבג stop";
+        Font font = TextLayoutTests.CreateFont(text);
+        TextOptions options = new(font)
+        {
+            Dpi = font.FontMetrics.ScaleFactor,
+            LayoutMode = layoutMode,
+            WrappingLength = 110
+        };
+
+        TextBlock block = new(text, options);
+
+        // Measure builds grapheme metrics and word metrics in the same visitor. GetWordMetrics
+        // uses the allocation-saving word-only visitor, so this text deliberately mixes word
+        // separators, a multi-codepoint grapheme, bidi runs, a hard break, and wrapping to pin
+        // every flush path against the full measurement pipeline.
+        ReadOnlySpan<WordMetrics> expected = block.Measure(options.WrappingLength).WordMetrics;
+        ReadOnlySpan<WordMetrics> actual = block.GetWordMetrics(options.WrappingLength).Span;
+
+        AssertWordMetricsEqual(expected, actual);
+    }
+
+    [Fact]
+    public void GetWordMetrics_UsesHitGraphemeForTrailingSide()
+    {
+        const string text = "can't stop";
+        TextMetrics metrics = TextMeasurer.Measure(text, Options(-1));
+        GraphemeMetrics finalWordGrapheme = FindGrapheme(metrics.GraphemeMetrics, 4);
+        Vector2 trailingPoint = new(
+            finalWordGrapheme.Advance.Right - (finalWordGrapheme.Advance.Width * 0.25F),
+            FontRectangle.Center(finalWordGrapheme.Advance).Y);
+
+        TextHit hit = metrics.HitTest(trailingPoint);
+        WordMetrics word = metrics.GetWordMetrics(hit);
+
+        // The hit is on the trailing side of "t", so its insertion index is after the word.
+        // Word selection still uses the hit grapheme itself, not the following space segment.
+        Assert.Equal(5, hit.GraphemeInsertionIndex);
+        AssertWordMetrics(word, 0, 5, 0, 5);
+    }
+
+    [Fact]
+    public void MoveCaret_PreviousWordAndNextWord_MoveByUnicodeWordBoundaries()
+    {
+        const string text = "can't stop";
+        TextMetrics metrics = TextMeasurer.Measure(text, Options(-1));
+
+        // UAX #29 word boundaries produce three segments here: "can't", " ", and "stop".
+        // Word movement walks those boundaries in source order rather than skipping separators.
+        CaretPosition caret = metrics.GetCaretPosition(0);
+        caret = metrics.MoveCaret(caret, CaretMovement.NextWord);
+        Assert.Equal(5, caret.GraphemeIndex);
+
+        caret = metrics.MoveCaret(caret, CaretMovement.NextWord);
+        Assert.Equal(6, caret.GraphemeIndex);
+
+        caret = metrics.MoveCaret(caret, CaretMovement.NextWord);
+        Assert.Equal(10, caret.GraphemeIndex);
+
+        caret = metrics.MoveCaret(caret, CaretMovement.PreviousWord);
+        Assert.Equal(6, caret.GraphemeIndex);
+
+        caret = metrics.MoveCaret(caret, CaretMovement.PreviousWord);
+        Assert.Equal(5, caret.GraphemeIndex);
+
+        caret = metrics.MoveCaret(caret, CaretMovement.PreviousWord);
+        Assert.Equal(0, caret.GraphemeIndex);
+    }
+
+    [Fact]
+    public void GetSelectionBounds_UsesWordMetrics()
+    {
+        const string text = "can't stop";
+        TextMetrics metrics = TextMeasurer.Measure(text, Options(-1));
+        GraphemeMetrics wordGrapheme = FindGrapheme(metrics.GraphemeMetrics, 2);
+        TextHit hit = metrics.HitTest(FontRectangle.Center(wordGrapheme.Advance));
+        WordMetrics word = metrics.GetWordMetrics(hit);
+
+        // Selecting a word should use the same grapheme range as selecting that word's
+        // insertion indexes directly. This pins WordMetrics as a convenience over the
+        // core selection API, not a separate rectangle-building rule.
+        ReadOnlySpan<FontRectangle> expected = metrics.GetSelectionBounds(0, 5).Span;
+        ReadOnlySpan<FontRectangle> actual = metrics.GetSelectionBounds(word).Span;
+
+        Assert.Equal(1, actual.Length);
+        AssertWordMetrics(word, 0, 5, 0, 5);
+        Assert.Equal(expected[0], actual[0], Comparer);
+    }
+
+    [Fact]
+    public void GetSelectionBounds_UsesCaretPositionsMovedByWord()
+    {
+        const string text = "can't stop";
+        TextMetrics metrics = TextMeasurer.Measure(text, Options(-1));
+        CaretPosition anchor = metrics.GetCaretPosition(0);
+
+        // This mimics Shift+Ctrl+Right on Windows-style editors: the anchor stays where
+        // selection began, while the focus caret advances by Unicode word-boundary segments.
+        // The first move selects "can't"; the second also selects the separator segment
+        // because our word movement intentionally exposes spaces as selectable segments.
+        CaretPosition focus = metrics.MoveCaret(anchor, CaretMovement.NextWord);
+        AssertSelectionBoundsEqual(metrics.GetSelectionBounds(0, 5).Span, metrics.GetSelectionBounds(anchor, focus).Span);
+
+        focus = metrics.MoveCaret(focus, CaretMovement.NextWord);
+        AssertSelectionBoundsEqual(metrics.GetSelectionBounds(0, 6).Span, metrics.GetSelectionBounds(anchor, focus).Span);
+
+        // Reverse word selection should produce the same rectangles for the same insertion
+        // range even though the caret movement started at the far end of the text.
+        CaretPosition reverseAnchor = metrics.GetCaretPosition(10);
+        CaretPosition reverseFocus = metrics.MoveCaret(reverseAnchor, CaretMovement.PreviousWord);
+
+        AssertSelectionBoundsEqual(metrics.GetSelectionBounds(6, 10).Span, metrics.GetSelectionBounds(reverseAnchor, reverseFocus).Span);
     }
 
     [Fact]
@@ -497,7 +650,7 @@ public class TextBlockTests
         TextBlock block = new(text, options);
 
         TextMetrics metrics = block.Measure(-1);
-        ReadOnlySpan<LineLayout> lines = block.LayoutLines(-1).Span;
+        ReadOnlySpan<LineLayout> lines = block.GetLineLayouts(-1).Span;
 
         for (int i = 0; i < lines.Length; i++)
         {
@@ -529,7 +682,7 @@ public class TextBlockTests
         options.LayoutMode = layoutMode;
         TextBlock block = new(text, options);
 
-        ReadOnlySpan<LineLayout> lines = block.LayoutLines(-1).Span;
+        ReadOnlySpan<LineLayout> lines = block.GetLineLayouts(-1).Span;
 
         Assert.Equal(2, lines.Length);
         for (int i = 0; i < lines.Length; i++)
@@ -554,7 +707,7 @@ public class TextBlockTests
         const string text = "Hi\nYo";
         TextBlock block = new(text, Options(-1));
         TextMetrics metrics = block.Measure(-1);
-        ReadOnlySpan<LineLayout> lines = block.LayoutLines(-1).Span;
+        ReadOnlySpan<LineLayout> lines = block.GetLineLayouts(-1).Span;
         GraphemeMetrics grapheme = lines[1].GraphemeMetrics[0];
         Vector2 point = FontRectangle.Center(grapheme.Advance);
 
@@ -573,11 +726,16 @@ public class TextBlockTests
         Assert.Equal(metricsCaret.SecondaryStart, lineCaret.SecondaryStart);
         Assert.Equal(metricsCaret.SecondaryEnd, lineCaret.SecondaryEnd);
         Assert.Equal(metricsCaret.LineNavigationPosition, lineCaret.LineNavigationPosition, Comparer);
+        AssertWordMetrics(metrics.GetWordMetrics(metricsHit), lines[1].GetWordMetrics(lineHit));
 
         CaretPosition nextMetricsCaret = metrics.MoveCaret(metricsCaret, CaretMovement.Next);
         CaretPosition nextLineCaret = lines[1].MoveCaret(lineCaret, CaretMovement.Next);
+        CaretPosition nextWordMetricsCaret = metrics.MoveCaret(metricsCaret, CaretMovement.NextWord);
+        CaretPosition nextWordLineCaret = lines[1].MoveCaret(lineCaret, CaretMovement.NextWord);
 
         Assert.Equal(nextMetricsCaret.GraphemeIndex, nextLineCaret.GraphemeIndex);
+        Assert.Equal(nextWordMetricsCaret.GraphemeIndex, nextWordLineCaret.GraphemeIndex);
+
         Assert.Equal(
             metrics.GetSelectionBounds(grapheme.GraphemeIndex, grapheme.GraphemeIndex + 1).Span[0],
             lines[1].GetSelectionBounds(grapheme.GraphemeIndex, grapheme.GraphemeIndex + 1).Span[0],
@@ -605,11 +763,13 @@ public class TextBlockTests
         Assert.True(metrics.MeasureGlyphRenderableBounds().IsEmpty);
         Assert.True(metrics.GraphemeMetrics.IsEmpty);
         Assert.True(metrics.LineMetrics.IsEmpty);
+        Assert.True(metrics.WordMetrics.IsEmpty);
         Assert.Equal(FontRectangle.Empty, block.MeasureAdvance(100), Comparer);
         Assert.Equal(FontRectangle.Empty, block.MeasureBounds(100), Comparer);
         Assert.Equal(FontRectangle.Empty, block.MeasureRenderableBounds(100), Comparer);
         Assert.Equal(0, block.CountLines(100));
         Assert.True(block.GetLineMetrics(100).IsEmpty);
+        Assert.True(block.GetWordMetrics(100).IsEmpty);
 
         Assert.True(block.MeasureGlyphAdvances(100).IsEmpty);
 
@@ -649,6 +809,15 @@ public class TextBlockTests
         return false;
     }
 
+    private static void AssertSelectionBoundsEqual(ReadOnlySpan<FontRectangle> expected, ReadOnlySpan<FontRectangle> actual)
+    {
+        Assert.Equal(expected.Length, actual.Length);
+        for (int i = 0; i < expected.Length; i++)
+        {
+            Assert.Equal(expected[i], actual[i], Comparer);
+        }
+    }
+
     private static void AssertTextMetricsEqual(TextMetrics expected, TextMetrics actual)
     {
         Assert.Equal(expected.Advance, actual.Advance, Comparer);
@@ -660,6 +829,7 @@ public class TextBlockTests
         AssertGlyphBoundsEqual(expected.MeasureGlyphRenderableBounds().Span, actual.MeasureGlyphRenderableBounds().Span);
         AssertGraphemeMetricsEqual(expected.GraphemeMetrics, actual.GraphemeMetrics);
         AssertLineMetricsEqual(expected.LineMetrics, actual.LineMetrics);
+        AssertWordMetricsEqual(expected.WordMetrics, actual.WordMetrics);
     }
 
     private static void AssertGlyphBoundsEqual(ReadOnlySpan<GlyphBounds> expected, ReadOnlySpan<GlyphBounds> actual)
@@ -693,6 +863,41 @@ public class TextBlockTests
             Assert.Equal(expected[i].IsLineBreak, actual[i].IsLineBreak);
             Assert.Equal(expected[i].ContributesToMeasurement, actual[i].ContributesToMeasurement);
         }
+    }
+
+    private static void AssertWordMetricsEqual(ReadOnlySpan<WordMetrics> expected, ReadOnlySpan<WordMetrics> actual)
+    {
+        Assert.Equal(expected.Length, actual.Length);
+        for (int i = 0; i < expected.Length; i++)
+        {
+            AssertWordMetrics(expected[i], actual[i]);
+        }
+    }
+
+    private static void AssertWordMetrics(WordMetrics actual, WordMetrics expected)
+    {
+        Assert.Equal(expected.Advance, actual.Advance, Comparer);
+        Assert.Equal(expected.Bounds, actual.Bounds, Comparer);
+        Assert.Equal(expected.RenderableBounds, actual.RenderableBounds, Comparer);
+        AssertWordMetrics(
+            actual,
+            expected.GraphemeStart,
+            expected.GraphemeEnd,
+            expected.StringStart,
+            expected.StringEnd);
+    }
+
+    private static void AssertWordMetrics(
+        WordMetrics actual,
+        int graphemeStart,
+        int graphemeEnd,
+        int stringStart,
+        int stringEnd)
+    {
+        Assert.Equal(graphemeStart, actual.GraphemeStart);
+        Assert.Equal(graphemeEnd, actual.GraphemeEnd);
+        Assert.Equal(stringStart, actual.StringStart);
+        Assert.Equal(stringEnd, actual.StringEnd);
     }
 
     private static void AssertLineMetricsEqual(ReadOnlySpan<LineMetrics> expected, ReadOnlySpan<LineMetrics> actual)
