@@ -81,7 +81,7 @@ internal class DefaultShaper : BaseShaper
     private static readonly CodePoint Slash = new(0x002F);
 
     /// <summary>The set of shaping stages accumulated during feature planning.</summary>
-    private readonly HashSet<ShapingStage> shapingStages = new();
+    private readonly HashSet<ShapingStage> shapingStages = [];
 
     /// <summary>The kerning mode from the text options.</summary>
     private readonly KerningMode kerningMode;
@@ -125,7 +125,7 @@ internal class DefaultShaper : BaseShaper
         this.AddFeature(collection, index, count, RvnrTag);
 
         // Add directional features.
-        for (int i = index; i < count; i++)
+        for (int i = index; i < index + count; i++)
         {
             GlyphShapingData shapingData = collection[i];
 
@@ -157,7 +157,7 @@ internal class DefaultShaper : BaseShaper
 
         LayoutMode layoutMode = collection.TextOptions.LayoutMode;
         bool isVerticalLayout = false;
-        for (int i = index; i < count; i++)
+        for (int i = index; i < index + count; i++)
         {
             GlyphShapingData shapingData = collection[i];
             isVerticalLayout |= AdvancedTypographicUtils.IsVerticalGlyph(shapingData.CodePoint, layoutMode);

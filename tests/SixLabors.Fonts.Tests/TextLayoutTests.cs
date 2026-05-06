@@ -4,8 +4,14 @@
 using System.Globalization;
 using System.Numerics;
 using SixLabors.Fonts.Rendering;
+using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tests.Fakes;
 using SixLabors.Fonts.Unicode;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace SixLabors.Fonts.Tests;
 
@@ -659,6 +665,295 @@ public class TextLayoutTests
     }
 
     [Theory]
+    [InlineData(LayoutMode.HorizontalTopBottom)]
+    [InlineData(LayoutMode.HorizontalBottomTop)]
+    [InlineData(LayoutMode.VerticalLeftRight)]
+    [InlineData(LayoutMode.VerticalRightLeft)]
+    [InlineData(LayoutMode.VerticalMixedLeftRight)]
+    [InlineData(LayoutMode.VerticalMixedRightLeft)]
+    public void LineMetrics_StartAndExtent_DrawsLineBoxes(LayoutMode layoutMode)
+    {
+        FontCollection fontCollection = new();
+        FontFamily latin = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansRegular);
+        FontFamily hebrew = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansHebrewRegular);
+        FontFamily arabic = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoNaskhArabicRegular);
+
+        Font font = latin.CreateFont(30);
+        Font largeFont = latin.CreateFont(46);
+        const string text = "Tall שלום عرب\nSmall مرحبا שלום";
+
+        // Forced vertical layout intentionally does not enable generic horizontal features.
+        // Request cursive positioning explicitly so this visual test still covers
+        // feature-driven Arabic positioning in that mode.
+        Tag[] featureTags = layoutMode.IsVertical()
+            ? [KnownFeatureTags.CursivePositioning]
+            : [];
+
+        TextOptions options = new(font)
+        {
+            FeatureTags = featureTags,
+            FallbackFontFamilies = [hebrew, arabic],
+            Origin = new(24, 28),
+            LayoutMode = layoutMode,
+            LineSpacing = 1.25F,
+            TextRuns =
+            [
+                new() { Start = 0, End = 4, Font = largeFont },
+                new() { Start = 20, End = 25, Font = largeFont }
+            ]
+        };
+
+        LineMetrics[] metrics = TextMeasurer.GetLineMetrics(text, options).ToArray();
+
+        void DrawLineBoxes(Image<Rgba32> image)
+        {
+            for (int i = 0; i < metrics.Length; i++)
+            {
+                LineMetrics m = metrics[i];
+                Color startColor = i == 0
+                    ? Color.Lime
+                    : Color.Cyan;
+
+                Color endColor = i == 0
+                    ? Color.Magenta
+                    : Color.Yellow;
+
+                PointF gradientStart = new(m.Start.X, m.Start.Y);
+                PointF gradientEnd = new(m.Start.X + m.Extent.X, m.Start.Y + m.Extent.Y);
+
+                LinearGradientBrush fill = new(
+                    gradientStart,
+                    gradientEnd,
+                    GradientRepetitionMode.None,
+                    new ColorStop(0, startColor),
+                    new ColorStop(1, endColor));
+
+                RectangularPolygon box = new(m.Start.X, m.Start.Y, m.Extent.X, m.Extent.Y);
+
+                image.Mutate(x =>
+                {
+                    x.Fill(fill, box);
+                    x.Draw(Color.Black, 2, box);
+                });
+            }
+        }
+
+        TextLayoutTestUtilities.TestLayout(
+            text,
+            options,
+            includeGeometry: false,
+            beforeAction: DrawLineBoxes,
+            properties: layoutMode);
+    }
+
+    [Theory]
+    [InlineData(LayoutMode.HorizontalTopBottom)]
+    [InlineData(LayoutMode.HorizontalBottomTop)]
+    [InlineData(LayoutMode.VerticalLeftRight)]
+    [InlineData(LayoutMode.VerticalRightLeft)]
+    [InlineData(LayoutMode.VerticalMixedLeftRight)]
+    [InlineData(LayoutMode.VerticalMixedRightLeft)]
+    public void GraphemeMetrics_GetSelectionBounds_DrawsGraphemeSelections(LayoutMode layoutMode)
+    {
+        FontCollection fontCollection = new();
+        FontFamily latin = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansRegular);
+        FontFamily hebrew = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansHebrewRegular);
+        FontFamily arabic = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoNaskhArabicRegular);
+
+        Font font = latin.CreateFont(30);
+        Font largeFont = latin.CreateFont(46);
+        const string text = "Tall שלום عرب\nSmall مرحبا שלום";
+
+        TextOptions options = new(font)
+        {
+            FallbackFontFamilies = [hebrew, arabic],
+            Origin = new(24, 28),
+            LayoutMode = layoutMode,
+            LineSpacing = 1.25F,
+            TextRuns =
+            [
+                new() { Start = 0, End = 4, Font = largeFont },
+                new() { Start = 20, End = 25, Font = largeFont }
+            ]
+        };
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        void DrawSelections(Image<Rgba32> image)
+        {
+            ReadOnlySpan<GraphemeMetrics> graphemes = metrics.GraphemeMetrics;
+            for (int i = 0; i < graphemes.Length; i++)
+            {
+                GraphemeMetrics grapheme = graphemes[i];
+                ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(grapheme.GraphemeIndex, grapheme.GraphemeIndex + 1).Span;
+                if (selection.IsEmpty)
+                {
+                    continue;
+                }
+
+                FontRectangle bounds = selection[0];
+                PointF gradientStart = new(bounds.Left, bounds.Top);
+                PointF gradientEnd = layoutMode.IsHorizontal()
+                    ? new(bounds.Right, bounds.Top)
+                    : new(bounds.Left, bounds.Bottom);
+
+                // Vary the gradient by visual grapheme order so bidi reordering is visible.
+                Color startColor = (i & 1) == 0
+                    ? Color.Lime
+                    : Color.Cyan;
+
+                Color endColor = (i & 1) == 0
+                    ? Color.Magenta
+                    : Color.Yellow;
+
+                LinearGradientBrush fill = new(
+                    gradientStart,
+                    gradientEnd,
+                    GradientRepetitionMode.None,
+                    new ColorStop(0, startColor),
+                    new ColorStop(1, endColor));
+
+                RectangularPolygon box = new(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+
+                image.Mutate(x =>
+                {
+                    x.Fill(fill, box);
+                    x.Draw(Color.Black, 1, box);
+                });
+            }
+        }
+
+        TextLayoutTestUtilities.TestLayout(
+            text,
+            options,
+            includeGeometry: false,
+            beforeAction: DrawSelections,
+            properties: layoutMode);
+    }
+
+    [Fact]
+    public void GraphemeMetrics_GetSelectionBounds_DrawsSelectionWithBlankLine()
+    {
+        FontCollection fontCollection = new();
+        FontFamily latin = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansRegular);
+        FontFamily hebrew = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansHebrewRegular);
+        FontFamily arabic = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoNaskhArabicRegular);
+
+        Font font = latin.CreateFont(30);
+        Font largeFont = latin.CreateFont(46);
+        const string text = "Tall عرب שלום\n\nSmall مرحبا שלום";
+
+        TextOptions options = new(font)
+        {
+            FallbackFontFamilies = [hebrew, arabic],
+            Origin = new(24, 28),
+            LayoutMode = LayoutMode.HorizontalTopBottom,
+            LineSpacing = 1.25F,
+            TextRuns =
+            [
+                new() { Start = 0, End = 4, Font = largeFont },
+                new() { Start = 15, End = 20, Font = largeFont }
+            ]
+        };
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        void DrawSelection(Image<Rgba32> image)
+        {
+            ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(0, metrics.GraphemeMetrics.Length).Span;
+
+            // The first hard break ends a measuring text line and should not paint
+            // its own box. The second hard break owns the empty line between text
+            // lines, so full-text selection should include a visible blank-line box.
+            for (int i = 0; i < selection.Length; i++)
+            {
+                FontRectangle bounds = selection[i];
+                RectangularPolygon box = new(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+
+                image.Mutate(x => x.Fill(Color.LightBlue, box));
+            }
+        }
+
+        TextLayoutTestUtilities.TestLayout(
+            text,
+            options,
+            includeGeometry: false,
+            beforeAction: DrawSelection);
+    }
+
+    [Fact]
+    public void GraphemeMetrics_GetSelectionBounds_DrawsBidiDragSelection()
+    {
+        FontCollection fontCollection = new();
+        FontFamily latin = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansRegular);
+        FontFamily hebrew = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansHebrewRegular);
+        FontFamily arabic = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoNaskhArabicRegular);
+
+        Font font = latin.CreateFont(30);
+        Font largeFont = latin.CreateFont(46);
+        const string text = "Tall שלום عرب";
+
+        TextOptions options = new(font)
+        {
+            FallbackFontFamilies = [hebrew, arabic],
+            Origin = new(24, 28),
+            LayoutMode = LayoutMode.HorizontalTopBottom,
+            TextRuns =
+            [
+                new() { Start = 0, End = 4, Font = largeFont }
+            ]
+        };
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+        ReadOnlySpan<GraphemeMetrics> graphemes = metrics.GraphemeMetrics;
+        GraphemeMetrics first = default;
+        GraphemeMetrics finalHebrew = default;
+        for (int i = 0; i < graphemes.Length; i++)
+        {
+            if (graphemes[i].GraphemeIndex == 0)
+            {
+                first = graphemes[i];
+            }
+
+            if (graphemes[i].GraphemeIndex == 8)
+            {
+                finalHebrew = graphemes[i];
+            }
+        }
+
+        // The text source is "Tall " then Hebrew then Arabic. In LTR paragraph
+        // layout the RTL run is painted with Arabic before Hebrew, so dragging
+        // left-to-right from "T" to the visual left side of the final Hebrew
+        // grapheme should select "Tall " and the Hebrew word while leaving the
+        // visually intervening Arabic word unselected.
+        Vector2 anchorPoint = new(first.Advance.Left, FontRectangle.Center(first.Advance).Y);
+        Vector2 focusPoint = new(
+            finalHebrew.Advance.Left + (finalHebrew.Advance.Width * 0.25F),
+            FontRectangle.Center(finalHebrew.Advance).Y);
+
+        TextHit anchor = metrics.HitTest(anchorPoint);
+        TextHit focus = metrics.HitTest(focusPoint);
+
+        void DrawSelection(Image<Rgba32> image)
+        {
+            ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(anchor, focus).Span;
+            for (int i = 0; i < selection.Length; i++)
+            {
+                FontRectangle bounds = selection[i];
+                RectangularPolygon box = new(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+
+                image.Mutate(x => x.Fill(Color.LightBlue, box));
+            }
+        }
+
+        TextLayoutTestUtilities.TestLayout(
+            text,
+            options,
+            includeGeometry: false,
+            beforeAction: DrawSelection);
+    }
+
+    [Theory]
     [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 25, 6)]
     [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 50, 4)]
     [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 100, 3)]
@@ -794,7 +1089,7 @@ public class TextLayoutTests
 
         TextLayoutTestUtilities.TestLayout(text, options, properties: new { rtl = direction == TextDirection.RightToLeft });
 
-        Assert.Equal(wrappingLength, justifiedMetrics.LineMetrics[0].Extent, 4F);
+        Assert.Equal(wrappingLength, justifiedMetrics.LineMetrics[0].Extent.X, 4F);
 
         options.TextJustification = TextJustification.None;
         TextMetrics unJustifiedMetrics = TextMeasurer.Measure(text, options);
@@ -847,12 +1142,12 @@ public class TextLayoutTests
         for (int i = 0; i < justifiedLineMetrics.Length; i++)
         {
             bool isLastLine = i == justifiedLineMetrics.Length - 1;
-            bool linesMatch = MathF.Abs(justifiedLineMetrics[i].Extent - unJustifiedLineMetrics[i].Extent) <= .01F;
+            bool linesMatch = MathF.Abs(justifiedLineMetrics[i].Extent.X - unJustifiedLineMetrics[i].Extent.X) <= .01F;
 
             if (isLastLine)
             {
                 // The trailing line in the text box must never be justified.
-                Assert.Equal(unJustifiedLineMetrics[i].Extent, justifiedLineMetrics[i].Extent, 4F);
+                Assert.Equal(unJustifiedLineMetrics[i].Extent.X, justifiedLineMetrics[i].Extent.X, 4F);
             }
             else
             {
@@ -862,7 +1157,7 @@ public class TextLayoutTests
 
                 // At least one other earlier line should still widen, proving that we
                 // did not disable justification for all wrapped lines.
-                foundJustifiedNonParagraphLine |= justifiedLineMetrics[i].Extent > unJustifiedLineMetrics[i].Extent;
+                foundJustifiedNonParagraphLine |= justifiedLineMetrics[i].Extent.X > unJustifiedLineMetrics[i].Extent.X;
             }
         }
 
@@ -906,12 +1201,12 @@ public class TextLayoutTests
         for (int i = 0; i < justifiedLineMetrics.Length; i++)
         {
             bool isLastLine = i == justifiedLineMetrics.Length - 1;
-            bool linesMatch = MathF.Abs(justifiedLineMetrics[i].Extent - unJustifiedLineMetrics[i].Extent) <= .01F;
+            bool linesMatch = MathF.Abs(justifiedLineMetrics[i].Extent.Y - unJustifiedLineMetrics[i].Extent.Y) <= .01F;
 
             if (isLastLine)
             {
                 // The trailing line in the text box must remain ragged in vertical layout too.
-                Assert.Equal(unJustifiedLineMetrics[i].Extent, justifiedLineMetrics[i].Extent, 4F);
+                Assert.Equal(unJustifiedLineMetrics[i].Extent.Y, justifiedLineMetrics[i].Extent.Y, 4F);
             }
             else
             {
@@ -919,7 +1214,7 @@ public class TextLayoutTests
                 foundUnchangedNonLastLine |= linesMatch;
 
                 // This captures a wrapped line that continues to justify normally.
-                foundJustifiedNonParagraphLine |= justifiedLineMetrics[i].Extent > unJustifiedLineMetrics[i].Extent;
+                foundJustifiedNonParagraphLine |= justifiedLineMetrics[i].Extent.Y > unJustifiedLineMetrics[i].Extent.Y;
             }
         }
 
@@ -948,7 +1243,7 @@ public class TextLayoutTests
 
         TextLayoutTestUtilities.TestLayout(text, options, properties: new { rtl = direction == TextDirection.RightToLeft });
 
-        Assert.Equal(wrappingLength, justifiedMetrics.LineMetrics[0].Extent, 4F);
+        Assert.Equal(wrappingLength, justifiedMetrics.LineMetrics[0].Extent.X, 4F);
 
         options.TextJustification = TextJustification.None;
         TextMetrics unJustifiedMetrics = TextMeasurer.Measure(text, options);
@@ -996,7 +1291,7 @@ public class TextLayoutTests
 
         TextLayoutTestUtilities.TestLayout(text, options, properties: new { rtl = direction == TextDirection.RightToLeft });
 
-        Assert.Equal(wrappingLength, justifiedMetrics.LineMetrics[0].Extent, 4F);
+        Assert.Equal(wrappingLength, justifiedMetrics.LineMetrics[0].Extent.Y, 4F);
 
         options.TextJustification = TextJustification.None;
         TextMetrics unJustifiedMetrics = TextMeasurer.Measure(text, options);
@@ -1037,7 +1332,7 @@ public class TextLayoutTests
 
         TextLayoutTestUtilities.TestLayout(text, options, properties: new { rtl = direction == TextDirection.RightToLeft });
 
-        Assert.Equal(wrappingLength, justifiedMetrics.LineMetrics[0].Extent, 4F);
+        Assert.Equal(wrappingLength, justifiedMetrics.LineMetrics[0].Extent.Y, 4F);
 
         options.TextJustification = TextJustification.None;
         TextMetrics unJustifiedMetrics = TextMeasurer.Measure(text, options);

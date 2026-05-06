@@ -343,12 +343,14 @@ internal static partial class TextLayout
         bool breakAll = options.WordBreaking == WordBreaking.BreakAll;
         bool keepAll = options.WordBreaking == WordBreaking.KeepAll;
         bool breakWord = options.WordBreaking == WordBreaking.BreakWord;
+        bool normalizeDecomposedAdvances = options.LayoutMode.IsVertical();
         List<TextLine> textLines = [];
 
         // Always clone the logical line so we can modify it during breaking without affecting the original.
         TextLine textLine = new(logicalLine.TextLine);
         IReadOnlyList<LineBreak> lineBreaks = logicalLine.LineBreaks;
         int processed = 0;
+
         while (textLine.Count > 0)
         {
             LineBreak? bestBreak = null;
@@ -393,14 +395,14 @@ internal static partial class TextLayout
                         if (textLine.TrySplitAt(breakAt, keepAll, out remaining))
                         {
                             processed = breakAt.PositionWrap;
-                            textLines.Add(textLine.Finalize(true));
+                            textLines.Add(textLine.Finalize(true, normalizeDecomposedAdvances));
                             textLine = remaining;
                         }
                     }
                     else if (textLine.TrySplitAt(scaledWrappingLength, out remaining))
                     {
                         processed += textLine.Count;
-                        textLines.Add(textLine.Finalize());
+                        textLines.Add(textLine.Finalize(normalizeDecomposedAdvances: normalizeDecomposedAdvances));
                         textLine = remaining;
                     }
                     else
@@ -432,7 +434,7 @@ internal static partial class TextLayout
                         }
 
                         // Add the split part to the list and continue processing.
-                        textLines.Add(textLine.Finalize(breakAt.Required));
+                        textLines.Add(textLine.Finalize(breakAt.Required, normalizeDecomposedAdvances));
                         textLine = remaining;
                     }
                     else
@@ -454,12 +456,12 @@ internal static partial class TextLayout
                             break;
                         }
 
-                        textLines.Add(textLine.Finalize());
+                        textLines.Add(textLine.Finalize(normalizeDecomposedAdvances: normalizeDecomposedAdvances));
                         textLine = overflow;
                     }
                 }
 
-                textLines.Add(textLine.Finalize(true));
+                textLines.Add(textLine.Finalize(true, normalizeDecomposedAdvances));
                 break;
             }
         }

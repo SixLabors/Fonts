@@ -38,34 +38,30 @@ public class Issues_353
             Assert.InRange(m.Baseline, m.Ascender, m.LineHeight);
             Assert.InRange(m.Descender, m.Baseline, m.LineHeight);
 
-            // Horizontal metrics should describe a valid span.
-            Assert.True(m.Extent > m.Start, "Extent should be greater than Start.");
+            // Horizontal metrics should describe a valid line box.
+            Assert.True(m.Extent.X > 0, "Extent.X should be positive.");
+            Assert.True(m.Extent.Y > 0, "Extent.Y should be positive.");
         }
 
         void DrawLineMetrics(Image<Rgba32> image)
         {
             // Draw four separate lines for ascender(orange), baseline (red), descender (blue),
             // and line bottom (green).
-            //
-            // `offset` represents the Y coordinate of the top of the current line box.
-            // It is advanced by `m.LineHeight` after each iteration.
-            float offset = 0;
             for (int i = 0; i < l.Length; i++)
             {
                 LineMetrics m = l[i];
 
-                float ascent = offset + m.Ascender;
-                float baseline = offset + m.Baseline;
-                float descender = offset + m.Descender;
-                float lineBottom = offset + m.LineHeight;
+                float ascent = m.Start.Y + m.Ascender;
+                float baseline = m.Start.Y + m.Baseline;
+                float descender = m.Start.Y + m.Descender;
+                float lineBottom = m.Start.Y + m.LineHeight;
+                float start = m.Start.X;
+                float end = m.Start.X + m.Extent.X;
 
-                image.Mutate(x => x.DrawLine(Color.Orange, 1, new(m.Start, ascent), new(m.Start + m.Extent, ascent)));
-                image.Mutate(x => x.DrawLine(Color.Red, 1, new(m.Start, baseline), new(m.Start + m.Extent, baseline)));
-                image.Mutate(x => x.DrawLine(Color.Blue, 1, new(m.Start, descender), new(m.Start + m.Extent, descender)));
-                image.Mutate(x => x.DrawLine(Color.Green, 1, new(m.Start, lineBottom), new(m.Start + m.Extent, lineBottom)));
-
-                // Advance to the next line's top-of-line-box.
-                offset += m.LineHeight;
+                image.Mutate(x => x.DrawLine(Color.Orange, 1, new(start, ascent), new(end, ascent)));
+                image.Mutate(x => x.DrawLine(Color.Red, 1, new(start, baseline), new(end, baseline)));
+                image.Mutate(x => x.DrawLine(Color.Blue, 1, new(start, descender), new(end, descender)));
+                image.Mutate(x => x.DrawLine(Color.Green, 1, new(start, lineBottom), new(end, lineBottom)));
             }
         }
 

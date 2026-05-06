@@ -8,18 +8,35 @@ namespace SixLabors.Fonts;
 /// </summary>
 public readonly struct GraphemeMetrics
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GraphemeMetrics"/> struct.
+    /// </summary>
+    /// <param name="advance">The positioned logical advance rectangle for the grapheme in pixel units.</param>
+    /// <param name="bounds">The rendered glyph bounds for the grapheme in pixel units.</param>
+    /// <param name="renderableBounds">The union of the positioned logical advance bounds and rendered glyph bounds in pixel units.</param>
+    /// <param name="graphemeIndex">The grapheme index in the original text.</param>
+    /// <param name="stringIndex">The UTF-16 index in the original text where the grapheme begins.</param>
+    /// <param name="bidiLevel">The resolved bidi embedding level.</param>
+    /// <param name="isLineBreak">Whether the grapheme represents a line break.</param>
+    /// <param name="contributesToMeasurement">Whether the grapheme contributes to visual measurements.</param>
     internal GraphemeMetrics(
         FontRectangle advance,
         FontRectangle bounds,
         FontRectangle renderableBounds,
         int graphemeIndex,
-        int stringIndex)
+        int stringIndex,
+        int bidiLevel,
+        bool isLineBreak,
+        bool contributesToMeasurement)
     {
         this.Advance = advance;
         this.Bounds = bounds;
         this.RenderableBounds = renderableBounds;
         this.GraphemeIndex = graphemeIndex;
         this.StringIndex = stringIndex;
+        this.BidiLevel = bidiLevel;
+        this.IsLineBreak = isLineBreak;
+        this.ContributesToMeasurement = contributesToMeasurement;
     }
 
     /// <summary>
@@ -46,4 +63,23 @@ public readonly struct GraphemeMetrics
     /// Gets the UTF-16 index in the original text where the grapheme begins.
     /// </summary>
     public int StringIndex { get; }
+
+    /// <summary>
+    /// Gets the resolved bidi embedding level.
+    /// </summary>
+    internal int BidiLevel { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether this grapheme represents a line break.
+    /// </summary>
+    public bool IsLineBreak { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether this grapheme contributes to text measurements and selection bounds.
+    /// </summary>
+    /// <remarks>
+    /// A grapheme can remain present for source mapping and caret positions without contributing to
+    /// aggregate measurements or painted selection rectangles.
+    /// </remarks>
+    public bool ContributesToMeasurement { get; }
 }

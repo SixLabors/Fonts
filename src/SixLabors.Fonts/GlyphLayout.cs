@@ -19,6 +19,7 @@ internal readonly struct GlyphLayout
         float advanceWidth,
         float advanceHeight,
         GlyphLayoutMode layoutMode,
+        int bidiLevel,
         bool isStartOfLine,
         int graphemeIndex,
         int stringIndex)
@@ -31,6 +32,7 @@ internal readonly struct GlyphLayout
         this.AdvanceX = advanceWidth;
         this.AdvanceY = advanceHeight;
         this.LayoutMode = layoutMode;
+        this.BidiLevel = bidiLevel;
         this.IsStartOfLine = isStartOfLine;
         this.GraphemeIndex = graphemeIndex;
         this.StringIndex = stringIndex;
@@ -90,6 +92,11 @@ internal readonly struct GlyphLayout
     /// Gets the glyph layout mode.
     /// </summary>
     public GlyphLayoutMode LayoutMode { get; }
+
+    /// <summary>
+    /// Gets the resolved bidi embedding level.
+    /// </summary>
+    internal int BidiLevel { get; }
 
     /// <summary>
     /// Gets a value indicating whether this glyph is the first glyph on a new line.

@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using SixLabors.Fonts.Rendering;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts;
 
@@ -30,6 +31,9 @@ public sealed partial class TextBlock
         private int count;
         private int graphemeIndex;
         private int stringIndex;
+        private int bidiLevel;
+        private bool isLineBreak;
+        private bool contributesToMeasurement;
         private FontRectangle advanceBounds;
         private FontRectangle bounds;
         private bool hasCurrent;
@@ -46,6 +50,9 @@ public sealed partial class TextBlock
             this.count = 0;
             this.graphemeIndex = 0;
             this.stringIndex = 0;
+            this.bidiLevel = 0;
+            this.isLineBreak = false;
+            this.contributesToMeasurement = false;
             this.advanceBounds = FontRectangle.Empty;
             this.bounds = FontRectangle.Empty;
             this.hasCurrent = false;
@@ -60,26 +67,29 @@ public sealed partial class TextBlock
         /// Adds one laid-out glyph entry to the current grapheme, flushing the previous grapheme when needed.
         /// </summary>
         /// <param name="glyph">The laid-out glyph entry.</param>
-        public void Visit(in GlyphLayout glyph)
+        /// <param name="contributesToMeasurement">Whether the glyph contributes to visual measurements.</param>
+        public void Visit(in GlyphLayout glyph, bool contributesToMeasurement)
         {
             FontRectangle advanceBounds = glyph.MeasureAdvance(this.dpi);
             FontRectangle bounds = glyph.MeasureBounds(this.dpi);
 
             if (!this.hasCurrent)
             {
-                this.Start(in glyph, in advanceBounds, in bounds);
+                this.Start(in glyph, in advanceBounds, in bounds, contributesToMeasurement);
                 return;
             }
 
             if (glyph.GraphemeIndex != this.graphemeIndex)
             {
                 this.Flush();
-                this.Start(in glyph, in advanceBounds, in bounds);
+                this.Start(in glyph, in advanceBounds, in bounds, contributesToMeasurement);
                 return;
             }
 
             this.advanceBounds = FontRectangle.Union(this.advanceBounds, advanceBounds);
             this.bounds = FontRectangle.Union(this.bounds, bounds);
+            this.isLineBreak |= CodePoint.IsNewLine(glyph.CodePoint);
+            this.contributesToMeasurement |= contributesToMeasurement;
         }
 
         /// <summary>
@@ -93,13 +103,18 @@ public sealed partial class TextBlock
         /// <param name="glyph">The first glyph in the grapheme.</param>
         /// <param name="advanceBounds">The positioned logical advance bounds for <paramref name="glyph"/>.</param>
         /// <param name="bounds">The rendered bounds for <paramref name="glyph"/>.</param>
+        /// <param name="contributesToMeasurement">Whether the glyph contributes to visual measurements.</param>
         private void Start(
             in GlyphLayout glyph,
             in FontRectangle advanceBounds,
-            in FontRectangle bounds)
+            in FontRectangle bounds,
+            bool contributesToMeasurement)
         {
             this.graphemeIndex = glyph.GraphemeIndex;
             this.stringIndex = glyph.StringIndex;
+            this.bidiLevel = glyph.BidiLevel;
+            this.isLineBreak = CodePoint.IsNewLine(glyph.CodePoint);
+            this.contributesToMeasurement = contributesToMeasurement;
             this.advanceBounds = advanceBounds;
             this.bounds = bounds;
             this.hasCurrent = true;
@@ -121,7 +136,10 @@ public sealed partial class TextBlock
                 this.bounds,
                 renderableBounds,
                 this.graphemeIndex,
-                this.stringIndex);
+                this.stringIndex,
+                this.bidiLevel,
+                this.isLineBreak,
+                this.contributesToMeasurement);
 
             this.count++;
             this.hasCurrent = false;
@@ -272,7 +290,7 @@ public sealed partial class TextBlock
             }
 
             this.hasBounds |= contributesToMeasurement && hasGlyphBox;
-            this.graphemes.Visit(in glyph);
+            this.graphemes.Visit(in glyph, contributesToMeasurement);
         }
 
         /// <summary>
@@ -342,7 +360,7 @@ public sealed partial class TextBlock
 
         /// <inheritdoc/>
         public void Visit(in GlyphLayout glyph, bool contributesToMeasurement)
-            => this.graphemeAccumulator.Visit(in glyph);
+            => this.graphemeAccumulator.Visit(in glyph, contributesToMeasurement);
 
         /// <inheritdoc/>
         public void EndLine()

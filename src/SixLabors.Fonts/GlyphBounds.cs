@@ -17,7 +17,7 @@ public readonly struct GlyphBounds
     /// <param name="bounds">The measured bounds.</param>
     /// <param name="graphemeIndex">The grapheme index in the original text.</param>
     /// <param name="stringIndex">The UTF-16 index in the original text where the glyph entry begins.</param>
-    public GlyphBounds(CodePoint codePoint, in FontRectangle bounds, int graphemeIndex, int stringIndex)
+    internal GlyphBounds(CodePoint codePoint, in FontRectangle bounds, int graphemeIndex, int stringIndex)
     {
         this.Codepoint = codePoint;
         this.Bounds = bounds;

@@ -518,6 +518,7 @@ internal static partial class TextLayout
                     data.ScaledAdvance,
                     yLineAdvance,
                     GlyphLayoutMode.Horizontal,
+                    data.BidiRun.Level,
                     true,
                     data.GraphemeIndex,
                     data.StringIndex),
@@ -556,6 +557,7 @@ internal static partial class TextLayout
                     data.ScaledAdvance,
                     advanceY,
                     GlyphLayoutMode.Horizontal,
+                    data.BidiRun.Level,
                     i == 0 && j == 0,
                     data.GraphemeIndex,
                     data.StringIndex),
@@ -717,6 +719,7 @@ internal static partial class TextLayout
         {
             TextLine.GlyphLayoutData data = textLine[i];
             float layoutAdvance = data.ContributesToMeasurement ? data.ScaledAdvance : 0;
+            float scaledLineHeight = data.ScaledLineHeight / options.LineSpacing;
 
             if (data.IsNewLine)
             {
@@ -726,7 +729,7 @@ internal static partial class TextLayout
                 // Hard breaks bypass the normal glyph loop, but still need the
                 // current pen position plus the same vertical glyph origin adjustment.
                 Vector2 hardBreakPenLocation = data.ContributesToMeasurement ? penLocation : boundsPenLocation;
-                Vector2 hardBreakDecorationOrigin = hardBreakPenLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0);
+                Vector2 hardBreakDecorationOrigin = hardBreakPenLocation + new Vector2((unscaledLineHeight - scaledLineHeight) * .5F, 0);
                 Vector2 hardBreakGlyphOrigin = hardBreakDecorationOrigin + new Vector2(0, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
 
                 visitor.Visit(
@@ -738,6 +741,7 @@ internal static partial class TextLayout
                     xLineAdvance,
                     data.ScaledAdvance,
                     GlyphLayoutMode.Vertical,
+                    data.BidiRun.Level,
                     true,
                     data.GraphemeIndex,
                     data.StringIndex),
@@ -837,10 +841,13 @@ internal static partial class TextLayout
 
                     float inkWidth = maxX - minX;
 
-                    // Normalize ink minX to 0 and center within the column width.
+                    // Normalize ink minX to 0 and center within the entry's own line box.
+                    // The decoration origin has already centered that entry line box within
+                    // the widest line box, so using the widest line box here would apply the
+                    // mixed-size offset twice.
                     // This is grapheme-correct and avoids centering based only on the "first" entry,
                     // which is not representative for marks like reph in Devanagari.
-                    currentGraphemeAlignX = -minX + ((unscaledLineHeight - inkWidth) * .5F);
+                    currentGraphemeAlignX = -minX + ((scaledLineHeight - inkWidth) * .5F);
                 }
             }
 
@@ -864,11 +871,20 @@ internal static partial class TextLayout
             {
                 // Align the glyph horizontally and vertically centering vertically around the baseline.
                 Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
+                float glyphAlignX = alignX;
+
+                if (!currentGraphemeIsTransformed)
+                {
+                    // Vertical origin fallback places the vertical origin at half the
+                    // horizontal advance. The decoration origin has already centered this
+                    // entry's line box in the column, so center the glyph advance inside it.
+                    glyphAlignX = (scaledLineHeight - (metric.AdvanceWidth * scale.X)) * .5F;
+                }
 
                 // Move the glyph origin without changing the advance or decoration origin.
-                Vector2 glyphOffset = new(alignX, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
+                Vector2 glyphOffset = new(glyphAlignX, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
                 Vector2 glyphPenLocation = data.ContributesToMeasurement ? penLocation : boundsPenLocation;
-                Vector2 decorationOrigin = glyphPenLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0);
+                Vector2 decorationOrigin = glyphPenLocation + new Vector2((unscaledLineHeight - scaledLineHeight) * .5F, 0);
                 Vector2 glyphOrigin = decorationOrigin + glyphOffset;
 
                 float advanceW = advanceX;
@@ -890,6 +906,7 @@ internal static partial class TextLayout
                     advanceW,
                     data.ScaledAdvance,
                     GlyphLayoutMode.Vertical,
+                    data.BidiRun.Level,
                     i == 0 && j == 0,
                     data.GraphemeIndex,
                     data.StringIndex),
@@ -1052,6 +1069,7 @@ internal static partial class TextLayout
         {
             TextLine.GlyphLayoutData data = textLine[i];
             float layoutAdvance = data.ContributesToMeasurement ? data.ScaledAdvance : 0;
+            float scaledLineHeight = data.ScaledLineHeight / options.LineSpacing;
 
             if (data.IsNewLine)
             {
@@ -1061,7 +1079,7 @@ internal static partial class TextLayout
                 // Hard breaks bypass the normal glyph loop, but still need the
                 // current pen position plus the same vertical glyph origin adjustment.
                 Vector2 hardBreakPenLocation = data.ContributesToMeasurement ? penLocation : boundsPenLocation;
-                Vector2 hardBreakDecorationOrigin = hardBreakPenLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0);
+                Vector2 hardBreakDecorationOrigin = hardBreakPenLocation + new Vector2((unscaledLineHeight - scaledLineHeight) * .5F, 0);
                 Vector2 hardBreakGlyphOrigin = hardBreakDecorationOrigin + new Vector2(0, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
 
                 visitor.Visit(
@@ -1073,6 +1091,7 @@ internal static partial class TextLayout
                     xLineAdvance,
                     data.ScaledAdvance,
                     GlyphLayoutMode.Vertical,
+                    data.BidiRun.Level,
                     true,
                     data.GraphemeIndex,
                     data.StringIndex),
@@ -1108,7 +1127,7 @@ internal static partial class TextLayout
                     // - Take half the difference between the max line height (scaledMaxLineHeight)
                     //   and the current glyph's line height (data.ScaledLineHeight).
                     // - The line height includes both ascender and descender metrics.
-                    float baselineDelta = (unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F;
+                    float baselineDelta = (unscaledLineHeight - scaledLineHeight) * .5F;
 
                     // Adjust the horizontal offset further by considering the descender differences:
                     // - Subtract the current glyph's descender (data.ScaledDescender) to align it properly.
@@ -1128,6 +1147,7 @@ internal static partial class TextLayout
                         advanceX,
                         data.ScaledAdvance,
                         GlyphLayoutMode.VerticalRotated,
+                        data.BidiRun.Level,
                         i == 0 && j == 0,
                         data.GraphemeIndex,
                         data.StringIndex),
@@ -1144,9 +1164,14 @@ internal static partial class TextLayout
                 {
                     // Align the glyph horizontally and vertically centering vertically around the baseline.
                     Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
-                    Vector2 glyphOffset = new(0, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
+
+                    // Vertical origin fallback places the vertical origin at half the
+                    // horizontal advance. The decoration origin has already centered this
+                    // entry's line box in the column, so center the glyph advance inside it.
+                    float glyphAlignX = (scaledLineHeight - (metric.AdvanceWidth * scale.X)) * .5F;
+                    Vector2 glyphOffset = new(glyphAlignX, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
                     Vector2 glyphPenLocation = data.ContributesToMeasurement ? penLocation : boundsPenLocation;
-                    Vector2 decorationOrigin = glyphPenLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0);
+                    Vector2 decorationOrigin = glyphPenLocation + new Vector2((unscaledLineHeight - scaledLineHeight) * .5F, 0);
                     Vector2 glyphOrigin = decorationOrigin + glyphOffset;
 
                     visitor.Visit(
@@ -1158,6 +1183,7 @@ internal static partial class TextLayout
                         advanceX,
                         data.ScaledAdvance,
                         GlyphLayoutMode.Vertical,
+                        data.BidiRun.Level,
                         i == 0 && j == 0,
                         data.GraphemeIndex,
                         data.StringIndex),
@@ -2015,14 +2041,63 @@ internal static partial class TextLayout
         /// When <see langword="true"/>, marks the line so <see cref="Justify"/> becomes a no-op
         /// (used for paragraph-final lines).
         /// </param>
+        /// <param name="normalizeDecomposedAdvances">
+        /// When <see langword="true"/>, moves decomposed grapheme advances to the final visual entry.
+        /// </param>
         /// <returns>This line, for fluent chaining.</returns>
-        public TextLine Finalize(bool skipJustification = false)
+        public TextLine Finalize(bool skipJustification = false, bool normalizeDecomposedAdvances = false)
         {
             this.SkipJustification = skipJustification;
             this.MarkTrailingWhitespaceAsNonMetric();
             this.BidiReOrder();
+
+            if (normalizeDecomposedAdvances)
+            {
+                this.NormalizeDecomposedAdvances();
+            }
+
             RecalculateLineMetrics(this);
             return this;
+        }
+
+        /// <summary>
+        /// Moves decomposed grapheme advances when bidi reordering moved the grapheme boundary marker.
+        /// </summary>
+        private void NormalizeDecomposedAdvances()
+        {
+            int start = 0;
+            while (start < this.data.Count)
+            {
+                int graphemeIndex = this.data[start].GraphemeIndex;
+                int end = start + 1;
+                bool hasDecomposedEntry = this.data[start].IsDecomposed;
+
+                while (end < this.data.Count && this.data[end].GraphemeIndex == graphemeIndex)
+                {
+                    hasDecomposedEntry |= this.data[end].IsDecomposed;
+                    end++;
+                }
+
+                if (hasDecomposedEntry && end - start > 1 && !this.data[end - 1].IsLastInGrapheme)
+                {
+                    float advance = 0;
+                    for (int i = start; i < end; i++)
+                    {
+                        GlyphLayoutData glyph = this.data[i];
+                        advance += glyph.ScaledAdvance;
+                        glyph.ScaledAdvance = 0;
+                        glyph.IsLastInGrapheme = false;
+                        this.data[i] = glyph;
+                    }
+
+                    GlyphLayoutData last = this.data[end - 1];
+                    last.ScaledAdvance = advance;
+                    last.IsLastInGrapheme = true;
+                    this.data[end - 1] = last;
+                }
+
+                start = end;
+            }
         }
 
         /// <summary>
@@ -2414,8 +2489,8 @@ internal static partial class TextLayout
             /// <summary>Gets the grapheme index in the source text.</summary>
             public int GraphemeIndex { get; }
 
-            /// <summary>Gets a value indicating whether this is the last codepoint in its grapheme cluster.</summary>
-            public bool IsLastInGrapheme { get; }
+            /// <summary>Gets or sets a value indicating whether this is the last entry in its grapheme cluster.</summary>
+            public bool IsLastInGrapheme { get; set; }
 
             /// <summary>Gets the index of this codepoint within its grapheme cluster (0-based).</summary>
             public int GraphemeCodePointIndex { get; }

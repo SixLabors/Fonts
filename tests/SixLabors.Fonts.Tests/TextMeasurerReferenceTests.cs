@@ -35,9 +35,6 @@ public class TextMeasurerReferenceTests
             LayoutMode = layoutMode
         };
 
-    // ======================================================================
-    // Pinned outputs — OpenSans-Regular @ 12pt, Dpi = 72, Origin = (0, 0)
-    // ======================================================================
     [Theory]
     [InlineData("A", 0f, 0f, 7.5879f, 12f)]
     [InlineData("Hello", 0f, 0f, 28.8633f, 12f)]
@@ -79,9 +76,6 @@ public class TextMeasurerReferenceTests
         Assert.Equal(new FontRectangle(ex, ey, ew, eh), actual, Comparer);
     }
 
-    // ======================================================================
-    // Pinned outputs with offset origin — advance independent, bounds shift
-    // ======================================================================
     [Fact]
     public void MeasureAdvance_OffsetOrigin_MatchesZeroOrigin()
     {
@@ -117,9 +111,6 @@ public class TextMeasurerReferenceTests
         Assert.Equal(atZero.Height, atOffset.Height, Comparer);
     }
 
-    // ======================================================================
-    // CountLines
-    // ======================================================================
     [Theory]
     [InlineData("", 0)]
     [InlineData("Hello", 1)]
@@ -132,9 +123,6 @@ public class TextMeasurerReferenceTests
         Assert.Equal(expected, TextMeasurer.CountLines(text, Options()));
     }
 
-    // ======================================================================
-    // GetLineMetrics — pinned counts and non-zero extents
-    // ======================================================================
     [Theory]
     [InlineData("Hello", 1)]
     [InlineData("Hello\nWorld", 2)]
@@ -155,8 +143,8 @@ public class TextMeasurerReferenceTests
 
         FontRectangle line1Advance = TextMeasurer.MeasureAdvance("Hello", Options());
         FontRectangle line2Advance = TextMeasurer.MeasureAdvance("World world", Options());
-        Assert.Equal(line1Advance.Width, metrics[0].Extent, Comparer);
-        Assert.Equal(line2Advance.Width, metrics[1].Extent, Comparer);
+        Assert.Equal(line1Advance.Width, metrics[0].Extent.X, Comparer);
+        Assert.Equal(line2Advance.Width, metrics[1].Extent.X, Comparer);
     }
 
     [Fact]
@@ -174,9 +162,6 @@ public class TextMeasurerReferenceTests
     public void GetLineMetrics_EmptyText_ReturnsEmpty()
         => Assert.True(TextMeasurer.GetLineMetrics(string.Empty, Options()).IsEmpty);
 
-    // ======================================================================
-    // Per-character metadata (codepoints, indices) — character content pinned
-    // ======================================================================
     [Fact]
     public void MeasureGlyphBounds_Hi_Pinned()
     {
@@ -235,19 +220,28 @@ public class TextMeasurerReferenceTests
                 new FontRectangle(1.1719f, 2.0889f, 6.4922f, 8.5664f),
                 new FontRectangle(0, 0, 8.8477f, 12f),
                 0,
-                0),
+                0,
+                0,
+                false,
+                true),
             new(
                 new FontRectangle(8.8477f, 0, 3.0293f, 12f),
                 new FontRectangle(9.7852f, 1.8311f, 1.1719f, 8.8242f),
                 new FontRectangle(8.8477f, 0, 3.0293f, 12f),
                 1,
-                1),
+                1,
+                0,
+                false,
+                true),
             new(
                 new FontRectangle(11.877f, 0, 3.1699f, 12f),
                 new FontRectangle(12.7559f, 2.0889f, 1.3945f, 8.7305f),
                 new FontRectangle(11.877f, 0, 3.1699f, 12f),
                 2,
-                2),
+                2,
+                0,
+                false,
+                true),
         ];
         AssertGraphemeMetricsEqual(expected, graphemes);
     }
@@ -320,9 +314,6 @@ public class TextMeasurerReferenceTests
         }
     }
 
-    // ======================================================================
-    // Invariants — hold regardless of font or text
-    // ======================================================================
     [Theory]
     [InlineData("Hello", 0f, 0f)]
     [InlineData("Hello, World!", 100, 50)]
@@ -466,6 +457,9 @@ public class TextMeasurerReferenceTests
             Assert.Equal(e.RenderableBounds, a.RenderableBounds, Comparer);
             Assert.Equal(e.GraphemeIndex, a.GraphemeIndex);
             Assert.Equal(e.StringIndex, a.StringIndex);
+            Assert.Equal(e.BidiLevel, a.BidiLevel);
+            Assert.Equal(e.IsLineBreak, a.IsLineBreak);
+            Assert.Equal(e.ContributesToMeasurement, a.ContributesToMeasurement);
         }
     }
 }

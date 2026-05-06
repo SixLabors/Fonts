@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Numerics;
 using SixLabors.Fonts.Rendering;
 
 namespace SixLabors.Fonts;
@@ -271,9 +272,19 @@ public sealed partial class TextBlock
 
         TextDirection direction = textBox.TextDirection();
         LayoutMode layoutMode = options.LayoutMode;
-        bool isHorizontalLayout = layoutMode.IsHorizontal();
 
-        for (int i = 0; i < textBox.TextLines.Count; i++)
+        bool isHorizontalLayout = layoutMode.IsHorizontal();
+        float lineOffset = isHorizontalLayout ? options.Origin.Y : options.Origin.X;
+
+        bool reverseLineOrder = layoutMode is
+            LayoutMode.HorizontalBottomTop
+            or LayoutMode.VerticalRightLeft
+            or LayoutMode.VerticalMixedRightLeft;
+
+        int i = reverseLineOrder ? textBox.TextLines.Count - 1 : 0;
+        int step = reverseLineOrder ? -1 : 1;
+
+        while (i >= 0 && i < textBox.TextLines.Count)
         {
             TextLayout.TextLine line = textBox.TextLines[i];
 
@@ -312,6 +323,13 @@ public sealed partial class TextBlock
 
             // Descender line position relative to the same origin.
             float descender = baseline + line.ScaledMaxDescender + delta;
+            Vector2 start = isHorizontalLayout
+                ? new(options.Origin.X + (offset * options.Dpi), lineOffset)
+                : new(lineOffset, options.Origin.Y + (offset * options.Dpi));
+
+            Vector2 extent = isHorizontalLayout
+                ? new(line.ScaledLineAdvance * options.Dpi, line.ScaledMaxLineHeight * options.Dpi)
+                : new(line.ScaledMaxLineHeight * options.Dpi, line.ScaledLineAdvance * options.Dpi);
 
             // Bidi reordering mutates entries into visual order, so the source
             // start is the minimum original source index rather than line[0].
@@ -328,11 +346,14 @@ public sealed partial class TextBlock
                 baseline * options.Dpi,
                 descender * options.Dpi,
                 line.ScaledMaxLineHeight * options.Dpi,
-                offset * options.Dpi,
-                line.ScaledLineAdvance * options.Dpi,
+                start,
+                extent,
                 stringIndex,
                 graphemeIndex,
                 line.GraphemeCount);
+
+            lineOffset += line.ScaledMaxLineHeight * options.Dpi;
+            i += step;
         }
 
         return metrics;
