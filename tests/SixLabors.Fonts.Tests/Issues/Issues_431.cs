@@ -32,11 +32,11 @@ public class Issues_431
             // The collection contains laid-out glyph entries. These fixtures shape one glyph per source
             // code point, so the preserved line-edge whitespace raises the count from the old trimmed 46.
             Assert.Equal(49, metrics.MeasureGlyphAdvances().Length);
-            AssertLineBreakCount(metrics.MeasureGlyphAdvances(), 2);
+            AssertLineBreakCount(metrics.MeasureGlyphAdvances().Span, 2);
 
             // Hard breaks are preserved at their original UTF-16 source indices.
-            AssertPreservedLineBreakAdvance(metrics.MeasureGlyphAdvances(), 16);
-            AssertPreservedLineBreakAdvance(metrics.MeasureGlyphAdvances(), 31);
+            AssertPreservedLineBreakAdvance(metrics.MeasureGlyphAdvances().Span, 16);
+            AssertPreservedLineBreakAdvance(metrics.MeasureGlyphAdvances().Span, 31);
         }
     }
 
@@ -64,10 +64,10 @@ public class Issues_431
             // The collection contains laid-out glyph entries. These fixtures shape one glyph per source
             // code point, so the preserved line-edge whitespace raises the count from the old trimmed 46.
             Assert.Equal(49, metrics.MeasureGlyphAdvances().Length);
-            AssertLineBreakCount(metrics.MeasureGlyphAdvances(), 1);
+            AssertLineBreakCount(metrics.MeasureGlyphAdvances().Span, 1);
 
             // Hard breaks are preserved at their original UTF-16 source indices.
-            AssertPreservedLineBreakAdvance(metrics.MeasureGlyphAdvances(), 31);
+            AssertPreservedLineBreakAdvance(metrics.MeasureGlyphAdvances().Span, 31);
         }
     }
 

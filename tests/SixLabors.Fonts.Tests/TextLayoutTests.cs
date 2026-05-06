@@ -248,7 +248,7 @@ public class TextLayoutTests
 
         ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(
             text.AsSpan(),
-            new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+            new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor }).Span;
 
         Assert.Equal(text.Length, bounds.Length);
 
@@ -284,7 +284,7 @@ public class TextLayoutTests
             LayoutMode = layoutMode
         };
 
-        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, options);
+        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, options).Span;
         Assert.Equal(1, bounds.Length);
         Assert.True(CodePoint.IsNewLine(bounds[0].Codepoint));
         Assert.True(bounds[0].Bounds.X >= 0);
@@ -1099,8 +1099,8 @@ public class TextLayoutTests
         bool foundWidenedCharacter = false;
         for (int i = 0; i < justifiedMetrics.MeasureGlyphAdvances().Length; i++)
         {
-            float justifiedWidth = justifiedMetrics.MeasureGlyphAdvances()[i].Bounds.Width;
-            float unJustifiedWidth = unJustifiedMetrics.MeasureGlyphAdvances()[i].Bounds.Width;
+            float justifiedWidth = justifiedMetrics.MeasureGlyphAdvances().Span[i].Bounds.Width;
+            float unJustifiedWidth = unJustifiedMetrics.MeasureGlyphAdvances().Span[i].Bounds.Width;
 
             Assert.True(justifiedWidth >= unJustifiedWidth);
             foundWidenedCharacter |= justifiedWidth > unJustifiedWidth;
@@ -1130,10 +1130,10 @@ public class TextLayoutTests
 
         TextLayoutTestUtilities.TestLayout(text, options, properties: new { rtl = direction == TextDirection.RightToLeft, mode = justification });
 
-        ReadOnlySpan<LineMetrics> justifiedLineMetrics = TextMeasurer.GetLineMetrics(text, options);
+        ReadOnlySpan<LineMetrics> justifiedLineMetrics = TextMeasurer.GetLineMetrics(text, options).Span;
 
         options.TextJustification = TextJustification.None;
-        ReadOnlySpan<LineMetrics> unJustifiedLineMetrics = TextMeasurer.GetLineMetrics(text, options);
+        ReadOnlySpan<LineMetrics> unJustifiedLineMetrics = TextMeasurer.GetLineMetrics(text, options).Span;
 
         Assert.Equal(unJustifiedLineMetrics.Length, justifiedLineMetrics.Length);
 
@@ -1189,10 +1189,10 @@ public class TextLayoutTests
 
         TextLayoutTestUtilities.TestLayout(text, options, properties: new { rtl = direction == TextDirection.RightToLeft, mode = justification });
 
-        ReadOnlySpan<LineMetrics> justifiedLineMetrics = TextMeasurer.GetLineMetrics(text, options);
+        ReadOnlySpan<LineMetrics> justifiedLineMetrics = TextMeasurer.GetLineMetrics(text, options).Span;
 
         options.TextJustification = TextJustification.None;
-        ReadOnlySpan<LineMetrics> unJustifiedLineMetrics = TextMeasurer.GetLineMetrics(text, options);
+        ReadOnlySpan<LineMetrics> unJustifiedLineMetrics = TextMeasurer.GetLineMetrics(text, options).Span;
 
         Assert.Equal(unJustifiedLineMetrics.Length, justifiedLineMetrics.Length);
 
@@ -1253,10 +1253,10 @@ public class TextLayoutTests
         bool foundWidenedWhitespace = false;
         for (int i = 0; i < justifiedMetrics.MeasureGlyphAdvances().Length; i++)
         {
-            float justifiedWidth = justifiedMetrics.MeasureGlyphAdvances()[i].Bounds.Width;
-            float unJustifiedWidth = unJustifiedMetrics.MeasureGlyphAdvances()[i].Bounds.Width;
+            float justifiedWidth = justifiedMetrics.MeasureGlyphAdvances().Span[i].Bounds.Width;
+            float unJustifiedWidth = unJustifiedMetrics.MeasureGlyphAdvances().Span[i].Bounds.Width;
 
-            if (CodePoint.IsWhiteSpace(unJustifiedMetrics.MeasureGlyphAdvances()[i].Codepoint))
+            if (CodePoint.IsWhiteSpace(unJustifiedMetrics.MeasureGlyphAdvances().Span[i].Codepoint))
             {
                 Assert.True(justifiedWidth >= unJustifiedWidth);
                 foundWidenedWhitespace |= justifiedWidth > unJustifiedWidth;
@@ -1301,8 +1301,8 @@ public class TextLayoutTests
         bool foundWidenedCharacter = false;
         for (int i = 0; i < justifiedMetrics.MeasureGlyphAdvances().Length; i++)
         {
-            float justifiedHeight = justifiedMetrics.MeasureGlyphAdvances()[i].Bounds.Height;
-            float unJustifiedHeight = unJustifiedMetrics.MeasureGlyphAdvances()[i].Bounds.Height;
+            float justifiedHeight = justifiedMetrics.MeasureGlyphAdvances().Span[i].Bounds.Height;
+            float unJustifiedHeight = unJustifiedMetrics.MeasureGlyphAdvances().Span[i].Bounds.Height;
 
             Assert.True(justifiedHeight >= unJustifiedHeight);
             foundWidenedCharacter |= justifiedHeight > unJustifiedHeight;
@@ -1342,10 +1342,10 @@ public class TextLayoutTests
         bool foundWidenedWhitespace = false;
         for (int i = 0; i < justifiedMetrics.MeasureGlyphAdvances().Length; i++)
         {
-            float justifiedHeight = justifiedMetrics.MeasureGlyphAdvances()[i].Bounds.Height;
-            float unJustifiedHeight = unJustifiedMetrics.MeasureGlyphAdvances()[i].Bounds.Height;
+            float justifiedHeight = justifiedMetrics.MeasureGlyphAdvances().Span[i].Bounds.Height;
+            float unJustifiedHeight = unJustifiedMetrics.MeasureGlyphAdvances().Span[i].Bounds.Height;
 
-            if (CodePoint.IsWhiteSpace(unJustifiedMetrics.MeasureGlyphAdvances()[i].Codepoint))
+            if (CodePoint.IsWhiteSpace(unJustifiedMetrics.MeasureGlyphAdvances().Span[i].Codepoint))
             {
                 Assert.True(justifiedHeight >= unJustifiedHeight);
                 foundWidenedWhitespace |= justifiedHeight > unJustifiedHeight;
@@ -1507,7 +1507,7 @@ public class TextLayoutTests
         FontRectangle actual = TextMeasurer.MeasureBounds(text, options);
         Assert.Equal(width, actual.Width, Comparer);
 
-        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, options);
+        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, options).Span;
         Assert.Equal(characterPosition, bounds.ToArray().Select(x => x.Bounds.X), Comparer);
     }
 
@@ -1536,7 +1536,7 @@ public class TextLayoutTests
         FontRectangle actual = TextMeasurer.MeasureBounds(text, options);
         Assert.Equal(width, actual.Height, Comparer);
 
-        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, options);
+        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, options).Span;
         Assert.Equal(characterPosition, bounds.ToArray().Select(x => x.Bounds.Y), Comparer);
     }
 
@@ -1659,8 +1659,8 @@ public class TextLayoutTests
 
         const string text = "Hello World!";
 
-        ReadOnlySpan<GlyphBounds> advances = TextMeasurer.MeasureGlyphAdvances(text, options);
-        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, options);
+        ReadOnlySpan<GlyphBounds> advances = TextMeasurer.MeasureGlyphAdvances(text, options).Span;
+        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, options).Span;
 
         Assert.Equal(advances.Length, bounds.Length);
 
@@ -1686,7 +1686,7 @@ public class TextLayoutTests
 
         const string text = "A\nA\nA\nA";
 
-        ReadOnlySpan<GlyphBounds> advances = TextMeasurer.MeasureGlyphAdvances(text, options);
+        ReadOnlySpan<GlyphBounds> advances = TextMeasurer.MeasureGlyphAdvances(text, options).Span;
 
         GlyphBounds? lastAdvance = null;
         int lineBreakCount = 0;
@@ -1726,8 +1726,8 @@ public class TextLayoutTests
 
         const string text = "The quick👩🏽‍🚒 brown fox jumps over \r\n the lazy dog";
 
-        ReadOnlySpan<GlyphBounds> advances = TextMeasurer.MeasureGlyphAdvances(text, options);
-        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, options);
+        ReadOnlySpan<GlyphBounds> advances = TextMeasurer.MeasureGlyphAdvances(text, options).Span;
+        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, options).Span;
 
         Assert.Equal(advances.Length, bounds.Length);
 
@@ -1789,8 +1789,8 @@ public class TextLayoutTests
         const string text = "H\tH";
 
         List<FontRectangle> glyphs = CaptureGlyphBoundBuilder.GenerateGlyphsBoxes(text, options);
-        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, options);
-        ReadOnlySpan<GlyphBounds> advances = TextMeasurer.MeasureGlyphAdvances(text, options);
+        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, options).Span;
+        ReadOnlySpan<GlyphBounds> advances = TextMeasurer.MeasureGlyphAdvances(text, options).Span;
 
         Assert.Equal(glyphs.Count, bounds.Length);
         Assert.Equal(glyphs.Count, advances.Length);
@@ -1828,7 +1828,7 @@ public class TextLayoutTests
         const string text = "Hello WorLLd";
 
         List<FontRectangle> glyphs = CaptureGlyphBoundBuilder.GenerateGlyphsBoxes(text, options);
-        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, options);
+        ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, options).Span;
 
         Assert.Equal(glyphs.Count, bounds.Length);
 
@@ -2068,17 +2068,17 @@ public class TextLayoutTests
         int glyphIndex = 0;
         for (int i = 0; i < lineIndex; i++)
         {
-            glyphIndex = AdvanceGlyphIndex(metrics.MeasureGlyphAdvances(), glyphIndex, metrics.LineMetrics[i].GraphemeCount);
+            glyphIndex = AdvanceGlyphIndex(metrics.MeasureGlyphAdvances().Span, glyphIndex, metrics.LineMetrics[i].GraphemeCount);
         }
 
         int startGlyphIndex = glyphIndex;
-        int endGlyphIndex = AdvanceGlyphIndex(metrics.MeasureGlyphAdvances(), glyphIndex, metrics.LineMetrics[lineIndex].GraphemeCount);
+        int endGlyphIndex = AdvanceGlyphIndex(metrics.MeasureGlyphAdvances().Span, glyphIndex, metrics.LineMetrics[lineIndex].GraphemeCount);
 
         int start = int.MaxValue;
         int end = 0;
         for (int i = startGlyphIndex; i < endGlyphIndex; i++)
         {
-            GlyphBounds glyph = metrics.MeasureGlyphAdvances()[i];
+            GlyphBounds glyph = metrics.MeasureGlyphAdvances().Span[i];
             start = Math.Min(start, glyph.StringIndex);
             end = Math.Max(end, glyph.StringIndex + glyph.Codepoint.Utf16SequenceLength);
         }

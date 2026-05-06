@@ -76,10 +76,10 @@ public class TextMetricsTests
         Font font = TextLayoutTests.CreateFont(text);
         TextOptions options = new(font) { Dpi = font.FontMetrics.ScaleFactor };
 
-        ReadOnlySpan<GlyphBounds> expected = TextMeasurer.MeasureGlyphAdvances(text, options);
+        ReadOnlySpan<GlyphBounds> expected = TextMeasurer.MeasureGlyphAdvances(text, options).Span;
         TextMetrics metrics = TextMeasurer.Measure(text, options);
 
-        AssertGlyphBoundsEqual(expected, metrics.MeasureGlyphAdvances());
+        AssertGlyphBoundsEqual(expected, metrics.MeasureGlyphAdvances().Span);
     }
 
     [Theory]
@@ -92,10 +92,10 @@ public class TextMetricsTests
         Font font = TextLayoutTests.CreateFont(text);
         TextOptions options = new(font) { Dpi = font.FontMetrics.ScaleFactor };
 
-        ReadOnlySpan<GlyphBounds> expected = TextMeasurer.MeasureGlyphBounds(text, options);
+        ReadOnlySpan<GlyphBounds> expected = TextMeasurer.MeasureGlyphBounds(text, options).Span;
         TextMetrics metrics = TextMeasurer.Measure(text, options);
 
-        AssertGlyphBoundsEqual(expected, metrics.MeasureGlyphBounds());
+        AssertGlyphBoundsEqual(expected, metrics.MeasureGlyphBounds().Span);
     }
 
     [Theory]
@@ -108,10 +108,10 @@ public class TextMetricsTests
         Font font = TextLayoutTests.CreateFont(text);
         TextOptions options = new(font) { Dpi = font.FontMetrics.ScaleFactor };
 
-        ReadOnlySpan<GlyphBounds> expected = TextMeasurer.MeasureGlyphRenderableBounds(text, options);
+        ReadOnlySpan<GlyphBounds> expected = TextMeasurer.MeasureGlyphRenderableBounds(text, options).Span;
         TextMetrics metrics = TextMeasurer.Measure(text, options);
 
-        AssertGlyphBoundsEqual(expected, metrics.MeasureGlyphRenderableBounds());
+        AssertGlyphBoundsEqual(expected, metrics.MeasureGlyphRenderableBounds().Span);
     }
 
     [Theory]
@@ -123,7 +123,7 @@ public class TextMetricsTests
         Font font = TextLayoutTests.CreateFont(text);
         TextOptions options = new(font) { Dpi = font.FontMetrics.ScaleFactor };
 
-        ReadOnlySpan<LineMetrics> expected = TextMeasurer.GetLineMetrics(text, options);
+        ReadOnlySpan<LineMetrics> expected = TextMeasurer.GetLineMetrics(text, options).Span;
         TextMetrics metrics = TextMeasurer.Measure(text, options);
 
         Assert.Equal(expected.Length, metrics.LineMetrics.Length);
@@ -158,9 +158,9 @@ public class TextMetricsTests
 
         for (int i = 0; i < count; i++)
         {
-            CodePoint cp = metrics.MeasureGlyphAdvances()[i].Codepoint;
-            Assert.Equal(cp, metrics.MeasureGlyphBounds()[i].Codepoint);
-            Assert.Equal(cp, metrics.MeasureGlyphRenderableBounds()[i].Codepoint);
+            CodePoint cp = metrics.MeasureGlyphAdvances().Span[i].Codepoint;
+            Assert.Equal(cp, metrics.MeasureGlyphBounds().Span[i].Codepoint);
+            Assert.Equal(cp, metrics.MeasureGlyphRenderableBounds().Span[i].Codepoint);
         }
     }
 

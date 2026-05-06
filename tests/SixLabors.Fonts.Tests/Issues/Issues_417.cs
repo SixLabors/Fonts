@@ -19,7 +19,7 @@ public class Issues_417
 
         // References values generated using.
         // https://www.corvelsoftware.co.uk/crowbar/
-        ReadOnlySpan<GlyphBounds> advances = TextMeasurer.MeasureGlyphAdvances("Text", options);
+        ReadOnlySpan<GlyphBounds> advances = TextMeasurer.MeasureGlyphAdvances("Text", options).Span;
 
         Assert.Equal(4, advances.Length);
         Assert.Equal(486, advances[0].Bounds.Width);

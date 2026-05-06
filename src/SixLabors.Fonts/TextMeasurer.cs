@@ -90,7 +90,7 @@ public static class TextMeasurer
     }
 
     /// <inheritdoc cref="MeasureGlyphAdvances(ReadOnlySpan{char}, TextOptions)"/>
-    public static ReadOnlySpan<GlyphBounds> MeasureGlyphAdvances(string text, TextOptions options)
+    public static ReadOnlyMemory<GlyphBounds> MeasureGlyphAdvances(string text, TextOptions options)
         => MeasureGlyphAdvances(text.AsSpan(), options);
 
     /// <summary>
@@ -98,12 +98,12 @@ public static class TextMeasurer
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
-    /// <returns>The list of per-entry positioned logical advance bounds of the text if it was to be rendered.</returns>
-    public static ReadOnlySpan<GlyphBounds> MeasureGlyphAdvances(ReadOnlySpan<char> text, TextOptions options)
+    /// <returns>A read-only memory region containing the per-entry positioned logical advance bounds of the text if it was to be rendered.</returns>
+    public static ReadOnlyMemory<GlyphBounds> MeasureGlyphAdvances(ReadOnlySpan<char> text, TextOptions options)
     {
         if (text.IsEmpty)
         {
-            return [];
+            return ReadOnlyMemory<GlyphBounds>.Empty;
         }
 
         TextBlock block = new(text, options);
@@ -111,11 +111,11 @@ public static class TextMeasurer
     }
 
     /// <inheritdoc cref="MeasureGlyphBounds(ReadOnlySpan{char}, TextOptions)"/>
-    public static ReadOnlySpan<GlyphBounds> MeasureGlyphBounds(string text, TextOptions options)
+    public static ReadOnlyMemory<GlyphBounds> MeasureGlyphBounds(string text, TextOptions options)
         => MeasureGlyphBounds(text.AsSpan(), options);
 
     /// <inheritdoc cref="MeasureGlyphRenderableBounds(ReadOnlySpan{char}, TextOptions)"/>
-    public static ReadOnlySpan<GlyphBounds> MeasureGlyphRenderableBounds(string text, TextOptions options)
+    public static ReadOnlyMemory<GlyphBounds> MeasureGlyphRenderableBounds(string text, TextOptions options)
         => MeasureGlyphRenderableBounds(text.AsSpan(), options);
 
     /// <summary>
@@ -123,12 +123,12 @@ public static class TextMeasurer
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
-    /// <returns>The list of per-entry rendered glyph bounds of the text if it was to be rendered.</returns>
-    public static ReadOnlySpan<GlyphBounds> MeasureGlyphBounds(ReadOnlySpan<char> text, TextOptions options)
+    /// <returns>A read-only memory region containing the per-entry rendered glyph bounds of the text if it was to be rendered.</returns>
+    public static ReadOnlyMemory<GlyphBounds> MeasureGlyphBounds(ReadOnlySpan<char> text, TextOptions options)
     {
         if (text.IsEmpty)
         {
-            return [];
+            return ReadOnlyMemory<GlyphBounds>.Empty;
         }
 
         TextBlock block = new(text, options);
@@ -140,12 +140,12 @@ public static class TextMeasurer
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
-    /// <returns>The list of per-entry renderable bounds of the text if it was to be rendered.</returns>
-    public static ReadOnlySpan<GlyphBounds> MeasureGlyphRenderableBounds(ReadOnlySpan<char> text, TextOptions options)
+    /// <returns>A read-only memory region containing the per-entry renderable bounds of the text if it was to be rendered.</returns>
+    public static ReadOnlyMemory<GlyphBounds> MeasureGlyphRenderableBounds(ReadOnlySpan<char> text, TextOptions options)
     {
         if (text.IsEmpty)
         {
-            return [];
+            return ReadOnlyMemory<GlyphBounds>.Empty;
         }
 
         TextBlock block = new(text, options);
@@ -153,7 +153,7 @@ public static class TextMeasurer
     }
 
     /// <inheritdoc cref="GetGraphemeMetrics(ReadOnlySpan{char}, TextOptions)"/>
-    public static ReadOnlySpan<GraphemeMetrics> GetGraphemeMetrics(string text, TextOptions options)
+    public static ReadOnlyMemory<GraphemeMetrics> GetGraphemeMetrics(string text, TextOptions options)
         => GetGraphemeMetrics(text.AsSpan(), options);
 
     /// <summary>
@@ -161,12 +161,12 @@ public static class TextMeasurer
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
-    /// <returns>The list of per-grapheme metrics entries of the text if it was to be rendered.</returns>
-    public static ReadOnlySpan<GraphemeMetrics> GetGraphemeMetrics(ReadOnlySpan<char> text, TextOptions options)
+    /// <returns>A read-only memory region containing the per-grapheme metrics entries of the text if it was to be rendered.</returns>
+    public static ReadOnlyMemory<GraphemeMetrics> GetGraphemeMetrics(ReadOnlySpan<char> text, TextOptions options)
     {
         if (text.IsEmpty)
         {
-            return [];
+            return ReadOnlyMemory<GraphemeMetrics>.Empty;
         }
 
         TextBlock block = new(text, options);
@@ -195,7 +195,7 @@ public static class TextMeasurer
     }
 
     /// <inheritdoc cref="GetLineMetrics(ReadOnlySpan{char}, TextOptions)"/>
-    public static ReadOnlySpan<LineMetrics> GetLineMetrics(string text, TextOptions options)
+    public static ReadOnlyMemory<LineMetrics> GetLineMetrics(string text, TextOptions options)
         => GetLineMetrics(text.AsSpan(), options);
 
     /// <summary>
@@ -204,13 +204,13 @@ public static class TextMeasurer
     /// <param name="text">The text to measure.</param>
     /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
     /// <returns>
-    /// A collection of <see cref="LineMetrics"/> in pixel units, one entry per laid-out line.
+    /// A read-only memory region containing <see cref="LineMetrics"/> in pixel units, one entry per laid-out line.
     /// </returns>
-    public static ReadOnlySpan<LineMetrics> GetLineMetrics(ReadOnlySpan<char> text, TextOptions options)
+    public static ReadOnlyMemory<LineMetrics> GetLineMetrics(ReadOnlySpan<char> text, TextOptions options)
     {
         if (text.IsEmpty)
         {
-            return [];
+            return ReadOnlyMemory<LineMetrics>.Empty;
         }
 
         TextBlock block = new(text, options);

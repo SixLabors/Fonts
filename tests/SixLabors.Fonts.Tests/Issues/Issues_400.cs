@@ -57,7 +57,7 @@ public class Issues_400
             DrawRectangle(x, bounds, Color.Lime, 2);
         });
 
-        ReadOnlySpan<GlyphBounds> measuredGlyphBounds = TextMeasurer.MeasureGlyphBounds(text, options);
+        ReadOnlySpan<GlyphBounds> measuredGlyphBounds = TextMeasurer.MeasureGlyphBounds(text, options).Span;
         GlyphBounds[] glyphBounds = measuredGlyphBounds.ToArray();
 
         image.Mutate(x =>

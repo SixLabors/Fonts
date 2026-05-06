@@ -31,7 +31,7 @@ public class Issues_434
             // The collection contains laid-out glyph entries. This fixture shapes one glyph per source
             // code point, so preserved hard breaks raise the count from the old trimmed 47.
             Assert.Equal(50, metrics.MeasureGlyphAdvances().Length);
-            AssertPreservedLineBreakAdvances(metrics.MeasureGlyphAdvances(), 16, 17, 32);
+            AssertPreservedLineBreakAdvances(metrics.MeasureGlyphAdvances().Span, 16, 17, 32);
         }
     }
 
@@ -58,7 +58,7 @@ public class Issues_434
             // The collection contains laid-out glyph entries. This fixture shapes one glyph per source
             // code point, so preserved hard breaks raise the count from the old trimmed 48.
             Assert.Equal(51, metrics.MeasureGlyphAdvances().Length);
-            AssertPreservedLineBreakAdvances(metrics.MeasureGlyphAdvances(), 16, 17, 18, 33);
+            AssertPreservedLineBreakAdvances(metrics.MeasureGlyphAdvances().Span, 16, 17, 18, 33);
         }
     }
 

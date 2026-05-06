@@ -67,9 +67,9 @@ public class Issues_47
             WrappingLength = 350
         });
 
-        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances()[0].Codepoint));
-        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances()[1].Codepoint));
-        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances()[2].Codepoint));
+        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances().Span[0].Codepoint));
+        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances().Span[1].Codepoint));
+        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances().Span[2].Codepoint));
     }
 
     [Fact]
@@ -90,9 +90,9 @@ public class Issues_47
         Assert.Equal(trimmedMetrics.Advance, metrics.Advance);
         Assert.Equal(trimmedMetrics.Bounds, metrics.Bounds);
 
-        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances()[^1].Codepoint));
-        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances()[^2].Codepoint));
-        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances()[^3].Codepoint));
+        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances().Span[^1].Codepoint));
+        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances().Span[^2].Codepoint));
+        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances().Span[^3].Codepoint));
     }
 
     public static Font CreateFont(string text)

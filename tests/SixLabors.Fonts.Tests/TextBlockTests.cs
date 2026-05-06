@@ -62,7 +62,7 @@ public class TextBlockTests
             Comparer);
 
         Assert.Equal(TextMeasurer.CountLines(text, Options(wrappingLength)), block.CountLines(wrappingLength));
-        AssertLineMetricsEqual(TextMeasurer.GetLineMetrics(text, Options(wrappingLength)), block.GetLineMetrics(wrappingLength));
+        AssertLineMetricsEqual(TextMeasurer.GetLineMetrics(text, Options(wrappingLength)).Span, block.GetLineMetrics(wrappingLength).Span);
     }
 
     [Fact]
@@ -88,8 +88,8 @@ public class TextBlockTests
         const string text = firstLine + "Second line";
         TextBlock block = new(text, Options(-1));
 
-        ReadOnlySpan<LineLayout> lines = block.LayoutLines(-1);
-        ReadOnlySpan<LineMetrics> metrics = block.GetLineMetrics(-1);
+        ReadOnlySpan<LineLayout> lines = block.LayoutLines(-1).Span;
+        ReadOnlySpan<LineMetrics> metrics = block.GetLineMetrics(-1).Span;
 
         Assert.Equal(2, lines.Length);
         AssertLineMetricsEqual(metrics, lines);
@@ -107,7 +107,7 @@ public class TextBlockTests
         const string text = "\n\tHelloworld";
         TextBlock block = new(text, Options(-1));
 
-        ReadOnlySpan<LineLayout> lines = block.LayoutLines(-1);
+        ReadOnlySpan<LineLayout> lines = block.LayoutLines(-1).Span;
 
         Assert.Equal(2, lines.Length);
         Assert.Equal(1, lines[0].GraphemeMetrics.Length);
@@ -123,23 +123,23 @@ public class TextBlockTests
         const float wrappingLength = 70;
         TextBlock block = new(text, Options(-1));
 
-        ReadOnlySpan<GlyphBounds> expectedAdvances = TextMeasurer.MeasureGlyphAdvances(text, Options(wrappingLength));
-        ReadOnlySpan<GlyphBounds> actualAdvances = block.MeasureGlyphAdvances(wrappingLength);
+        ReadOnlySpan<GlyphBounds> expectedAdvances = TextMeasurer.MeasureGlyphAdvances(text, Options(wrappingLength)).Span;
+        ReadOnlySpan<GlyphBounds> actualAdvances = block.MeasureGlyphAdvances(wrappingLength).Span;
 
         AssertGlyphBoundsEqual(expectedAdvances, actualAdvances);
 
-        ReadOnlySpan<GlyphBounds> expectedBounds = TextMeasurer.MeasureGlyphBounds(text, Options(wrappingLength));
-        ReadOnlySpan<GlyphBounds> actualBounds = block.MeasureGlyphBounds(wrappingLength);
+        ReadOnlySpan<GlyphBounds> expectedBounds = TextMeasurer.MeasureGlyphBounds(text, Options(wrappingLength)).Span;
+        ReadOnlySpan<GlyphBounds> actualBounds = block.MeasureGlyphBounds(wrappingLength).Span;
 
         AssertGlyphBoundsEqual(expectedBounds, actualBounds);
 
-        ReadOnlySpan<GlyphBounds> expectedRenderableBounds = TextMeasurer.MeasureGlyphRenderableBounds(text, Options(wrappingLength));
-        ReadOnlySpan<GlyphBounds> actualRenderableBounds = block.MeasureGlyphRenderableBounds(wrappingLength);
+        ReadOnlySpan<GlyphBounds> expectedRenderableBounds = TextMeasurer.MeasureGlyphRenderableBounds(text, Options(wrappingLength)).Span;
+        ReadOnlySpan<GlyphBounds> actualRenderableBounds = block.MeasureGlyphRenderableBounds(wrappingLength).Span;
 
         AssertGlyphBoundsEqual(expectedRenderableBounds, actualRenderableBounds);
 
-        ReadOnlySpan<GraphemeMetrics> expectedGraphemeMetrics = TextMeasurer.GetGraphemeMetrics(text, Options(wrappingLength));
-        ReadOnlySpan<GraphemeMetrics> actualGraphemeMetrics = block.GetGraphemeMetrics(wrappingLength);
+        ReadOnlySpan<GraphemeMetrics> expectedGraphemeMetrics = TextMeasurer.GetGraphemeMetrics(text, Options(wrappingLength)).Span;
+        ReadOnlySpan<GraphemeMetrics> actualGraphemeMetrics = block.GetGraphemeMetrics(wrappingLength).Span;
 
         AssertGraphemeMetricsEqual(expectedGraphemeMetrics, actualGraphemeMetrics);
     }
@@ -150,17 +150,17 @@ public class TextBlockTests
         const string text = "Hello\nWorld";
         TextBlock block = new(text, Options(-1));
 
-        ReadOnlySpan<LineLayout> lines = block.LayoutLines(-1);
-        ReadOnlySpan<GlyphBounds> expectedAdvances = block.MeasureGlyphAdvances(-1);
-        ReadOnlySpan<GlyphBounds> expectedBounds = block.MeasureGlyphBounds(-1);
-        ReadOnlySpan<GlyphBounds> expectedRenderableBounds = block.MeasureGlyphRenderableBounds(-1);
+        ReadOnlySpan<LineLayout> lines = block.LayoutLines(-1).Span;
+        ReadOnlySpan<GlyphBounds> expectedAdvances = block.MeasureGlyphAdvances(-1).Span;
+        ReadOnlySpan<GlyphBounds> expectedBounds = block.MeasureGlyphBounds(-1).Span;
+        ReadOnlySpan<GlyphBounds> expectedRenderableBounds = block.MeasureGlyphRenderableBounds(-1).Span;
 
         int glyphIndex = 0;
         for (int i = 0; i < lines.Length; i++)
         {
-            ReadOnlySpan<GlyphBounds> lineAdvances = lines[i].MeasureGlyphAdvances();
-            ReadOnlySpan<GlyphBounds> lineBounds = lines[i].MeasureGlyphBounds();
-            ReadOnlySpan<GlyphBounds> lineRenderableBounds = lines[i].MeasureGlyphRenderableBounds();
+            ReadOnlySpan<GlyphBounds> lineAdvances = lines[i].MeasureGlyphAdvances().Span;
+            ReadOnlySpan<GlyphBounds> lineBounds = lines[i].MeasureGlyphBounds().Span;
+            ReadOnlySpan<GlyphBounds> lineRenderableBounds = lines[i].MeasureGlyphRenderableBounds().Span;
 
             AssertGlyphBoundsEqual(expectedAdvances.Slice(glyphIndex, lineAdvances.Length), lineAdvances);
             AssertGlyphBoundsEqual(expectedBounds.Slice(glyphIndex, lineBounds.Length), lineBounds);
@@ -497,7 +497,7 @@ public class TextBlockTests
         TextBlock block = new(text, options);
 
         TextMetrics metrics = block.Measure(-1);
-        ReadOnlySpan<LineLayout> lines = block.LayoutLines(-1);
+        ReadOnlySpan<LineLayout> lines = block.LayoutLines(-1).Span;
 
         for (int i = 0; i < lines.Length; i++)
         {
@@ -529,7 +529,7 @@ public class TextBlockTests
         options.LayoutMode = layoutMode;
         TextBlock block = new(text, options);
 
-        ReadOnlySpan<LineLayout> lines = block.LayoutLines(-1);
+        ReadOnlySpan<LineLayout> lines = block.LayoutLines(-1).Span;
 
         Assert.Equal(2, lines.Length);
         for (int i = 0; i < lines.Length; i++)
@@ -554,7 +554,7 @@ public class TextBlockTests
         const string text = "Hi\nYo";
         TextBlock block = new(text, Options(-1));
         TextMetrics metrics = block.Measure(-1);
-        ReadOnlySpan<LineLayout> lines = block.LayoutLines(-1);
+        ReadOnlySpan<LineLayout> lines = block.LayoutLines(-1).Span;
         GraphemeMetrics grapheme = lines[1].GraphemeMetrics[0];
         Vector2 point = FontRectangle.Center(grapheme.Advance);
 
@@ -655,9 +655,9 @@ public class TextBlockTests
         Assert.Equal(expected.Bounds, actual.Bounds, Comparer);
         Assert.Equal(expected.RenderableBounds, actual.RenderableBounds, Comparer);
         Assert.Equal(expected.LineCount, actual.LineCount);
-        AssertGlyphBoundsEqual(expected.MeasureGlyphAdvances(), actual.MeasureGlyphAdvances());
-        AssertGlyphBoundsEqual(expected.MeasureGlyphBounds(), actual.MeasureGlyphBounds());
-        AssertGlyphBoundsEqual(expected.MeasureGlyphRenderableBounds(), actual.MeasureGlyphRenderableBounds());
+        AssertGlyphBoundsEqual(expected.MeasureGlyphAdvances().Span, actual.MeasureGlyphAdvances().Span);
+        AssertGlyphBoundsEqual(expected.MeasureGlyphBounds().Span, actual.MeasureGlyphBounds().Span);
+        AssertGlyphBoundsEqual(expected.MeasureGlyphRenderableBounds().Span, actual.MeasureGlyphRenderableBounds().Span);
         AssertGraphemeMetricsEqual(expected.GraphemeMetrics, actual.GraphemeMetrics);
         AssertLineMetricsEqual(expected.LineMetrics, actual.LineMetrics);
     }

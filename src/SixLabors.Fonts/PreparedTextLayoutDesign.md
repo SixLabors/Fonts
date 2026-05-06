@@ -76,10 +76,15 @@ TextMetrics unwrapped = block.Measure(-1);
 not needed:
 
 ```csharp
-ReadOnlySpan<LineMetrics> lines = block.GetLineMetrics(320);
-ReadOnlySpan<GraphemeMetrics> graphemes = block.GetGraphemeMetrics(320);
-ReadOnlySpan<GlyphBounds> glyphBounds = block.MeasureGlyphBounds(320);
+ReadOnlyMemory<LineMetrics> lines = block.GetLineMetrics(320);
+ReadOnlyMemory<GraphemeMetrics> graphemes = block.GetGraphemeMetrics(320);
+ReadOnlyMemory<GlyphBounds> glyphBounds = block.MeasureGlyphBounds(320);
 ```
+
+Method-returned measurement collections use `ReadOnlyMemory<T>` because they are
+snapshots that callers may store with their own layout state. Owner-backed
+properties, such as `TextMetrics.LineMetrics` and `LineLayout.GraphemeMetrics`,
+use `ReadOnlySpan<T>` because the owner object already controls the lifetime.
 
 ## TextMetrics
 
@@ -163,9 +168,9 @@ without contributing to those visual measurements.
 Glyph detail APIs expose laid-out glyph entries.
 
 ```csharp
-ReadOnlySpan<GlyphBounds> advances = metrics.MeasureGlyphAdvances();
-ReadOnlySpan<GlyphBounds> bounds = metrics.MeasureGlyphBounds();
-ReadOnlySpan<GlyphBounds> renderable = metrics.MeasureGlyphRenderableBounds();
+ReadOnlyMemory<GlyphBounds> advances = metrics.MeasureGlyphAdvances();
+ReadOnlyMemory<GlyphBounds> bounds = metrics.MeasureGlyphBounds();
+ReadOnlyMemory<GlyphBounds> renderable = metrics.MeasureGlyphRenderableBounds();
 ```
 
 Use glyph detail for rendering diagnostics, glyph-level visualization, or
@@ -181,9 +186,9 @@ inspection or interaction.
 
 ```csharp
 TextBlock block = new(text, options);
-ReadOnlySpan<LineLayout> layout = block.LayoutLines(320);
+ReadOnlyMemory<LineLayout> layout = block.LayoutLines(320);
 
-foreach (LineLayout line in layout)
+foreach (LineLayout line in layout.Span)
 {
     // LineLayout exposes the slice of grapheme metrics owned by this line.
     LineMetrics lineMetrics = line.LineMetrics;
@@ -199,7 +204,7 @@ TextHit hit = line.HitTest(point);
 CaretPosition caret = line.GetCaretPosition(hit);
 CaretPosition next = line.MoveCaret(caret, CaretMovement.Next);
 ReadOnlyMemory<FontRectangle> selection = line.GetSelectionBounds(caret, next);
-ReadOnlySpan<GlyphBounds> glyphs = line.MeasureGlyphRenderableBounds();
+ReadOnlyMemory<GlyphBounds> glyphs = line.MeasureGlyphRenderableBounds();
 ```
 
 Use the full `TextMetrics` interaction methods for selections that can cross
@@ -440,12 +445,12 @@ ReadOnlyMemory<FontRectangle> selection = metrics.GetSelectionBounds(anchor, car
 For per-line UI:
 
 ```csharp
-ReadOnlySpan<LineLayout> lines = block.LayoutLines(wrappingLength);
+ReadOnlyMemory<LineLayout> lines = block.LayoutLines(wrappingLength);
 
-foreach (LineLayout line in lines)
+foreach (LineLayout line in lines.Span)
 {
     ReadOnlySpan<GraphemeMetrics> graphemes = line.GraphemeMetrics;
-    ReadOnlySpan<GlyphBounds> glyphs = line.MeasureGlyphBounds();
+    ReadOnlyMemory<GlyphBounds> glyphs = line.MeasureGlyphBounds();
 }
 ```
 

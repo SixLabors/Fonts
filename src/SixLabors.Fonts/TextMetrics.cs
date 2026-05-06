@@ -175,7 +175,7 @@ public sealed class TextMetrics
             this.layoutMode);
 
     /// <inheritdoc cref="TextBlock.MeasureGlyphAdvances(float)"/>
-    public ReadOnlySpan<GlyphBounds> MeasureGlyphAdvances()
+    public ReadOnlyMemory<GlyphBounds> MeasureGlyphAdvances()
         => this.glyphAdvances ??= TextBlock.MeasureGlyphBoundsArray(
             this.textBox,
             this.textBlock.Options,
@@ -183,7 +183,7 @@ public sealed class TextMetrics
             TextBlock.GlyphBoundsMeasurement.Advance);
 
     /// <inheritdoc cref="TextBlock.MeasureGlyphBounds(float)"/>
-    public ReadOnlySpan<GlyphBounds> MeasureGlyphBounds()
+    public ReadOnlyMemory<GlyphBounds> MeasureGlyphBounds()
         => this.glyphBounds ??= TextBlock.MeasureGlyphBoundsArray(
             this.textBox,
             this.textBlock.Options,
@@ -191,7 +191,7 @@ public sealed class TextMetrics
             TextBlock.GlyphBoundsMeasurement.Bounds);
 
     /// <inheritdoc cref="TextBlock.MeasureGlyphRenderableBounds(float)"/>
-    public ReadOnlySpan<GlyphBounds> MeasureGlyphRenderableBounds()
+    public ReadOnlyMemory<GlyphBounds> MeasureGlyphRenderableBounds()
         => this.glyphRenderableBounds ??= TextBlock.MeasureGlyphBoundsArray(
             this.textBox,
             this.textBlock.Options,

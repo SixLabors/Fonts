@@ -138,32 +138,32 @@ public sealed partial class TextBlock
     /// Measures the positioned logical advance bounds of each laid-out glyph entry.
     /// </summary>
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
-    /// <returns>The list of per-entry positioned logical advance bounds.</returns>
-    public ReadOnlySpan<GlyphBounds> MeasureGlyphAdvances(float wrappingLength)
+    /// <returns>A read-only memory region containing per-entry positioned logical advance bounds.</returns>
+    public ReadOnlyMemory<GlyphBounds> MeasureGlyphAdvances(float wrappingLength)
         => this.MeasureGlyphBoundsArray(wrappingLength, GlyphBoundsMeasurement.Advance);
 
     /// <summary>
     /// Measures the rendered glyph bounds of each laid-out glyph entry.
     /// </summary>
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
-    /// <returns>The list of per-entry rendered glyph bounds.</returns>
-    public ReadOnlySpan<GlyphBounds> MeasureGlyphBounds(float wrappingLength)
+    /// <returns>A read-only memory region containing per-entry rendered glyph bounds.</returns>
+    public ReadOnlyMemory<GlyphBounds> MeasureGlyphBounds(float wrappingLength)
         => this.MeasureGlyphBoundsArray(wrappingLength, GlyphBoundsMeasurement.Bounds);
 
     /// <summary>
     /// Measures the full renderable bounds of each laid-out glyph entry.
     /// </summary>
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
-    /// <returns>The list of per-entry renderable bounds.</returns>
-    public ReadOnlySpan<GlyphBounds> MeasureGlyphRenderableBounds(float wrappingLength)
+    /// <returns>A read-only memory region containing per-entry renderable bounds.</returns>
+    public ReadOnlyMemory<GlyphBounds> MeasureGlyphRenderableBounds(float wrappingLength)
         => this.MeasureGlyphBoundsArray(wrappingLength, GlyphBoundsMeasurement.RenderableBounds);
 
     /// <summary>
     /// Gets the positioned metrics of each laid-out grapheme.
     /// </summary>
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
-    /// <returns>The list of per-grapheme metrics entries.</returns>
-    public ReadOnlySpan<GraphemeMetrics> GetGraphemeMetrics(float wrappingLength)
+    /// <returns>A read-only memory region containing per-grapheme metrics entries.</returns>
+    public ReadOnlyMemory<GraphemeMetrics> GetGraphemeMetrics(float wrappingLength)
     {
         TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
         return GetGraphemeMetricsArray(textBox, this.Options, wrappingLength);
@@ -181,24 +181,24 @@ public sealed partial class TextBlock
     /// Gets per-line layout metrics at the supplied wrapping length.
     /// </summary>
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
-    /// <returns>A collection of <see cref="LineMetrics"/> in pixel units.</returns>
-    public ReadOnlySpan<LineMetrics> GetLineMetrics(float wrappingLength)
+    /// <returns>A read-only memory region containing <see cref="LineMetrics"/> in pixel units.</returns>
+    public ReadOnlyMemory<LineMetrics> GetLineMetrics(float wrappingLength)
         => GetLineMetrics(this.BreakLines(wrappingLength), this.Options, wrappingLength);
 
     /// <summary>
     /// Lays out this block into visual lines at the supplied wrapping length.
     /// </summary>
     /// <remarks>
-    /// The returned array contains every laid-out line, including lines produced by hard line breaks.
+    /// The returned memory contains every laid-out line, including lines produced by hard line breaks.
     /// </remarks>
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
-    /// <returns>A collection of <see cref="LineLayout"/> entries in final layout order.</returns>
-    public ReadOnlySpan<LineLayout> LayoutLines(float wrappingLength)
+    /// <returns>A read-only memory region containing <see cref="LineLayout"/> entries in final layout order.</returns>
+    public ReadOnlyMemory<LineLayout> LayoutLines(float wrappingLength)
     {
         TextLayout.TextBox textBox = this.BreakLines(wrappingLength);
         if (textBox.TextLines.Count == 0)
         {
-            return [];
+            return ReadOnlyMemory<LineLayout>.Empty;
         }
 
         GraphemeMetrics[] graphemes = new GraphemeMetrics[CountGraphemeMetrics(textBox)];
