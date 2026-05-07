@@ -121,6 +121,102 @@ public class TextBlockTests
     }
 
     [Fact]
+    public void EnumerateLineLayouts_EmptyText_ReturnsNoLines()
+    {
+        TextBlock block = new(string.Empty, Options(-1));
+        LineLayoutEnumerator enumerator = block.EnumerateLineLayouts();
+
+        Assert.False(enumerator.MoveNext(100));
+    }
+
+    [Fact]
+    public void EnumerateLineLayouts_MaxLinesZero_ReturnsNoLines()
+    {
+        TextOptions options = Options(100);
+        options.MaxLines = 0;
+        TextBlock block = new("Alpha beta gamma", options);
+        LineLayoutEnumerator enumerator = block.EnumerateLineLayouts();
+
+        Assert.False(enumerator.MoveNext(100));
+    }
+
+    [Fact]
+    public void EnumerateLineLayouts_MatchesFixedWidthLineSourceRanges()
+    {
+        const string text = "Alpha beta gamma delta epsilon.";
+        const float wrappingLength = 90;
+        TextOptions options = Options(-1);
+        TextBlock block = new(text, options);
+
+        ReadOnlySpan<LineLayout> expected = block.GetLineLayouts(wrappingLength).Span;
+        LineLayoutEnumerator enumerator = block.EnumerateLineLayouts();
+
+        for (int i = 0; i < expected.Length; i++)
+        {
+            Assert.True(enumerator.MoveNext(wrappingLength));
+
+            LineLayout actual = enumerator.Current;
+            Assert.Equal(expected[i].LineMetrics.StringIndex, actual.LineMetrics.StringIndex);
+            Assert.Equal(expected[i].LineMetrics.GraphemeIndex, actual.LineMetrics.GraphemeIndex);
+            Assert.Equal(expected[i].LineMetrics.GraphemeCount, actual.LineMetrics.GraphemeCount);
+            Assert.Equal(expected[i].LineMetrics.Extent, actual.LineMetrics.Extent, Comparer);
+
+            // The enumerator returns each line as an independently placed layout so
+            // custom-flow callers can choose their own column or shape position.
+            Assert.Equal(options.Origin, actual.LineMetrics.Start);
+            AssertGraphemeSourceMappingEqual(expected[i].GraphemeMetrics, actual.GraphemeMetrics);
+        }
+
+        Assert.False(enumerator.MoveNext(wrappingLength));
+    }
+
+    [Fact]
+    public void EnumerateLineLayouts_UsesSuppliedWidthPerMove()
+    {
+        const string text = "Alpha beta gamma delta epsilon.";
+        TextBlock block = new(text, Options(-1));
+        TextOptions measureOptions = Options(-1);
+
+        float firstBreakWidth = TextMeasurer.MeasureAdvance("Alpha beta", measureOptions).Width;
+        float nextBreakWidth = TextMeasurer.MeasureAdvance("Alpha beta gamma", measureOptions).Width;
+        float narrowWidth = firstBreakWidth + ((nextBreakWidth - firstBreakWidth) * 0.5F);
+        float wideWidth = TextMeasurer.MeasureAdvance(text, measureOptions).Width + 1;
+
+        LineLayoutEnumerator enumerator = block.EnumerateLineLayouts();
+        Assert.True(enumerator.MoveNext(narrowWidth));
+        LineLayout narrowLine = enumerator.Current;
+
+        Assert.True(enumerator.MoveNext(wideWidth));
+        LineLayout wideLine = enumerator.Current;
+
+        // The second call gets a wider line after the first break has consumed
+        // "Alpha beta", which is the behavior needed for manual flow shapes.
+        Assert.True(wideLine.LineMetrics.GraphemeCount > narrowLine.LineMetrics.GraphemeCount);
+        Assert.False(enumerator.MoveNext(wideWidth));
+    }
+
+    [Fact]
+    public void LineLayout_RenderTo_RendersOnlyThatLine()
+    {
+        const string text = "Alpha beta gamma delta epsilon.";
+        const float wrappingLength = 90;
+        TextBlock block = new(text, Options(-1));
+
+        ReadOnlySpan<LineLayout> lines = block.GetLineLayouts(wrappingLength).Span;
+        LineLayout line = lines[1];
+        GlyphRenderer lineRenderer = new();
+        GlyphRenderer blockRenderer = new();
+
+        line.RenderTo(lineRenderer);
+        block.RenderTo(blockRenderer, wrappingLength);
+
+        // LineLayout rendering must be usable for manual-flow consumers that
+        // render only the current enumerated line rather than the whole block.
+        Assert.Equal(line.MeasureGlyphBounds().Length, lineRenderer.GlyphRects.Count);
+        Assert.True(blockRenderer.GlyphRects.Count > lineRenderer.GlyphRects.Count);
+    }
+
+    [Fact]
     public void CharacterMeasurements_MatchTextMeasurer()
     {
         const string text = "A quick test.";
@@ -1208,6 +1304,18 @@ public class TextBlockTests
             Assert.Equal(expected[i].Advance, actual[i].Advance, Comparer);
             Assert.Equal(expected[i].Bounds, actual[i].Bounds, Comparer);
             Assert.Equal(expected[i].RenderableBounds, actual[i].RenderableBounds, Comparer);
+            Assert.Equal(expected[i].GraphemeIndex, actual[i].GraphemeIndex);
+            Assert.Equal(expected[i].StringIndex, actual[i].StringIndex);
+            Assert.Equal(expected[i].BidiLevel, actual[i].BidiLevel);
+            Assert.Equal(expected[i].IsLineBreak, actual[i].IsLineBreak);
+        }
+    }
+
+    private static void AssertGraphemeSourceMappingEqual(ReadOnlySpan<GraphemeMetrics> expected, ReadOnlySpan<GraphemeMetrics> actual)
+    {
+        Assert.Equal(expected.Length, actual.Length);
+        for (int i = 0; i < expected.Length; i++)
+        {
             Assert.Equal(expected[i].GraphemeIndex, actual[i].GraphemeIndex);
             Assert.Equal(expected[i].StringIndex, actual[i].StringIndex);
             Assert.Equal(expected[i].BidiLevel, actual[i].BidiLevel);

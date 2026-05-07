@@ -218,6 +218,41 @@ public sealed partial class TextBlock
             return ReadOnlyMemory<LineLayout>.Empty;
         }
 
+        return this.GetLineLayouts(textBox, wrappingLength);
+    }
+
+    /// <summary>
+    /// Creates an enumerator that lays out this block one line at a time.
+    /// </summary>
+    /// <returns>A line layout enumerator for this block.</returns>
+    public LineLayoutEnumerator EnumerateLineLayouts()
+        => new(this);
+
+    /// <summary>
+    /// Gets a single line layout for an already line-broken text line.
+    /// </summary>
+    /// <param name="textLine">The line to lay out.</param>
+    /// <param name="wrappingLength">The wrapping length in pixels.</param>
+    /// <param name="textDirection">The block-level text direction used for alignment.</param>
+    /// <returns>The line layout for the supplied line.</returns>
+    internal LineLayout GetLineLayout(
+        TextLine textLine,
+        float wrappingLength,
+        TextDirection textDirection)
+    {
+        TextBox textBox = new([textLine], textDirection);
+
+        return this.GetLineLayouts(textBox, wrappingLength)[0];
+    }
+
+    /// <summary>
+    /// Gets visual line layouts for an already line-broken text box.
+    /// </summary>
+    /// <param name="textBox">The shaped and line-broken text box.</param>
+    /// <param name="wrappingLength">The wrapping length in pixels.</param>
+    /// <returns>The line layouts for the supplied text box.</returns>
+    private LineLayout[] GetLineLayouts(TextBox textBox, float wrappingLength)
+    {
         GraphemeMetrics[] graphemes = new GraphemeMetrics[CountGraphemeMetrics(textBox)];
         LineMetrics[] metrics = GetLineMetrics(textBox, this.Options, wrappingLength);
         LineLayout[] lines = new LineLayout[textBox.TextLines.Count];
@@ -239,10 +274,30 @@ public sealed partial class TextBlock
         TextBox textBox = this.BreakLines(wrappingLength);
         FontRectangle rect = GetBounds(textBox, this.Options, wrappingLength);
 
-        renderer.BeginText(in rect);
+        RenderTo(renderer, textBox, this.Options, wrappingLength, rect);
+    }
 
-        GlyphRendererVisitor visitor = new(renderer, this.Options);
-        TextLayout.LayoutText(textBox, this.Options, wrappingLength, ref visitor);
+    /// <summary>
+    /// Renders an already line-broken text box to the supplied glyph renderer.
+    /// </summary>
+    /// <param name="renderer">The target renderer.</param>
+    /// <param name="textBox">The shaped and line-broken text box.</param>
+    /// <param name="options">The text options used for rendering.</param>
+    /// <param name="wrappingLength">The wrapping length in pixels.</param>
+    /// <param name="bounds">The bounds passed to the renderer.</param>
+    /// <param name="lineIndex">The line index to render, or <c>-1</c> to render every line.</param>
+    internal static void RenderTo(
+        IGlyphRenderer renderer,
+        TextBox textBox,
+        TextOptions options,
+        float wrappingLength,
+        in FontRectangle bounds,
+        int lineIndex = -1)
+    {
+        renderer.BeginText(in bounds);
+
+        GlyphRendererVisitor visitor = new(renderer, options, lineIndex);
+        TextLayout.LayoutText(textBox, options, wrappingLength, ref visitor);
 
         renderer.EndText();
     }

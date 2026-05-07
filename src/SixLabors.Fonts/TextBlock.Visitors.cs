@@ -788,30 +788,38 @@ public sealed partial class TextBlock
     /// <summary>
     /// Renders glyphs as they stream from layout.
     /// </summary>
-    private readonly struct GlyphRendererVisitor : TextLayout.IGlyphLayoutVisitor
+    private struct GlyphRendererVisitor : TextLayout.IGlyphLayoutVisitor
     {
         private readonly IGlyphRenderer renderer;
         private readonly TextOptions options;
+        private readonly int lineIndex;
+        private int currentLineIndex;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphRendererVisitor"/> struct.
         /// </summary>
         /// <param name="renderer">The target renderer.</param>
         /// <param name="options">The text options used for rendering.</param>
-        public GlyphRendererVisitor(IGlyphRenderer renderer, TextOptions options)
+        /// <param name="lineIndex">The line index to render, or <c>-1</c> to render every line.</param>
+        public GlyphRendererVisitor(IGlyphRenderer renderer, TextOptions options, int lineIndex)
         {
             this.renderer = renderer;
             this.options = options;
+            this.lineIndex = lineIndex;
+            this.currentLineIndex = -1;
         }
 
         /// <inheritdoc/>
-        public readonly void BeginLine(int lineIndex)
-        {
-        }
+        public void BeginLine(int lineIndex) => this.currentLineIndex = lineIndex;
 
         /// <inheritdoc/>
         public readonly void Visit(in GlyphLayout glyph)
         {
+            if (this.lineIndex > -1 && this.currentLineIndex != this.lineIndex)
+            {
+                return;
+            }
+
             glyph.Glyph.RenderTo(this.renderer, glyph.GraphemeIndex, glyph.GlyphOrigin, glyph.DecorationOrigin, glyph.LayoutMode, this.options);
         }
 

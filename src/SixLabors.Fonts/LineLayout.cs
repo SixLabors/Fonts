@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
+using SixLabors.Fonts.Rendering;
 
 namespace SixLabors.Fonts;
 
@@ -196,4 +197,29 @@ public sealed class LineLayout
             this.wrappingLength,
             TextBlock.GlyphBoundsMeasurement.RenderableBounds,
             this.lineIndex);
+
+    /// <summary>
+    /// Renders this line to the supplied glyph renderer.
+    /// </summary>
+    /// <param name="renderer">The target renderer.</param>
+    public void RenderTo(IGlyphRenderer renderer)
+    {
+        FontRectangle bounds = FontRectangle.Empty;
+        ReadOnlySpan<GlyphBounds> glyphBounds = this.MeasureGlyphBounds().Span;
+
+        for (int i = 0; i < glyphBounds.Length; i++)
+        {
+            bounds = i == 0
+                ? glyphBounds[i].Bounds
+                : FontRectangle.Union(bounds, glyphBounds[i].Bounds);
+        }
+
+        TextBlock.RenderTo(
+            renderer,
+            this.textBox,
+            this.options,
+            this.wrappingLength,
+            bounds,
+            this.lineIndex);
+    }
 }

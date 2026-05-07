@@ -446,14 +446,6 @@ internal static partial class TextLayout
         TextOptions options,
         float wrappingLength)
     {
-        bool shouldWrap = wrappingLength > 0;
-
-        // Wrapping length is always provided in pixels. Convert to inches for comparison.
-        float scaledWrappingLength = shouldWrap ? wrappingLength / options.Dpi : float.MaxValue;
-        bool breakAll = options.WordBreaking == WordBreaking.BreakAll;
-        bool keepAll = options.WordBreaking == WordBreaking.KeepAll;
-        bool breakWord = options.WordBreaking == WordBreaking.BreakWord;
-        bool normalizeDecomposedAdvances = options.LayoutMode.IsVertical();
         int maxLines = options.MaxLines;
 
         if (maxLines == 0)
@@ -465,266 +457,29 @@ internal static partial class TextLayout
             return new TextBox([], emptyTextDirection);
         }
 
-        TextDirection textDirection = options.TextDirection == TextDirection.Auto && logicalLine.TextLine.Count > 0
-            ? logicalLine.TextLine[0].TextDirection
-            : options.TextDirection;
+        TextDirection textDirection = GetTextDirection(logicalLine, options);
 
-        CodePoint? ellipsisMarkerCodePoint = GetEllipsisMarkerCodePoint(options);
         List<TextLine> textLines = [];
+        TextLineBreakEnumerator lineEnumerator = new(logicalLine, options);
 
-        // Always clone the logical line so we can modify it during breaking without affecting the original.
-        TextLine textLine = new(logicalLine.TextLine);
-        IReadOnlyList<LineBreak> lineBreaks = logicalLine.LineBreaks;
-        int processed = 0;
-        bool stopLayout = false;
-
-        while (textLine.Count > 0 && !stopLayout)
+        while (lineEnumerator.MoveNext(wrappingLength))
         {
-            LineBreak? bestBreak = null;
-            foreach (LineBreak lineBreak in lineBreaks)
-            {
-                // Skip breaks that are already behind the processed portion
-                if (lineBreak.PositionWrap <= processed)
-                {
-                    continue;
-                }
-
-                // Measure the text up to the adjusted break point.
-                int measureIndex = lineBreak.PositionMeasure - processed;
-                float advance = textLine.MeasureAt(measureIndex);
-                if (lineBreak.IsHyphenationBreak)
-                {
-                    advance += textLine.GetHyphenationMarkerAdvance(
-                        measureIndex - 1,
-                        logicalLine.HyphenationMarkers);
-                }
-
-                if (advance >= scaledWrappingLength)
-                {
-                    bestBreak ??= lineBreak;
-                    break;
-                }
-
-                // If it's a mandatory break, stop immediately
-                if (lineBreak.Required)
-                {
-                    bestBreak = lineBreak;
-                    break;
-                }
-
-                // Update the best break
-                bestBreak = lineBreak;
-            }
-
-            if (bestBreak != null)
-            {
-                LineBreak breakAt = bestBreak.Value;
-                if (breakAll)
-                {
-                    // Break-all works differently to the other modes.
-                    // It will break at any character so we simply toggle the breaking operation depending
-                    // on whether the break is required.
-                    TextLine? remaining;
-                    if (bestBreak.Value.Required)
-                    {
-                        if (textLine.TrySplitAt(breakAt, keepAll, out remaining))
-                        {
-                            processed = breakAt.PositionWrap;
-
-                            stopLayout = AddLine(
-                                textLines,
-                                textLine,
-                                true,
-                                remaining.Count > 0,
-                                normalizeDecomposedAdvances,
-                                maxLines,
-                                ellipsisMarkerCodePoint,
-                                scaledWrappingLength,
-                                options);
-
-                            textLine = remaining;
-                        }
-                    }
-                    else if (textLine.TrySplitAt(scaledWrappingLength, out remaining))
-                    {
-                        processed += textLine.Count;
-
-                        stopLayout = AddLine(
-                            textLines,
-                            textLine,
-                            false,
-                            remaining.Count > 0,
-                            normalizeDecomposedAdvances,
-                            maxLines,
-                            ellipsisMarkerCodePoint,
-                            scaledWrappingLength,
-                            options);
-
-                        textLine = remaining;
-                    }
-                    else
-                    {
-                        processed += textLine.Count;
-                    }
-                }
-                else
-                {
-                    int hyphenationMarkerIndex = breakAt.PositionMeasure - processed - 1;
-
-                    // Split the current line at the adjusted break index
-                    if (textLine.TrySplitAt(breakAt, keepAll, out TextLine? remaining))
-                    {
-                        if (breakAt.IsHyphenationBreak)
-                        {
-                            textLine.ApplyHyphenationMarker(
-                                hyphenationMarkerIndex,
-                                logicalLine.HyphenationMarkers);
-                        }
-
-                        // If 'keepAll' is true then the break could be later than expected.
-                        processed = keepAll
-                            ? processed + Math.Max(textLine.Count, breakAt.PositionWrap - processed)
-                            : breakAt.PositionWrap;
-
-                        if (breakWord)
-                        {
-                            // A break was found, but we need to check if the line is too long
-                            // and break if required.
-                            if (textLine.ScaledLineAdvance > scaledWrappingLength &&
-                                textLine.TrySplitAt(scaledWrappingLength, out TextLine? overflow))
-                            {
-                                // Reinsert the overflow at the beginning of the remaining line
-                                processed -= overflow.Count;
-                                remaining.InsertAt(0, overflow);
-                            }
-                        }
-
-                        // Add the split part to the list and continue processing.
-                        stopLayout = AddLine(
-                            textLines,
-                            textLine,
-                            breakAt.Required,
-                            remaining.Count > 0,
-                            normalizeDecomposedAdvances,
-                            maxLines,
-                            ellipsisMarkerCodePoint,
-                            scaledWrappingLength,
-                            options);
-
-                        textLine = remaining;
-                    }
-                    else
-                    {
-                        processed += textLine.Count;
-                    }
-                }
-            }
-            else
-            {
-                // We're at the last line break which should be at the end of the
-                // text. We can break here and finalize the line.
-                if (breakWord || breakAll)
-                {
-                    while (textLine.ScaledLineAdvance > scaledWrappingLength)
-                    {
-                        if (!textLine.TrySplitAt(scaledWrappingLength, out TextLine? overflow))
-                        {
-                            break;
-                        }
-
-                        stopLayout = AddLine(
-                            textLines,
-                            textLine,
-                            false,
-                            overflow.Count > 0,
-                            normalizeDecomposedAdvances,
-                            maxLines,
-                            ellipsisMarkerCodePoint,
-                            scaledWrappingLength,
-                            options);
-
-                        textLine = overflow;
-                    }
-
-                    if (stopLayout)
-                    {
-                        break;
-                    }
-                }
-
-                if (!stopLayout)
-                {
-                    AddLine(
-                        textLines,
-                        textLine,
-                        true,
-                        false,
-                        normalizeDecomposedAdvances,
-                        maxLines,
-                        ellipsisMarkerCodePoint,
-                        scaledWrappingLength,
-                        options);
-                }
-
-                break;
-            }
-        }
-
-        // Finally we justify each line that does not end a paragraph.
-        for (int i = 0; i < textLines.Count; i++)
-        {
-            TextLine line = textLines[i];
-            if (!line.SkipJustification)
-            {
-                line.Justify(options);
-            }
+            textLines.Add(lineEnumerator.Current);
         }
 
         return new TextBox(textLines, textDirection);
     }
 
     /// <summary>
-    /// Finalizes and stores one visual line, applying ellipsis when this line is the configured limit
-    /// and additional text remains hidden after it.
+    /// Gets the block-level text direction for a prepared logical line.
     /// </summary>
-    /// <param name="textLines">The destination visual-line list.</param>
-    /// <param name="line">The line to finalize and store.</param>
-    /// <param name="skipJustification">Whether the line should skip justification.</param>
-    /// <param name="hasOverflow">Whether source text remains after this line.</param>
-    /// <param name="normalizeDecomposedAdvances">Whether vertical decomposed advances should be normalized.</param>
-    /// <param name="maxLines">The configured maximum line count.</param>
-    /// <param name="ellipsisMarkerCodePoint">The configured ellipsis marker, if any.</param>
-    /// <param name="scaledWrappingLength">The wrapping length in inches.</param>
+    /// <param name="logicalLine">The prepared logical line.</param>
     /// <param name="options">The text options used for layout.</param>
-    /// <returns><see langword="true"/> when no further lines should be produced.</returns>
-    private static bool AddLine(
-        List<TextLine> textLines,
-        TextLine line,
-        bool skipJustification,
-        bool hasOverflow,
-        bool normalizeDecomposedAdvances,
-        int maxLines,
-        CodePoint? ellipsisMarkerCodePoint,
-        float scaledWrappingLength,
-        TextOptions options)
-    {
-        bool isLimitedFinalLine = maxLines > -1 && textLines.Count + 1 >= maxLines;
-        if (isLimitedFinalLine && hasOverflow)
-        {
-            // A max-lines ellipsis is a final-line transformation: wrapping has already
-            // chosen the visible line, so the marker replaces the tail of that line and
-            // the line must behave like a paragraph-final line for justification.
-            if (ellipsisMarkerCodePoint.HasValue)
-            {
-                line.ApplyEllipsisMarker(ellipsisMarkerCodePoint.Value, scaledWrappingLength, options);
-            }
-
-            skipJustification = true;
-        }
-
-        textLines.Add(line.Finalize(skipJustification, normalizeDecomposedAdvances));
-        return isLimitedFinalLine;
-    }
+    /// <returns>The block-level text direction.</returns>
+    public static TextDirection GetTextDirection(in LogicalTextLine logicalLine, TextOptions options)
+        => options.TextDirection == TextDirection.Auto && logicalLine.TextLine.Count > 0
+            ? logicalLine.TextLine[0].TextDirection
+            : options.TextDirection;
 
     /// <summary>
     /// Collects the line break opportunities used by the wrapping loop.
@@ -886,7 +641,12 @@ internal static partial class TextLayout
             stringIndex);
     }
 
-    private static CodePoint? GetEllipsisMarkerCodePoint(TextOptions options)
+    /// <summary>
+    /// Gets the configured ellipsis marker codepoint.
+    /// </summary>
+    /// <param name="options">The text options used for layout.</param>
+    /// <returns>The configured ellipsis marker codepoint, or <see langword="null"/> when ellipsis is disabled.</returns>
+    public static CodePoint? GetEllipsisMarkerCodePoint(TextOptions options)
         => options.TextEllipsis switch
         {
             TextEllipsis.Standard => new CodePoint(StandardEllipsis),

@@ -1850,6 +1850,155 @@ public class TextLayoutTests
     }
 
     [Fact]
+    public void LineLayoutEnumerator_DrawsManualFlowAroundCircle()
+    {
+        Font font = CreateRenderingFont(22);
+        const string text =
+            "Text can flow around arbitrary shapes when each line is measured independently. " +
+            "The caller chooses the available width for the next row, places the returned line, " +
+            "then asks for another line using the next open slot. This mirrors the Pretext-style " +
+            "manual layout demos without reshaping the paragraph for every row.";
+
+        TextOptions options = new(font)
+        {
+            Origin = Vector2.Zero,
+            WrappingLength = -1,
+            LineSpacing = 1.15F
+        };
+
+        TextBlock block = new(text, options);
+        LineLayoutEnumerator enumerator = block.EnumerateLineLayouts();
+
+        // The test owns all page geometry. TextBlock owns the expensive shaping
+        // and Unicode layout preparation, while the caller chooses where each
+        // successive line is allowed to fit.
+        const float pageLeft = 28;
+        const float pageTop = 28;
+        const float pageRight = 592;
+        const float pageBottom = 334;
+        const float circleX = 340;
+        const float circleY = 174;
+        const float circleRadius = 74;
+        const float circlePadding = 14;
+        const float minSlotWidth = 112;
+        float y = pageTop;
+        bool hasMoreText = true;
+
+        TextLayoutTestUtilities.TestImage(
+            620,
+            360,
+            image => image.Mutate(x =>
+            {
+                x.Fill(Color.White);
+                x.Draw(Color.DarkSlateGray, 1, new RectangularPolygon(pageLeft, pageTop, pageRight - pageLeft, pageBottom - pageTop));
+                x.Fill(Color.SteelBlue.WithAlpha(.16F), new EllipsePolygon(circleX, circleY, circleRadius, circleRadius));
+                x.Draw(Color.SteelBlue, 2, new EllipsePolygon(circleX, circleY, circleRadius, circleRadius));
+
+                // A horizontal band can be split by the obstacle into at most
+                // two usable slots. Keep these buffers outside the row loop so
+                // the test does not stackalloc on every line.
+                Span<float> slotLefts = stackalloc float[2];
+                Span<float> slotRights = stackalloc float[2];
+
+                while (hasMoreText && y < pageBottom)
+                {
+                    float bandTop = y;
+                    float bandBottom = y + 30;
+                    float blockedLeft = float.NaN;
+                    float blockedRight = float.NaN;
+
+                    // The circle is converted into a blocked horizontal interval for
+                    // the current line band. The remaining intervals become the
+                    // widths passed to the line enumerator, so the text engine never
+                    // needs to understand circles, columns, or obstacle geometry.
+                    if (bandTop < circleY + circleRadius && bandBottom > circleY - circleRadius)
+                    {
+                        float closestY = Math.Clamp(circleY, bandTop, bandBottom);
+                        float dy = Math.Abs(closestY - circleY);
+                        float dx = MathF.Sqrt((circleRadius * circleRadius) - (dy * dy));
+                        blockedLeft = circleX - dx - circlePadding;
+                        blockedRight = circleX + dx + circlePadding;
+                    }
+
+                    int slotCount = 0;
+                    if (float.IsNaN(blockedLeft))
+                    {
+                        // Rows outside the circle receive one full-width slot.
+                        slotLefts[slotCount] = pageLeft;
+                        slotRights[slotCount++] = pageRight;
+                    }
+                    else
+                    {
+                        // Rows crossing the circle receive the left and right
+                        // slots only when there is enough room for useful text.
+                        if (blockedLeft - pageLeft >= minSlotWidth)
+                        {
+                            slotLefts[slotCount] = pageLeft;
+                            slotRights[slotCount++] = blockedLeft;
+                        }
+
+                        if (pageRight - blockedRight >= minSlotWidth)
+                        {
+                            slotLefts[slotCount] = blockedRight;
+                            slotRights[slotCount++] = pageRight;
+                        }
+                    }
+
+                    float rowHeight = 30;
+                    for (int i = 0; i < slotCount && hasMoreText; i++)
+                    {
+                        float slotLeft = slotLefts[i];
+                        float slotRight = slotRights[i];
+                        float slotWidth = slotRight - slotLeft;
+
+                        // This is the API behavior under test: each MoveNext call
+                        // supplies the width for exactly one produced line. The
+                        // next call can use a completely different width.
+                        hasMoreText = enumerator.MoveNext(slotWidth);
+                        if (!hasMoreText)
+                        {
+                            break;
+                        }
+
+                        LineLayout line = enumerator.Current;
+                        ReadOnlySpan<GraphemeMetrics> graphemes = line.GraphemeMetrics;
+                        int stringStart = graphemes[0].StringIndex;
+                        int stringEnd = stringStart;
+
+                        // Bidi reordering means visual order is not guaranteed to
+                        // match source order. The test draws the original source
+                        // slice for this line, so it derives the slice from the
+                        // grapheme source indices rather than array position alone.
+                        for (int j = 0; j < graphemes.Length; j++)
+                        {
+                            stringStart = Math.Min(stringStart, graphemes[j].StringIndex);
+                            stringEnd = Math.Max(stringEnd, graphemes[j].StringIndex + 1);
+                        }
+
+                        // The blue slot boxes are the caller-owned placement regions.
+                        // Text is drawn from the line's source mapping at the slot origin,
+                        // showing that one prepared block can feed arbitrary row widths
+                        // without re-preparing the original paragraph.
+                        x.Fill(Color.SteelBlue.WithAlpha(.28F), new RectangularPolygon(slotLeft, y, slotWidth, line.LineMetrics.LineHeight));
+                        x.DrawText(
+                            new RichTextOptions(font)
+                            {
+                                Origin = new(slotLeft, y),
+                                WrappingLength = -1,
+                                LineSpacing = options.LineSpacing
+                            },
+                            text[stringStart..stringEnd],
+                            Color.Black);
+
+                        rowHeight = Math.Max(rowHeight, line.LineMetrics.LineHeight);
+                    }
+
+                    y += rowHeight;
+                }
+            }));
+    }
+
+    [Fact]
     public void WordMetrics_GetSelectionBounds_DrawsWordSelections()
     {
         FontCollection fontCollection = new();
