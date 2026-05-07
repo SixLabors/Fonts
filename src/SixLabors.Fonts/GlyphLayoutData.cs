@@ -36,7 +36,6 @@ internal struct GlyphLayoutData
     /// <param name="isTransformed">Whether the entry participates in a transformed vertical layout.</param>
     /// <param name="isDecomposed">Whether the entry was produced by Unicode decomposition.</param>
     /// <param name="stringIndex">The UTF-16 character index in the source string.</param>
-    /// <param name="contributesToMeasurement">Whether this entry contributes to line metrics and measurements.</param>
     /// <param name="hyphenationMarkerIndex">The marker index to use if this entry becomes a selected soft-hyphen break.</param>
     public GlyphLayoutData(
         IReadOnlyList<GlyphMetrics> metrics,
@@ -55,7 +54,6 @@ internal struct GlyphLayoutData
         bool isTransformed,
         bool isDecomposed,
         int stringIndex,
-        bool contributesToMeasurement = true,
         int hyphenationMarkerIndex = NoHyphenationMarker)
     {
         this.Metrics = metrics;
@@ -74,7 +72,6 @@ internal struct GlyphLayoutData
         this.IsTransformed = isTransformed;
         this.IsDecomposed = isDecomposed;
         this.StringIndex = stringIndex;
-        this.ContributesToMeasurement = contributesToMeasurement;
         this.HyphenationMarkerIndex = hyphenationMarkerIndex;
     }
 
@@ -111,7 +108,7 @@ internal struct GlyphLayoutData
     /// <summary>Gets the text direction derived from <see cref="BidiRun"/>.</summary>
     public readonly TextDirection TextDirection => (TextDirection)this.BidiRun.Direction;
 
-    /// <summary>Gets the grapheme index in the source text.</summary>
+    /// <summary>Gets the zero-based grapheme index in the original text.</summary>
     public int GraphemeIndex { get; }
 
     /// <summary>Gets or sets a value indicating whether this is the last entry in its grapheme cluster.</summary>
@@ -129,11 +126,8 @@ internal struct GlyphLayoutData
     /// <summary>Gets a value indicating whether the entry was produced by Unicode decomposition.</summary>
     public bool IsDecomposed { get; }
 
-    /// <summary>Gets the UTF-16 character index in the source string.</summary>
+    /// <summary>Gets the zero-based UTF-16 code unit index in the original text.</summary>
     public int StringIndex { get; }
-
-    /// <summary>Gets or sets a value indicating whether this entry contributes to line metrics and measurements.</summary>
-    public bool ContributesToMeasurement { get; set; }
 
     /// <summary>Gets the marker index to use if this entry becomes a selected soft-hyphen break.</summary>
     public int HyphenationMarkerIndex { get; }

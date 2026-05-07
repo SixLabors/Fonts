@@ -60,7 +60,7 @@ public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParamet
     public ushort CompositeGlyphId { get; }
 
     /// <summary>
-    /// Gets the index of the grapheme this glyph belongs to.
+    /// Gets the zero-based grapheme index in the original text.
     /// </summary>
     public int GraphemeIndex { get; }
 

@@ -79,7 +79,10 @@ public class TextBlockTests
         Assert.Equal(0, metrics[0].StringIndex);
         Assert.Equal(firstLine.Length, metrics[1].StringIndex);
         Assert.Equal(0, metrics[0].GraphemeIndex);
-        Assert.Equal(metrics[0].GraphemeCount, metrics[1].GraphemeIndex);
+
+        // The newline that ends the first line is trimmed from visual metrics, so
+        // the next line starts after a source-position gap.
+        Assert.Equal(firstLine.Length, metrics[1].GraphemeIndex);
     }
 
     [Fact]
@@ -95,10 +98,10 @@ public class TextBlockTests
         Assert.Equal(2, lines.Length);
         AssertLineMetricsEqual(metrics, lines);
 
-        Assert.Equal(firstLine.Length, lines[0].GraphemeMetrics.Length);
+        Assert.Equal(firstLine.Length - 1, lines[0].GraphemeMetrics.Length);
         Assert.Equal("Second line".Length, lines[1].GraphemeMetrics.Length);
         Assert.Equal(0, lines[0].GraphemeMetrics[0].StringIndex);
-        Assert.Equal(firstLine.Length - 1, lines[0].GraphemeMetrics[^1].StringIndex);
+        Assert.Equal(firstLine.Length - 2, lines[0].GraphemeMetrics[^1].StringIndex);
         Assert.Equal(firstLine.Length, lines[1].GraphemeMetrics[0].StringIndex);
     }
 
@@ -188,7 +191,6 @@ public class TextBlockTests
         Assert.Equal(1, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('*')));
         Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('-')));
         Assert.Equal(5, softHyphen.StringIndex);
-        Assert.True(softHyphen.ContributesToMeasurement);
     }
 
     [Fact]
@@ -229,6 +231,153 @@ public class TextBlockTests
         Assert.True(lines.Length >= 2);
         Assert.Equal(0, lines[0].LineMetrics.StringIndex);
         Assert.Equal(2, lines[1].LineMetrics.StringIndex);
+    }
+
+    [Fact]
+    public void TextEllipsis_Standard_InsertsMarkerWhenMaxLinesHidesText()
+    {
+        const string text = "one two three four five";
+        TextOptions options = Options(TextMeasurer.MeasureAdvance("one two", Options(-1)).Width);
+        options.MaxLines = 1;
+        options.TextEllipsis = TextEllipsis.Standard;
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        // The source would wrap onto later lines, but MaxLines exposes only the
+        // first visual line. Standard ellipsis should replace the tail of that
+        // final visible line with one U+2026 marker.
+        Assert.Equal(1, metrics.LineCount);
+        Assert.Equal(1, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint(0x2026)));
+    }
+
+    [Fact]
+    public void TextEllipsis_Custom_InsertsConfiguredMarkerWhenMaxLinesHidesText()
+    {
+        const string text = "one two three four five";
+        TextOptions options = Options(TextMeasurer.MeasureAdvance("one two", Options(-1)).Width);
+        options.MaxLines = 1;
+        options.TextEllipsis = TextEllipsis.Custom;
+        options.CustomEllipsis = new('*');
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        // Custom ellipsis uses the supplied codepoint instead of the standard
+        // marker while preserving the same max-lines truncation behavior.
+        Assert.Equal(1, metrics.LineCount);
+        Assert.Equal(1, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('*')));
+        Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint(0x2026)));
+    }
+
+    [Fact]
+    public void TextEllipsis_None_LimitsLinesWithoutMarker()
+    {
+        const string text = "one two three four five";
+        TextOptions options = Options(TextMeasurer.MeasureAdvance("one two", Options(-1)).Width);
+        options.MaxLines = 1;
+        options.TextEllipsis = TextEllipsis.None;
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        // MaxLines still hides later lines when ellipsis is disabled; the final
+        // visible line is simply clipped at the selected line boundary with no
+        // generated marker.
+        Assert.Equal(1, metrics.LineCount);
+        Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint(0x2026)));
+    }
+
+    [Fact]
+    public void TextEllipsis_Standard_DoesNotInsertMarkerWhenTextFitsMaxLines()
+    {
+        const string text = "one two";
+        TextOptions options = Options(1000);
+        options.MaxLines = 2;
+        options.TextEllipsis = TextEllipsis.Standard;
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        // The marker is only generated when MaxLines actually hides source text.
+        // A fitting paragraph keeps its original glyph stream unchanged.
+        Assert.Equal(1, metrics.LineCount);
+        Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint(0x2026)));
+    }
+
+    [Fact]
+    public void TextBidiMode_Normal_KeepsLatinRunsInSourceOrder()
+    {
+        const string text = "abc def";
+        TextOptions options = Options(-1);
+        options.TextDirection = TextDirection.RightToLeft;
+        options.TextBidiMode = TextBidiMode.Normal;
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+        ReadOnlySpan<GlyphBounds> glyphs = metrics.MeasureGlyphAdvances().Span;
+
+        // Normal bidi uses RTL as the paragraph direction, but Latin remains a
+        // strong LTR run. The run may be right-aligned by layout, but its glyph
+        // order is still the readable source order.
+        Assert.Equal(new CodePoint('a'), glyphs[0].Codepoint);
+        Assert.Equal(new CodePoint('b'), glyphs[1].Codepoint);
+        Assert.Equal(new CodePoint('c'), glyphs[2].Codepoint);
+    }
+
+    [Fact]
+    public void TextBidiMode_Override_ReversesLatinRunsInResolvedDirection()
+    {
+        const string text = "abc def";
+        TextOptions options = Options(-1);
+        options.TextDirection = TextDirection.RightToLeft;
+        options.TextBidiMode = TextBidiMode.Override;
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+        ReadOnlySpan<GlyphBounds> glyphs = metrics.MeasureGlyphAdvances().Span;
+
+        // Override feeds the bidi algorithm with the requested strong direction
+        // for real text. Under RTL override, Latin no longer forms an LTR run,
+        // so the final visual glyph order is reversed.
+        Assert.Equal(new CodePoint('f'), glyphs[0].Codepoint);
+        Assert.Equal(new CodePoint('e'), glyphs[1].Codepoint);
+        Assert.Equal(new CodePoint('d'), glyphs[2].Codepoint);
+    }
+
+    [Fact]
+    public void TextBidiMode_Normal_KeepsHebrewRunsInResolvedRightToLeftOrder()
+    {
+        const string text = "אבג דהו";
+        TextOptions options = new(TextLayoutTests.CreateFont(text))
+        {
+            TextDirection = TextDirection.LeftToRight,
+            TextBidiMode = TextBidiMode.Normal
+        };
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+        ReadOnlySpan<GlyphBounds> glyphs = metrics.MeasureGlyphAdvances().Span;
+
+        // Normal bidi keeps Hebrew as a strong RTL run inside the LTR paragraph.
+        // The first visual glyph is therefore the final Hebrew grapheme in the
+        // source phrase, not the first source grapheme.
+        Assert.Equal(new CodePoint('ו'), glyphs[0].Codepoint);
+        Assert.Equal(new CodePoint('ה'), glyphs[1].Codepoint);
+        Assert.Equal(new CodePoint('ד'), glyphs[2].Codepoint);
+    }
+
+    [Fact]
+    public void TextBidiMode_Override_ReversesHebrewRunsInResolvedDirection()
+    {
+        const string text = "אבג דהו";
+        TextOptions options = new(TextLayoutTests.CreateFont(text))
+        {
+            TextDirection = TextDirection.LeftToRight,
+            TextBidiMode = TextBidiMode.Override
+        };
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+        ReadOnlySpan<GlyphBounds> glyphs = metrics.MeasureGlyphAdvances().Span;
+
+        // LTR override forces the Hebrew letters through LTR bidi resolution,
+        // visibly reversing the normal RTL run order.
+        Assert.Equal(new CodePoint('א'), glyphs[0].Codepoint);
+        Assert.Equal(new CodePoint('ב'), glyphs[1].Codepoint);
+        Assert.Equal(new CodePoint('ג'), glyphs[2].Codepoint);
     }
 
     [Fact]
@@ -288,8 +437,8 @@ public class TextBlockTests
         GraphemeMetrics grapheme = metrics.GraphemeMetrics[0];
         LineMetrics line = metrics.LineMetrics[0];
 
-        CaretPosition leading = metrics.GetCaretPosition(0);
-        CaretPosition trailing = metrics.GetCaretPosition(1);
+        CaretPosition leading = metrics.GetCaret(CaretPlacement.Start);
+        CaretPosition trailing = metrics.GetCaret(CaretPlacement.End);
 
         Assert.Equal(new Vector2(grapheme.Advance.Left, line.Start.Y), leading.Start, Comparer);
         Assert.Equal(new Vector2(grapheme.Advance.Left, line.Start.Y + line.Extent.Y), leading.End, Comparer);
@@ -300,14 +449,64 @@ public class TextBlockTests
     }
 
     [Fact]
+    public void GetCaretPosition_UsesResolvedDirectionForRtlStartAndEnd()
+    {
+        const string text = "אבג";
+        Font font = TextLayoutTests.CreateFont(text);
+        TextOptions options = new(font)
+        {
+            Dpi = font.FontMetrics.ScaleFactor,
+            TextDirection = TextDirection.RightToLeft
+        };
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+        LineMetrics line = metrics.LineMetrics[0];
+
+        // In RTL text, the source start maps to the physical end of the line box,
+        // and the source end maps to the physical start of that same line box.
+        CaretPosition start = metrics.GetCaret(CaretPlacement.Start);
+        CaretPosition end = metrics.GetCaret(CaretPlacement.End);
+
+        float startX = line.Start.X + line.Extent.X;
+        float endX = line.Start.X;
+
+        Assert.Equal(new Vector2(startX, line.Start.Y), start.Start, Comparer);
+        Assert.Equal(new Vector2(startX, line.Start.Y + line.Extent.Y), start.End, Comparer);
+        Assert.Equal(new Vector2(endX, line.Start.Y), end.Start, Comparer);
+        Assert.Equal(new Vector2(endX, line.Start.Y + line.Extent.Y), end.End, Comparer);
+    }
+
+    [Fact]
     public void MoveCaret_PreviousAndNext_MoveByGraphemeInsertionIndex()
     {
         const string text = "ABC";
         TextMetrics metrics = TextMeasurer.Measure(text, Options(-1));
-        CaretPosition caret = metrics.GetCaretPosition(1);
+        CaretPosition caret = metrics.MoveCaret(metrics.GetCaret(CaretPlacement.Start), CaretMovement.Next);
 
         Assert.Equal(0, metrics.MoveCaret(caret, CaretMovement.Previous).GraphemeIndex);
         Assert.Equal(2, metrics.MoveCaret(caret, CaretMovement.Next).GraphemeIndex);
+    }
+
+    [Fact]
+    public void MoveCaret_PreviousAndNext_UseSourceOrderThroughBidiText()
+    {
+        const string text = "abc אבג";
+        Font font = TextLayoutTests.CreateFont(text);
+        TextOptions options = new(font) { Dpi = font.FontMetrics.ScaleFactor };
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        // Previous/Next model keyboard movement through the source string. Inside
+        // a bidi run that means the caret may jump visually, but the source
+        // insertion indices still advance one grapheme boundary at a time.
+        CaretPosition caret = metrics.GetCaret(CaretPlacement.Start);
+        for (int i = 0; i < 5; i++)
+        {
+            caret = metrics.MoveCaret(caret, CaretMovement.Next);
+        }
+
+        Assert.Equal(5, caret.GraphemeIndex);
+        Assert.Equal(4, metrics.MoveCaret(caret, CaretMovement.Previous).GraphemeIndex);
+        Assert.Equal(6, metrics.MoveCaret(caret, CaretMovement.Next).GraphemeIndex);
     }
 
     [Fact]
@@ -398,7 +597,7 @@ public class TextBlockTests
 
         // UAX #29 word boundaries produce three segments here: "can't", " ", and "stop".
         // Word movement walks those boundaries in source order rather than skipping separators.
-        CaretPosition caret = metrics.GetCaretPosition(0);
+        CaretPosition caret = metrics.GetCaret(CaretPlacement.Start);
         caret = metrics.MoveCaret(caret, CaretMovement.NextWord);
         Assert.Equal(5, caret.GraphemeIndex);
 
@@ -427,15 +626,11 @@ public class TextBlockTests
         TextHit hit = metrics.HitTest(FontRectangle.Center(wordGrapheme.Advance));
         WordMetrics word = metrics.GetWordMetrics(hit);
 
-        // Selecting a word should use the same grapheme range as selecting that word's
-        // insertion indexes directly. This pins WordMetrics as a convenience over the
-        // core selection API, not a separate rectangle-building rule.
-        ReadOnlySpan<FontRectangle> expected = metrics.GetSelectionBounds(0, 5).Span;
         ReadOnlySpan<FontRectangle> actual = metrics.GetSelectionBounds(word).Span;
 
         Assert.Equal(1, actual.Length);
         AssertWordMetrics(word, 0, 5, 0, 5);
-        Assert.Equal(expected[0], actual[0], Comparer);
+        Assert.True(SelectionContains(actual, FontRectangle.Center(wordGrapheme.Advance)));
     }
 
     [Fact]
@@ -443,24 +638,27 @@ public class TextBlockTests
     {
         const string text = "can't stop";
         TextMetrics metrics = TextMeasurer.Measure(text, Options(-1));
-        CaretPosition anchor = metrics.GetCaretPosition(0);
+        CaretPosition anchor = metrics.GetCaret(CaretPlacement.Start);
 
         // This mimics Shift+Ctrl+Right on Windows-style editors: the anchor stays where
         // selection began, while the focus caret advances by Unicode word-boundary segments.
         // The first move selects "can't"; the second also selects the separator segment
         // because our word movement intentionally exposes spaces as selectable segments.
         CaretPosition focus = metrics.MoveCaret(anchor, CaretMovement.NextWord);
-        AssertSelectionBoundsEqual(metrics.GetSelectionBounds(0, 5).Span, metrics.GetSelectionBounds(anchor, focus).Span);
+        AssertSelectionBoundsEqual(metrics.GetSelectionBounds(metrics.GetWordMetrics(anchor)).Span, metrics.GetSelectionBounds(anchor, focus).Span);
 
         focus = metrics.MoveCaret(focus, CaretMovement.NextWord);
-        AssertSelectionBoundsEqual(metrics.GetSelectionBounds(0, 6).Span, metrics.GetSelectionBounds(anchor, focus).Span);
+        ReadOnlyMemory<FontRectangle> firstTwoWords = metrics.GetSelectionBounds(anchor, focus);
+
+        Assert.True(SelectionContains(firstTwoWords.Span, FontRectangle.Center(FindGrapheme(metrics.GraphemeMetrics, 0).Advance)));
+        Assert.True(SelectionContains(firstTwoWords.Span, FontRectangle.Center(FindGrapheme(metrics.GraphemeMetrics, 5).Advance)));
 
         // Reverse word selection should produce the same rectangles for the same insertion
         // range even though the caret movement started at the far end of the text.
-        CaretPosition reverseAnchor = metrics.GetCaretPosition(10);
+        CaretPosition reverseAnchor = metrics.GetCaret(CaretPlacement.End);
         CaretPosition reverseFocus = metrics.MoveCaret(reverseAnchor, CaretMovement.PreviousWord);
 
-        AssertSelectionBoundsEqual(metrics.GetSelectionBounds(6, 10).Span, metrics.GetSelectionBounds(reverseAnchor, reverseFocus).Span);
+        AssertSelectionBoundsEqual(metrics.GetSelectionBounds(metrics.GetWordMetrics(reverseFocus)).Span, metrics.GetSelectionBounds(reverseAnchor, reverseFocus).Span);
     }
 
     [Fact]
@@ -468,10 +666,10 @@ public class TextBlockTests
     {
         const string text = "Hi\nYo";
         TextMetrics metrics = TextMeasurer.Measure(text, Options(-1));
-        CaretPosition firstLineCaret = metrics.GetCaretPosition(1);
-        CaretPosition secondLineCaret = metrics.GetCaretPosition(4);
+        CaretPosition firstLineCaret = metrics.MoveCaret(metrics.GetCaret(CaretPlacement.Start), CaretMovement.Next);
+        CaretPosition secondLineCaret = metrics.MoveCaret(metrics.GetCaret(CaretPlacement.End), CaretMovement.Previous);
 
-        // LineEnd stops before the non-measuring hard break that terminates the first line.
+        // LineEnd stops at the source gap left by the trimmed hard break.
         // TextEnd moves to the final source insertion position of the measured text block.
         Assert.Equal(0, metrics.MoveCaret(firstLineCaret, CaretMovement.LineStart).GraphemeIndex);
         Assert.Equal(2, metrics.MoveCaret(firstLineCaret, CaretMovement.LineEnd).GraphemeIndex);
@@ -480,11 +678,42 @@ public class TextBlockTests
     }
 
     [Fact]
+    public void MoveCaret_LineStartAndLineEnd_UseResolvedDirectionForRtlLine()
+    {
+        const string text = "abc\nאבג";
+        Font font = TextLayoutTests.CreateFont(text);
+        TextOptions options = new(font)
+        {
+            Dpi = font.FontMetrics.ScaleFactor,
+            TextDirection = TextDirection.RightToLeft
+        };
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+        GraphemeMetrics middleHebrew = FindGrapheme(metrics.GraphemeMetrics, 5);
+        CaretPosition caret = metrics.GetCaretPosition(metrics.HitTest(FontRectangle.Center(middleHebrew.Advance)));
+        LineMetrics line = metrics.LineMetrics[1];
+
+        // Home/End style movement uses the line's source boundaries. For RTL,
+        // LineStart maps to the physical end of the line box, and LineEnd maps
+        // to the physical start of that same line box.
+        CaretPosition lineStart = metrics.MoveCaret(caret, CaretMovement.LineStart);
+        CaretPosition lineEnd = metrics.MoveCaret(caret, CaretMovement.LineEnd);
+
+        float lineStartX = line.Start.X + line.Extent.X;
+        float lineEndX = line.Start.X;
+
+        Assert.Equal(new Vector2(lineStartX, line.Start.Y), lineStart.Start, Comparer);
+        Assert.Equal(new Vector2(lineStartX, line.Start.Y + line.Extent.Y), lineStart.End, Comparer);
+        Assert.Equal(new Vector2(lineEndX, line.Start.Y), lineEnd.Start, Comparer);
+        Assert.Equal(new Vector2(lineEndX, line.Start.Y + line.Extent.Y), lineEnd.End, Comparer);
+    }
+
+    [Fact]
     public void MoveCaret_LineDown_PreservesPositionAcrossShortLine()
     {
         const string text = "Hello\nA\nHello";
         TextMetrics metrics = TextMeasurer.Measure(text, Options(-1));
-        CaretPosition firstLineEnd = metrics.GetCaretPosition(5);
+        CaretPosition firstLineEnd = metrics.MoveCaret(metrics.GetCaret(CaretPlacement.Start), CaretMovement.LineEnd);
 
         // The first LineDown clamps to the end of the short middle line. The second
         // LineDown should still use the original "Hello" end position, not the
@@ -495,6 +724,24 @@ public class TextBlockTests
         Assert.Equal(7, middleLineEnd.GraphemeIndex);
         Assert.Equal(13, finalLineEnd.GraphemeIndex);
         Assert.Equal(firstLineEnd.Start.X, finalLineEnd.Start.X, Comparer);
+    }
+
+    [Fact]
+    public void MoveCaret_LineUp_PreservesPositionAcrossShortLine()
+    {
+        const string text = "Hello\nA\nHello";
+        TextMetrics metrics = TextMeasurer.Measure(text, Options(-1));
+        CaretPosition finalLineEnd = metrics.MoveCaret(metrics.GetCaret(CaretPlacement.End), CaretMovement.LineEnd);
+
+        // The first LineUp clamps to the end of the short middle line. The second
+        // LineUp should still use the original "Hello" end position, not the
+        // clamped middle-line position, so it reaches the end of the first line.
+        CaretPosition middleLineEnd = metrics.MoveCaret(finalLineEnd, CaretMovement.LineUp);
+        CaretPosition firstLineEnd = metrics.MoveCaret(middleLineEnd, CaretMovement.LineUp);
+
+        Assert.Equal(7, middleLineEnd.GraphemeIndex);
+        Assert.Equal(5, firstLineEnd.GraphemeIndex);
+        Assert.Equal(finalLineEnd.Start.X, firstLineEnd.Start.X, Comparer);
     }
 
     [Fact]
@@ -563,14 +810,13 @@ public class TextBlockTests
     {
         const string text = "ABC";
         TextMetrics metrics = TextMeasurer.Measure(text, Options(-1));
-        CaretPosition anchor = metrics.GetCaretPosition(0);
+        CaretPosition anchor = metrics.GetCaret(CaretPlacement.Start);
         CaretPosition focus = metrics.MoveCaret(anchor, CaretMovement.Next);
 
-        ReadOnlySpan<FontRectangle> expected = metrics.GetSelectionBounds(0, 1).Span;
         ReadOnlySpan<FontRectangle> actual = metrics.GetSelectionBounds(anchor, focus).Span;
 
         Assert.Single(actual.ToArray());
-        Assert.Equal(expected[0], actual[0], Comparer);
+        Assert.Equal(metrics.GetSelectionBounds(metrics.GraphemeMetrics[0]).Span[0], actual[0], Comparer);
     }
 
     [Fact]
@@ -590,7 +836,7 @@ public class TextBlockTests
         // the RTL Hebrew run. Those are different visual edges: the normal caret
         // is at the leading edge of "א" (its visual right edge), while the
         // secondary caret is at the trailing edge of the preceding space.
-        CaretPosition caret = metrics.GetCaretPosition(4);
+        CaretPosition caret = metrics.GetCaretPosition(metrics.HitTest(FontRectangle.Center(next.Advance)));
 
         Assert.Equal(4, caret.GraphemeIndex);
         Assert.True(caret.HasSecondary);
@@ -606,12 +852,12 @@ public class TextBlockTests
         const string text = "Hi\nYo";
         TextMetrics metrics = TextMeasurer.Measure(text, Options(-1));
 
-        // The selected range covers all graphemes in both lines. Since each line is
-        // visually continuous, each line should produce one selection rectangle
-        // spanning the selected grapheme advances while using the full line box height.
-        // The hard break ending the first line remains in the source range but does
-        // not contribute to measurement, so it should not widen the painted rectangle.
-        ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(0, metrics.GraphemeMetrics.Length).Span;
+        // The selected range covers both visual lines. Since each line is visually
+        // continuous, each line should produce one selection rectangle spanning
+        // the selected grapheme advances while using the full line box height.
+        CaretPosition anchor = metrics.GetCaret(CaretPlacement.Start);
+        CaretPosition focus = metrics.MoveCaret(anchor, CaretMovement.TextEnd);
+        ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(anchor, focus).Span;
 
         Assert.Equal(metrics.LineMetrics.Length, selection.Length);
         int graphemeOffset = 0;
@@ -624,11 +870,6 @@ public class TextBlockTests
             float end = advance.Right;
             for (int j = 1; j < lineGraphemes.Length; j++)
             {
-                if (lineGraphemes[j].IsLineBreak && !lineGraphemes[j].ContributesToMeasurement)
-                {
-                    continue;
-                }
-
                 advance = lineGraphemes[j].Advance;
                 start = Math.Min(start, advance.Left);
                 end = Math.Max(end, advance.Right);
@@ -654,7 +895,7 @@ public class TextBlockTests
         // Selection rectangles use the line box for the cross-axis extent, not the
         // individual grapheme bounds. The origin therefore shifts the rectangle's
         // Y coordinates even though the horizontal range comes from grapheme advances.
-        ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(0, metrics.GraphemeMetrics.Length).Span;
+        ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(metrics.GetCaret(CaretPlacement.Start), metrics.GetCaret(CaretPlacement.End)).Span;
 
         FontRectangle expected = FontRectangle.FromLTRB(
             Math.Min(first.Left, second.Left),
@@ -680,7 +921,16 @@ public class TextBlockTests
         // "ג" (grapheme index 6) is painted between the selected LTR fragment
         // and the selected Hebrew fragment. The result should therefore be two
         // selection rectangles, and neither may cover the center of "ג".
-        ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(2, 6).Span;
+        CaretPosition anchor = metrics.GetCaret(CaretPlacement.Start);
+        anchor = metrics.MoveCaret(anchor, CaretMovement.Next);
+        anchor = metrics.MoveCaret(anchor, CaretMovement.Next);
+        CaretPosition focus = anchor;
+        for (int i = 0; i < 4; i++)
+        {
+            focus = metrics.MoveCaret(focus, CaretMovement.Next);
+        }
+
+        ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(anchor, focus).Span;
 
         Assert.Equal(2, selection.Length);
         Assert.True(SelectionContains(selection, FontRectangle.Center(selectedBeforeGap.Advance)));
@@ -688,37 +938,35 @@ public class TextBlockTests
     }
 
     [Fact]
-    public void GetSelectionBounds_IgnoresNonMeasuringHardBreak()
+    public void GetSelectionBounds_IgnoresTrimmedHardBreak()
     {
         const string text = "A\nB";
         TextMetrics metrics = TextMeasurer.Measure(text, Options(-1));
-        GraphemeMetrics hardBreak = FindGrapheme(metrics.GraphemeMetrics, 1);
 
-        // The hard break ends the first line, so line finalization marks it as
-        // non-measuring. It remains a logical grapheme at index 1, but selecting
-        // only that grapheme should not create a painted selection rectangle.
-        Assert.True(hardBreak.IsLineBreak);
-        Assert.False(hardBreak.ContributesToMeasurement);
+        // The hard break ends a non-empty line, so it is trimmed with trailing
+        // breaking whitespace. Selecting only that source grapheme therefore
+        // has no measured grapheme to paint.
+        Assert.DoesNotContain(metrics.GraphemeMetrics.ToArray(), x => x.GraphemeIndex == 1);
 
-        ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(1, 2).Span;
+        CaretPosition anchor = metrics.MoveCaret(metrics.GetCaret(CaretPlacement.Start), CaretMovement.Next);
+        CaretPosition focus = metrics.MoveCaret(anchor, CaretMovement.Next);
+        ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(anchor, focus).Span;
 
         Assert.True(selection.IsEmpty);
     }
 
     [Fact]
-    public void GetSelectionBounds_IncludesMeasuringHardBreak()
+    public void GetSelectionBounds_IncludesBlankLineHardBreak()
     {
         const string text = "\nA";
         TextMetrics metrics = TextMeasurer.Measure(text, Options(-1));
         GraphemeMetrics hardBreak = FindGrapheme(metrics.GraphemeMetrics, 0);
 
-        // A leading hard break is the only grapheme on its line. It contributes
-        // to measurement, so selection should expose the same visible line box
-        // behavior as other measuring graphemes.
+        // A leading hard break is the only grapheme on its line. It is preserved
+        // so the blank line has real line geometry for selection.
         Assert.True(hardBreak.IsLineBreak);
-        Assert.True(hardBreak.ContributesToMeasurement);
 
-        ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(0, 1).Span;
+        ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(hardBreak).Span;
 
         Assert.Equal(1, selection.Length);
         Assert.True(SelectionContains(selection, FontRectangle.Center(hardBreak.Advance)));
@@ -746,8 +994,8 @@ public class TextBlockTests
             // Reverse line-order modes emit grapheme metrics in visual order, but line metrics
             // retain their source line index. Full-text selection must still find the same
             // owning line slice that the line-local API already has.
-            ReadOnlySpan<FontRectangle> expected = lines[i].GetSelectionBounds(grapheme.GraphemeIndex, grapheme.GraphemeIndex + 1).Span;
-            ReadOnlySpan<FontRectangle> actual = metrics.GetSelectionBounds(grapheme.GraphemeIndex, grapheme.GraphemeIndex + 1).Span;
+            ReadOnlySpan<FontRectangle> expected = lines[i].GetSelectionBounds(grapheme).Span;
+            ReadOnlySpan<FontRectangle> actual = metrics.GetSelectionBounds(grapheme).Span;
 
             Assert.Single(actual.ToArray());
             Assert.Equal(expected[0], actual[0], Comparer);
@@ -800,8 +1048,10 @@ public class TextBlockTests
 
         TextHit lineHit = lines[1].HitTest(point);
         TextHit metricsHit = metrics.HitTest(point);
-        CaretPosition lineCaret = lines[1].GetCaretPosition(grapheme.GraphemeIndex);
-        CaretPosition metricsCaret = metrics.GetCaretPosition(grapheme.GraphemeIndex);
+        TextHit lineCaretHit = lines[1].HitTest(point);
+        TextHit metricsCaretHit = metrics.HitTest(point);
+        CaretPosition lineCaret = lines[1].GetCaretPosition(lineCaretHit);
+        CaretPosition metricsCaret = metrics.GetCaretPosition(metricsCaretHit);
 
         Assert.Equal(metricsHit.LineIndex, lineHit.LineIndex);
         Assert.Equal(metricsHit.GraphemeIndex, lineHit.GraphemeIndex);
@@ -824,8 +1074,8 @@ public class TextBlockTests
         Assert.Equal(nextWordMetricsCaret.GraphemeIndex, nextWordLineCaret.GraphemeIndex);
 
         Assert.Equal(
-            metrics.GetSelectionBounds(grapheme.GraphemeIndex, grapheme.GraphemeIndex + 1).Span[0],
-            lines[1].GetSelectionBounds(grapheme.GraphemeIndex, grapheme.GraphemeIndex + 1).Span[0],
+            metrics.GetSelectionBounds(grapheme).Span[0],
+            lines[1].GetSelectionBounds(grapheme).Span[0],
             Comparer);
 
         Assert.Equal(
@@ -962,7 +1212,6 @@ public class TextBlockTests
             Assert.Equal(expected[i].StringIndex, actual[i].StringIndex);
             Assert.Equal(expected[i].BidiLevel, actual[i].BidiLevel);
             Assert.Equal(expected[i].IsLineBreak, actual[i].IsLineBreak);
-            Assert.Equal(expected[i].ContributesToMeasurement, actual[i].ContributesToMeasurement);
         }
     }
 

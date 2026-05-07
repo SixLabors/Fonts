@@ -240,7 +240,6 @@ public class TextLayoutTests
             new(new CodePoint('a'), new FontRectangle(10, 0, 10, 10), 0, 0),
             new(new CodePoint(' '), new FontRectangle(40, 0, 30, 10), 1, 1),
             new(new CodePoint('b'), new FontRectangle(70, 0, 10, 10), 2, 2),
-            new(new CodePoint('\n'), new FontRectangle(100, 0, 30, 10), 3, 3),
             new(new CodePoint('c'), new FontRectangle(10, 30, 10, 10), 4, 4),
         ];
 
@@ -250,7 +249,10 @@ public class TextLayoutTests
             text.AsSpan(),
             new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor }).Span;
 
-        Assert.Equal(text.Length, bounds.Length);
+        // The hard break ends a non-empty line, so it is trimmed from visual
+        // glyph bounds. The following glyph still carries its original source
+        // string index.
+        Assert.Equal(expectedGlyphMetrics.Length, bounds.Length);
 
         for (int i = 0; i < expectedGlyphMetrics.Length; i++)
         {
@@ -914,6 +916,53 @@ public class TextLayoutTests
     }
 
     [Theory]
+    [InlineData(TextEllipsis.Standard)]
+    [InlineData(TextEllipsis.Custom)]
+    [InlineData(TextEllipsis.None)]
+    public void TextEllipsis_DrawsMaxLinesMarker(TextEllipsis ellipsis)
+    {
+        Font font = CreateRenderingFont(34);
+        const string text = "one two three four five six";
+
+        TextOptions options = new(font)
+        {
+            Origin = new(24, 42),
+            WrappingLength = 210,
+            MaxLines = 1,
+            TextEllipsis = ellipsis,
+            CustomEllipsis = new('*'),
+            LayoutMode = LayoutMode.HorizontalTopBottom
+        };
+
+        TextLayoutTestUtilities.TestLayout(
+            text,
+            options,
+            includeGeometry: false,
+            properties: ellipsis.ToString().ToLowerInvariant());
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        // These assertions document the visible marker behavior shown by the
+        // reference images: standard uses U+2026, custom uses the configured
+        // marker, and none only clamps the visible line count.
+        if (ellipsis == TextEllipsis.Standard)
+        {
+            Assert.Equal(1, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint(0x2026)));
+            Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('*')));
+        }
+        else if (ellipsis == TextEllipsis.Custom)
+        {
+            Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint(0x2026)));
+            Assert.Equal(1, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('*')));
+        }
+        else
+        {
+            Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint(0x2026)));
+            Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('*')));
+        }
+    }
+
+    [Theory]
     [InlineData(LayoutMode.HorizontalTopBottom)]
     [InlineData(LayoutMode.HorizontalBottomTop)]
     [InlineData(LayoutMode.VerticalLeftRight)]
@@ -1034,7 +1083,7 @@ public class TextLayoutTests
             for (int i = 0; i < graphemes.Length; i++)
             {
                 GraphemeMetrics grapheme = graphemes[i];
-                ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(grapheme.GraphemeIndex, grapheme.GraphemeIndex + 1).Span;
+                ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(grapheme).Span;
                 if (selection.IsEmpty)
                 {
                     continue;
@@ -1109,7 +1158,9 @@ public class TextLayoutTests
 
         void DrawSelection(Image<Rgba32> image)
         {
-            ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(0, metrics.GraphemeMetrics.Length).Span;
+            CaretPosition anchor = metrics.GetCaret(CaretPlacement.Start);
+            CaretPosition focus = metrics.MoveCaret(anchor, CaretMovement.TextEnd);
+            ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(anchor, focus).Span;
 
             // The first hard break ends a measuring text line and should not paint
             // its own box. The second hard break owns the empty line between text
@@ -1200,6 +1251,191 @@ public class TextLayoutTests
             options,
             includeGeometry: false,
             beforeAction: DrawSelection);
+    }
+
+    [Theory]
+    [InlineData(TextDirection.LeftToRight, TextBidiMode.Normal)]
+    [InlineData(TextDirection.LeftToRight, TextBidiMode.Override)]
+    [InlineData(TextDirection.RightToLeft, TextBidiMode.Normal)]
+    [InlineData(TextDirection.RightToLeft, TextBidiMode.Override)]
+    public void TextBidiMode_DrawsMixedBidiLayout(TextDirection direction, TextBidiMode mode)
+    {
+        FontCollection fontCollection = new();
+        FontFamily latin = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansRegular);
+        FontFamily hebrew = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansHebrewRegular);
+        FontFamily arabic = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoNaskhArabicRegular);
+
+        Font font = latin.CreateFont(40);
+        const string text = "abc שלום عرب def";
+
+        TextOptions options = new(font)
+        {
+            FallbackFontFamilies = [hebrew, arabic],
+            Origin = new(24, 52),
+            WrappingLength = 430,
+            TextDirection = direction,
+            TextBidiMode = mode,
+            LayoutMode = LayoutMode.HorizontalTopBottom
+        };
+
+        // Mixed-script text makes the distinction visible: Normal preserves each
+        // script's bidi class inside the paragraph direction, while Override
+        // forces every real text character through the paragraph direction.
+        TextLayoutTestUtilities.TestLayout(
+            text,
+            options,
+            includeGeometry: false,
+            properties: $"{(direction == TextDirection.RightToLeft ? "rtl" : "ltr")}-{mode.ToString().ToLowerInvariant()}");
+    }
+
+    [Theory]
+    [InlineData(TextDirection.LeftToRight)]
+    [InlineData(TextDirection.RightToLeft)]
+    public void CaretPosition_DrawsStartAndEndCarets(TextDirection direction)
+    {
+        FontCollection fontCollection = new();
+        FontFamily latin = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansRegular);
+        FontFamily hebrew = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansHebrewRegular);
+        FontFamily arabic = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoNaskhArabicRegular);
+
+        Font font = latin.CreateFont(30);
+        Font largeFont = latin.CreateFont(46);
+        const string text = "Tall שלום عرب\nSmall مرحبا שלום";
+
+        TextOptions options = new(font)
+        {
+            FallbackFontFamilies = [hebrew, arabic],
+            Origin = new(24, 28),
+            TextDirection = direction,
+            LayoutMode = LayoutMode.HorizontalTopBottom,
+            LineSpacing = 1.25F,
+            TextRuns =
+            [
+                new() { Start = 0, End = 4, Font = largeFont },
+                new() { Start = 20, End = 25, Font = largeFont }
+            ]
+        };
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        void DrawCarets(Image<Rgba32> image)
+        {
+            CaretPosition start = metrics.GetCaret(CaretPlacement.Start);
+            CaretPosition end = metrics.GetCaret(CaretPlacement.End);
+
+            image.Mutate(x =>
+            {
+                // Solid carets make absolute start/end placement easy to compare
+                // between LTR and RTL paragraph directions.
+                DrawCaret(x, start, Color.Lime, 3, dashed: false);
+                DrawCaret(x, end, Color.Magenta, 3, dashed: false);
+            });
+        }
+
+        TextLayoutTestUtilities.TestLayout(
+            text,
+            options,
+            includeGeometry: false,
+            afterAction: DrawCarets,
+            properties: direction == TextDirection.RightToLeft ? "rtl" : "ltr");
+    }
+
+    [Theory]
+    [InlineData(TextDirection.LeftToRight)]
+    [InlineData(TextDirection.RightToLeft)]
+    public void CaretPosition_DrawsMovedCarets(TextDirection direction)
+    {
+        FontCollection fontCollection = new();
+        FontFamily latin = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansRegular);
+        FontFamily hebrew = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoSansHebrewRegular);
+        FontFamily arabic = TestFonts.GetFontFamily(fontCollection, TestFonts.NotoNaskhArabicRegular);
+
+        Font font = latin.CreateFont(34);
+        const string text = "abc שלום عرب def\n123 אבג xyz";
+
+        TextOptions options = new(font)
+        {
+            FallbackFontFamilies = [hebrew, arabic],
+            Origin = new(24, 34),
+            TextDirection = direction,
+            LayoutMode = LayoutMode.HorizontalTopBottom,
+            LineSpacing = 1.25F
+        };
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        void DrawCarets(Image<Rgba32> image)
+        {
+            CaretPosition textStart = metrics.GetCaret(CaretPlacement.Start);
+            CaretPosition textEnd = metrics.GetCaret(CaretPlacement.End);
+            ReadOnlySpan<GraphemeMetrics> graphemes = metrics.GraphemeMetrics;
+            int hebrewLamedStringIndex = text.IndexOf('ל');
+            int arabicBehStringIndex = text.IndexOf('ب');
+            int secondLineHebrewBetStringIndex = text.IndexOf('ב');
+            GraphemeMetrics hebrewLamed = default;
+            GraphemeMetrics arabicBeh = default;
+            GraphemeMetrics secondLineHebrewBet = default;
+
+            for (int i = 0; i < graphemes.Length; i++)
+            {
+                GraphemeMetrics grapheme = graphemes[i];
+                if (grapheme.StringIndex == hebrewLamedStringIndex)
+                {
+                    hebrewLamed = grapheme;
+                }
+                else if (grapheme.StringIndex == arabicBehStringIndex)
+                {
+                    arabicBeh = grapheme;
+                }
+                else if (grapheme.StringIndex == secondLineHebrewBetStringIndex)
+                {
+                    secondLineHebrewBet = grapheme;
+                }
+            }
+
+            // Previous/next movement is source-order navigation. In mixed bidi text the
+            // visual jump can cross runs, so the variable names include the anchor caret.
+            CaretPosition hebrewRunCaret = metrics.GetCaretPosition(metrics.HitTest(FontRectangle.Center(hebrewLamed.Advance)));
+            CaretPosition arabicRunCaret = metrics.GetCaretPosition(metrics.HitTest(FontRectangle.Center(arabicBeh.Advance)));
+            CaretPosition secondLineHebrewRunCaret = metrics.GetCaretPosition(metrics.HitTest(FontRectangle.Center(secondLineHebrewBet.Advance)));
+            CaretPosition nextFromHebrewRun = metrics.MoveCaret(hebrewRunCaret, CaretMovement.Next);
+            CaretPosition nextWordFromHebrewRun = metrics.MoveCaret(hebrewRunCaret, CaretMovement.NextWord);
+            CaretPosition previousFromArabicRun = metrics.MoveCaret(arabicRunCaret, CaretMovement.Previous);
+            CaretPosition previousWordFromArabicRun = metrics.MoveCaret(arabicRunCaret, CaretMovement.PreviousWord);
+
+            // Line movement keeps the original horizontal preference, then line start/end
+            // resolve against the paragraph direction on the destination visual line.
+            CaretPosition lineStartFromHebrewRun = metrics.MoveCaret(secondLineHebrewRunCaret, CaretMovement.LineStart);
+            CaretPosition lineEndFromHebrewRun = metrics.MoveCaret(secondLineHebrewRunCaret, CaretMovement.LineEnd);
+
+            image.Mutate(x =>
+            {
+                // Blue starts from a hit on ל in שלום and moves to the caret after ו.
+                DrawCaret(x, nextFromHebrewRun, Color.Blue, 3, dashed: true);
+
+                // Cyan starts from a hit on ל in שלום and moves to the word boundary after ם.
+                DrawCaret(x, nextWordFromHebrewRun, Color.Cyan, 3, dashed: true);
+
+                // Red starts from a hit on ب in عرب and moves one source-order grapheme toward ر.
+                DrawCaret(x, previousFromArabicRun, Color.Red, 3, dashed: true);
+
+                // Purple starts from a hit on ب in عرب and moves to the word boundary before ع.
+                DrawCaret(x, previousWordFromArabicRun, Color.Purple, 3, dashed: true);
+
+                // Lime starts from a hit on ב in אבג and moves to the second-line start.
+                DrawCaret(x, lineStartFromHebrewRun, Color.Lime, 2, dashed: true);
+
+                // Magenta starts from a hit on ב in אבג and moves to the second-line end.
+                DrawCaret(x, lineEndFromHebrewRun, Color.Magenta, 2, dashed: true);
+            });
+        }
+
+        TextLayoutTestUtilities.TestLayout(
+            text,
+            options,
+            includeGeometry: false,
+            afterAction: DrawCarets,
+            properties: direction == TextDirection.RightToLeft ? "rtl" : "ltr");
     }
 
     [Fact]
@@ -2015,7 +2251,10 @@ public class TextLayoutTests
             lastAdvance = advance;
         }
 
-        Assert.Equal(3, lineBreakCount);
+        // Hard breaks that terminate non-empty lines are trimmed from the visual
+        // glyph stream. The four visible glyphs are still laid out on four lines.
+        Assert.Equal(0, lineBreakCount);
+        Assert.Equal(4, advances.Length);
     }
 
     [Fact]
@@ -2367,6 +2606,53 @@ public class TextLayoutTests
 
     private static readonly Font SegoeUi = SystemFonts.CreateFont("Segoe Ui", 10);
 #endif
+
+    private static void DrawCaret(
+        IImageProcessingContext context,
+        CaretPosition caret,
+        Color color,
+        float thickness,
+        bool dashed)
+    {
+        DrawCaretLine(context, caret.Start, caret.End, color, thickness, dashed);
+
+        if (caret.HasSecondary)
+        {
+            DrawCaretLine(context, caret.SecondaryStart, caret.SecondaryEnd, color, thickness, dashed);
+        }
+    }
+
+    private static void DrawCaretLine(
+        IImageProcessingContext context,
+        Vector2 start,
+        Vector2 end,
+        Color color,
+        float thickness,
+        bool dashed)
+    {
+        if (!dashed)
+        {
+            context.DrawLine(color, thickness, new PointF(start.X, start.Y), new PointF(end.X, end.Y));
+            return;
+        }
+
+        Vector2 delta = end - start;
+        Vector2 step = Vector2.Normalize(delta);
+        float length = delta.Length();
+
+        // Build movement carets from short line segments instead of using a pen
+        // option so the dashed output is independent of ImageSharp.Drawing internals.
+        const float dash = 5F;
+        const float gap = 4F;
+
+        for (float distance = 0; distance < length; distance += dash + gap)
+        {
+            Vector2 dashStart = start + (step * distance);
+            Vector2 dashEnd = start + (step * MathF.Min(distance + dash, length));
+
+            context.DrawLine(color, thickness, new PointF(dashStart.X, dashStart.Y), new PointF(dashEnd.X, dashEnd.Y));
+        }
+    }
 
     private static string GetSourceTextForLine(string text, TextMetrics metrics, int lineIndex)
     {

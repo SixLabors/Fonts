@@ -13,6 +13,7 @@ internal static partial class TextLayout
 {
     private const int SoftHyphen = 0x00AD;
     private const int StandardHyphen = 0x2010;
+    private const int StandardEllipsis = 0x2026;
 
     /// <summary>
     /// Composes the logical <see cref="TextLine"/> from shaped glyph data before width-dependent line breaking.
@@ -315,106 +316,19 @@ internal static partial class TextLayout
                             // the same run, font attributes, bidi mapping, and source mapping. Build
                             // that marker here while those values are already in hand; BreakLines can
                             // then account for its advance without rescanning or reshaping the line.
-                            CodePoint markerCodePoint = hyphenationMarkerCodePoint.Value;
-                            glyph.FontMetrics.TryGetGlyphId(markerCodePoint, out ushort markerGlyphId);
-
-                            GlyphMetrics markerMetric = glyph.FontMetrics.GetGlyphMetrics(
-                                markerCodePoint,
-                                markerGlyphId,
-                                glyph.TextAttributes,
-                                glyph.TextDecorations,
-                                shapedText.LayoutMode,
-                                options.ColorFontSupport);
-
-                            // GetGlyphMetrics returns the cached font-level metric. Clone it with the
-                            // source run so renderers see the same font, decorations, and attributes
-                            // that the invisible soft hyphen would have used.
-                            markerMetric = markerMetric.CloneForRendering(glyph.TextRun);
-
-                            // The marker is a normal glyph entry once selected, so it must use the
-                            // same orientation and CSS line-box calculations as the source glyphs.
-                            // This intentionally mirrors the calculations above instead of sharing
-                            // state from the invisible soft hyphen, whose advance and bounds are zero.
-                            bool markerShouldRotate = isVerticalMixedLayout &&
-                                !isVerticalSubstitution &&
-                                CodePoint.GetVerticalOrientationType(markerCodePoint) is
-                                            VerticalOrientationType.Rotate or
-                                            VerticalOrientationType.TransformRotate;
-
-                            bool markerShouldOffset = isVerticalLayout &&
-                                !isVerticalSubstitution &&
-                                CodePoint.GetVerticalOrientationType(markerCodePoint) is
-                                            VerticalOrientationType.Rotate or
-                                            VerticalOrientationType.TransformRotate;
-
-                            GlyphLayoutMode markerMode = GlyphLayoutMode.Horizontal;
-                            if (isVerticalLayout)
-                            {
-                                markerMode = GlyphLayoutMode.Vertical;
-                            }
-                            else if (isVerticalMixedLayout)
-                            {
-                                markerMode = markerShouldRotate ? GlyphLayoutMode.VerticalRotated : GlyphLayoutMode.Vertical;
-                            }
-
-                            // Calculate the marker advance and scale it to pixels. Hyphenation
-                            // marker measurement must happen here so line fitting can include the
-                            // marker advance before deciding whether this break actually fits.
-                            float markerAdvance = isHorizontalLayout || markerShouldRotate
-                                ? markerMetric.AdvanceWidth * (pointSize / markerMetric.ScaleFactor.X)
-                                : markerMetric.AdvanceHeight * (pointSize / markerMetric.ScaleFactor.Y);
-
-                            // Convert design-space units to pixels based on the target point size.
-                            // ScaleFactor.Y represents the vertical UPEM scaling factor for this glyph.
-                            float markerScaleY = pointSize / markerMetric.ScaleFactor.Y;
-
-                            // Choose which metrics table to use based on layout orientation.
-                            // Horizontal is the default; vertical fonts use VMTX if available.
-                            IMetricsHeader markerMetricsHeader = isHorizontalLayout || markerShouldRotate
-                                ? markerMetric.FontMetrics.HorizontalMetrics
-                                : markerMetric.FontMetrics.VerticalMetrics;
-
-                            // Ascender and descender are stored in font design units, so scale them to pixels.
-                            float markerAscender = markerMetricsHeader.Ascender * markerScaleY;
-
-                            // Match browser line-height calculation logic.
-                            // Reference: https://www.w3.org/TR/CSS2/visudet.html#propdef-line-height
-                            // The line height in CSS is based on a multiple of the font-size (pointSize),
-                            // but fonts may define a custom LineHeight in their metrics that differs from UPEM.
-                            float markerDescender = Math.Abs(markerMetricsHeader.Descender * markerScaleY);
-                            float markerLineHeight = markerMetric.UnitsPerEm * markerScaleY;
-
-                            // The delta centers the font's line box within the CSS line box when
-                            // LineHeight differs from the nominal font size.
-                            float markerDelta = ((markerMetricsHeader.LineHeight * markerScaleY) - markerLineHeight) * 0.5F;
-
-                            // Adjust ascender and descender symmetrically by delta to preserve visual balance.
-                            markerAscender -= markerDelta;
-                            markerDescender -= markerDelta;
-
-                            // Track the true top of the marker ink in device space (Y down, baseline at 0).
-                            FontRectangle markerBox = GlyphMetrics.ShouldSkipGlyphRendering(markerMetric.CodePoint)
-                                ? FontRectangle.Empty
-                                : markerMetric.GetBoundingBox(markerMode, Vector2.Zero, pointSize);
-
                             hyphenationMarkerIndex = hyphenationMarkers.Count;
-                            hyphenationMarkers.Add(new GlyphLayoutData(
-                                new GlyphMetrics[] { markerMetric },
+                            hyphenationMarkers.Add(CreateGeneratedMarker(
+                                glyph,
                                 pointSize,
-                                markerAdvance,
-                                markerLineHeight * options.LineSpacing,
-                                markerAscender,
-                                markerDescender,
-                                markerDelta,
-                                MathF.Min(0, markerBox.Y),
                                 shapedText.BidiRuns[shapedText.BidiMap[codePointIndex]],
                                 graphemeIndex,
                                 isLastInGrapheme,
                                 codePointIndex,
                                 graphemeCodePointIndex,
-                                markerShouldRotate || markerShouldOffset,
-                                false,
-                                stringIndex));
+                                stringIndex,
+                                hyphenationMarkerCodePoint.Value,
+                                shapedText.LayoutMode,
+                                options));
                         }
 
                         // Add our metrics to the line.
@@ -436,7 +350,6 @@ internal static partial class TextLayout
                             stringIndex,
                             mode,
                             options.LineSpacing,
-                            !isSoftHyphen,
                             hyphenationMarkerIndex);
                     }
 
@@ -484,14 +397,31 @@ internal static partial class TextLayout
         bool keepAll = options.WordBreaking == WordBreaking.KeepAll;
         bool breakWord = options.WordBreaking == WordBreaking.BreakWord;
         bool normalizeDecomposedAdvances = options.LayoutMode.IsVertical();
+        int maxLines = options.MaxLines;
+
+        if (maxLines == 0)
+        {
+            TextDirection emptyTextDirection = options.TextDirection == TextDirection.RightToLeft
+                ? TextDirection.RightToLeft
+                : TextDirection.LeftToRight;
+
+            return new TextBox([], emptyTextDirection);
+        }
+
+        TextDirection textDirection = options.TextDirection == TextDirection.Auto && logicalLine.TextLine.Count > 0
+            ? logicalLine.TextLine[0].TextDirection
+            : options.TextDirection;
+
+        CodePoint? ellipsisMarkerCodePoint = GetEllipsisMarkerCodePoint(options);
         List<TextLine> textLines = [];
 
         // Always clone the logical line so we can modify it during breaking without affecting the original.
         TextLine textLine = new(logicalLine.TextLine);
         IReadOnlyList<LineBreak> lineBreaks = logicalLine.LineBreaks;
         int processed = 0;
+        bool stopLayout = false;
 
-        while (textLine.Count > 0)
+        while (textLine.Count > 0 && !stopLayout)
         {
             LineBreak? bestBreak = null;
             foreach (LineBreak lineBreak in lineBreaks)
@@ -543,14 +473,36 @@ internal static partial class TextLayout
                         if (textLine.TrySplitAt(breakAt, keepAll, out remaining))
                         {
                             processed = breakAt.PositionWrap;
-                            textLines.Add(textLine.Finalize(true, normalizeDecomposedAdvances));
+
+                            stopLayout = AddLine(
+                                textLines,
+                                textLine,
+                                true,
+                                remaining.Count > 0,
+                                normalizeDecomposedAdvances,
+                                maxLines,
+                                ellipsisMarkerCodePoint,
+                                scaledWrappingLength,
+                                options);
+
                             textLine = remaining;
                         }
                     }
                     else if (textLine.TrySplitAt(scaledWrappingLength, out remaining))
                     {
                         processed += textLine.Count;
-                        textLines.Add(textLine.Finalize(normalizeDecomposedAdvances: normalizeDecomposedAdvances));
+
+                        stopLayout = AddLine(
+                            textLines,
+                            textLine,
+                            false,
+                            remaining.Count > 0,
+                            normalizeDecomposedAdvances,
+                            maxLines,
+                            ellipsisMarkerCodePoint,
+                            scaledWrappingLength,
+                            options);
+
                         textLine = remaining;
                     }
                     else
@@ -591,7 +543,17 @@ internal static partial class TextLayout
                         }
 
                         // Add the split part to the list and continue processing.
-                        textLines.Add(textLine.Finalize(breakAt.Required, normalizeDecomposedAdvances));
+                        stopLayout = AddLine(
+                            textLines,
+                            textLine,
+                            breakAt.Required,
+                            remaining.Count > 0,
+                            normalizeDecomposedAdvances,
+                            maxLines,
+                            ellipsisMarkerCodePoint,
+                            scaledWrappingLength,
+                            options);
+
                         textLine = remaining;
                     }
                     else
@@ -613,12 +575,40 @@ internal static partial class TextLayout
                             break;
                         }
 
-                        textLines.Add(textLine.Finalize(normalizeDecomposedAdvances: normalizeDecomposedAdvances));
+                        stopLayout = AddLine(
+                            textLines,
+                            textLine,
+                            false,
+                            overflow.Count > 0,
+                            normalizeDecomposedAdvances,
+                            maxLines,
+                            ellipsisMarkerCodePoint,
+                            scaledWrappingLength,
+                            options);
+
                         textLine = overflow;
+                    }
+
+                    if (stopLayout)
+                    {
+                        break;
                     }
                 }
 
-                textLines.Add(textLine.Finalize(true, normalizeDecomposedAdvances));
+                if (!stopLayout)
+                {
+                    AddLine(
+                        textLines,
+                        textLine,
+                        true,
+                        false,
+                        normalizeDecomposedAdvances,
+                        maxLines,
+                        ellipsisMarkerCodePoint,
+                        scaledWrappingLength,
+                        options);
+                }
+
                 break;
             }
         }
@@ -633,7 +623,50 @@ internal static partial class TextLayout
             }
         }
 
-        return new TextBox(textLines);
+        return new TextBox(textLines, textDirection);
+    }
+
+    /// <summary>
+    /// Finalizes and stores one visual line, applying ellipsis when this line is the configured limit
+    /// and additional text remains hidden after it.
+    /// </summary>
+    /// <param name="textLines">The destination visual-line list.</param>
+    /// <param name="line">The line to finalize and store.</param>
+    /// <param name="skipJustification">Whether the line should skip justification.</param>
+    /// <param name="hasOverflow">Whether source text remains after this line.</param>
+    /// <param name="normalizeDecomposedAdvances">Whether vertical decomposed advances should be normalized.</param>
+    /// <param name="maxLines">The configured maximum line count.</param>
+    /// <param name="ellipsisMarkerCodePoint">The configured ellipsis marker, if any.</param>
+    /// <param name="scaledWrappingLength">The wrapping length in inches.</param>
+    /// <param name="options">The text options used for layout.</param>
+    /// <returns><see langword="true"/> when no further lines should be produced.</returns>
+    private static bool AddLine(
+        List<TextLine> textLines,
+        TextLine line,
+        bool skipJustification,
+        bool hasOverflow,
+        bool normalizeDecomposedAdvances,
+        int maxLines,
+        CodePoint? ellipsisMarkerCodePoint,
+        float scaledWrappingLength,
+        TextOptions options)
+    {
+        bool isLimitedFinalLine = maxLines > -1 && textLines.Count + 1 >= maxLines;
+        if (isLimitedFinalLine && hasOverflow)
+        {
+            // A max-lines ellipsis is a final-line transformation: wrapping has already
+            // chosen the visible line, so the marker replaces the tail of that line and
+            // the line must behave like a paragraph-final line for justification.
+            if (ellipsisMarkerCodePoint.HasValue)
+            {
+                line.ApplyEllipsisMarker(ellipsisMarkerCodePoint.Value, scaledWrappingLength, options);
+            }
+
+            skipJustification = true;
+        }
+
+        textLines.Add(line.Finalize(skipJustification, normalizeDecomposedAdvances));
+        return isLimitedFinalLine;
     }
 
     /// <summary>
@@ -687,6 +720,120 @@ internal static partial class TextLayout
         {
             TextHyphenation.Standard => new CodePoint(StandardHyphen),
             TextHyphenation.Custom => options.CustomHyphen,
+            _ => null
+        };
+
+    /// <summary>
+    /// Creates a visible generated marker that matches the layout style of the anchor entry.
+    /// </summary>
+    /// <param name="anchorMetric">The glyph metric that supplies font, run, attributes, and decorations.</param>
+    /// <param name="pointSize">The point size at which the marker is rendered.</param>
+    /// <param name="bidiRun">The bidi run that the marker belongs to.</param>
+    /// <param name="graphemeIndex">The source grapheme index to map the marker to.</param>
+    /// <param name="isLastInGrapheme">Whether the marker maps to the last entry in its grapheme.</param>
+    /// <param name="codePointIndex">The source codepoint index to map the marker to.</param>
+    /// <param name="graphemeCodePointIndex">The source codepoint-in-grapheme index to map the marker to.</param>
+    /// <param name="stringIndex">The UTF-16 source index to map the marker to.</param>
+    /// <param name="markerCodePoint">The marker codepoint to create.</param>
+    /// <param name="layoutMode">The layout mode used to calculate marker orientation.</param>
+    /// <param name="options">The text options used for layout.</param>
+    /// <returns>The generated marker entry.</returns>
+    internal static GlyphLayoutData CreateGeneratedMarker(
+        GlyphMetrics anchorMetric,
+        float pointSize,
+        BidiRun bidiRun,
+        int graphemeIndex,
+        bool isLastInGrapheme,
+        int codePointIndex,
+        int graphemeCodePointIndex,
+        int stringIndex,
+        CodePoint markerCodePoint,
+        LayoutMode layoutMode,
+        TextOptions options)
+    {
+        anchorMetric.FontMetrics.TryGetGlyphId(markerCodePoint, out ushort markerGlyphId);
+
+        GlyphMetrics markerMetric = anchorMetric.FontMetrics.GetGlyphMetrics(
+            markerCodePoint,
+            markerGlyphId,
+            anchorMetric.TextAttributes,
+            anchorMetric.TextDecorations,
+            layoutMode,
+            options.ColorFontSupport);
+
+        markerMetric = markerMetric.CloneForRendering(anchorMetric.TextRun);
+
+        bool isHorizontalLayout = layoutMode.IsHorizontal();
+        bool isVerticalLayout = layoutMode.IsVertical();
+        bool isVerticalMixedLayout = layoutMode.IsVerticalMixed();
+        bool shouldRotate = isVerticalMixedLayout &&
+            CodePoint.GetVerticalOrientationType(markerCodePoint) is
+                        VerticalOrientationType.Rotate or
+                        VerticalOrientationType.TransformRotate;
+
+        bool shouldOffset = isVerticalLayout &&
+            CodePoint.GetVerticalOrientationType(markerCodePoint) is
+                        VerticalOrientationType.Rotate or
+                        VerticalOrientationType.TransformRotate;
+
+        GlyphLayoutMode markerMode = GlyphLayoutMode.Horizontal;
+        if (isVerticalLayout)
+        {
+            markerMode = GlyphLayoutMode.Vertical;
+        }
+        else if (isVerticalMixedLayout)
+        {
+            markerMode = shouldRotate ? GlyphLayoutMode.VerticalRotated : GlyphLayoutMode.Vertical;
+        }
+
+        float markerAdvance = isHorizontalLayout || shouldRotate
+            ? markerMetric.AdvanceWidth * (pointSize / markerMetric.ScaleFactor.X)
+            : markerMetric.AdvanceHeight * (pointSize / markerMetric.ScaleFactor.Y);
+
+        // Generated markers must reserve the same CSS line box as ordinary glyphs
+        // from the same run so truncation and discretionary hyphens do not collapse
+        // or expand line spacing.
+        float markerScaleY = pointSize / markerMetric.ScaleFactor.Y;
+        IMetricsHeader markerMetricsHeader = isHorizontalLayout || shouldRotate
+            ? markerMetric.FontMetrics.HorizontalMetrics
+            : markerMetric.FontMetrics.VerticalMetrics;
+
+        float markerAscender = markerMetricsHeader.Ascender * markerScaleY;
+        float markerDescender = Math.Abs(markerMetricsHeader.Descender * markerScaleY);
+        float markerLineHeight = markerMetric.UnitsPerEm * markerScaleY;
+        float markerDelta = ((markerMetricsHeader.LineHeight * markerScaleY) - markerLineHeight) * 0.5F;
+
+        markerAscender -= markerDelta;
+        markerDescender -= markerDelta;
+
+        FontRectangle markerBox = GlyphMetrics.ShouldSkipGlyphRendering(markerMetric.CodePoint)
+            ? FontRectangle.Empty
+            : markerMetric.GetBoundingBox(markerMode, Vector2.Zero, pointSize);
+
+        return new GlyphLayoutData(
+            new GlyphMetrics[] { markerMetric },
+            pointSize,
+            markerAdvance,
+            markerLineHeight * options.LineSpacing,
+            markerAscender,
+            markerDescender,
+            markerDelta,
+            MathF.Min(0, markerBox.Y),
+            bidiRun,
+            graphemeIndex,
+            isLastInGrapheme,
+            codePointIndex,
+            graphemeCodePointIndex,
+            shouldRotate || shouldOffset,
+            false,
+            stringIndex);
+    }
+
+    private static CodePoint? GetEllipsisMarkerCodePoint(TextOptions options)
+        => options.TextEllipsis switch
+        {
+            TextEllipsis.Standard => new CodePoint(StandardEllipsis),
+            TextEllipsis.Custom => options.CustomEllipsis,
             _ => null
         };
 }

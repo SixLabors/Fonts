@@ -14,6 +14,7 @@ public sealed class TextMetrics
     private readonly TextBox textBox;
     private readonly float wrappingLength;
     private readonly LayoutMode layoutMode;
+    private readonly TextDirection textDirection;
     private readonly GraphemeMetrics[] graphemeMetrics;
     private readonly LineMetrics[] lineMetrics;
     private readonly WordMetrics[] wordMetrics;
@@ -37,6 +38,10 @@ public sealed class TextMetrics
         this.textBox = textBox;
         this.wrappingLength = wrappingLength;
         this.layoutMode = textBlock.Options.LayoutMode;
+        this.textDirection = textBox.TextLines.Count == 0
+            ? (textBlock.Options.TextDirection == TextDirection.RightToLeft ? TextDirection.RightToLeft : TextDirection.LeftToRight)
+            : textBox.TextDirection();
+
         this.Advance = advance;
         this.Bounds = bounds;
         this.RenderableBounds = renderableBounds;
@@ -107,24 +112,29 @@ public sealed class TextMetrics
             this.layoutMode);
 
     /// <summary>
-    /// Gets the caret position for the supplied grapheme index.
-    /// </summary>
-    /// <param name="graphemeIndex">The grapheme insertion index in the original text.</param>
-    /// <returns>The caret position in pixel units.</returns>
-    public CaretPosition GetCaretPosition(int graphemeIndex)
-        => TextInteraction.GetCaretPosition(
-            this.LineMetrics,
-            this.GraphemeMetrics,
-            graphemeIndex,
-            this.layoutMode);
-
-    /// <summary>
     /// Gets the caret position for the supplied hit.
     /// </summary>
     /// <param name="hit">The hit-tested grapheme position.</param>
     /// <returns>The caret position in pixel units.</returns>
     public CaretPosition GetCaretPosition(TextHit hit)
-        => this.GetCaretPosition(hit.GraphemeInsertionIndex);
+        => TextInteraction.GetCaretPosition(
+            this.LineMetrics,
+            this.GraphemeMetrics,
+            hit.GraphemeInsertionIndex,
+            this.layoutMode);
+
+    /// <summary>
+    /// Gets an absolute caret position in the laid-out text.
+    /// </summary>
+    /// <param name="placement">The absolute caret placement.</param>
+    /// <returns>The caret position in pixel units.</returns>
+    public CaretPosition GetCaret(CaretPlacement placement)
+        => TextInteraction.GetCaret(
+            this.LineMetrics,
+            this.GraphemeMetrics,
+            placement,
+            this.layoutMode,
+            this.textDirection);
 
     /// <summary>
     /// Moves the supplied caret by the requested operation.
@@ -139,7 +149,8 @@ public sealed class TextMetrics
             this.WordMetrics,
             caret,
             movement,
-            this.layoutMode);
+            this.layoutMode,
+            this.textDirection);
 
     /// <summary>
     /// Gets the word metrics for the word-boundary segment containing the supplied hit-tested grapheme position.
@@ -156,20 +167,6 @@ public sealed class TextMetrics
     /// <returns>The word metrics containing the caret's grapheme insertion index.</returns>
     public WordMetrics GetWordMetrics(CaretPosition caret)
         => TextInteraction.GetWordMetrics(this.WordMetrics, caret.GraphemeIndex);
-
-    /// <summary>
-    /// Gets selection bounds for the supplied grapheme range.
-    /// </summary>
-    /// <param name="graphemeStart">The inclusive start grapheme index in the original text.</param>
-    /// <param name="graphemeEnd">The exclusive end grapheme index in the original text.</param>
-    /// <returns>A read-only memory region containing the selection bounds in visual order and pixel units.</returns>
-    public ReadOnlyMemory<FontRectangle> GetSelectionBounds(int graphemeStart, int graphemeEnd)
-        => TextInteraction.GetSelectionBounds(
-            this.LineMetrics,
-            this.GraphemeMetrics,
-            graphemeStart,
-            graphemeEnd,
-            this.layoutMode);
 
     /// <summary>
     /// Gets selection bounds between two hit-tested grapheme positions.
@@ -200,12 +197,29 @@ public sealed class TextMetrics
             this.layoutMode);
 
     /// <summary>
+    /// Gets selection bounds for the supplied grapheme metrics.
+    /// </summary>
+    /// <param name="metrics">The grapheme metrics to select.</param>
+    /// <returns>A read-only memory region containing the selection bounds in visual order and pixel units.</returns>
+    public ReadOnlyMemory<FontRectangle> GetSelectionBounds(GraphemeMetrics metrics)
+        => TextInteraction.GetSelectionBounds(
+            this.LineMetrics,
+            this.GraphemeMetrics,
+            metrics,
+            this.layoutMode);
+
+    /// <summary>
     /// Gets selection bounds for the supplied word metrics.
     /// </summary>
     /// <param name="metrics">The word metrics to select.</param>
     /// <returns>A read-only memory region containing the selection bounds in visual order and pixel units.</returns>
     public ReadOnlyMemory<FontRectangle> GetSelectionBounds(WordMetrics metrics)
-        => this.GetSelectionBounds(metrics.GraphemeStart, metrics.GraphemeEnd);
+        => TextInteraction.GetSelectionBounds(
+            this.LineMetrics,
+            this.GraphemeMetrics,
+            metrics.GraphemeStart,
+            metrics.GraphemeEnd,
+            this.layoutMode);
 
     /// <inheritdoc cref="TextBlock.MeasureGlyphAdvances(float)"/>
     public ReadOnlyMemory<GlyphBounds> MeasureGlyphAdvances()

@@ -2,7 +2,6 @@
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
-using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests.Issues;
 
@@ -29,14 +28,9 @@ public class Issues_431
 
             TextMetrics metrics = TextMeasurer.Measure(text, options);
 
-            // The collection contains laid-out glyph entries. These fixtures shape one glyph per source
-            // code point, so the preserved line-edge whitespace raises the count from the old trimmed 46.
-            Assert.Equal(49, metrics.MeasureGlyphAdvances().Length);
-            AssertLineBreakCount(metrics.MeasureGlyphAdvances().Span, 2);
-
-            // Hard breaks are preserved at their original UTF-16 source indices.
-            AssertPreservedLineBreakAdvance(metrics.MeasureGlyphAdvances().Span, 16);
-            AssertPreservedLineBreakAdvance(metrics.MeasureGlyphAdvances().Span, 31);
+            // Hard breaks that terminate non-empty lines are trimmed from the visual
+            // glyph stream, so the glyph count returns to the visible source glyphs.
+            Assert.Equal(46, metrics.MeasureGlyphAdvances().Length);
         }
     }
 
@@ -61,45 +55,9 @@ public class Issues_431
 
             TextMetrics metrics = TextMeasurer.Measure(text, options);
 
-            // The collection contains laid-out glyph entries. These fixtures shape one glyph per source
-            // code point, so the preserved line-edge whitespace raises the count from the old trimmed 46.
-            Assert.Equal(49, metrics.MeasureGlyphAdvances().Length);
-            AssertLineBreakCount(metrics.MeasureGlyphAdvances().Span, 1);
-
-            // Hard breaks are preserved at their original UTF-16 source indices.
-            AssertPreservedLineBreakAdvance(metrics.MeasureGlyphAdvances().Span, 31);
+            // Hard breaks that terminate non-empty lines are trimmed from the visual
+            // glyph stream, so the glyph count returns to the visible source glyphs.
+            Assert.Equal(46, metrics.MeasureGlyphAdvances().Length);
         }
-    }
-
-    private static void AssertLineBreakCount(ReadOnlySpan<GlyphBounds> advances, int expected)
-    {
-        int count = 0;
-        for (int i = 0; i < advances.Length; i++)
-        {
-            if (CodePoint.IsNewLine(advances[i].Codepoint))
-            {
-                count++;
-            }
-        }
-
-        Assert.Equal(expected, count);
-    }
-
-    private static void AssertPreservedLineBreakAdvance(ReadOnlySpan<GlyphBounds> advances, int stringIndex)
-    {
-        for (int i = 0; i < advances.Length; i++)
-        {
-            GlyphBounds advance = advances[i];
-            if (advance.StringIndex != stringIndex)
-            {
-                continue;
-            }
-
-            Assert.True(CodePoint.IsNewLine(advance.Codepoint));
-            Assert.True(advance.Bounds.Width > 0 || advance.Bounds.Height > 0);
-            return;
-        }
-
-        Assert.Fail($"No preserved line break glyph found at string index {stringIndex}.");
     }
 }

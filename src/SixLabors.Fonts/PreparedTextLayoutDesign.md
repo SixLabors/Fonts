@@ -151,7 +151,6 @@ foreach (GraphemeMetrics grapheme in metrics.GraphemeMetrics)
     FontRectangle bounds = grapheme.Bounds;
     FontRectangle renderableBounds = grapheme.RenderableBounds;
     bool isLineBreak = grapheme.IsLineBreak;
-    bool contributesToMeasurement = grapheme.ContributesToMeasurement;
 }
 ```
 
@@ -165,10 +164,10 @@ Use `Advance` for hit targets, carets, and selection geometry. Ink bounds can be
 empty, overhang the advance, or exclude whitespace, so they are not a reliable
 interaction target.
 
-`IsLineBreak` identifies hard-break graphemes. `ContributesToMeasurement`
-identifies whether the grapheme expands text measurements and painted selection
-rectangles. A grapheme can remain present for source mapping and caret positions
-without contributing to those visual measurements.
+`IsLineBreak` identifies hard-break graphemes that remain in the laid-out
+metrics. Hard breaks at the end of non-empty lines are trimmed with other
+trailing breaking whitespace; hard breaks that own blank lines remain because
+they provide the line geometry for selection and caret behavior.
 
 ## Word Metrics
 
@@ -308,11 +307,10 @@ if (caret.HasSecondary)
 }
 ```
 
-The integer overload is for callers that already have a logical insertion index:
+Use absolute placement when initializing a keyboard caret without a pointer hit.
 
 ```csharp
-// Use this when the caller already owns a logical insertion index.
-CaretPosition caret = metrics.GetCaretPosition(graphemeInsertionIndex);
+CaretPosition caret = metrics.GetCaret(CaretPlacement.Start);
 ```
 
 At bidi boundaries, one logical insertion position can have two visual edges.
@@ -324,7 +322,7 @@ to present or navigate that boundary without recomputing bidi affinity.
 `MoveCaret` applies editor-style movement to a caret and returns the new caret.
 
 ```csharp
-CaretPosition caret = metrics.GetCaretPosition(graphemeInsertionIndex);
+CaretPosition caret = metrics.GetCaret(CaretPlacement.Start);
 
 // Previous and Next move through logical grapheme insertion positions.
 caret = metrics.MoveCaret(caret, CaretMovement.Next);
@@ -343,7 +341,8 @@ caret = metrics.MoveCaret(caret, CaretMovement.TextStart);
 caret's requested position on the line.
 
 ```csharp
-CaretPosition firstLineEnd = metrics.GetCaretPosition(firstLineEndIndex);
+CaretPosition firstLineEnd = metrics.GetCaret(CaretPlacement.Start);
+firstLineEnd = metrics.MoveCaret(firstLineEnd, CaretMovement.LineEnd);
 
 // Repeated LineDown keeps the original line position even when an intermediate
 // line is shorter and the visible caret has to clamp to that line's end.
@@ -360,19 +359,6 @@ position.
 Selection APIs return rectangles in visual order and pixel units. The result is
 `ReadOnlyMemory<FontRectangle>` so callers can store it with selection state and
 use `.Span` when drawing.
-
-```csharp
-ReadOnlyMemory<FontRectangle> selection = metrics.GetSelectionBounds(start, end);
-
-foreach (FontRectangle rectangle in selection.Span)
-{
-    // Draw every rectangle; bidi selections can be visually discontinuous.
-    FillSelectionRectangle(rectangle);
-}
-```
-
-The integer overload accepts logical grapheme insertion indices. It is useful
-when the caller already owns a source range.
 
 For pointer selection, use the hit overload. This keeps bidi and trailing-edge
 logic inside the library.
@@ -393,7 +379,7 @@ foreach (FontRectangle rectangle in selection.Span)
 For keyboard selection, keep an anchor caret and move the focus caret.
 
 ```csharp
-CaretPosition anchor = metrics.GetCaretPosition(selectionStart);
+CaretPosition anchor = metrics.GetCaret(CaretPlacement.Start);
 CaretPosition focus = anchor;
 
 // Shift+Right-style behavior updates only the focus caret.
@@ -449,9 +435,9 @@ already split into the visual rectangles that should be painted.
 
 ## Hard Line Breaks
 
-Hard line breaks remain graphemes for source ranges, hit testing, and caret
-movement. Selection painting only creates a rectangle when the hard break owns
-measurable line space.
+Hard line breaks that end non-empty lines are trimmed with trailing breaking
+whitespace. Hard line breaks that own blank lines remain as graphemes for source
+ranges, hit testing, caret movement, and selection painting.
 
 For text with two hard breaks in the middle:
 
@@ -467,8 +453,7 @@ not add a separate painted box; the line break that owns the blank line should.
 
 Consumers should not special-case this. Draw the rectangles returned by
 `GetSelectionBounds`. Consumers that inspect individual graphemes can use
-`IsLineBreak` and `ContributesToMeasurement` to understand why a line-break
-grapheme is present but does not paint a selection rectangle.
+`IsLineBreak` to identify the blank-line hard breaks that remain in the metrics.
 
 ## Recommended Workflows
 
@@ -507,7 +492,7 @@ For keyboard navigation and selection:
 
 ```csharp
 TextMetrics metrics = block.Measure(wrappingLength);
-CaretPosition caret = metrics.GetCaretPosition(currentInsertionIndex);
+CaretPosition caret = metrics.GetCaret(CaretPlacement.Start);
 CaretPosition anchor = caret;
 
 // The movement operation owns grapheme, line, and hard-break navigation rules.

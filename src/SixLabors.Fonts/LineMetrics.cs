@@ -22,6 +22,7 @@ public readonly struct LineMetrics
     /// <param name="stringIndex">The UTF-16 index in the original text where this line begins.</param>
     /// <param name="graphemeIndex">The grapheme index in the original text where this line begins.</param>
     /// <param name="graphemeCount">The number of graphemes in the line.</param>
+    /// <param name="graphemeOffset">The offset of this line's first grapheme metrics entry.</param>
     internal LineMetrics(
         float ascender,
         float baseline,
@@ -31,7 +32,8 @@ public readonly struct LineMetrics
         Vector2 extent,
         int stringIndex,
         int graphemeIndex,
-        int graphemeCount)
+        int graphemeCount,
+        int graphemeOffset)
     {
         this.Ascender = ascender;
         this.Baseline = baseline;
@@ -42,6 +44,7 @@ public readonly struct LineMetrics
         this.StringIndex = stringIndex;
         this.GraphemeIndex = graphemeIndex;
         this.GraphemeCount = graphemeCount;
+        this.GraphemeOffset = graphemeOffset;
     }
 
     /// <summary>
@@ -86,12 +89,12 @@ public readonly struct LineMetrics
     public Vector2 Extent { get; }
 
     /// <summary>
-    /// Gets the UTF-16 index in the original text where this line begins.
+    /// Gets the zero-based UTF-16 code unit index in the original text.
     /// </summary>
     public int StringIndex { get; }
 
     /// <summary>
-    /// Gets the grapheme index in the original text where this line begins.
+    /// Gets the zero-based grapheme index in the original text.
     /// </summary>
     public int GraphemeIndex { get; }
 
@@ -99,4 +102,9 @@ public readonly struct LineMetrics
     /// Gets the number of graphemes in the line.
     /// </summary>
     public int GraphemeCount { get; }
+
+    /// <summary>
+    /// Gets the offset of this line's first entry in the flattened grapheme metrics buffer.
+    /// </summary>
+    internal int GraphemeOffset { get; }
 }

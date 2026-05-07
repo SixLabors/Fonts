@@ -302,6 +302,7 @@ public sealed partial class TextBlock
 
         int i = reverseLineOrder ? textBox.TextLines.Count - 1 : 0;
         int step = reverseLineOrder ? -1 : 1;
+        int graphemeOffset = 0;
 
         while (i >= 0 && i < textBox.TextLines.Count)
         {
@@ -369,8 +370,10 @@ public sealed partial class TextBlock
                 extent,
                 stringIndex,
                 graphemeIndex,
-                line.GraphemeCount);
+                line.GraphemeCount,
+                graphemeOffset);
 
+            graphemeOffset += line.GraphemeCount;
             lineOffset += line.ScaledMaxLineHeight * options.Dpi;
             i += step;
         }

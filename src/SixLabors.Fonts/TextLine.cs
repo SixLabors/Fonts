@@ -158,7 +158,6 @@ internal sealed class TextLine
     /// <param name="stringIndex">The character index in the source string.</param>
     /// <param name="layoutMode">The glyph-level layout mode to use for ink bounds computation.</param>
     /// <param name="lineSpacing">The line-spacing factor to apply to <paramref name="scaledLineHeight"/>.</param>
-    /// <param name="contributesToMeasurement">Whether this entry contributes to line metrics and measurements.</param>
     /// <param name="hyphenationMarkerIndex">The marker index to use if this entry becomes a selected soft-hyphen break.</param>
     public void Add(
         IReadOnlyList<GlyphMetrics> metrics,
@@ -178,7 +177,6 @@ internal sealed class TextLine
         int stringIndex,
         GlyphLayoutMode layoutMode,
         float lineSpacing,
-        bool contributesToMeasurement = true,
         int hyphenationMarkerIndex = GlyphLayoutData.NoHyphenationMarker)
     {
         // Apply LineSpacing to scaledLineHeight before storing
@@ -241,7 +239,6 @@ internal sealed class TextLine
             isTransformed,
             isDecomposed,
             stringIndex,
-            contributesToMeasurement,
             hyphenationMarkerIndex));
     }
 
@@ -315,6 +312,93 @@ internal sealed class TextLine
         List<GlyphLayoutData> hyphenationMarkers)
     {
         this.data[index] = hyphenationMarkers[this.data[index].HyphenationMarkerIndex];
+        RecalculateLineMetrics(this);
+    }
+
+    /// <summary>
+    /// Applies an ellipsis marker to the end of this line.
+    /// </summary>
+    /// <param name="markerCodePoint">The marker codepoint to append.</param>
+    /// <param name="scaledWrappingLength">The wrapping length in inches.</param>
+    /// <param name="options">The text options used for layout.</param>
+    public void ApplyEllipsisMarker(
+        CodePoint markerCodePoint,
+        float scaledWrappingLength,
+        TextOptions options)
+    {
+        // The marker replaces the hidden tail, so breakable whitespace at the
+        // truncation edge is removed before we choose the marker style or decide
+        // how many graphemes fit.
+        this.RemoveTrailingBreakingWhitespace();
+
+        GlyphLayoutData anchor = this.data[^1];
+        GlyphLayoutData marker = TextLayout.CreateGeneratedMarker(
+            anchor.Metrics[0],
+            anchor.PointSize,
+            anchor.BidiRun,
+            anchor.GraphemeIndex,
+            anchor.IsLastInGrapheme,
+            anchor.CodePointIndex,
+            anchor.GraphemeCodePointIndex,
+            anchor.StringIndex,
+            markerCodePoint,
+            options.LayoutMode,
+            options);
+
+        while (this.data.Count > 0 &&
+            this.ScaledLineAdvance + marker.ScaledAdvance > scaledWrappingLength)
+        {
+            // Remove a whole grapheme at a time. Truncating through a decomposed
+            // cluster would corrupt the same source unit that selection and caret
+            // metrics expose as indivisible.
+            this.RemoveLastGrapheme();
+        }
+
+        // CSS block ellipsis allows the marker to displace the whole final line.
+        // That means an overflowing line can become marker-only, but only because
+        // hidden text exists after the clamp point.
+        this.data.Add(marker);
+        RecalculateLineMetrics(this);
+    }
+
+    /// <summary>
+    /// Removes trailing breakable whitespace from the line.
+    /// </summary>
+    private void RemoveTrailingBreakingWhitespace()
+    {
+        int index = this.data.Count;
+        while (index > 1)
+        {
+            CodePoint point = this.data[index - 1].CodePoint;
+            if (!CodePoint.IsWhiteSpace(point) || CodePoint.IsNonBreakingSpace(point))
+            {
+                break;
+            }
+
+            index--;
+        }
+
+        if (index < this.data.Count)
+        {
+            this.data.RemoveRange(index, this.data.Count - index);
+            RecalculateLineMetrics(this);
+        }
+    }
+
+    /// <summary>
+    /// Removes the last complete grapheme from the line.
+    /// </summary>
+    private void RemoveLastGrapheme()
+    {
+        int end = this.data.Count - 1;
+        int graphemeIndex = this.data[end].GraphemeIndex;
+        int start = end;
+        while (start > 0 && this.data[start - 1].GraphemeIndex == graphemeIndex)
+        {
+            start--;
+        }
+
+        this.data.RemoveRange(start, end - start + 1);
         RecalculateLineMetrics(this);
     }
 
@@ -451,39 +535,7 @@ internal sealed class TextLine
             or LineBreakClass.Ideographic;
 
     /// <summary>
-    /// Marks trailing breaking-whitespace entries so they remain part of the line but do not
-    /// contribute to line metrics. Non-breaking spaces are preserved and the first entry always
-    /// contributes, matching the previous trimming behavior for blank lines.
-    /// </summary>
-    private void MarkTrailingWhitespaceAsNonMetric()
-    {
-        int count = this.data.Count;
-        int index = count;
-        while (index > 1)
-        {
-            // Trim trailing breaking whitespace.
-            CodePoint point = this.data[index - 1].CodePoint;
-            if (!CodePoint.IsWhiteSpace(point) || CodePoint.IsNonBreakingSpace(point))
-            {
-                break;
-            }
-
-            index--;
-        }
-
-        if (index < count)
-        {
-            for (int i = index; i < count; i++)
-            {
-                GlyphLayoutData glyph = this.data[i];
-                glyph.ContributesToMeasurement = false;
-                this.data[i] = glyph;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Finalizes this line after line-breaking: marks trailing breaking whitespace as non-metric, applies
+    /// Finalizes this line after line-breaking: trims trailing breaking whitespace, applies
     /// bidi reordering so entries are in visual order, and recomputes aggregated metrics.
     /// </summary>
     /// <param name="skipJustification">
@@ -497,7 +549,7 @@ internal sealed class TextLine
     public TextLine Finalize(bool skipJustification = false, bool normalizeDecomposedAdvances = false)
     {
         this.SkipJustification = skipJustification;
-        this.MarkTrailingWhitespaceAsNonMetric();
+        this.RemoveTrailingBreakingWhitespace();
         this.BidiReOrder();
 
         if (normalizeDecomposedAdvances)
@@ -585,8 +637,7 @@ internal sealed class TextLine
             for (int i = 0; i < this.data.Count; i++)
             {
                 GlyphLayoutData glyph = this.data[i];
-                if (glyph.ContributesToMeasurement
-                    && !CodePoint.IsZeroWidthJoiner(glyph.CodePoint)
+                if (!CodePoint.IsZeroWidthJoiner(glyph.CodePoint)
                     && !CodePoint.IsZeroWidthNonJoiner(glyph.CodePoint))
                 {
                     nonZeroCount++;
@@ -604,8 +655,7 @@ internal sealed class TextLine
             for (int i = 0; i < this.data.Count && remainingOpportunities > 0; i++)
             {
                 GlyphLayoutData glyph = this.data[i];
-                if (glyph.ContributesToMeasurement
-                    && !CodePoint.IsZeroWidthJoiner(glyph.CodePoint)
+                if (!CodePoint.IsZeroWidthJoiner(glyph.CodePoint)
                     && !CodePoint.IsZeroWidthNonJoiner(glyph.CodePoint))
                 {
                     glyph.ScaledAdvance += padding;
@@ -626,7 +676,7 @@ internal sealed class TextLine
             for (int i = 0; i < this.data.Count; i++)
             {
                 GlyphLayoutData glyph = this.data[i];
-                if (glyph.ContributesToMeasurement && CodePoint.IsWhiteSpace(glyph.CodePoint))
+                if (CodePoint.IsWhiteSpace(glyph.CodePoint))
                 {
                     whiteSpaceCount++;
                 }
@@ -641,7 +691,7 @@ internal sealed class TextLine
             for (int i = 0; i < this.data.Count; i++)
             {
                 GlyphLayoutData glyph = this.data[i];
-                if (glyph.ContributesToMeasurement && CodePoint.IsWhiteSpace(glyph.CodePoint))
+                if (CodePoint.IsWhiteSpace(glyph.CodePoint))
                 {
                     glyph.ScaledAdvance += padding;
                     this.data[i] = glyph;
@@ -754,11 +804,6 @@ internal sealed class TextLine
         for (int i = 0; i < textLine.Count; i++)
         {
             GlyphLayoutData glyph = textLine[i];
-            if (!glyph.ContributesToMeasurement)
-            {
-                continue;
-            }
-
             advance += glyph.ScaledAdvance;
             ascender = MathF.Max(ascender, glyph.ScaledAscender);
             descender = MathF.Max(descender, glyph.ScaledDescender);

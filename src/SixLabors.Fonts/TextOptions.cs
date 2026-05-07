@@ -44,6 +44,7 @@ public class TextOptions
         this.TextHyphenation = options.TextHyphenation;
         this.CustomHyphen = options.CustomHyphen;
         this.TextDirection = options.TextDirection;
+        this.TextBidiMode = options.TextBidiMode;
         this.TextAlignment = options.TextAlignment;
         this.TextJustification = options.TextJustification;
         this.HorizontalAlignment = options.HorizontalAlignment;
@@ -174,6 +175,11 @@ public class TextOptions
     /// Gets or sets the text direction.
     /// </summary>
     public TextDirection TextDirection { get; set; } = TextDirection.Auto;
+
+    /// <summary>
+    /// Gets or sets how bidirectional text is resolved.
+    /// </summary>
+    public TextBidiMode TextBidiMode { get; set; }
 
     /// <summary>
     /// Gets or sets the text alignment of the text within the box.

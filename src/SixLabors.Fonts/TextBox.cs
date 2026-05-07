@@ -11,6 +11,8 @@ namespace SixLabors.Fonts;
 /// </summary>
 internal sealed class TextBox
 {
+    private readonly TextDirection textDirection;
+
     private float? scaledMaxAdvance;
 
     private float? minY;
@@ -23,8 +25,12 @@ internal sealed class TextBox
     /// Initializes a new instance of the <see cref="TextBox"/> class.
     /// </summary>
     /// <param name="textLines">The shaped, line-broken lines that make up this text box.</param>
-    public TextBox(IReadOnlyList<TextLine> textLines)
-        => this.TextLines = textLines;
+    /// <param name="textDirection">The block-level text direction.</param>
+    public TextBox(IReadOnlyList<TextLine> textLines, TextDirection textDirection)
+    {
+        this.TextLines = textLines;
+        this.textDirection = textDirection;
+    }
 
     /// <summary>
     /// Gets the shaped and line-broken lines that make up the text.
@@ -72,9 +78,8 @@ internal sealed class TextBox
     }
 
     /// <summary>
-    /// Returns the resolved text direction of the first glyph in the first line. Used as the
-    /// block-level direction for alignment calculations.
+    /// Returns the block-level text direction used for alignment calculations.
     /// </summary>
     /// <returns>The block-level text direction.</returns>
-    public TextDirection TextDirection() => this.TextLines[0][0].TextDirection;
+    public TextDirection TextDirection() => this.textDirection;
 }

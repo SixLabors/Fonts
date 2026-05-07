@@ -40,7 +40,7 @@ internal static class TextInteraction
         // LineMetrics preserve their source line index, while grapheme metrics are emitted in
         // visual line order. Locate the line slice by source range so reverse line-order modes
         // pair the hit-tested line with its own graphemes.
-        int graphemeOffset = GetGraphemeOffset(graphemes, lines[lineIndex]);
+        int graphemeOffset = GetGraphemeOffset(lines[lineIndex]);
         ReadOnlySpan<GraphemeMetrics> lineGraphemes = graphemes.Slice(graphemeOffset, lines[lineIndex].GraphemeCount);
 
         return HitTestLine(lineIndex, lineGraphemes, point, isHorizontal);
@@ -85,7 +85,7 @@ internal static class TextInteraction
 
         // See HitTest: line source indices and flattened storage offsets are deliberately
         // separate because bidi reordering can make source order differ from visual order.
-        int graphemeOffset = GetGraphemeOffset(graphemes, line);
+        int graphemeOffset = GetGraphemeOffset(line);
         ReadOnlySpan<GraphemeMetrics> lineGraphemes = graphemes.Slice(graphemeOffset, line.GraphemeCount);
 
         return GetCaretPositionLine(lineIndex, line, lineGraphemes, graphemeIndex, layoutMode);
@@ -116,6 +116,66 @@ internal static class TextInteraction
     }
 
     /// <summary>
+    /// Gets an absolute caret position from a complete laid-out text box.
+    /// </summary>
+    /// <param name="lines">All laid-out lines available for caret placement.</param>
+    /// <param name="graphemes">The flattened grapheme metrics that back the full text box.</param>
+    /// <param name="placement">The absolute placement within the text box.</param>
+    /// <param name="layoutMode">The layout orientation used when the caret geometry was calculated.</param>
+    /// <param name="direction">The resolved text direction used to choose the visual start or end of the scope.</param>
+    /// <returns>The caret position in pixel units.</returns>
+    public static CaretPosition GetCaret(
+        ReadOnlySpan<LineMetrics> lines,
+        ReadOnlySpan<GraphemeMetrics> graphemes,
+        CaretPlacement placement,
+        LayoutMode layoutMode,
+        TextDirection direction)
+    {
+        if (lines.IsEmpty || graphemes.IsEmpty)
+        {
+            return new(-1, -1, -1, default, default, false, default, default, 0);
+        }
+
+        int targetGraphemeIndex = placement == CaretPlacement.Start
+            ? GetSourceTextStart(graphemes)
+            : GetSourceTextEnd(graphemes);
+
+        int lineIndex = FindLineByGraphemeIndex(lines, targetGraphemeIndex);
+
+        LineMetrics line = lines[lineIndex];
+        int graphemeOffset = GetGraphemeOffset(line);
+        ReadOnlySpan<GraphemeMetrics> lineGraphemes = graphemes.Slice(graphemeOffset, line.GraphemeCount);
+
+        return GetCaretLine(lineIndex, line, lineGraphemes, placement, layoutMode, direction);
+    }
+
+    /// <summary>
+    /// Gets an absolute caret position from one laid-out line.
+    /// </summary>
+    /// <param name="lineIndex">The zero-based visual index of the supplied line.</param>
+    /// <param name="line">The metrics for the single line that will host the caret.</param>
+    /// <param name="graphemes">The visual-order grapheme metrics for that one line.</param>
+    /// <param name="placement">The absolute placement within the line.</param>
+    /// <param name="layoutMode">The orientation that determines the caret edge direction.</param>
+    /// <param name="direction">The resolved text direction used to choose the visual start or end of the scope.</param>
+    /// <returns>The caret position in pixel units.</returns>
+    public static CaretPosition GetCaretLine(
+        int lineIndex,
+        in LineMetrics line,
+        ReadOnlySpan<GraphemeMetrics> graphemes,
+        CaretPlacement placement,
+        LayoutMode layoutMode,
+        TextDirection direction)
+    {
+        if (graphemes.IsEmpty)
+        {
+            return new(lineIndex, line.GraphemeIndex, line.StringIndex, default, default, false, default, default, 0);
+        }
+
+        return CreateCaretAtVisualLineEdge(lineIndex, line, graphemes, placement, layoutMode.IsHorizontal(), direction);
+    }
+
+    /// <summary>
     /// Moves a caret within a complete laid-out text box.
     /// </summary>
     /// <param name="lines">The visual lines across which the caret may move.</param>
@@ -124,6 +184,7 @@ internal static class TextInteraction
     /// <param name="caret">The starting caret location before applying the movement.</param>
     /// <param name="movement">The requested caret navigation command.</param>
     /// <param name="layoutMode">The orientation rules that control horizontal versus vertical motion.</param>
+    /// <param name="direction">The resolved text direction used to choose line and text start/end.</param>
     /// <returns>The moved caret position in pixel units.</returns>
     public static CaretPosition MoveCaret(
         ReadOnlySpan<LineMetrics> lines,
@@ -131,7 +192,8 @@ internal static class TextInteraction
         ReadOnlySpan<WordMetrics> wordMetrics,
         CaretPosition caret,
         CaretMovement movement,
-        LayoutMode layoutMode)
+        LayoutMode layoutMode,
+        TextDirection direction)
     {
         if (lines.IsEmpty || graphemes.IsEmpty)
         {
@@ -139,44 +201,40 @@ internal static class TextInteraction
         }
 
         bool isHorizontal = layoutMode.IsHorizontal();
-        int lineIndex = GetCaretLineIndex(lines, caret);
+        int lineIndex = GetCaretLineIndex(lines, graphemes, caret);
         LineMetrics line = lines[lineIndex];
-        int graphemeOffset = GetGraphemeOffset(graphemes, line);
+        int graphemeOffset = GetGraphemeOffset(line);
         ReadOnlySpan<GraphemeMetrics> lineGraphemes = graphemes.Slice(graphemeOffset, line.GraphemeCount);
         int target = caret.GraphemeIndex;
         switch (movement)
         {
             case CaretMovement.Previous:
-                target = Math.Max(GetTextStart(lines), caret.GraphemeIndex - 1);
+                target = GetPreviousInsertionIndex(graphemes, caret.GraphemeIndex, GetSourceTextStart(graphemes));
                 break;
 
             case CaretMovement.Next:
-                target = Math.Min(GetTextEnd(lines), caret.GraphemeIndex + 1);
+                target = GetNextInsertionIndex(graphemes, caret.GraphemeIndex, GetSourceTextEnd(graphemes));
                 break;
 
             case CaretMovement.PreviousWord:
-                target = GetPreviousWordBoundary(wordMetrics, caret.GraphemeIndex, GetTextStart(lines));
+                target = GetPreviousWordBoundary(wordMetrics, caret.GraphemeIndex, GetSourceTextStart(graphemes));
                 break;
 
             case CaretMovement.NextWord:
-                target = GetNextWordBoundary(wordMetrics, caret.GraphemeIndex, GetTextEnd(lines));
+                target = GetNextWordBoundary(wordMetrics, caret.GraphemeIndex, GetSourceTextEnd(graphemes));
                 break;
 
             case CaretMovement.LineStart:
-                target = line.GraphemeIndex;
-                break;
+                return GetCaretLine(lineIndex, line, lineGraphemes, CaretPlacement.Start, layoutMode, direction);
 
             case CaretMovement.LineEnd:
-                target = GetLineEndInsertionIndex(line, lineGraphemes);
-                break;
+                return GetCaretLine(lineIndex, line, lineGraphemes, CaretPlacement.End, layoutMode, direction);
 
             case CaretMovement.TextStart:
-                target = GetTextStart(lines);
-                break;
+                return GetCaret(lines, graphemes, CaretPlacement.Start, layoutMode, direction);
 
             case CaretMovement.TextEnd:
-                target = GetTextEnd(lines);
-                break;
+                return GetCaret(lines, graphemes, CaretPlacement.End, layoutMode, direction);
 
             case CaretMovement.LineUp:
                 return MoveCaretToAdjacentLine(
@@ -212,6 +270,7 @@ internal static class TextInteraction
     /// <param name="caret">The caret location to move inside the line.</param>
     /// <param name="movement">The in-line caret navigation command to execute.</param>
     /// <param name="layoutMode">The orientation used to choose the caret axis within the line.</param>
+    /// <param name="direction">The resolved text direction used to choose line start/end.</param>
     /// <returns>The moved caret position in pixel units.</returns>
     public static CaretPosition MoveCaretLine(
         int lineIndex,
@@ -220,32 +279,34 @@ internal static class TextInteraction
         ReadOnlySpan<WordMetrics> wordMetrics,
         CaretPosition caret,
         CaretMovement movement,
-        LayoutMode layoutMode)
+        LayoutMode layoutMode,
+        TextDirection direction)
     {
         if (graphemes.IsEmpty)
         {
             return caret;
         }
 
+        int lineStart = GetSourceLineStart(graphemes);
+        int lineEnd = GetSourceLineEnd(graphemes);
         int target = caret.GraphemeIndex;
         switch (movement)
         {
             case CaretMovement.Previous:
-                target = Math.Max(line.GraphemeIndex, caret.GraphemeIndex - 1);
+                target = GetPreviousInsertionIndex(graphemes, caret.GraphemeIndex, lineStart);
                 break;
 
             case CaretMovement.Next:
-                target = Math.Min(GetLineEndInsertionIndex(line, graphemes), caret.GraphemeIndex + 1);
+                target = GetNextInsertionIndex(graphemes, caret.GraphemeIndex, lineEnd);
                 break;
 
             case CaretMovement.PreviousWord:
                 target = Math.Max(
-                    line.GraphemeIndex,
-                    GetPreviousWordBoundary(wordMetrics, caret.GraphemeIndex, line.GraphemeIndex));
+                    lineStart,
+                    GetPreviousWordBoundary(wordMetrics, caret.GraphemeIndex, lineStart));
                 break;
 
             case CaretMovement.NextWord:
-                int lineEnd = GetLineEndInsertionIndex(line, graphemes);
                 target = Math.Min(
                     lineEnd,
                     GetNextWordBoundary(wordMetrics, caret.GraphemeIndex, lineEnd));
@@ -253,13 +314,11 @@ internal static class TextInteraction
 
             case CaretMovement.LineStart:
             case CaretMovement.TextStart:
-                target = line.GraphemeIndex;
-                break;
+                return GetCaretLine(lineIndex, line, graphemes, CaretPlacement.Start, layoutMode, direction);
 
             case CaretMovement.LineEnd:
             case CaretMovement.TextEnd:
-                target = GetLineEndInsertionIndex(line, graphemes);
-                break;
+                return GetCaretLine(lineIndex, line, graphemes, CaretPlacement.End, layoutMode, direction);
 
             case CaretMovement.LineUp:
             case CaretMovement.LineDown:
@@ -304,8 +363,8 @@ internal static class TextInteraction
     /// </summary>
     /// <param name="lines">The visual lines that may contribute selection rectangles.</param>
     /// <param name="graphemes">The flattened grapheme metrics scanned for the selected range.</param>
-    /// <param name="graphemeStart">The inclusive logical start of the selection.</param>
-    /// <param name="graphemeEnd">The exclusive logical end of the selection.</param>
+    /// <param name="graphemeStart">The first source grapheme insertion boundary in the selection.</param>
+    /// <param name="graphemeEnd">The final source grapheme insertion boundary in the selection.</param>
     /// <param name="layoutMode">The orientation used when converting ranges into rectangles.</param>
     /// <returns>A read-only memory region containing the selection rectangles in visual order.</returns>
     public static ReadOnlyMemory<FontRectangle> GetSelectionBounds(
@@ -320,23 +379,29 @@ internal static class TextInteraction
             return ReadOnlyMemory<FontRectangle>.Empty;
         }
 
-        int start = Math.Min(graphemeStart, graphemeEnd);
-        int end = Math.Max(graphemeStart, graphemeEnd);
-        FontRectangle[] result = new FontRectangle[CountSelectionBounds(lines, graphemes, start, end)];
+        int selectionStart = Math.Min(graphemeStart, graphemeEnd);
+        int selectionEnd = Math.Max(graphemeStart, graphemeEnd);
+        int rectangleCount = CountSelectionBounds(lines, graphemes, selectionStart, selectionEnd);
+        if (rectangleCount == 0)
+        {
+            return ReadOnlyMemory<FontRectangle>.Empty;
+        }
+
+        FontRectangle[] result = new FontRectangle[rectangleCount];
         int count = 0;
         bool isHorizontal = layoutMode.IsHorizontal();
 
         for (int i = 0; i < lines.Length; i++)
         {
             LineMetrics line = lines[i];
-            if (!LineIntersectsSelection(line, start, end))
+            int graphemeOffset = GetGraphemeOffset(line);
+            ReadOnlySpan<GraphemeMetrics> lineGraphemes = graphemes.Slice(graphemeOffset, line.GraphemeCount);
+            if (CountSelectionBoundsLine(lineGraphemes, selectionStart, selectionEnd) == 0)
             {
                 continue;
             }
 
-            int graphemeOffset = GetGraphemeOffset(graphemes, line);
-            ReadOnlySpan<GraphemeMetrics> lineGraphemes = graphemes.Slice(graphemeOffset, line.GraphemeCount);
-            count += FillSelectionBoundsLine(line, lineGraphemes, start, end, isHorizontal, result.AsSpan(count));
+            count += FillSelectionBoundsLine(line, lineGraphemes, selectionStart, selectionEnd, isHorizontal, result.AsSpan(count));
         }
 
         return result;
@@ -347,8 +412,8 @@ internal static class TextInteraction
     /// </summary>
     /// <param name="line">The single line for which selection rectangles are produced.</param>
     /// <param name="graphemes">The line-local grapheme metrics scanned in visual order.</param>
-    /// <param name="graphemeStart">The inclusive logical start bound applied to this line.</param>
-    /// <param name="graphemeEnd">The exclusive logical end bound applied to this line.</param>
+    /// <param name="graphemeStart">The first source grapheme insertion boundary applied to this line.</param>
+    /// <param name="graphemeEnd">The final source grapheme insertion boundary applied to this line.</param>
     /// <param name="layoutMode">The orientation used to map the selected run onto the line box.</param>
     /// <returns>A read-only memory region containing the line selection rectangles in visual order.</returns>
     public static ReadOnlyMemory<FontRectangle> GetSelectionBoundsLine(
@@ -363,15 +428,56 @@ internal static class TextInteraction
             return ReadOnlyMemory<FontRectangle>.Empty;
         }
 
-        int start = Math.Min(graphemeStart, graphemeEnd);
-        int end = Math.Max(graphemeStart, graphemeEnd);
-        if (!LineIntersectsSelection(line, start, end))
+        int selectionStart = Math.Min(graphemeStart, graphemeEnd);
+        int selectionEnd = Math.Max(graphemeStart, graphemeEnd);
+        int count = CountSelectionBoundsLine(graphemes, selectionStart, selectionEnd);
+        if (count == 0)
         {
             return ReadOnlyMemory<FontRectangle>.Empty;
         }
 
-        FontRectangle[] result = new FontRectangle[CountSelectionBoundsLine(graphemes, start, end)];
-        FillSelectionBoundsLine(line, graphemes, start, end, layoutMode.IsHorizontal(), result);
+        FontRectangle[] result = new FontRectangle[count];
+        _ = FillSelectionBoundsLine(line, graphemes, selectionStart, selectionEnd, layoutMode.IsHorizontal(), result);
+        return result;
+    }
+
+    /// <summary>
+    /// Gets selection bounds for one measured grapheme.
+    /// </summary>
+    /// <param name="lines">The visual lines used to find the grapheme's line box.</param>
+    /// <param name="graphemes">The flattened grapheme metrics that back the full text box.</param>
+    /// <param name="grapheme">The measured grapheme to select.</param>
+    /// <param name="layoutMode">The orientation used to map the grapheme advance onto the line box.</param>
+    /// <returns>A read-only memory region containing the grapheme selection bounds.</returns>
+    public static ReadOnlyMemory<FontRectangle> GetSelectionBounds(
+        ReadOnlySpan<LineMetrics> lines,
+        ReadOnlySpan<GraphemeMetrics> graphemes,
+        in GraphemeMetrics grapheme,
+        LayoutMode layoutMode)
+    {
+        if (lines.IsEmpty || graphemes.IsEmpty)
+        {
+            return ReadOnlyMemory<FontRectangle>.Empty;
+        }
+
+        int lineIndex = FindLineByGraphemeIndex(lines, grapheme.GraphemeIndex);
+        FontRectangle[] result = [CreateSelectionBounds(lines[lineIndex], grapheme, layoutMode.IsHorizontal())];
+        return result;
+    }
+
+    /// <summary>
+    /// Gets selection bounds for one measured grapheme within one laid-out line.
+    /// </summary>
+    /// <param name="line">The line that provides the cross-axis selection extent.</param>
+    /// <param name="grapheme">The measured grapheme to select.</param>
+    /// <param name="layoutMode">The orientation used to map the grapheme advance onto the line box.</param>
+    /// <returns>A read-only memory region containing the grapheme selection bounds.</returns>
+    public static ReadOnlyMemory<FontRectangle> GetSelectionBoundsLine(
+        in LineMetrics line,
+        in GraphemeMetrics grapheme,
+        LayoutMode layoutMode)
+    {
+        FontRectangle[] result = [CreateSelectionBounds(line, grapheme, layoutMode.IsHorizontal())];
         return result;
     }
 
@@ -406,21 +512,24 @@ internal static class TextInteraction
     /// Finds the line that owns the supplied grapheme index.
     /// </summary>
     /// <param name="lines">The visual lines whose source ranges are searched.</param>
-    /// <param name="graphemeIndex">The logical grapheme position to locate within those ranges.</param>
+    /// <param name="graphemeIndex">The source grapheme index to locate.</param>
     /// <returns>The nearest owning line index.</returns>
-    private static int FindLineByGraphemeIndex(ReadOnlySpan<LineMetrics> lines, int graphemeIndex)
+    private static int FindLineByGraphemeIndex(
+        ReadOnlySpan<LineMetrics> lines,
+        int graphemeIndex)
     {
         for (int i = 0; i < lines.Length; i++)
         {
-            int start = lines[i].GraphemeIndex;
-            int end = start + lines[i].GraphemeCount;
-            if (graphemeIndex >= start && graphemeIndex < end)
+            LineMetrics line = lines[i];
+            int lineStart = line.GraphemeIndex;
+            int lineEnd = lineStart + line.GraphemeCount;
+            if (graphemeIndex >= lineStart && graphemeIndex <= lineEnd)
             {
                 return i;
             }
         }
 
-        return graphemeIndex < lines[0].GraphemeIndex ? 0 : lines.Length - 1;
+        return 0;
     }
 
     /// <summary>
@@ -565,15 +674,80 @@ internal static class TextInteraction
 
         if (isHorizontal)
         {
-            float x = useEnd ? advance.Right : advance.Left;
+            // Bidi layout can produce negative advance widths. Left/Right are
+            // rectangle construction edges in that case, so choose the physical
+            // min/max x edge after logical leading/trailing has been resolved.
+            float physicalStart = MathF.Min(advance.Left, advance.Right);
+            float physicalEnd = MathF.Max(advance.Left, advance.Right);
+            float x = useEnd ? physicalEnd : physicalStart;
+
             start = new Vector2(x, line.Start.Y);
             end = new Vector2(x, line.Start.Y + line.Extent.Y);
             return;
         }
 
-        float y = useEnd ? advance.Bottom : advance.Top;
+        float physicalTop = MathF.Min(advance.Top, advance.Bottom);
+        float physicalBottom = MathF.Max(advance.Top, advance.Bottom);
+        float y = useEnd ? physicalBottom : physicalTop;
+
         start = new Vector2(line.Start.X, y);
         end = new Vector2(line.Start.X + line.Extent.X, y);
+    }
+
+    /// <summary>
+    /// Creates a caret at the source start or end boundary of a laid-out line.
+    /// </summary>
+    /// <param name="lineIndex">The zero-based visual index of the line.</param>
+    /// <param name="line">The line metrics used to size the caret segment.</param>
+    /// <param name="graphemes">The line-local grapheme metrics in visual order.</param>
+    /// <param name="placement">The source boundary to place within the line.</param>
+    /// <param name="isHorizontal">Indicates whether the caret spans vertically or horizontally.</param>
+    /// <param name="direction">The resolved text direction used to choose the visual start or end of the scope.</param>
+    /// <returns>The caret position at the requested line boundary.</returns>
+    private static CaretPosition CreateCaretAtVisualLineEdge(
+        int lineIndex,
+        in LineMetrics line,
+        ReadOnlySpan<GraphemeMetrics> graphemes,
+        CaretPlacement placement,
+        bool isHorizontal,
+        TextDirection direction)
+    {
+        bool isStart = placement == CaretPlacement.Start;
+        int insertionIndex = isStart ? GetSourceLineStart(graphemes) : GetSourceLineEnd(graphemes);
+        int visualIndex = FindGraphemeBySourceIndex(graphemes, isStart ? insertionIndex : insertionIndex - 1);
+        GraphemeMetrics grapheme = graphemes[visualIndex];
+        bool isRightToLeft = direction == TextDirection.RightToLeft;
+        bool useEnd = isStart == isRightToLeft;
+
+        // Start/end placement is anchored to the source boundary grapheme for
+        // the returned insertion index, but the visible caret sits on the line
+        // box edge. The resolved paragraph direction chooses which physical
+        // line edge represents start or end.
+        Vector2 start;
+        Vector2 end;
+        if (isHorizontal)
+        {
+            float x = useEnd ? line.Start.X + line.Extent.X : line.Start.X;
+            start = new Vector2(x, line.Start.Y);
+            end = new Vector2(x, line.Start.Y + line.Extent.Y);
+        }
+        else
+        {
+            float y = useEnd ? line.Start.Y + line.Extent.Y : line.Start.Y;
+            start = new Vector2(line.Start.X, y);
+            end = new Vector2(line.Start.X + line.Extent.X, y);
+        }
+
+        return new(
+            lineIndex,
+            insertionIndex,
+            grapheme.StringIndex,
+            start,
+            end,
+            false,
+            default,
+            default,
+            GetLineNavigationPosition(start, isHorizontal));
     }
 
     /// <summary>
@@ -603,7 +777,7 @@ internal static class TextInteraction
         }
 
         LineMetrics targetLine = lines[targetLineIndex];
-        int graphemeOffset = GetGraphemeOffset(graphemes, targetLine);
+        int graphemeOffset = GetGraphemeOffset(targetLine);
         ReadOnlySpan<GraphemeMetrics> targetGraphemes = graphemes.Slice(graphemeOffset, targetLine.GraphemeCount);
 
         Vector2 hitPoint = isHorizontal
@@ -667,11 +841,6 @@ internal static class TextInteraction
         int last = -1;
         for (int i = 0; i < graphemes.Length; i++)
         {
-            if (!ContributesToCaretNavigation(graphemes[i]))
-            {
-                continue;
-            }
-
             first = first < 0 ? i : first;
             last = i;
 
@@ -732,9 +901,13 @@ internal static class TextInteraction
     /// Gets a valid line index for the supplied caret.
     /// </summary>
     /// <param name="lines">The laid-out lines used to validate the caret's stored line index.</param>
+    /// <param name="graphemes">The flattened grapheme metrics used to resolve the caret when its line index is stale.</param>
     /// <param name="caret">The caret whose associated visual line must be resolved.</param>
     /// <returns>The line index.</returns>
-    private static int GetCaretLineIndex(ReadOnlySpan<LineMetrics> lines, in CaretPosition caret)
+    private static int GetCaretLineIndex(
+        ReadOnlySpan<LineMetrics> lines,
+        ReadOnlySpan<GraphemeMetrics> graphemes,
+        in CaretPosition caret)
     {
         if ((uint)caret.LineIndex < (uint)lines.Length)
         {
@@ -805,55 +978,130 @@ internal static class TextInteraction
     }
 
     /// <summary>
-    /// Gets the first grapheme insertion index in the laid-out text.
+    /// Gets the previous measured grapheme insertion index.
     /// </summary>
-    /// <param name="lines">The laid-out lines from which the earliest insertion point is derived.</param>
-    /// <returns>The text start insertion index.</returns>
-    private static int GetTextStart(ReadOnlySpan<LineMetrics> lines)
+    /// <param name="graphemes">The grapheme metrics that define valid caret stops.</param>
+    /// <param name="graphemeIndex">The caret insertion index to move from.</param>
+    /// <param name="limit">The minimum grapheme insertion index that can be returned.</param>
+    /// <returns>The previous measured grapheme insertion index.</returns>
+    private static int GetPreviousInsertionIndex(
+        ReadOnlySpan<GraphemeMetrics> graphemes,
+        int graphemeIndex,
+        int limit)
     {
-        int start = lines[0].GraphemeIndex;
-        for (int i = 1; i < lines.Length; i++)
+        int target = limit;
+        for (int i = 0; i < graphemes.Length; i++)
         {
-            start = Math.Min(start, lines[i].GraphemeIndex);
+            int start = graphemes[i].GraphemeIndex;
+            if (start < graphemeIndex)
+            {
+                target = Math.Max(target, start);
+            }
+
+            // The trailing boundary is derived only from an actual measured grapheme.
+            // This avoids walking through sparse source indices left by trimmed text.
+            int end = start + 1;
+            if (end < graphemeIndex)
+            {
+                target = Math.Max(target, end);
+            }
+        }
+
+        return target;
+    }
+
+    /// <summary>
+    /// Gets the next measured grapheme insertion index.
+    /// </summary>
+    /// <param name="graphemes">The grapheme metrics that define valid caret stops.</param>
+    /// <param name="graphemeIndex">The caret insertion index to move from.</param>
+    /// <param name="limit">The maximum grapheme insertion index that can be returned.</param>
+    /// <returns>The next measured grapheme insertion index.</returns>
+    private static int GetNextInsertionIndex(
+        ReadOnlySpan<GraphemeMetrics> graphemes,
+        int graphemeIndex,
+        int limit)
+    {
+        int target = limit;
+        for (int i = 0; i < graphemes.Length; i++)
+        {
+            int start = graphemes[i].GraphemeIndex;
+            if (start > graphemeIndex)
+            {
+                target = Math.Min(target, start);
+            }
+
+            // The trailing boundary is derived only from an actual measured grapheme.
+            // This avoids walking through sparse source indices left by trimmed text.
+            int end = start + 1;
+            if (end > graphemeIndex)
+            {
+                target = Math.Min(target, end);
+            }
+        }
+
+        return target;
+    }
+
+    /// <summary>
+    /// Gets the first source grapheme insertion index in the laid-out text.
+    /// </summary>
+    /// <param name="graphemes">The laid-out grapheme metrics searched for the earliest source insertion point.</param>
+    /// <returns>The source text start insertion index.</returns>
+    private static int GetSourceTextStart(ReadOnlySpan<GraphemeMetrics> graphemes)
+    {
+        int start = graphemes[0].GraphemeIndex;
+        for (int i = 1; i < graphemes.Length; i++)
+        {
+            start = Math.Min(start, graphemes[i].GraphemeIndex);
         }
 
         return start;
     }
 
     /// <summary>
-    /// Gets the final grapheme insertion index in the laid-out text.
+    /// Gets the final source grapheme insertion index in the laid-out text.
     /// </summary>
-    /// <param name="lines">The laid-out lines from which the final insertion point is derived.</param>
-    /// <returns>The text end insertion index.</returns>
-    private static int GetTextEnd(ReadOnlySpan<LineMetrics> lines)
+    /// <param name="graphemes">The laid-out grapheme metrics searched for the final source insertion point.</param>
+    /// <returns>The source text end insertion index.</returns>
+    private static int GetSourceTextEnd(ReadOnlySpan<GraphemeMetrics> graphemes)
     {
-        int end = lines[0].GraphemeIndex + lines[0].GraphemeCount;
-        for (int i = 1; i < lines.Length; i++)
+        int end = graphemes[0].GraphemeIndex + 1;
+        for (int i = 1; i < graphemes.Length; i++)
         {
-            end = Math.Max(end, lines[i].GraphemeIndex + lines[i].GraphemeCount);
+            end = Math.Max(end, graphemes[i].GraphemeIndex + 1);
         }
 
         return end;
     }
 
     /// <summary>
-    /// Gets the line end insertion index for caret navigation.
+    /// Gets the first source grapheme insertion index for a line.
     /// </summary>
-    /// <param name="line">The line whose logical end position is being computed.</param>
-    /// <param name="graphemes">The line-local grapheme metrics inspected for trailing hidden breaks.</param>
-    /// <returns>The line end insertion index.</returns>
-    private static int GetLineEndInsertionIndex(in LineMetrics line, ReadOnlySpan<GraphemeMetrics> graphemes)
+    /// <param name="graphemes">The line-local grapheme metrics.</param>
+    /// <returns>The source line start insertion index.</returns>
+    private static int GetSourceLineStart(ReadOnlySpan<GraphemeMetrics> graphemes)
     {
-        int end = line.GraphemeIndex + line.GraphemeCount;
-        int finalGraphemeIndex = end - 1;
-        for (int i = 0; i < graphemes.Length; i++)
+        int start = graphemes[0].GraphemeIndex;
+        for (int i = 1; i < graphemes.Length; i++)
         {
-            GraphemeMetrics grapheme = graphemes[i];
-            if (grapheme.GraphemeIndex == finalGraphemeIndex
-                && !ContributesToCaretNavigation(grapheme))
-            {
-                return finalGraphemeIndex;
-            }
+            start = Math.Min(start, graphemes[i].GraphemeIndex);
+        }
+
+        return start;
+    }
+
+    /// <summary>
+    /// Gets the final source grapheme insertion index for a line.
+    /// </summary>
+    /// <param name="graphemes">The line-local grapheme metrics.</param>
+    /// <returns>The source line end insertion index.</returns>
+    private static int GetSourceLineEnd(ReadOnlySpan<GraphemeMetrics> graphemes)
+    {
+        int end = graphemes[0].GraphemeIndex + 1;
+        for (int i = 1; i < graphemes.Length; i++)
+        {
+            end = Math.Max(end, graphemes[i].GraphemeIndex + 1);
         }
 
         return end;
@@ -911,16 +1159,16 @@ internal static class TextInteraction
     /// </summary>
     /// <param name="line">The line that will receive one or more selection rectangles.</param>
     /// <param name="graphemes">The line-local grapheme metrics grouped into visual runs.</param>
-    /// <param name="graphemeStart">The inclusive logical start bound for the selected range.</param>
-    /// <param name="graphemeEnd">The exclusive logical end bound for the selected range.</param>
+    /// <param name="selectionStart">The first source grapheme insertion boundary in the selected range.</param>
+    /// <param name="selectionEnd">The final source grapheme insertion boundary in the selected range.</param>
     /// <param name="isHorizontal">Indicates whether rectangles expand primarily along x.</param>
     /// <param name="result">The destination span that receives the generated rectangles.</param>
     /// <returns>The number of selection rectangles written.</returns>
     private static int FillSelectionBoundsLine(
         in LineMetrics line,
         ReadOnlySpan<GraphemeMetrics> graphemes,
-        int graphemeStart,
-        int graphemeEnd,
+        int selectionStart,
+        int selectionEnd,
         bool isHorizontal,
         Span<FontRectangle> result)
     {
@@ -931,9 +1179,12 @@ internal static class TextInteraction
         for (int i = 0; i < graphemes.Length; i++)
         {
             GraphemeMetrics grapheme = graphemes[i];
-            if (grapheme.GraphemeIndex < graphemeStart
-                || grapheme.GraphemeIndex >= graphemeEnd
-                || !ContributesToSelectionBounds(grapheme))
+
+            // Selections are caret boundary ranges: [start, end). A grapheme is selected
+            // when its source start sits inside that boundary span.
+            int graphemeStart = grapheme.GraphemeIndex;
+            bool isSelected = graphemeStart >= selectionStart && graphemeStart < selectionEnd;
+            if (!isSelected)
             {
                 // A logical range can be visually discontinuous after bidi reordering. Flush at
                 // the first unselected visual grapheme so selection never covers that gap.
@@ -981,37 +1232,54 @@ internal static class TextInteraction
         in LineMetrics line,
         float start,
         float end,
-        bool isHorizontal) =>
+        bool isHorizontal)
+        =>
         isHorizontal
         ? FontRectangle.FromLTRB(start, line.Start.Y, end, line.Start.Y + line.Extent.Y)
-            : FontRectangle.FromLTRB(line.Start.X, start, line.Start.X + line.Extent.X, end);
+        : FontRectangle.FromLTRB(line.Start.X, start, line.Start.X + line.Extent.X, end);
+
+    /// <summary>
+    /// Creates a selection rectangle for one measured grapheme.
+    /// </summary>
+    /// <param name="line">The containing line used to fill the rectangle on the secondary axis.</param>
+    /// <param name="grapheme">The grapheme whose advance defines the primary-axis selection extent.</param>
+    /// <param name="isHorizontal">Indicates whether the primary axis runs left to right.</param>
+    /// <returns>The selection rectangle in pixel units.</returns>
+    private static FontRectangle CreateSelectionBounds(
+        in LineMetrics line,
+        in GraphemeMetrics grapheme,
+        bool isHorizontal)
+    {
+        FontRectangle advance = grapheme.Advance;
+        float start = isHorizontal ? advance.Left : advance.Top;
+        float end = isHorizontal ? advance.Right : advance.Bottom;
+        return CreateSelectionBounds(line, start, end, isHorizontal);
+    }
 
     /// <summary>
     /// Counts how many selection rectangles are required for a grapheme range.
     /// </summary>
-    /// <param name="lines">The visual lines checked for intersection with the selection range.</param>
+    /// <param name="lines">The visual lines searched for selected graphemes.</param>
     /// <param name="graphemes">The flattened grapheme metrics used to count visual runs.</param>
-    /// <param name="graphemeStart">The inclusive logical selection start used for counting.</param>
-    /// <param name="graphemeEnd">The exclusive logical selection end used for counting.</param>
+    /// <param name="selectionStart">The first source grapheme insertion boundary used for counting.</param>
+    /// <param name="selectionEnd">The final source grapheme insertion boundary used for counting.</param>
     /// <returns>The number of selection rectangles.</returns>
     private static int CountSelectionBounds(
         ReadOnlySpan<LineMetrics> lines,
         ReadOnlySpan<GraphemeMetrics> graphemes,
-        int graphemeStart,
-        int graphemeEnd)
+        int selectionStart,
+        int selectionEnd)
     {
         int count = 0;
         for (int i = 0; i < lines.Length; i++)
         {
             LineMetrics line = lines[i];
-            if (!LineIntersectsSelection(line, graphemeStart, graphemeEnd))
-            {
-                continue;
-            }
-
-            int graphemeOffset = GetGraphemeOffset(graphemes, line);
+            int graphemeOffset = GetGraphemeOffset(line);
             ReadOnlySpan<GraphemeMetrics> lineGraphemes = graphemes.Slice(graphemeOffset, line.GraphemeCount);
-            count += CountSelectionBoundsLine(lineGraphemes, graphemeStart, graphemeEnd);
+
+            // Source grapheme indices can have gaps because trailing whitespace is trimmed.
+            // Count actual measured graphemes instead of deriving a dense range from the line.
+            count += CountSelectionBoundsLine(lineGraphemes, selectionStart, selectionEnd);
         }
 
         return count;
@@ -1021,22 +1289,24 @@ internal static class TextInteraction
     /// Counts visually contiguous selected grapheme runs in one line.
     /// </summary>
     /// <param name="graphemes">The visual-order grapheme metrics for the current line.</param>
-    /// <param name="graphemeStart">The inclusive logical selection start applied to that line.</param>
-    /// <param name="graphemeEnd">The exclusive logical selection end applied to that line.</param>
+    /// <param name="selectionStart">The first source grapheme insertion boundary applied to that line.</param>
+    /// <param name="selectionEnd">The final source grapheme insertion boundary applied to that line.</param>
     /// <returns>The number of selected visual runs.</returns>
     private static int CountSelectionBoundsLine(
         ReadOnlySpan<GraphemeMetrics> graphemes,
-        int graphemeStart,
-        int graphemeEnd)
+        int selectionStart,
+        int selectionEnd)
     {
         int count = 0;
         bool hasSelection = false;
         for (int i = 0; i < graphemes.Length; i++)
         {
             GraphemeMetrics grapheme = graphemes[i];
-            bool isSelected = grapheme.GraphemeIndex >= graphemeStart
-                && grapheme.GraphemeIndex < graphemeEnd
-                && ContributesToSelectionBounds(grapheme);
+
+            // Selections are caret boundary ranges: [start, end). A grapheme is selected
+            // when its source start sits inside that boundary span.
+            int graphemeStart = grapheme.GraphemeIndex;
+            bool isSelected = graphemeStart >= selectionStart && graphemeStart < selectionEnd;
 
             if (!isSelected)
             {
@@ -1052,20 +1322,6 @@ internal static class TextInteraction
         }
 
         return count;
-    }
-
-    /// <summary>
-    /// Gets a value indicating whether a line intersects the supplied grapheme range.
-    /// </summary>
-    /// <param name="line">The line whose grapheme range is being compared.</param>
-    /// <param name="graphemeStart">The inclusive logical start of the queried range.</param>
-    /// <param name="graphemeEnd">The exclusive logical end of the queried range.</param>
-    /// <returns><see langword="true"/> when the line intersects the range.</returns>
-    private static bool LineIntersectsSelection(in LineMetrics line, int graphemeStart, int graphemeEnd)
-    {
-        int lineStart = line.GraphemeIndex;
-        int lineEnd = lineStart + line.GraphemeCount;
-        return graphemeStart < lineEnd && graphemeEnd > lineStart;
     }
 
     /// <summary>
@@ -1144,48 +1400,10 @@ internal static class TextInteraction
         => (grapheme.BidiLevel & 1) != 0;
 
     /// <summary>
-    /// Gets a value indicating whether the grapheme should create visual selection bounds.
-    /// </summary>
-    /// <param name="grapheme">The grapheme being evaluated for selection rendering.</param>
-    /// <returns><see langword="true"/> when the grapheme should contribute to selection bounds.</returns>
-    private static bool ContributesToSelectionBounds(in GraphemeMetrics grapheme)
-        =>
-
-        // Hard breaks remain logical graphemes for caret movement and source ranges, but
-        // a non-measuring hard break should not create its own painted selection box.
-        !grapheme.IsLineBreak || grapheme.ContributesToMeasurement;
-
-    /// <summary>
-    /// Gets a value indicating whether the grapheme should participate in keyboard caret navigation.
-    /// </summary>
-    /// <param name="grapheme">The grapheme being evaluated as a keyboard navigation stop.</param>
-    /// <returns><see langword="true"/> when the grapheme should be a caret navigation target.</returns>
-    private static bool ContributesToCaretNavigation(in GraphemeMetrics grapheme)
-        =>
-
-        // Non-measuring hard breaks still exist as source positions, but Up/Down and LineEnd
-        // should target the visible line content rather than snapping after the hidden break.
-        !grapheme.IsLineBreak || grapheme.ContributesToMeasurement;
-
-    /// <summary>
     /// Gets the offset of a line's graphemes within the flattened metrics array.
     /// </summary>
-    /// <param name="graphemes">The flattened grapheme metrics searched for the line's first entry.</param>
-    /// <param name="line">The line whose logical grapheme range identifies the desired slice.</param>
+    /// <param name="line">The line whose stored grapheme offset identifies the desired slice.</param>
     /// <returns>The flattened grapheme metrics offset.</returns>
-    private static int GetGraphemeOffset(ReadOnlySpan<GraphemeMetrics> graphemes, in LineMetrics line)
-    {
-        int lineStart = line.GraphemeIndex;
-        int lineEnd = lineStart + line.GraphemeCount;
-        for (int i = 0; i < graphemes.Length; i++)
-        {
-            int graphemeIndex = graphemes[i].GraphemeIndex;
-            if (graphemeIndex >= lineStart && graphemeIndex < lineEnd)
-            {
-                return i;
-            }
-        }
-
-        return 0;
-    }
+    private static int GetGraphemeOffset(in LineMetrics line)
+        => line.GraphemeOffset;
 }

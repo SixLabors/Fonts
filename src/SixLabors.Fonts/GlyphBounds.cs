@@ -36,12 +36,12 @@ public readonly struct GlyphBounds
     public FontRectangle Bounds { get; }
 
     /// <summary>
-    /// Gets the grapheme index in the original text.
+    /// Gets the zero-based grapheme index in the original text.
     /// </summary>
     public int GraphemeIndex { get; }
 
     /// <summary>
-    /// Gets the UTF-16 index in the original text where the glyph entry begins.
+    /// Gets the zero-based UTF-16 code unit index in the original text.
     /// </summary>
     public int StringIndex { get; }
 

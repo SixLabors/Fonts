@@ -87,7 +87,6 @@ public sealed partial class TextBlock
         private int stringIndex;
         private int bidiLevel;
         private bool isLineBreak;
-        private bool contributesToMeasurement;
         private FontRectangle advanceBounds;
         private FontRectangle bounds;
         private bool hasCurrent;
@@ -106,7 +105,6 @@ public sealed partial class TextBlock
             this.stringIndex = 0;
             this.bidiLevel = 0;
             this.isLineBreak = false;
-            this.contributesToMeasurement = false;
             this.advanceBounds = FontRectangle.Empty;
             this.bounds = FontRectangle.Empty;
             this.hasCurrent = false;
@@ -121,20 +119,17 @@ public sealed partial class TextBlock
         /// Adds one laid-out glyph entry to the current grapheme, flushing the previous grapheme when needed.
         /// </summary>
         /// <param name="glyph">The laid-out glyph entry.</param>
-        /// <param name="contributesToMeasurement">Whether the glyph contributes to visual measurements.</param>
-        public void Visit(in GlyphLayout glyph, bool contributesToMeasurement)
-            => this.Visit(glyph, contributesToMeasurement, out _);
+        public void Visit(in GlyphLayout glyph)
+            => this.Visit(glyph, out _);
 
         /// <summary>
         /// Adds one laid-out glyph entry to the current grapheme, returning emitted metrics when the previous grapheme is flushed.
         /// </summary>
         /// <param name="glyph">The laid-out glyph entry.</param>
-        /// <param name="contributesToMeasurement">Whether the glyph contributes to visual measurements.</param>
         /// <param name="metrics">The emitted grapheme metrics when this method returns <see langword="true"/>.</param>
         /// <returns><see langword="true"/> when a grapheme was emitted.</returns>
         public bool Visit(
             in GlyphLayout glyph,
-            bool contributesToMeasurement,
             out GraphemeMetrics metrics)
         {
             FontRectangle advanceBounds = glyph.MeasureAdvance(this.dpi);
@@ -142,7 +137,7 @@ public sealed partial class TextBlock
 
             if (!this.hasCurrent)
             {
-                this.Start(glyph, advanceBounds, bounds, contributesToMeasurement);
+                this.Start(glyph, advanceBounds, bounds);
                 metrics = default;
                 return false;
             }
@@ -150,14 +145,13 @@ public sealed partial class TextBlock
             if (glyph.GraphemeIndex != this.graphemeIndex)
             {
                 bool emitted = this.Flush(out metrics);
-                this.Start(glyph, advanceBounds, bounds, contributesToMeasurement);
+                this.Start(glyph, advanceBounds, bounds);
                 return emitted;
             }
 
             this.advanceBounds = FontRectangle.Union(this.advanceBounds, advanceBounds);
             this.bounds = FontRectangle.Union(this.bounds, bounds);
             this.isLineBreak |= CodePoint.IsNewLine(glyph.CodePoint);
-            this.contributesToMeasurement |= contributesToMeasurement;
             metrics = default;
             return false;
         }
@@ -181,18 +175,15 @@ public sealed partial class TextBlock
         /// <param name="glyph">The first glyph in the grapheme.</param>
         /// <param name="advanceBounds">The positioned logical advance bounds for <paramref name="glyph"/>.</param>
         /// <param name="bounds">The rendered bounds for <paramref name="glyph"/>.</param>
-        /// <param name="contributesToMeasurement">Whether the glyph contributes to visual measurements.</param>
         private void Start(
             in GlyphLayout glyph,
             in FontRectangle advanceBounds,
-            in FontRectangle bounds,
-            bool contributesToMeasurement)
+            in FontRectangle bounds)
         {
             this.graphemeIndex = glyph.GraphemeIndex;
             this.stringIndex = glyph.StringIndex;
             this.bidiLevel = glyph.BidiLevel;
             this.isLineBreak = CodePoint.IsNewLine(glyph.CodePoint);
-            this.contributesToMeasurement = contributesToMeasurement;
             this.advanceBounds = advanceBounds;
             this.bounds = bounds;
             this.hasCurrent = true;
@@ -219,8 +210,7 @@ public sealed partial class TextBlock
                 this.graphemeIndex,
                 this.stringIndex,
                 this.bidiLevel,
-                this.isLineBreak,
-                this.contributesToMeasurement);
+                this.isLineBreak);
 
             this.graphemes[this.count] = metrics;
             this.count++;
@@ -265,10 +255,9 @@ public sealed partial class TextBlock
         /// Adds one laid-out glyph entry to the current grapheme and updates word metrics when a grapheme is emitted.
         /// </summary>
         /// <param name="glyph">The laid-out glyph entry.</param>
-        /// <param name="contributesToMeasurement">Whether the glyph contributes to visual measurements.</param>
-        public void Visit(in GlyphLayout glyph, bool contributesToMeasurement)
+        public void Visit(in GlyphLayout glyph)
         {
-            if (this.graphemes.Visit(glyph, contributesToMeasurement, out GraphemeMetrics metrics))
+            if (this.graphemes.Visit(glyph, out GraphemeMetrics metrics))
             {
                 AccumulateWordMetrics(this.wordSegments, this.wordMetrics, metrics);
             }
@@ -325,7 +314,7 @@ public sealed partial class TextBlock
         }
 
         /// <inheritdoc/>
-        public void Visit(in GlyphLayout glyph, bool contributesToMeasurement)
+        public void Visit(in GlyphLayout glyph)
         {
             FontRectangle advanceBounds = glyph.MeasureAdvance(this.dpi);
             FontRectangle bounds = glyph.MeasureBounds(this.dpi);
@@ -422,13 +411,8 @@ public sealed partial class TextBlock
         }
 
         /// <inheritdoc/>
-        public void Visit(in GlyphLayout glyph, bool contributesToMeasurement)
+        public void Visit(in GlyphLayout glyph)
         {
-            if (!contributesToMeasurement)
-            {
-                return;
-            }
-
             FontRectangle box = glyph.MeasureBounds(this.dpi);
             if (box.Width <= 0 && box.Height <= 0)
             {
@@ -508,34 +492,33 @@ public sealed partial class TextBlock
         }
 
         /// <inheritdoc/>
-        public void Visit(in GlyphLayout glyph, bool contributesToMeasurement)
+        public void Visit(in GlyphLayout glyph)
         {
             FontRectangle glyphBox = glyph.MeasureBounds(this.dpi);
             bool hasGlyphBox = glyphBox.Width > 0 || glyphBox.Height > 0;
-            bool shouldMeasure = contributesToMeasurement && hasGlyphBox;
 
-            if (shouldMeasure && glyphBox.Left < this.left)
+            if (hasGlyphBox && glyphBox.Left < this.left)
             {
                 this.left = glyphBox.Left;
             }
 
-            if (shouldMeasure && glyphBox.Top < this.top)
+            if (hasGlyphBox && glyphBox.Top < this.top)
             {
                 this.top = glyphBox.Top;
             }
 
-            if (shouldMeasure && glyphBox.Right > this.right)
+            if (hasGlyphBox && glyphBox.Right > this.right)
             {
                 this.right = glyphBox.Right;
             }
 
-            if (shouldMeasure && glyphBox.Bottom > this.bottom)
+            if (hasGlyphBox && glyphBox.Bottom > this.bottom)
             {
                 this.bottom = glyphBox.Bottom;
             }
 
-            this.hasBounds |= shouldMeasure;
-            this.graphemes.Visit(glyph, contributesToMeasurement);
+            this.hasBounds |= hasGlyphBox;
+            this.graphemes.Visit(glyph);
         }
 
         /// <summary>
@@ -590,34 +573,33 @@ public sealed partial class TextBlock
         }
 
         /// <inheritdoc/>
-        public void Visit(in GlyphLayout glyph, bool contributesToMeasurement)
+        public void Visit(in GlyphLayout glyph)
         {
             FontRectangle glyphBox = glyph.MeasureBounds(this.dpi);
             bool hasGlyphBox = glyphBox.Width > 0 || glyphBox.Height > 0;
-            bool shouldMeasure = contributesToMeasurement && hasGlyphBox;
 
-            if (shouldMeasure && glyphBox.Left < this.left)
+            if (hasGlyphBox && glyphBox.Left < this.left)
             {
                 this.left = glyphBox.Left;
             }
 
-            if (shouldMeasure && glyphBox.Top < this.top)
+            if (hasGlyphBox && glyphBox.Top < this.top)
             {
                 this.top = glyphBox.Top;
             }
 
-            if (shouldMeasure && glyphBox.Right > this.right)
+            if (hasGlyphBox && glyphBox.Right > this.right)
             {
                 this.right = glyphBox.Right;
             }
 
-            if (shouldMeasure && glyphBox.Bottom > this.bottom)
+            if (hasGlyphBox && glyphBox.Bottom > this.bottom)
             {
                 this.bottom = glyphBox.Bottom;
             }
 
-            this.hasBounds |= shouldMeasure;
-            this.graphemes.Visit(glyph, contributesToMeasurement);
+            this.hasBounds |= hasGlyphBox;
+            this.graphemes.Visit(glyph);
         }
 
         /// <summary>
@@ -692,8 +674,8 @@ public sealed partial class TextBlock
         }
 
         /// <inheritdoc/>
-        public void Visit(in GlyphLayout glyph, bool contributesToMeasurement)
-            => this.graphemeAccumulator.Visit(glyph, contributesToMeasurement);
+        public void Visit(in GlyphLayout glyph)
+            => this.graphemeAccumulator.Visit(glyph);
 
         /// <inheritdoc/>
         public void EndLine()
@@ -768,7 +750,7 @@ public sealed partial class TextBlock
             => this.currentLineIndex = lineIndex;
 
         /// <inheritdoc/>
-        public void Visit(in GlyphLayout glyph, bool contributesToMeasurement)
+        public void Visit(in GlyphLayout glyph)
         {
             if (this.lineIndex >= 0 && this.currentLineIndex != this.lineIndex)
             {
@@ -828,13 +810,8 @@ public sealed partial class TextBlock
         }
 
         /// <inheritdoc/>
-        public readonly void Visit(in GlyphLayout glyph, bool contributesToMeasurement)
+        public readonly void Visit(in GlyphLayout glyph)
         {
-            if (!contributesToMeasurement)
-            {
-                return;
-            }
-
             glyph.Glyph.RenderTo(this.renderer, glyph.GraphemeIndex, glyph.GlyphOrigin, glyph.DecorationOrigin, glyph.LayoutMode, this.options);
         }
 

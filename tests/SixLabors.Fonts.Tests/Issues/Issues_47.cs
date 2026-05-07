@@ -90,9 +90,10 @@ public class Issues_47
         Assert.Equal(trimmedMetrics.Advance, metrics.Advance);
         Assert.Equal(trimmedMetrics.Bounds, metrics.Bounds);
 
-        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances().Span[^1].Codepoint));
-        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances().Span[^2].Codepoint));
-        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances().Span[^3].Codepoint));
+        // Trailing breaking whitespace is trimmed from the visual glyph stream,
+        // so the measured glyphs match the explicitly trimmed input.
+        Assert.Equal(trimmedMetrics.MeasureGlyphAdvances().Length, metrics.MeasureGlyphAdvances().Length);
+        Assert.False(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances().Span[^1].Codepoint));
     }
 
     public static Font CreateFont(string text)

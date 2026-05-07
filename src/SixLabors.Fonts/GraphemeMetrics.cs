@@ -18,7 +18,6 @@ public readonly struct GraphemeMetrics
     /// <param name="stringIndex">The UTF-16 index in the original text where the grapheme begins.</param>
     /// <param name="bidiLevel">The resolved bidi embedding level.</param>
     /// <param name="isLineBreak">Whether the grapheme represents a line break.</param>
-    /// <param name="contributesToMeasurement">Whether the grapheme contributes to visual measurements.</param>
     internal GraphemeMetrics(
         FontRectangle advance,
         FontRectangle bounds,
@@ -26,8 +25,7 @@ public readonly struct GraphemeMetrics
         int graphemeIndex,
         int stringIndex,
         int bidiLevel,
-        bool isLineBreak,
-        bool contributesToMeasurement)
+        bool isLineBreak)
     {
         this.Advance = advance;
         this.Bounds = bounds;
@@ -36,7 +34,6 @@ public readonly struct GraphemeMetrics
         this.StringIndex = stringIndex;
         this.BidiLevel = bidiLevel;
         this.IsLineBreak = isLineBreak;
-        this.ContributesToMeasurement = contributesToMeasurement;
     }
 
     /// <summary>
@@ -55,12 +52,12 @@ public readonly struct GraphemeMetrics
     public FontRectangle RenderableBounds { get; }
 
     /// <summary>
-    /// Gets the grapheme index in the original text.
+    /// Gets the zero-based grapheme index in the original text.
     /// </summary>
     public int GraphemeIndex { get; }
 
     /// <summary>
-    /// Gets the UTF-16 index in the original text where the grapheme begins.
+    /// Gets the zero-based UTF-16 code unit index in the original text.
     /// </summary>
     public int StringIndex { get; }
 
@@ -73,13 +70,4 @@ public readonly struct GraphemeMetrics
     /// Gets a value indicating whether this grapheme represents a line break.
     /// </summary>
     public bool IsLineBreak { get; }
-
-    /// <summary>
-    /// Gets a value indicating whether this grapheme contributes to text measurements and selection bounds.
-    /// </summary>
-    /// <remarks>
-    /// A grapheme can remain present for source mapping and caret positions without contributing to
-    /// aggregate measurements or painted selection rectangles.
-    /// </remarks>
-    public bool ContributesToMeasurement { get; }
 }

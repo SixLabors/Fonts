@@ -224,8 +224,7 @@ public class TextMeasurerReferenceTests
                 0,
                 0,
                 0,
-                false,
-                true),
+                false),
             new(
                 new FontRectangle(8.8477f, 0, 3.0293f, 12f),
                 new FontRectangle(9.7852f, 1.8311f, 1.1719f, 8.8242f),
@@ -233,8 +232,7 @@ public class TextMeasurerReferenceTests
                 1,
                 1,
                 0,
-                false,
-                true),
+                false),
             new(
                 new FontRectangle(11.877f, 0, 3.1699f, 12f),
                 new FontRectangle(12.7559f, 2.0889f, 1.3945f, 8.7305f),
@@ -242,8 +240,7 @@ public class TextMeasurerReferenceTests
                 2,
                 2,
                 0,
-                false,
-                true),
+                false),
         ];
         AssertGraphemeMetricsEqual(expected, graphemes);
     }
@@ -264,30 +261,25 @@ public class TextMeasurerReferenceTests
     }
 
     [Fact]
-    public void MeasureGlyphBounds_Newline_IsPreservedAndAdvancesIndices()
+    public void MeasureGlyphBounds_Newline_IsTrimmedAndAdvancesIndices()
     {
         const string text = "A\nB";
         TextOptions options = Options();
         ReadOnlySpan<GlyphBounds> bounds = TextMeasurer.MeasureGlyphBounds(text, options).Span;
 
-        Assert.Equal(3, bounds.Length);
+        Assert.Equal(2, bounds.Length);
         Assert.Equal(new CodePoint('A'), bounds[0].Codepoint);
         Assert.Equal(0, bounds[0].StringIndex);
 
-        Assert.True(CodePoint.IsNewLine(bounds[1].Codepoint));
-        Assert.Equal(1, bounds[1].StringIndex);
-        Assert.True(bounds[1].Bounds.Width > 0 || bounds[1].Bounds.Height > 0);
-
-        Assert.Equal(new CodePoint('B'), bounds[2].Codepoint);
-        Assert.Equal(2, bounds[2].StringIndex);
+        Assert.Equal(new CodePoint('B'), bounds[1].Codepoint);
+        Assert.Equal(2, bounds[1].StringIndex);
 
         TextMetrics metrics = TextMeasurer.Measure(text, options);
 
-        // The newline entry has real glyph bounds above, but it is the hard break
-        // that ended the previous line. It remains addressable by StringIndex while
-        // being excluded from aggregate text bounds because it contributes no ink
-        // to the laid-out line.
-        FontRectangle expectedBounds = FontRectangle.Union(bounds[0].Bounds, bounds[2].Bounds);
+        // The newline ends a non-empty line and is trimmed from visual metrics.
+        // The following glyph keeps its source string index, so callers still see
+        // the original source gap while measurements only reflect visible content.
+        FontRectangle expectedBounds = FontRectangle.Union(bounds[0].Bounds, bounds[1].Bounds);
         Assert.Equal(expectedBounds, metrics.Bounds, Comparer);
     }
 
@@ -461,7 +453,6 @@ public class TextMeasurerReferenceTests
             Assert.Equal(e.StringIndex, a.StringIndex);
             Assert.Equal(e.BidiLevel, a.BidiLevel);
             Assert.Equal(e.IsLineBreak, a.IsLineBreak);
-            Assert.Equal(e.ContributesToMeasurement, a.ContributesToMeasurement);
         }
     }
 }

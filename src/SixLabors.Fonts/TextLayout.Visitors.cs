@@ -25,8 +25,7 @@ internal static partial class TextLayout
         /// Invoked once for each laid-out glyph in layout order.
         /// </summary>
         /// <param name="glyph">The laid-out glyph.</param>
-        /// <param name="contributesToMeasurement">Whether the glyph contributes to line metrics and measurements.</param>
-        public void Visit(in GlyphLayout glyph, bool contributesToMeasurement);
+        public void Visit(in GlyphLayout glyph);
 
         /// <summary>
         /// Invoked after glyphs have been streamed for a laid-out line.
