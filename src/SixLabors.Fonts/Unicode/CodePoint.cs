@@ -181,6 +181,11 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     public static CodePoint ReplacementChar { get; } = new CodePoint(0xFFFD);
 
+    /// <summary>
+    /// Gets a <see cref="CodePoint"/> instance that represents the Unicode object replacement character U+FFFC.
+    /// </summary>
+    public static CodePoint ObjectReplacementChar { get; } = new CodePoint(0xFFFC);
+
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
     // Operators below are explicit because they may throw.

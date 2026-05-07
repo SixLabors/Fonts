@@ -243,6 +243,82 @@ internal sealed class TextLine
     }
 
     /// <summary>
+    /// Adds an inline placeholder entry at an existing source codepoint position without consuming source text.
+    /// </summary>
+    /// <param name="placeholder">The positioned placeholder glyph data.</param>
+    /// <param name="graphemeIndex">The source grapheme index at the placeholder insertion point.</param>
+    /// <param name="stringIndex">The source UTF-16 index at the placeholder insertion point.</param>
+    /// <param name="isHorizontalLayout"><see langword="true"/> when the current layout advances horizontally.</param>
+    /// <param name="isVerticalMixedLayout"><see langword="true"/> when the current layout is vertical mixed.</param>
+    /// <param name="lineSpacing">The line-spacing factor to apply to placeholder line height.</param>
+    public void AddPlaceholder(
+        GlyphPositioningCollection.GlyphPositioningData placeholder,
+        int graphemeIndex,
+        int stringIndex,
+        bool isHorizontalLayout,
+        bool isVerticalMixedLayout,
+        float lineSpacing)
+    {
+        GlyphMetrics placeholderGlyph = placeholder.Metrics;
+        bool isPlaceholderHorizontal = isHorizontalLayout || isVerticalMixedLayout;
+        float placeholderAdvance = isPlaceholderHorizontal
+            ? placeholderGlyph.AdvanceWidth
+            : placeholderGlyph.AdvanceHeight;
+
+        Vector2 placeholderScale = new(
+            placeholder.PointSize / placeholderGlyph.ScaleFactor.X,
+            placeholder.PointSize / placeholderGlyph.ScaleFactor.Y);
+
+        placeholderAdvance *= isPlaceholderHorizontal ? placeholderScale.X : placeholderScale.Y;
+
+        GlyphLayoutMode placeholderMode = isHorizontalLayout
+            ? GlyphLayoutMode.Horizontal
+            : GlyphLayoutMode.Vertical;
+
+        FontRectangle placeholderBox = placeholderGlyph.GetBoundingBox(placeholderMode, Vector2.Zero, placeholder.PointSize);
+
+        IMetricsHeader metricsHeader = isPlaceholderHorizontal
+            ? placeholderGlyph.FontMetrics.HorizontalMetrics
+            : placeholderGlyph.FontMetrics.VerticalMetrics;
+
+        // Placeholder bounds can extend beyond the surrounding run font's
+        // normal ascender/descender band. Keep the run font line-box model as
+        // the baseline contribution, then expand only the side the placeholder
+        // actually overhangs so following lines reserve enough space.
+        float placeholderScaleY = placeholder.PointSize / placeholderGlyph.ScaleFactor.Y;
+        float placeholderLineHeight = placeholderGlyph.UnitsPerEm * placeholderScaleY;
+        float placeholderDelta = ((metricsHeader.LineHeight * placeholderScaleY) - placeholderLineHeight) * .5F;
+        float placeholderAscender = (metricsHeader.Ascender * placeholderScaleY) - placeholderDelta;
+        float placeholderDescender = Math.Abs(metricsHeader.Descender * placeholderScaleY) - placeholderDelta;
+        placeholderAscender = MathF.Max(placeholderAscender, -placeholderBox.Top);
+        placeholderDescender = MathF.Max(placeholderDescender, placeholderBox.Bottom);
+        placeholderLineHeight = MathF.Max(
+            placeholderLineHeight,
+            placeholderAscender + placeholderDescender + (2 * placeholderDelta));
+
+        // Placeholders share the source codepoint offset at their insertion point,
+        // but they do not consume source grapheme, codepoint, or UTF-16 indexes.
+        this.Add(
+            new GlyphMetrics[] { placeholderGlyph },
+            placeholder.PointSize,
+            placeholderAdvance,
+            placeholderLineHeight,
+            placeholderAscender,
+            placeholderDescender,
+            placeholderDelta,
+            placeholder.Data.BidiRun,
+            graphemeIndex,
+            true,
+            placeholder.Offset,
+            0,
+            false,
+            false,
+            stringIndex,
+            placeholderMode,
+            lineSpacing);
+    }
+
+    /// <summary>
     /// Inserts all entries from <paramref name="textLine"/> into this line at the given index
     /// and recomputes aggregated metrics.
     /// </summary>

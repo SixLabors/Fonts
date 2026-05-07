@@ -68,9 +68,38 @@ internal static partial class TextLayout
                         out bool isSubstituted,
                         out bool isVerticalSubstitution,
                         out bool isDecomposed,
-                        out IReadOnlyList<GlyphMetrics>? metrics))
+                        out IReadOnlyList<GlyphPositioningCollection.GlyphPositioningData>? glyphData))
                     {
                         // Codepoint was skipped during original enumeration.
+                        codePointIndex++;
+                        graphemeCodePointIndex++;
+                        continue;
+                    }
+
+                    List<GlyphMetrics> metrics = [];
+                    for (int i = 0; i < glyphData.Count; i++)
+                    {
+                        GlyphPositioningCollection.GlyphPositioningData data = glyphData[i];
+                        if (data.Data.IsPlaceholder)
+                        {
+                            textLine.AddPlaceholder(
+                                data,
+                                graphemeIndex,
+                                stringIndex,
+                                isHorizontalLayout,
+                                isVerticalMixedLayout,
+                                options.LineSpacing);
+
+                            continue;
+                        }
+
+                        metrics.Add(data.Metrics);
+                    }
+
+                    if (metrics.Count == 0)
+                    {
+                        // This source codepoint was skipped during shaping; any placeholder
+                        // sharing the same source offset has already been added above.
                         codePointIndex++;
                         graphemeCodePointIndex++;
                         continue;
@@ -366,6 +395,34 @@ internal static partial class TextLayout
                 graphemeIndex,
                 wordSegment.Utf16Offset,
                 wordSegment.Utf16Offset + wordSegment.Utf16Length));
+        }
+
+        // Placeholders do not consume source text. A placeholder inserted at
+        // the final source position has no following codepoint to visit in
+        // the main loop, so we add those trailing placeholder entries here.
+        if (shapedText.Positionings.TryGetGlyphMetricsAtOffset(
+            codePointIndex,
+            ref glyphSearchIndex,
+            out _,
+            out _,
+            out _,
+            out _,
+            out IReadOnlyList<GlyphPositioningCollection.GlyphPositioningData>? endGlyphData))
+        {
+            for (int i = 0; i < endGlyphData.Count; i++)
+            {
+                GlyphPositioningCollection.GlyphPositioningData data = endGlyphData[i];
+                if (data.Data.IsPlaceholder)
+                {
+                    textLine.AddPlaceholder(
+                        data,
+                        graphemeIndex,
+                        stringIndex,
+                        isHorizontalLayout,
+                        isVerticalMixedLayout,
+                        options.LineSpacing);
+                }
+            }
         }
 
         // Line break candidates are width-independent and belong with the composed logical line.

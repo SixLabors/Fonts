@@ -10,6 +10,7 @@ using SixLabors.Fonts.Unicode;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.Drawing.Text;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
@@ -960,6 +961,416 @@ public class TextLayoutTests
             Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint(0x2026)));
             Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('*')));
         }
+    }
+
+    [Fact]
+    public void TextPlaceholder_SharesInsertionCodePointOffset()
+    {
+        const string text = "a\u0301b";
+        Font font = CreateFont(text);
+        TextOptions options = new(font)
+        {
+            Dpi = font.FontMetrics.ScaleFactor,
+            TextRuns =
+            [
+                new()
+                {
+                    Start = 1,
+                    End = 1,
+                    Placeholder = new(40, 24, TextPlaceholderAlignment.Baseline, 18)
+                }
+            ]
+        };
+
+        ShapedText shapedText = TextLayout.ShapeText(text.AsSpan(), options);
+        LogicalTextLine logicalLine = TextLayout.ComposeLogicalLine(shapedText, text.AsSpan(), options);
+
+        GlyphLayoutData placeholder = default;
+        GlyphLayoutData following = default;
+        for (int i = 0; i < logicalLine.TextLine.Count; i++)
+        {
+            GlyphLayoutData current = logicalLine.TextLine[i];
+            if (current.CodePoint == CodePoint.ObjectReplacementChar)
+            {
+                placeholder = current;
+                continue;
+            }
+
+            if (current.CodePoint == new CodePoint('b'))
+            {
+                following = current;
+            }
+        }
+
+        // The placeholder is inserted after a grapheme made from two source
+        // codepoints. It must therefore share the codepoint and UTF-16 offset
+        // of the following source glyph instead of using the grapheme run index.
+        Assert.Equal(2, placeholder.CodePointIndex);
+        Assert.Equal(2, placeholder.StringIndex);
+        Assert.Equal(following.CodePointIndex, placeholder.CodePointIndex);
+        Assert.Equal(following.StringIndex, placeholder.StringIndex);
+    }
+
+    [Fact]
+    public void TextPlaceholder_AddsInlineAdvanceWithoutConsumingSourceText()
+    {
+        const string text = "ab";
+        Font font = CreateFont(text);
+        TextOptions baselineOptions = new(font)
+        {
+            Dpi = font.FontMetrics.ScaleFactor
+        };
+
+        TextOptions placeholderOptions = new(font)
+        {
+            Dpi = font.FontMetrics.ScaleFactor,
+            TextRuns =
+            [
+                new()
+                {
+                    Start = 1,
+                    End = 1,
+                    Placeholder = new(40, 24, TextPlaceholderAlignment.Baseline, 18)
+                }
+            ]
+        };
+
+        FontRectangle baseline = TextMeasurer.MeasureAdvance(text, baselineOptions);
+        FontRectangle withPlaceholder = TextMeasurer.MeasureAdvance(text, placeholderOptions);
+        GlyphBounds[] glyphs = TextMeasurer.MeasureGlyphAdvances(text, placeholderOptions).ToArray();
+
+        // The placeholder contributes its own inline advance, but the source
+        // text still has only the two original graphemes around the inserted object.
+        Assert.Equal(baseline.Width + 40, withPlaceholder.Width, 0.1F);
+        Assert.Equal(1, CountGlyphs(glyphs, CodePoint.ObjectReplacementChar));
+        Assert.Equal(1, CountGlyphs(glyphs, new CodePoint('a')));
+        Assert.Equal(1, CountGlyphs(glyphs, new CodePoint('b')));
+    }
+
+    [Theory]
+    [InlineData(TextPlaceholderAlignment.Baseline)]
+    [InlineData(TextPlaceholderAlignment.AboveBaseline)]
+    [InlineData(TextPlaceholderAlignment.BelowBaseline)]
+    [InlineData(TextPlaceholderAlignment.Top)]
+    [InlineData(TextPlaceholderAlignment.Bottom)]
+    [InlineData(TextPlaceholderAlignment.Middle)]
+    public void TextPlaceholderAlignment_PositionsPlaceholderBounds(TextPlaceholderAlignment alignment)
+    {
+        const string text = "Alpha Omega";
+        const float width = 56;
+        const float height = 30;
+        const float baselineOffset = 23;
+        Font font = CreateRenderingFont(34);
+        TextOptions surroundingOptions = new(font);
+
+        TextOptions options = new(font)
+        {
+            TextRuns =
+            [
+                new()
+                {
+                    Start = 6,
+                    End = 6,
+                    Placeholder = new(width, height, alignment, baselineOffset)
+                }
+            ]
+        };
+
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+        LineMetrics surroundingLine = TextMeasurer.Measure(text, surroundingOptions).LineMetrics[0];
+        ReadOnlySpan<GlyphBounds> glyphs = metrics.MeasureGlyphBounds().Span;
+        FontRectangle placeholderBounds = FontRectangle.Empty;
+        for (int i = 0; i < glyphs.Length; i++)
+        {
+            if (glyphs[i].Codepoint == CodePoint.ObjectReplacementChar)
+            {
+                placeholderBounds = glyphs[i].Bounds;
+                break;
+            }
+        }
+
+        float baseline = surroundingLine.Start.Y + surroundingLine.Baseline;
+        float lineTop = surroundingLine.Start.Y;
+        float lineBottom = surroundingLine.Start.Y + surroundingLine.LineHeight;
+        float expectedTop;
+        float expectedBottom;
+
+        switch (alignment)
+        {
+            case TextPlaceholderAlignment.AboveBaseline:
+                expectedTop = baseline - height;
+                expectedBottom = baseline;
+                break;
+
+            case TextPlaceholderAlignment.BelowBaseline:
+                expectedTop = baseline;
+                expectedBottom = baseline + height;
+                break;
+
+            case TextPlaceholderAlignment.Top:
+                expectedTop = lineTop;
+                expectedBottom = expectedTop + height;
+                break;
+
+            case TextPlaceholderAlignment.Bottom:
+                expectedBottom = lineBottom;
+                expectedTop = expectedBottom - height;
+                break;
+
+            case TextPlaceholderAlignment.Middle:
+                float center = (lineTop + lineBottom) * .5F;
+                expectedTop = center - (height * .5F);
+                expectedBottom = center + (height * .5F);
+                break;
+
+            default:
+                expectedTop = baseline - baselineOffset;
+                expectedBottom = baseline + height - baselineOffset;
+                break;
+        }
+
+        // Each alignment changes only the placeholder's vertical placement. The
+        // inline width remains the caller-provided atomic object width.
+        Assert.Equal(width, placeholderBounds.Width, 0.1F);
+        Assert.Equal(height, placeholderBounds.Height, 0.1F);
+        Assert.Equal(expectedTop, placeholderBounds.Top, 0.1F);
+        Assert.Equal(expectedBottom, placeholderBounds.Bottom, 0.1F);
+    }
+
+    [Fact]
+    public void TextPlaceholder_RunMustBeInsertionPoint()
+    {
+        const string text = "ab";
+        Font font = CreateFont(text);
+        TextOptions options = new(font)
+        {
+            TextRuns =
+            [
+                new()
+                {
+                    Start = 1,
+                    End = 2,
+                    Placeholder = new(40, 24, TextPlaceholderAlignment.Baseline, 18)
+                }
+            ]
+        };
+
+        // Placeholder runs represent an inserted object at a source position.
+        // Covering real source graphemes would make the object consume text.
+        Assert.Throws<ArgumentException>(() => TextMeasurer.MeasureAdvance(text, options));
+    }
+
+    [Theory]
+    [InlineData(TextPlaceholderAlignment.Baseline)]
+    [InlineData(TextPlaceholderAlignment.AboveBaseline)]
+    [InlineData(TextPlaceholderAlignment.BelowBaseline)]
+    [InlineData(TextPlaceholderAlignment.Top)]
+    [InlineData(TextPlaceholderAlignment.Bottom)]
+    [InlineData(TextPlaceholderAlignment.Middle)]
+    public void TextPlaceholder_DrawsInlineReservedSpace(TextPlaceholderAlignment alignment)
+    {
+        const string text = "Alpha  Omega\nAlpha  Omega";
+        Font font = CreateRenderingFont(34);
+        TextPlaceholder placeholder = new(56, 30, alignment, 23);
+        Vector2 origin = new(24, 58);
+
+        TextOptions optionsBase = new(font)
+        {
+            Origin = origin,
+        };
+
+        TextOptions options = new(optionsBase)
+        {
+            TextRuns =
+            [
+                new()
+                {
+                    Start = 6,
+                    End = 6,
+                    Placeholder = placeholder
+                }
+            ]
+        };
+
+        IReadOnlyList<GlyphPathCollection> glyphs = TextBuilder.GenerateGlyphs(text, options);
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        LineMetrics line = metrics.LineMetrics[0];
+        LineMetrics lineBase = TextMeasurer.Measure(text, optionsBase).LineMetrics[0];
+
+        // Expected output:
+        // - Baseline aligns the placeholder's internal baseline offset to the red baseline.
+        // - AboveBaseline places the object immediately above the red baseline.
+        // - BelowBaseline places the object immediately below the red baseline.
+        // - Top, middle, and bottom align the object against the blue surrounding font line box.
+        // - The green placeholder-layout line box may grow when the object extends beyond that blue box.
+        ReadOnlySpan<GlyphBounds> measuredGlyphs = metrics.MeasureGlyphBounds().Span;
+        FontRectangle placeholderBounds = FontRectangle.Empty;
+        for (int i = 0; i < measuredGlyphs.Length; i++)
+        {
+            if (measuredGlyphs[i].Codepoint == CodePoint.ObjectReplacementChar)
+            {
+                placeholderBounds = measuredGlyphs[i].Bounds;
+                break;
+            }
+        }
+
+        TextLayoutTestUtilities.TestImage(
+            340,
+            180,
+            image => image.Mutate(x =>
+            {
+                RectangularPolygon lineBox = new(
+                    0,
+                    line.Start.Y,
+                    340,
+                    line.LineHeight);
+
+                RectangularPolygon lineBoxBase = new(
+                    0,
+                    lineBase.Start.Y,
+                    340,
+                    lineBase.LineHeight);
+
+                // Green is the actual line box for the layout that contains the
+                // placeholder. It shows whether the object caused this line to
+                // reserve more vertical space.
+                x.Fill(Color.Green.WithAlpha(.15F), lineBox);
+
+                // Blue is the same text measured without the placeholder. This
+                // gives a stable reference for the surrounding font line box
+                // that top/middle/bottom alignment should use.
+                x.Fill(Color.LightBlue.WithAlpha(.95F), lineBoxBase);
+
+                x.Draw(Color.Gray, 1, lineBox);
+                x.Fill(Color.Black, glyphs);
+
+                // The black outline is the caller-owned inline object bounds
+                // returned by the public glyph-bounds API.
+                RectangularPolygon box = new(
+                    placeholderBounds.X,
+                    placeholderBounds.Y,
+                    placeholderBounds.Width,
+                    placeholderBounds.Height);
+
+                x.Draw(Color.Black, 1, box);
+
+                // Red is the baseline for the surrounding text without the
+                // placeholder. Baseline-relative modes should align to this.
+                float baseline = lineBase.Start.Y + lineBase.Baseline;
+                x.DrawLine(Color.Red, 1, new PointF(0, baseline), new PointF(340, baseline));
+            }),
+            properties: alignment.ToString().ToLowerInvariant());
+
+        // The visual output shows the reserved object space; the measured data
+        // also exposes one object-replacement glyph at the insertion point.
+        Assert.Equal(1, CountGlyphs(metrics.MeasureGlyphAdvances().Span, CodePoint.ObjectReplacementChar));
+    }
+
+    [Theory]
+    [InlineData(TextPlaceholderAlignment.Baseline)]
+    [InlineData(TextPlaceholderAlignment.AboveBaseline)]
+    [InlineData(TextPlaceholderAlignment.BelowBaseline)]
+    [InlineData(TextPlaceholderAlignment.Top)]
+    [InlineData(TextPlaceholderAlignment.Bottom)]
+    [InlineData(TextPlaceholderAlignment.Middle)]
+    public void TextPlaceholder_DrawsOversizedInlineReservedSpace(TextPlaceholderAlignment alignment)
+    {
+        const string text = "Alpha  Omega\nAlpha  Omega";
+        Font font = CreateRenderingFont(34);
+        TextPlaceholder placeholder = new(56, 82, alignment, 23);
+        Vector2 origin = new(24, 98);
+
+        TextOptions optionsBase = new(font)
+        {
+            Origin = origin,
+        };
+
+        TextOptions options = new(optionsBase)
+        {
+            TextRuns =
+            [
+                new()
+                {
+                    Start = 6,
+                    End = 6,
+                    Placeholder = placeholder
+                }
+            ]
+        };
+
+        IReadOnlyList<GlyphPathCollection> glyphs = TextBuilder.GenerateGlyphs(text, options);
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        LineMetrics line = metrics.LineMetrics[0];
+        LineMetrics lineBase = TextMeasurer.Measure(text, optionsBase).LineMetrics[0];
+
+        // Expected output for oversized objects:
+        // - Top keeps the object top aligned to the blue surrounding line box and grows downward.
+        // - Bottom keeps the object bottom aligned to the blue surrounding line box and grows upward.
+        // - Middle centers the object on the blue surrounding line box and grows equally both ways.
+        // - The green line box must expand far enough that the second line does not overlap the object.
+        ReadOnlySpan<GlyphBounds> measuredGlyphs = metrics.MeasureGlyphBounds().Span;
+        FontRectangle placeholderBounds = FontRectangle.Empty;
+        for (int i = 0; i < measuredGlyphs.Length; i++)
+        {
+            if (measuredGlyphs[i].Codepoint == CodePoint.ObjectReplacementChar)
+            {
+                placeholderBounds = measuredGlyphs[i].Bounds;
+                break;
+            }
+        }
+
+        TextLayoutTestUtilities.TestImage(
+            340,
+            260,
+            image => image.Mutate(x =>
+            {
+                RectangularPolygon lineBox = new(
+                    0,
+                    line.Start.Y,
+                    340,
+                    line.LineHeight);
+
+                RectangularPolygon lineBoxBase = new(
+                    0,
+                    lineBase.Start.Y,
+                    340,
+                    lineBase.LineHeight);
+
+                // Green is the expanded line box for the placeholder layout.
+                // It should grow enough that the second line does not overlap
+                // the oversized inline object.
+                x.Fill(Color.Green.WithAlpha(.15F), lineBox);
+
+                // Blue is the normal surrounding text line box. Top, middle,
+                // and bottom align against this box before any oversized object
+                // growth is applied to the actual line.
+                x.Fill(Color.LightBlue.WithAlpha(.95F), lineBoxBase);
+
+                x.Draw(Color.Gray, 1, lineBox);
+                x.Fill(Color.Black, glyphs);
+
+                // The black outline is intentionally taller than the normal
+                // text line so this visual test shows both alignment and line
+                // growth in the same output.
+                RectangularPolygon box = new(
+                    placeholderBounds.X,
+                    placeholderBounds.Y,
+                    placeholderBounds.Width,
+                    placeholderBounds.Height);
+
+                x.Draw(Color.Black, 1, box);
+
+                // Red is the baseline for the surrounding text without the
+                // placeholder; these modes should not align to it directly.
+                float baseline = lineBase.Start.Y + lineBase.Baseline;
+                x.DrawLine(Color.Red, 1, new PointF(0, baseline), new PointF(340, baseline));
+            }),
+            properties: alignment.ToString().ToLowerInvariant());
+
+        // The oversized visual still represents one atomic inline object.
+        Assert.Equal(1, CountGlyphs(metrics.MeasureGlyphAdvances().Span, CodePoint.ObjectReplacementChar));
     }
 
     [Theory]

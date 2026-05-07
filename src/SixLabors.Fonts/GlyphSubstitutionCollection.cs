@@ -131,6 +131,23 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
         }));
 
     /// <summary>
+    /// Adds an atomic inline placeholder to the collection.
+    /// </summary>
+    /// <param name="codePoint">The object replacement codepoint used for Unicode processing.</param>
+    /// <param name="bidiRun">The resolved bidi run for the placeholder.</param>
+    /// <param name="textRun">The text run this placeholder belongs to.</param>
+    /// <param name="offset">The zero-based index within the input codepoint collection.</param>
+    public void AddPlaceholder(CodePoint codePoint, BidiRun bidiRun, TextRun textRun, int offset)
+        => this.glyphs.Add(new(offset, new(textRun)
+        {
+            CodePoint = codePoint,
+            Direction = (TextDirection)bidiRun.Direction,
+            GlyphId = 0,
+            IsPlaceholder = true,
+            BidiRun = bidiRun,
+        }));
+
+    /// <summary>
     /// Moves the specified glyph to the specified position.
     /// </summary>
     /// <param name="fromIndex">The index to move from.</param>

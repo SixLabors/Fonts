@@ -1,8 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
@@ -63,6 +61,11 @@ internal static partial class TextLayout
 
             // Add the current run, ensuring the font is not null.
             textRun.Font ??= options.Font;
+
+            if (textRun.Placeholder.HasValue && textRun.End != textRun.Start)
+            {
+                throw new ArgumentException("Placeholder text runs must be zero-length insertion runs.", nameof(options));
+            }
 
             // Ensure that the previous run does not overlap the current.
             if (textRuns.Count > 0)
@@ -162,6 +165,35 @@ internal static partial class TextLayout
         int bidiRunIndex = 0;
         foreach (TextRun textRun in textRuns)
         {
+            if (textRun.Placeholder.HasValue)
+            {
+                substitutions.Clear();
+
+                while (bidiRunIndex < bidiRuns.Length && codePointIndex == bidiRuns[bidiRunIndex].End)
+                {
+                    bidiRunIndex++;
+                }
+
+                // Placeholder direction comes from the bidi region at the insertion
+                // point. If the insertion point is after all source text, use the
+                // default even/LTR embedding level.
+                BidiRun placeholderBidiRun = bidiRunIndex < bidiRuns.Length
+                    ? bidiRuns[bidiRunIndex]
+                    : new(BidiCharacterType.LeftToRight, 2, codePointIndex, 0);
+
+                // Placeholder runs are inserted into the layout stream and do not consume
+                // source graphemes, source codepoints, or bidi runs.
+                substitutions.AddPlaceholder(
+                    CodePoint.ObjectReplacementChar,
+                    placeholderBidiRun,
+                    textRun,
+                    codePointIndex);
+
+                complete &= positionings.TryAdd(textRun.Font!, substitutions);
+                textRunIndex++;
+                continue;
+            }
+
             if (!DoFontRun(
                 textRun.Slice(text),
                 textRun.Start,
@@ -1231,7 +1263,7 @@ internal static partial class TextLayout
             int graphemeCodePointIndex = 0;
             int charIndex = 0;
 
-            if (graphemeIndex == textRuns[textRunIndex].End)
+            while (textRunIndex < textRuns.Count - 1 && graphemeIndex == textRuns[textRunIndex].End)
             {
                 textRunIndex++;
             }
