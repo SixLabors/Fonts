@@ -37,6 +37,14 @@ public class TextRun
     public TextDecorations TextDecorations { get; set; }
 
     /// <summary>
+    /// Gets or sets the inline placeholder represented by this run.
+    /// </summary>
+    /// <remarks>
+    /// Placeholder runs are inserted at <see cref="Start"/> and must have <see cref="End"/> equal to <see cref="Start"/>.
+    /// </remarks>
+    public TextPlaceholder? Placeholder { get; set; }
+
+    /// <summary>
     /// Returns the slice of the given text representing this <see cref="TextRun"/>.
     /// </summary>
     /// <param name="text">The text to slice.</param>

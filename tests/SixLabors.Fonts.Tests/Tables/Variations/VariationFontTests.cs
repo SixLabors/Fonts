@@ -81,13 +81,13 @@ public class VariationFontTests
         FontFamily family = TestFonts.GetFontFamily(TestFonts.RobotoFlex);
         Font font = family.CreateFont(12);
 
-        Assert.True(font.FontMetrics.TryGetVariationAxes(out VariationAxis[] axes));
+        Assert.True(font.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> axes));
         Assert.Equal(13, axes.Length);
 
-        Assert.Equal("wght", axes[0].Tag);
-        Assert.Equal(100, axes[0].Min);
-        Assert.Equal(1000, axes[0].Max);
-        Assert.Equal(400, axes[0].Default);
+        Assert.Equal("wght", axes.Span[0].Tag);
+        Assert.Equal(100, axes.Span[0].Min);
+        Assert.Equal(1000, axes.Span[0].Max);
+        Assert.Equal(400, axes.Span[0].Default);
     }
 
     [Fact]
@@ -96,14 +96,14 @@ public class VariationFontTests
         FontFamily family = TestFonts.GetFontFamily(TestFonts.AdobeVFPrototype);
         Font font = family.CreateFont(12);
 
-        Assert.True(font.FontMetrics.TryGetVariationAxes(out VariationAxis[] axes));
+        Assert.True(font.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> axes));
         Assert.Equal(2, axes.Length);
 
-        Assert.Equal("wght", axes[0].Tag);
-        Assert.Equal(200, axes[0].Min);
-        Assert.Equal(900, axes[0].Max);
+        Assert.Equal("wght", axes.Span[0].Tag);
+        Assert.Equal(200, axes.Span[0].Min);
+        Assert.Equal(900, axes.Span[0].Max);
 
-        Assert.Equal("CNTR", axes[1].Tag);
+        Assert.Equal("CNTR", axes.Span[1].Tag);
     }
 
     [Fact]
@@ -207,8 +207,8 @@ public class VariationFontTests
         FontFamily family = TestFonts.GetFontFamily(TestFonts.TestGVARFour);
         Font defaultFont = family.CreateFont(12);
 
-        Assert.True(defaultFont.FontMetrics.TryGetVariationAxes(out VariationAxis[] axes));
-        VariationAxis wghtAxis = Assert.Single(axes, a => a.Tag == "wght");
+        Assert.True(defaultFont.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> axes));
+        VariationAxis wghtAxis = Assert.Single(axes.ToArray(), a => a.Tag == "wght");
 
         Font variedFont = family.CreateFont(12, new FontVariation("wght", wghtAxis.Default));
 
@@ -301,9 +301,9 @@ public class VariationFontTests
         FontFamily family = TestFonts.GetFontFamily(TestFonts.AdobeVFPrototypeSubset);
         Font font = family.CreateFont(12);
 
-        Assert.True(font.FontMetrics.TryGetVariationAxes(out VariationAxis[] axes));
+        Assert.True(font.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> axes));
         Assert.Equal(2, axes.Length);
-        Assert.Equal("wght", axes[0].Tag);
+        Assert.Equal("wght", axes.Span[0].Tag);
     }
 
     [Fact]
@@ -666,11 +666,11 @@ public class VariationFontTests
         Font font = family.CreateFont(12);
 
         Assert.NotNull(font.FontMetrics);
-        Assert.True(font.FontMetrics.TryGetVariationAxes(out VariationAxis[] axes));
+        Assert.True(font.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> axes));
         Assert.Equal(3, axes.Length);
-        Assert.Equal("wght", axes[0].Tag);
-        Assert.Equal("wdth", axes[1].Tag);
-        Assert.Equal("opsz", axes[2].Tag);
+        Assert.Equal("wght", axes.Span[0].Tag);
+        Assert.Equal("wdth", axes.Span[1].Tag);
+        Assert.Equal("opsz", axes.Span[2].Tag);
     }
 
     [Fact]
@@ -681,7 +681,7 @@ public class VariationFontTests
         Font font = family.CreateFont(12);
 
         Assert.NotNull(font.FontMetrics);
-        Assert.True(font.FontMetrics.TryGetVariationAxes(out VariationAxis[] axes));
+        Assert.True(font.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> axes));
         Assert.Equal(3, axes.Length);
     }
 

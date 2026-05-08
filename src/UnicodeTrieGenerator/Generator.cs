@@ -147,6 +147,43 @@ public static partial class Generator
             { "XX", LineBreakClass.Unknown }
         };
 
+    private static readonly Dictionary<string, WordBreakClass> WordBreakClassMap
+        = new(StringComparer.OrdinalIgnoreCase)
+        {
+            { "CR", WordBreakClass.CarriageReturn },
+            { "LF", WordBreakClass.LineFeed },
+            { "Newline", WordBreakClass.Newline },
+            { "Extend", WordBreakClass.Extend },
+            { "ZWJ", WordBreakClass.ZeroWidthJoiner },
+            { "Regional_Indicator", WordBreakClass.RegionalIndicator },
+            { "RI", WordBreakClass.RegionalIndicator },
+            { "Format", WordBreakClass.Format },
+            { "FO", WordBreakClass.Format },
+            { "Katakana", WordBreakClass.Katakana },
+            { "KA", WordBreakClass.Katakana },
+            { "Hebrew_Letter", WordBreakClass.HebrewLetter },
+            { "HL", WordBreakClass.HebrewLetter },
+            { "ALetter", WordBreakClass.ALetter },
+            { "LE", WordBreakClass.ALetter },
+            { "Single_Quote", WordBreakClass.SingleQuote },
+            { "SQ", WordBreakClass.SingleQuote },
+            { "Double_Quote", WordBreakClass.DoubleQuote },
+            { "DQ", WordBreakClass.DoubleQuote },
+            { "MidNumLet", WordBreakClass.MidNumLet },
+            { "MB", WordBreakClass.MidNumLet },
+            { "MidLetter", WordBreakClass.MidLetter },
+            { "ML", WordBreakClass.MidLetter },
+            { "MidNum", WordBreakClass.MidNum },
+            { "MN", WordBreakClass.MidNum },
+            { "Numeric", WordBreakClass.Numeric },
+            { "NU", WordBreakClass.Numeric },
+            { "ExtendNumLet", WordBreakClass.ExtendNumLet },
+            { "EX", WordBreakClass.ExtendNumLet },
+            { "WSegSpace", WordBreakClass.WSegSpace },
+            { "Other", WordBreakClass.Other },
+            { "XX", WordBreakClass.Other }
+        };
+
     private static readonly Dictionary<string, ScriptClass> ScriptMap
         = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -541,6 +578,7 @@ public static partial class Generator
         GenerateBidiBracketsTrie();
         GenerateBidiMirrorTrie();
         GenerateLineBreakTrie();
+        GenerateWordBreakTrie();
         GenerateEastAsianWidthTrie();
         GenerateEmojiTrie();
         UnicodeTrie ugc = GenerateUnicodeCategoryTrie();
@@ -779,6 +817,41 @@ public static partial class Generator
 
         UnicodeTrie trie = builder.Freeze();
         GenerateTrieClass("LineBreak", trie);
+    }
+
+    /// <summary>
+    /// Generates the UnicodeTrie for the Word_Break code point ranges.
+    /// </summary>
+    private static void GenerateWordBreakTrie()
+    {
+        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        UnicodeTrieBuilder builder = new((uint)WordBreakClass.Other);
+
+        using (StreamReader sr = GetStreamReader("WordBreakProperty.txt"))
+        {
+            string? line;
+            while ((line = sr.ReadLine()) != null)
+            {
+                Match match = regex.Match(line);
+
+                if (match.Success)
+                {
+                    string start = match.Groups[1].Value;
+                    string end = match.Groups[2].Value;
+                    string point = match.Groups[3].Value;
+
+                    if (string.IsNullOrEmpty(end))
+                    {
+                        end = start;
+                    }
+
+                    builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)WordBreakClassMap[point], true);
+                }
+            }
+        }
+
+        UnicodeTrie trie = builder.Freeze();
+        GenerateTrieClass("WordBreak", trie);
     }
 
     /// <summary>

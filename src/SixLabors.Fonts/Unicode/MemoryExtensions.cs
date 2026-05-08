@@ -104,6 +104,28 @@ public static class MemoryExtensions
         => new(span, terminalWidthOptions);
 
     /// <summary>
+    /// Returns an enumeration of Unicode word-boundary segments from the provided span.
+    /// </summary>
+    /// <param name="span">The read-only span of char elements representing the text to enumerate.</param>
+    /// <remarks>
+    /// Invalid UTF-16 sequences are treated as <see cref="CodePoint.ReplacementChar"/> while determining word boundaries.
+    /// </remarks>
+    /// <returns>The <see cref="SpanWordEnumerator"/>.</returns>
+    public static SpanWordEnumerator EnumerateWordSegments(this ReadOnlySpan<char> span)
+        => new(span);
+
+    /// <summary>
+    /// Returns an enumeration of Unicode word-boundary segments from the provided span.
+    /// </summary>
+    /// <param name="span">The span of char elements representing the text to enumerate.</param>
+    /// <remarks>
+    /// Invalid UTF-16 sequences are treated as <see cref="CodePoint.ReplacementChar"/> while determining word boundaries.
+    /// </remarks>
+    /// <returns>The <see cref="SpanWordEnumerator"/>.</returns>
+    public static SpanWordEnumerator EnumerateWordSegments(this Span<char> span)
+        => new(span);
+
+    /// <summary>
     /// Returns the terminal cell width of the provided text.
     /// </summary>
     /// <param name="text">The text to measure.</param>

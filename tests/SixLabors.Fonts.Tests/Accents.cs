@@ -18,7 +18,7 @@ public class Accents
     {
         Font font = TestFonts.GetFont(TestFonts.OpenSansFile, 1f);
 
-        _ = TextMeasurer.MeasureSize(c.ToString(), new TextOptions(font));
+        _ = TextMeasurer.MeasureBounds(c.ToString(), new TextOptions(font));
     }
 
     [Theory]
@@ -34,6 +34,6 @@ public class Accents
     {
         Font font = TestFonts.GetFont(TestFonts.OpenSansFile, 1f);
 
-        _ = TextMeasurer.MeasureSize($"abc{c}def", new TextOptions(font));
+        _ = TextMeasurer.MeasureBounds($"abc{c}def", new TextOptions(font));
     }
 }

@@ -125,10 +125,14 @@ public class GPosTableTests
         ColorGlyphRenderer renderer = new();
         string testStr = "\u0012\u0012"; // "\u0012\u0012" characters should overlap.
         int[] expectedGlyphIndices = [20, 20];
+
+        // The test font's cursive lookup has no RightToLeft flag. HarfBuzz treats
+        // that as attaching the following glyph back to the current glyph, so the
+        // second glyph carries the minor-axis offset from entry(100,150)-exit(200,250).
         FontRectangle[] expectedFontRectangles =
         [
-            new(475, 1185.9999F, 825, 719),
-            new(575, 1085.9999F, 825, 719),
+            new(475, 1085.9999F, 825, 719),
+            new(575, 985.9999F, 825, 719),
         ];
 
         // act

@@ -15,6 +15,7 @@ internal static class UnicodeData
     private static readonly Lazy<UnicodeTrie> LazyEmojiTrie = new(() => GetEmojiTrie(), true);
     private static readonly Lazy<UnicodeTrie> LazyGraphemeTrie = new(() => GetGraphemeTrie(), true);
     private static readonly Lazy<UnicodeTrie> LazyLineBreakTrie = new(() => GetLineBreakTrie(), true);
+    private static readonly Lazy<UnicodeTrie> LazyWordBreakTrie = new(() => GetWordBreakTrie(), true);
     private static readonly Lazy<UnicodeTrie> LazyScriptTrie = new(() => GetScriptTrie(), true);
     private static readonly Lazy<UnicodeTrie> LazyCategoryTrie = new(() => GetCategoryTrie(), true);
     private static readonly Lazy<UnicodeTrie> LazyArabicShapingTrie = new(() => GetArabicShapingTrie(), true);
@@ -42,6 +43,9 @@ internal static class UnicodeData
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static LineBreakClass GetLineBreakClass(uint codePoint) => (LineBreakClass)LazyLineBreakTrie.Value.Get(codePoint);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static WordBreakClass GetWordBreakClass(uint codePoint) => (WordBreakClass)LazyWordBreakTrie.Value.Get(codePoint);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ScriptClass GetScriptClass(uint codePoint) => (ScriptClass)LazyScriptTrie.Value.Get(codePoint);
@@ -81,6 +85,8 @@ internal static class UnicodeData
     private static UnicodeTrie GetGraphemeTrie() => new(GraphemeTrie.Data);
 
     private static UnicodeTrie GetLineBreakTrie() => new(LineBreakTrie.Data);
+
+    private static UnicodeTrie GetWordBreakTrie() => new(WordBreakTrie.Data);
 
     private static UnicodeTrie GetScriptTrie() => new(ScriptTrie.Data);
 

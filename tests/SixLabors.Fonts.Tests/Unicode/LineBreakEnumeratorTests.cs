@@ -92,6 +92,32 @@ public class LineBreakEnumeratorTests
     }
 
     [Fact]
+    public void SoftHyphenBreakIsMarkedForLayoutTailoring()
+    {
+        const string text = "extra\u00ADordinary";
+        List<LineBreak> breaks = [.. new LineBreakEnumerator(text.AsSpan())];
+
+        int hyphenationBreaks = 0;
+        LineBreak hyphenationBreak = default;
+        for (int i = 0; i < breaks.Count; i++)
+        {
+            if (breaks[i].IsHyphenationBreak)
+            {
+                hyphenationBreaks++;
+                hyphenationBreak = breaks[i];
+            }
+        }
+
+        // UAX #14 exposes U+00AD as a discretionary break, but layout needs to
+        // distinguish it from ordinary opportunities so it can decide whether to
+        // materialize a visible marker for the chosen break.
+        Assert.Equal(1, hyphenationBreaks);
+        Assert.False(hyphenationBreak.Required);
+        Assert.Equal(6, hyphenationBreak.PositionMeasure);
+        Assert.Equal(6, hyphenationBreak.PositionWrap);
+    }
+
+    [Fact]
     public void ForwardTextWithOuterWhitespace()
     {
         string text = " Apples Pears Bananas   ";

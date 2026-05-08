@@ -19,7 +19,7 @@
       </PropertyGroup>
     </Otherwise>
   </Choose>
-  
+
   <ItemGroup>
     <Compile Include="..\..\tests\SixLabors.Fonts.Tests\Unicode\UnicodeTypeMaps.cs" Link="UnicodeTypeMaps.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\BidiCharacterType.cs" Link="BidiCharacterType.cs" />
@@ -33,6 +33,7 @@
     <Compile Include="..\SixLabors.Fonts\Unicode\IndicPositionalCategory.cs" Link="IndicPositionalCategory.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\IndicSyllabicCategory.cs" Link="IndicSyllabicCategory.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\LineBreakClass.cs" Link="LineBreakClass.cs" />
+    <Compile Include="..\SixLabors.Fonts\Unicode\WordBreakClass.cs" Link="WordBreakClass.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\Resources\IndicShapingData.cs" Link="IndicShapingData.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\ScriptClass.cs" Link="ScriptClass.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\UnicodeTrie.cs" Link="UnicodeTrie.cs" />

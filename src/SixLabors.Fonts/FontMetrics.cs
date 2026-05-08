@@ -177,9 +177,9 @@ public abstract class FontMetrics
     /// Tries to get the variation axes that this font supports.
     /// The font needs to have a fvar table.
     /// </summary>
-    /// <param name="variationAxes">An array with Variation axes.</param>
+    /// <param name="variationAxes">A read-only memory region containing the variation axes.</param>
     /// <returns>True, if fvar table is present.</returns>
-    public abstract bool TryGetVariationAxes(out VariationAxis[]? variationAxes);
+    public abstract bool TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> variationAxes);
 
     /// <summary>
     /// Returns a value indicating whether the specified glyph is in the given mark filtering set.
@@ -213,13 +213,13 @@ public abstract class FontMetrics
         TextDecorations textDecorations,
         LayoutMode layoutMode,
         ColorFontSupport support,
-        [NotNullWhen(true)] out GlyphMetrics? metrics);
+        [NotNullWhen(true)] out FontGlyphMetrics? metrics);
 
     /// <summary>
     /// Gets the unicode codepoints for which a glyph exists in the font.
     /// </summary>
-    /// <returns>The <see cref="IReadOnlyList{CodePoint}"/>.</returns>
-    public abstract IReadOnlyList<CodePoint> GetAvailableCodePoints();
+    /// <returns>A read-only memory region containing the available codepoints.</returns>
+    public abstract ReadOnlyMemory<CodePoint> GetAvailableCodePoints();
 
     /// <summary>
     /// Gets the glyph metrics for a given code point and glyph id.
@@ -233,8 +233,8 @@ public abstract class FontMetrics
     /// <param name="textDecorations">The text decorations applied to the glyph.</param>
     /// <param name="layoutMode">The layout mode applied to the glyph.</param>
     /// <param name="colorSupport">Options for enabling color font support during layout and rendering.</param>
-    /// <returns>The <see cref="IEnumerable{GlyphMetrics}"/>.</returns>
-    internal abstract GlyphMetrics GetGlyphMetrics(
+    /// <returns>The font glyph metrics.</returns>
+    internal abstract FontGlyphMetrics GetGlyphMetrics(
         CodePoint codePoint,
         ushort glyphId,
         TextAttributes textAttributes,

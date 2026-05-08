@@ -11,7 +11,7 @@ public class Issues_180
         // Whitney-book has invalid hhea values.
         Font font = TestFonts.GetFont(TestFonts.WhitneyBookFile, 25);
 
-        FontRectangle size = TextMeasurer.MeasureSize("H", new TextOptions(font));
+        FontRectangle size = TextMeasurer.MeasureBounds("H", new TextOptions(font));
 
         Assert.Equal(14, size.Width, 1F);
         Assert.Equal(17, size.Height, 1F);

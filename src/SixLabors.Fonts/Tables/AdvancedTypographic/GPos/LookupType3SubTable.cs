@@ -185,30 +185,19 @@ internal static class LookupType3SubTable
             }
             else
             {
-                // Vertical : Top to bottom
-                if (current.Direction == TextDirection.LeftToRight)
-                {
-                    current.Bounds.Height = exitXY.YCoordinate + current.Bounds.Y;
+                // Vertical layout modes advance top-to-bottom; column progression is handled by layout.
+                current.Bounds.Height = exitXY.YCoordinate + current.Bounds.Y;
 
-                    int delta = entryXY.YCoordinate + next.Bounds.Y;
-                    next.Bounds.Height -= delta;
-                    next.Bounds.Y -= delta;
-                }
-                else
-                {
-                    int delta = exitXY.YCoordinate + current.Bounds.Y;
-                    current.Bounds.Height -= delta;
-                    current.Bounds.Y -= delta;
-
-                    next.Bounds.Height = entryXY.YCoordinate + next.Bounds.Y;
-                }
+                int delta = entryXY.YCoordinate + next.Bounds.Y;
+                next.Bounds.Height -= delta;
+                next.Bounds.Y -= delta;
             }
 
             int child = index;
             int parent = nextIndex;
             int xOffset = entryXY.XCoordinate - exitXY.XCoordinate;
             int yOffset = entryXY.YCoordinate - exitXY.YCoordinate;
-            if ((this.LookupFlags & LookupFlags.RightToLeft) == LookupFlags.RightToLeft)
+            if ((this.LookupFlags & LookupFlags.RightToLeft) != LookupFlags.RightToLeft)
             {
                 (parent, child) = (child, parent);
 
@@ -235,10 +224,22 @@ internal static class LookupType3SubTable
             }
 
             // If parent was attached to child, separate them.
+            // https://github.com/harfbuzz/harfbuzz/issues/2469
             GlyphShapingData p = collection[parent];
             if (p.CursiveAttachment == -c.CursiveAttachment)
             {
                 p.CursiveAttachment = 0;
+
+                // Bounds.X/Y carry shaping placement offsets here, matching
+                // HarfBuzz x_offset/y_offset. Clear only the detached parent's minor axis.
+                if (horizontal)
+                {
+                    p.Bounds.Y = 0;
+                }
+                else
+                {
+                    p.Bounds.X = 0;
+                }
             }
 
             return true;

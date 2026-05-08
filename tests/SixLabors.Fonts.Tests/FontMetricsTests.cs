@@ -150,7 +150,7 @@ public class FontMetricsTests
             TextDecorations.None,
             LayoutMode.HorizontalTopBottom,
             ColorFontSupport.None,
-            out GlyphMetrics metrics));
+            out FontGlyphMetrics metrics));
 
         Assert.Equal(codePoint, metrics.CodePoint);
         Assert.Equal(font.FontMetrics.UnitsPerEm, metrics.UnitsPerEm);
@@ -179,7 +179,7 @@ public class FontMetricsTests
             TextDecorations.None,
             LayoutMode.HorizontalTopBottom,
             ColorFontSupport.None,
-            out GlyphMetrics metrics));
+            out FontGlyphMetrics metrics));
 
         Assert.Equal(codePoint, metrics.CodePoint);
         Assert.Equal(font.FontMetrics.UnitsPerEm, metrics.UnitsPerEm);
@@ -208,7 +208,7 @@ public class FontMetricsTests
             TextDecorations.None,
             LayoutMode.HorizontalTopBottom,
             ColorFontSupport.None,
-            out GlyphMetrics metrics));
+            out FontGlyphMetrics metrics));
 
         Assert.Equal(codePoint, metrics.CodePoint);
         Assert.Equal(font.FontMetrics.UnitsPerEm, metrics.UnitsPerEm);
@@ -237,7 +237,7 @@ public class FontMetricsTests
             TextDecorations.None,
             LayoutMode.HorizontalTopBottom,
             ColorFontSupport.None,
-            out GlyphMetrics metrics));
+            out FontGlyphMetrics metrics));
 
         // Position 0.
         Assert.Equal(codePoint, metrics.CodePoint);

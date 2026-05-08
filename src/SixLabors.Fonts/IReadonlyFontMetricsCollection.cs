@@ -44,9 +44,9 @@ internal interface IReadOnlyFontMetricsCollection
     /// </summary>
     /// <param name="name">The font family name.</param>
     /// <param name="culture">The culture to use when searching for a match.</param>
-    /// <returns>The <see cref="IEnumerable{FontStyle}"/>.</returns>
+    /// <returns>A read-only memory region containing the available font styles.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/></exception>
-    public IEnumerable<FontStyle> GetAllStyles(string name, CultureInfo culture);
+    public ReadOnlyMemory<FontStyle> GetAllStyles(string name, CultureInfo culture);
 
     /// <inheritdoc cref="IEnumerable{T}.GetEnumerator"/>
     public IEnumerator<FontMetrics> GetEnumerator();

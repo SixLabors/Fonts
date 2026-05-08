@@ -123,10 +123,10 @@ public class SystemFontCollectionTests
     public void CanGetAllStylesByCulture()
     {
         FontFamily family = SysFontCollection.Families.First();
-        IEnumerable<FontStyle> styles = ((IReadOnlyFontMetricsCollection)SysFontCollection).GetAllStyles(family.Name, family.Culture);
+        ReadOnlyMemory<FontStyle> styles = ((IReadOnlyFontMetricsCollection)SysFontCollection).GetAllStyles(family.Name, family.Culture);
 
-        Assert.True(styles.Any());
-        Assert.Equal(family.GetAvailableStyles(), styles);
+        Assert.False(styles.IsEmpty);
+        Assert.Equal(family.GetAvailableStyles().ToArray(), styles.ToArray());
     }
 
     [Fact]

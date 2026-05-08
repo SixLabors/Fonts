@@ -25,8 +25,12 @@ public class Issues_434
             int lineCount = TextMeasurer.CountLines(text, options);
             Assert.Equal(expectedLineCount, lineCount);
 
-            IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text, options);
-            Assert.Equal(47, layout.Count);
+            TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+            // Hard breaks that terminate visual lines are trimmed from the glyph stream.
+            // The line count assertion above owns the regression; this count verifies
+            // that trimming no longer exposes those break glyphs as measured advances.
+            Assert.Equal(47, metrics.GetGlyphMetrics().Length);
         }
     }
 
@@ -48,8 +52,12 @@ public class Issues_434
             int lineCount = TextMeasurer.CountLines(text, options);
             Assert.Equal(expectedLineCount, lineCount);
 
-            IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text, options);
-            Assert.Equal(48, layout.Count);
+            TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+            // Hard breaks that terminate visual lines are trimmed from the glyph stream.
+            // The line count assertion above owns the regression; this count verifies
+            // that trimming no longer exposes those break glyphs as measured advances.
+            Assert.Equal(48, metrics.GetGlyphMetrics().Length);
         }
     }
 }

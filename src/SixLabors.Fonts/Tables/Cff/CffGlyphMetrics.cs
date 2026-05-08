@@ -10,7 +10,7 @@ namespace SixLabors.Fonts.Tables.Cff;
 /// <summary>
 /// Represents a glyph metric from a particular Compact Font Face.
 /// </summary>
-internal class CffGlyphMetrics : GlyphMetrics
+internal class CffGlyphMetrics : FontGlyphMetrics
 {
     private CffGlyphData glyphData;
 
@@ -108,7 +108,7 @@ internal class CffGlyphMetrics : GlyphMetrics
         => this.glyphData = glyphData;
 
     /// <inheritdoc/>
-    internal override GlyphMetrics CloneForRendering(TextRun textRun)
+    internal override FontGlyphMetrics CloneForRendering(TextRun textRun)
         => new CffGlyphMetrics(
             this.FontMetrics,
             this.GlyphId,
@@ -129,8 +129,8 @@ internal class CffGlyphMetrics : GlyphMetrics
     internal override void RenderTo(
         IGlyphRenderer renderer,
         int graphemeIndex,
-        Vector2 location,
-        Vector2 offset,
+        Vector2 glyphOrigin,
+        Vector2 decorationOrigin,
         GlyphLayoutMode mode,
         TextOptions options)
     {
@@ -143,16 +143,12 @@ internal class CffGlyphMetrics : GlyphMetrics
         float pointSize = this.TextRun.Font?.Size ?? options.Font.Size;
         float dpi = options.Dpi;
 
-        // The glyph vector is rendered offset to the location.
-        // For horizontal text, the offset is always zero but vertical or rotated text
-        // will be offset against the location.
-        location *= dpi;
-        offset *= dpi;
-        Vector2 renderLocation = location + offset;
+        glyphOrigin *= dpi;
+        decorationOrigin *= dpi;
         float scaledPPEM = this.GetScaledSize(pointSize, dpi);
 
         Matrix3x2 rotation = GetRotationMatrix(mode);
-        FontRectangle box = this.GetBoundingBox(mode, renderLocation, scaledPPEM);
+        FontRectangle box = this.GetBoundingBox(mode, glyphOrigin, scaledPPEM);
         GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode, graphemeIndex);
 
         if (renderer.BeginGlyph(in box, in parameters))
@@ -171,11 +167,11 @@ internal class CffGlyphMetrics : GlyphMetrics
                 }
 
                 Vector2 scaledOffset = this.Offset * scale;
-                this.glyphData.RenderTo(renderer, renderLocation, scale, scaledOffset, rotation);
+                this.glyphData.RenderTo(renderer, glyphOrigin, scale, scaledOffset, rotation);
             }
 
             renderer.EndGlyph();
-            this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPPEM, options);
+            this.RenderDecorationsTo(renderer, decorationOrigin, mode, rotation, scaledPPEM, options);
         }
     }
 }

@@ -32,7 +32,7 @@ internal partial class StreamFontMetrics : FontMetrics
     private readonly OutlineType outlineType;
 
     // https://docs.microsoft.com/en-us/typography/opentype/spec/otff#font-tables
-    private readonly ConcurrentDictionary<(int CodePoint, ushort Id, TextAttributes Attributes, ColorFontSupport ColorSupport, bool IsVerticalLayout), GlyphMetrics> glyphCache;
+    private readonly ConcurrentDictionary<(int CodePoint, ushort Id, TextAttributes Attributes, ColorFontSupport ColorSupport, bool IsVerticalLayout), FontGlyphMetrics> glyphCache;
     private readonly ConcurrentDictionary<(int CodePoint, int NextCodePoint), (bool Success, ushort GlyphId, bool SkipNextCodePoint)> glyphIdCache;
     private readonly ConcurrentDictionary<ushort, (bool Success, CodePoint CodePoint)> codePointCache;
     private SvgGlyphSource? svgGlyphSource;
@@ -277,23 +277,23 @@ internal partial class StreamFontMetrics : FontMetrics
     }
 
     /// <inheritdoc/>
-    public override bool TryGetVariationAxes(out VariationAxis[]? variationAxes)
+    public override bool TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> variationAxes)
     {
         FVarTable? fvar = this.trueTypeFontTables?.Fvar ?? this.compactFontTables?.FVar;
         Tables.General.Name.NameTable? names = this.trueTypeFontTables?.Name ?? this.compactFontTables?.Name;
 
         if (fvar == null)
         {
-            variationAxes = [];
+            variationAxes = ReadOnlyMemory<VariationAxis>.Empty;
             return false;
         }
 
-        variationAxes = new VariationAxis[fvar.Axes.Length];
+        VariationAxis[] axes = new VariationAxis[fvar.Axes.Length];
         for (int i = 0; i < fvar.Axes.Length; i++)
         {
             VariationAxisRecord axis = fvar.Axes[i];
             string name = names != null ? names.GetNameById(CultureInfo.InvariantCulture, axis.AxisNameId) : string.Empty;
-            variationAxes[i] = new VariationAxis()
+            axes[i] = new VariationAxis()
             {
                 Tag = axis.Tag,
                 Min = axis.MinValue,
@@ -303,6 +303,7 @@ internal partial class StreamFontMetrics : FontMetrics
             };
         }
 
+        variationAxes = axes;
         return true;
     }
 
@@ -323,7 +324,7 @@ internal partial class StreamFontMetrics : FontMetrics
         TextDecorations textDecorations,
         LayoutMode layoutMode,
         ColorFontSupport support,
-        [NotNullWhen(true)] out GlyphMetrics? metrics)
+        [NotNullWhen(true)] out FontGlyphMetrics? metrics)
     {
         // We return metrics for the special glyph representing a missing character, commonly known as .notdef.
         this.TryGetGlyphId(codePoint, out ushort glyphId);
@@ -332,7 +333,7 @@ internal partial class StreamFontMetrics : FontMetrics
     }
 
     /// <inheritdoc/>
-    internal override GlyphMetrics GetGlyphMetrics(
+    internal override FontGlyphMetrics GetGlyphMetrics(
         CodePoint codePoint,
         ushort glyphId,
         TextAttributes textAttributes,
@@ -356,7 +357,7 @@ internal partial class StreamFontMetrics : FontMetrics
             (textDecorations, codePoint, this));
 
     /// <inheritdoc />
-    public override IReadOnlyList<CodePoint> GetAvailableCodePoints()
+    public override ReadOnlyMemory<CodePoint> GetAvailableCodePoints()
     {
         CMapTable cmap = this.outlineType == OutlineType.TrueType
             ? this.trueTypeFontTables!.Cmap
@@ -780,8 +781,8 @@ internal partial class StreamFontMetrics : FontMetrics
     /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
     /// </summary>
     /// <param name="path">The file path.</param>
-    /// <returns>a <see cref="StreamFontMetrics"/>.</returns>
-    public static StreamFontMetrics[] LoadFontCollection(string path)
+    /// <returns>A read-only memory region containing the font metrics.</returns>
+    public static ReadOnlyMemory<StreamFontMetrics> LoadFontCollection(string path)
     {
         using FileStream fs = File.OpenRead(path);
         return LoadFontCollection(fs);
@@ -791,8 +792,8 @@ internal partial class StreamFontMetrics : FontMetrics
     /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
     /// </summary>
     /// <param name="stream">The stream.</param>
-    /// <returns>a <see cref="StreamFontMetrics"/>.</returns>
-    public static StreamFontMetrics[] LoadFontCollection(Stream stream)
+    /// <returns>A read-only memory region containing the font metrics.</returns>
+    public static ReadOnlyMemory<StreamFontMetrics> LoadFontCollection(Stream stream)
     {
         long startPos = stream.Position;
         BigEndianBinaryReader reader = new(stream, true);
@@ -816,7 +817,7 @@ internal partial class StreamFontMetrics : FontMetrics
         LayoutMode layoutMode)
         => (codePoint.Value, glyphId, textAttributes, colorSupport, AdvancedTypographicUtils.IsVerticalGlyph(codePoint, layoutMode));
 
-    private GlyphMetrics CreateGlyphMetrics(
+    private FontGlyphMetrics CreateGlyphMetrics(
         in CodePoint codePoint,
         ushort glyphId,
         GlyphType glyphType,

@@ -26,8 +26,11 @@ public class Issues_431
             int lineCount = TextMeasurer.CountLines(text, options);
             Assert.Equal(4, lineCount);
 
-            IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text, options);
-            Assert.Equal(46, layout.Count);
+            TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+            // Hard breaks that terminate non-empty lines are trimmed from the visual
+            // glyph stream, so the glyph count returns to the visible source glyphs.
+            Assert.Equal(46, metrics.GetGlyphMetrics().Length);
         }
     }
 
@@ -50,8 +53,11 @@ public class Issues_431
             int lineCount = TextMeasurer.CountLines(text, options);
             Assert.Equal(4, lineCount);
 
-            IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text, options);
-            Assert.Equal(46, layout.Count);
+            TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+            // Hard breaks that terminate non-empty lines are trimmed from the visual
+            // glyph stream, so the glyph count returns to the visible source glyphs.
+            Assert.Equal(46, metrics.GetGlyphMetrics().Length);
         }
     }
 }

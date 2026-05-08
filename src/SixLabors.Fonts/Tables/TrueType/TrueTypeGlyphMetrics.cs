@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tables.TrueType;
 /// <summary>
 /// Represents a glyph metric from a particular TrueType font face.
 /// </summary>
-public partial class TrueTypeGlyphMetrics : GlyphMetrics
+public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
 {
     private static readonly Vector2 YInverter = new(1, -1);
     private readonly GlyphVector vector;
@@ -109,7 +109,7 @@ public partial class TrueTypeGlyphMetrics : GlyphMetrics
         => this.vector = vector;
 
     /// <inheritdoc/>
-    internal override GlyphMetrics CloneForRendering(TextRun textRun)
+    internal override FontGlyphMetrics CloneForRendering(TextRun textRun)
         => new TrueTypeGlyphMetrics(
             this.FontMetrics,
             this.GlyphId,
@@ -135,8 +135,8 @@ public partial class TrueTypeGlyphMetrics : GlyphMetrics
     internal override void RenderTo(
         IGlyphRenderer renderer,
         int graphemeIndex,
-        Vector2 location,
-        Vector2 offset,
+        Vector2 glyphOrigin,
+        Vector2 decorationOrigin,
         GlyphLayoutMode mode,
         TextOptions options)
     {
@@ -149,16 +149,12 @@ public partial class TrueTypeGlyphMetrics : GlyphMetrics
         float pointSize = this.TextRun.Font?.Size ?? options.Font.Size;
         float dpi = options.Dpi;
 
-        // The glyph vector is rendered offset to the location.
-        // For horizontal text, the offset is always zero but vertical or rotated text
-        // will be offset against the location.
-        location *= dpi;
-        offset *= dpi;
-        Vector2 renderLocation = location + offset;
+        glyphOrigin *= dpi;
+        decorationOrigin *= dpi;
         float scaledPPEM = this.GetScaledSize(pointSize, dpi);
 
         Matrix3x2 rotation = GetRotationMatrix(mode);
-        FontRectangle box = this.GetBoundingBox(mode, renderLocation, scaledPPEM);
+        FontRectangle box = this.GetBoundingBox(mode, glyphOrigin, scaledPPEM);
         GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode, graphemeIndex);
 
         if (renderer.BeginGlyph(in box, in parameters))
@@ -195,8 +191,8 @@ public partial class TrueTypeGlyphMetrics : GlyphMetrics
                     endOfContour = endPoints[i];
 
                     Vector2 prev;
-                    Vector2 curr = (YInverter * controlPoints[endOfContour].Point) + renderLocation;
-                    Vector2 next = (YInverter * controlPoints[startOfContour].Point) + renderLocation;
+                    Vector2 curr = (YInverter * controlPoints[endOfContour].Point) + glyphOrigin;
+                    Vector2 next = (YInverter * controlPoints[startOfContour].Point) + glyphOrigin;
 
                     if (controlPoints[endOfContour].OnCurve)
                     {
@@ -224,7 +220,7 @@ public partial class TrueTypeGlyphMetrics : GlyphMetrics
                         int currentIndex = startOfContour + p;
                         int nextIndex = startOfContour + ((p + 1) % length);
                         int prevIndex = startOfContour + ((length + p - 1) % length);
-                        next = (YInverter * controlPoints[nextIndex].Point) + renderLocation;
+                        next = (YInverter * controlPoints[nextIndex].Point) + glyphOrigin;
 
                         if (controlPoints[currentIndex].OnCurve)
                         {
@@ -257,7 +253,7 @@ public partial class TrueTypeGlyphMetrics : GlyphMetrics
             }
 
             renderer.EndGlyph();
-            this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPPEM, options);
+            this.RenderDecorationsTo(renderer, decorationOrigin, mode, rotation, scaledPPEM, options);
         }
     }
 }

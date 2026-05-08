@@ -155,9 +155,9 @@ public class TextAlignmentTests
 
     private sealed class BoundsRenderer : IGlyphRenderer
     {
-        private readonly List<FontRectangle> glyphBounds = [];
+        private readonly List<FontRectangle> glyphRectangles = [];
 
-        public IPathCollection Boxes => new PathCollection(this.glyphBounds.Select(x => new RectangularPolygon(x.X, x.Y, x.Width, x.Height)));
+        public IPathCollection Boxes => new PathCollection(this.glyphRectangles.Select(x => new RectangularPolygon(x.X, x.Y, x.Width, x.Height)));
 
         public IPath TextBox { get; private set; }
 
@@ -166,7 +166,7 @@ public class TextAlignmentTests
 
         public bool BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters)
         {
-            this.glyphBounds.Add(bounds);
+            this.glyphRectangles.Add(bounds);
             return true;
         }
 

@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace SixLabors.Fonts.Unicode;
 
@@ -50,6 +51,11 @@ internal ref struct LineBreakEnumerator
     /// U+002D HYPHEN-MINUS. Valid inside URI schemes and host labels.
     /// </summary>
     private const int HyphenMinus = 0x002D;
+
+    /// <summary>
+    /// U+00AD SOFT HYPHEN. It creates a manual hyphenation opportunity but is not rendered unless that break is chosen.
+    /// </summary>
+    private const int SoftHyphen = 0x00AD;
 
     /// <summary>
     /// U+002B PLUS SIGN. Valid inside URI schemes.
@@ -253,7 +259,8 @@ internal ref struct LineBreakEnumerator
                     this.Current = new LineBreak(
                         this.FindPriorNonWhitespace(this.current),
                         this.current.Length,
-                        action == BreakAction.MustBreak);
+                        action == BreakAction.MustBreak,
+                        this.current.HasValue(SoftHyphen));
                     this.previousBreakPosition = this.current.Length;
                     return true;
 
@@ -2059,6 +2066,7 @@ internal ref struct LineBreakEnumerator
         /// <param name="length">The code point boundary associated with the sentinel.</param>
         /// <param name="charEnd">The UTF-16 boundary associated with the sentinel.</param>
         /// <returns>The sentinel item.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static LineBreakCodePoint CreateSentinel(int sentinel, int length, int charEnd) => new(sentinel, length, charEnd);
 
         /// <summary>
@@ -2066,6 +2074,7 @@ internal ref struct LineBreakEnumerator
         /// </summary>
         /// <param name="cls">The class to compare.</param>
         /// <returns><see langword="true"/> when this is a real item with the requested class.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool Is(LineBreakClass cls) => !this.IsSentinel && this.Class == cls;
 
         /// <summary>
@@ -2073,6 +2082,7 @@ internal ref struct LineBreakEnumerator
         /// </summary>
         /// <param name="value">The scalar value to compare.</param>
         /// <returns><see langword="true"/> when this is a real item with the requested value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool HasValue(int value) => !this.IsSentinel && this.CodePoint.Value == value;
     }
 }

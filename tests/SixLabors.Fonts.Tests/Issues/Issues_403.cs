@@ -12,11 +12,11 @@ public class Issues_403
         Font font = TestFonts.GetFont(TestFonts.KellySlabFile, 2048);
 
         TextOptions options = new(font) { KerningMode = KerningMode.Auto };
-        FontRectangle kerned = TextMeasurer.MeasureSize("AY", options);
+        FontRectangle kerned = TextMeasurer.MeasureBounds("AY", options);
 
         options.KerningMode = KerningMode.None;
 
-        FontRectangle unkerned = TextMeasurer.MeasureSize("AY", options);
+        FontRectangle unkerned = TextMeasurer.MeasureBounds("AY", options);
 
         Assert.Equal(kerned.Left, unkerned.Left);
         Assert.Equal(kerned.Top, unkerned.Top);

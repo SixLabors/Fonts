@@ -10,6 +10,6 @@ public class Issues_333
     {
         const string text = "文字測試文字測試文字測試文字測試文字測試";
         Font font = TestFonts.GetFont(TestFonts.PMINGLIUFile, 1024);
-        TextMeasurer.MeasureSize(text, new TextOptions(font));
+        TextMeasurer.MeasureBounds(text, new TextOptions(font));
     }
 }

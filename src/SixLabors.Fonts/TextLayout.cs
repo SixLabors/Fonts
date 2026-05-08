@@ -1,8 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
@@ -10,32 +8,10 @@ using SixLabors.Fonts.Unicode;
 namespace SixLabors.Fonts;
 
 /// <summary>
-/// Encapsulated logic or laying out text.
+/// Encapsulates logic for laying out text.
 /// </summary>
 internal static partial class TextLayout
 {
-    /// <summary>
-    /// Shapes the supplied text and returns every laid-out glyph in layout order.
-    /// </summary>
-    /// <remarks>
-    /// Equivalent to <see cref="ProcessText"/> followed by <see cref="LayoutText(TextBox, TextOptions)"/>.
-    /// Prefer <see cref="GetBounds(TextBox, TextOptions)"/> for callers that only need aggregate ink bounds,
-    /// or the streaming <see cref="LayoutText{TVisitor}"/> overload to avoid materializing the glyph list.
-    /// </remarks>
-    /// <param name="text">The text to lay out.</param>
-    /// <param name="options">The text shaping and layout options.</param>
-    /// <returns>The laid-out glyphs in layout order, or an empty list when <paramref name="text"/> is empty.</returns>
-    public static IReadOnlyList<GlyphLayout> GenerateLayout(ReadOnlySpan<char> text, TextOptions options)
-    {
-        if (text.IsEmpty)
-        {
-            return Array.Empty<GlyphLayout>();
-        }
-
-        TextBox textBox = ProcessText(text, options);
-        return LayoutText(textBox, options);
-    }
-
     /// <summary>
     /// Resolves the ordered sequence of <see cref="TextRun"/> instances that cover <paramref name="text"/>.
     /// </summary>
@@ -45,10 +21,17 @@ internal static partial class TextLayout
     /// supplied runs are ordered, gaps are filled with default-font runs, and overlapping ranges are trimmed.
     /// </remarks>
     /// <param name="text">The text to partition into runs.</param>
-    /// <param name="options">The text shaping options supplying the default font and optional user-defined runs.</param>
+    /// <param name="options">The text options supplying the default font and optional user-defined runs.</param>
     /// <returns>The resolved runs that together cover the entire grapheme range of <paramref name="text"/>.</returns>
     public static IReadOnlyList<TextRun> BuildTextRuns(ReadOnlySpan<char> text, TextOptions options)
     {
+        int start = 0;
+        int end = text.GetGraphemeCount();
+        if (end == 0)
+        {
+            return [];
+        }
+
         if (options.TextRuns is null || options.TextRuns.Count == 0)
         {
             return new TextRun[]
@@ -62,8 +45,6 @@ internal static partial class TextLayout
             };
         }
 
-        int start = 0;
-        int end = text.GetGraphemeCount();
         List<TextRun> textRuns = [];
         foreach (TextRun textRun in options.TextRuns.OrderBy(x => x.Start))
         {
@@ -80,6 +61,11 @@ internal static partial class TextLayout
 
             // Add the current run, ensuring the font is not null.
             textRun.Font ??= options.Font;
+
+            if (textRun.Placeholder.HasValue && textRun.End != textRun.Start)
+            {
+                throw new ArgumentException("Placeholder text runs must be zero-length insertion runs.", nameof(options));
+            }
 
             // Ensure that the previous run does not overlap the current.
             if (textRuns.Count > 0)
@@ -108,18 +94,17 @@ internal static partial class TextLayout
     }
 
     /// <summary>
-    /// Shapes and line-breaks <paramref name="text"/> into a <see cref="TextBox"/> ready for layout.
+    /// Shapes <paramref name="text"/> into shaping state that is independent of the wrapping length.
     /// </summary>
     /// <remarks>
     /// Performs the font-run build, bidi analysis, GSUB/GPOS shaping (including fallback font
-    /// resolution for unmapped codepoints), and line breaking. The result is a sequence of
-    /// <see cref="TextLine"/> entries with resolved glyph metrics but no pen positioning — positioning
-    /// is applied later by <see cref="LayoutText{TVisitor}"/>.
+    /// resolution for unmapped codepoints). The result contains the positioned glyph collection
+    /// and bidi state used by logical line composition.
     /// </remarks>
     /// <param name="text">The text to process.</param>
-    /// <param name="options">The text shaping options.</param>
-    /// <returns>The shaped, line-broken text ready for glyph positioning.</returns>
-    internal static TextBox ProcessText(ReadOnlySpan<char> text, TextOptions options)
+    /// <param name="options">The text options used while shaping.</param>
+    /// <returns>The wrapping-independent shaping state.</returns>
+    public static ShapedText ShapeText(ReadOnlySpan<char> text, TextOptions options)
     {
         // Gather the font and fallbacks.
         Font[] fallbackFonts = (options.FallbackFontFamilies?.Count > 0)
@@ -135,13 +120,33 @@ internal static partial class TextLayout
         BidiData bidiData = new();
         bidiData.Init(text, (sbyte)options.TextDirection);
 
-        // If we have embedded directional overrides then change those
-        // ranges to neutral.
-        if (options.TextDirection != TextDirection.Auto)
+        if (options.TextBidiMode == TextBidiMode.Override)
         {
-            bidiData.SaveTypes();
-            bidiData.Types.Span.Fill(BidiCharacterType.OtherNeutral);
-            bidiData.PairedBracketTypes.Span.Clear();
+            BidiCharacterType overrideType = options.TextDirection == TextDirection.Auto
+                ? (bidi.ResolveEmbeddingLevel(bidiData.Types) == 1 ? BidiCharacterType.RightToLeft : BidiCharacterType.LeftToRight)
+                : (options.TextDirection == TextDirection.RightToLeft ? BidiCharacterType.RightToLeft : BidiCharacterType.LeftToRight);
+
+            for (int i = 0; i < bidiData.Types.Length; i++)
+            {
+                // Bidi override is a higher-level protocol override: real text behaves as the requested
+                // strong direction, while separators and explicit bidi controls keep their structural role.
+                bidiData.Types[i] = bidiData.Types[i] switch
+                {
+                    BidiCharacterType.ParagraphSeparator
+                    or BidiCharacterType.SegmentSeparator
+                    or BidiCharacterType.BoundaryNeutral
+                    or BidiCharacterType.LeftToRightEmbedding
+                    or BidiCharacterType.RightToLeftEmbedding
+                    or BidiCharacterType.LeftToRightOverride
+                    or BidiCharacterType.RightToLeftOverride
+                    or BidiCharacterType.PopDirectionalFormat
+                    or BidiCharacterType.LeftToRightIsolate
+                    or BidiCharacterType.RightToLeftIsolate
+                    or BidiCharacterType.FirstStrongIsolate
+                    or BidiCharacterType.PopDirectionalIsolate => bidiData.Types[i],
+                    _ => overrideType,
+                };
+            }
         }
 
         bidi.Process(bidiData);
@@ -160,6 +165,35 @@ internal static partial class TextLayout
         int bidiRunIndex = 0;
         foreach (TextRun textRun in textRuns)
         {
+            if (textRun.Placeholder.HasValue)
+            {
+                substitutions.Clear();
+
+                while (bidiRunIndex < bidiRuns.Length && codePointIndex == bidiRuns[bidiRunIndex].End)
+                {
+                    bidiRunIndex++;
+                }
+
+                // Placeholder direction comes from the bidi region at the insertion
+                // point. If the insertion point is after all source text, use the
+                // default even/LTR embedding level.
+                BidiRun placeholderBidiRun = bidiRunIndex < bidiRuns.Length
+                    ? bidiRuns[bidiRunIndex]
+                    : new(BidiCharacterType.LeftToRight, 2, codePointIndex, 0);
+
+                // Placeholder runs are inserted into the layout stream and do not consume
+                // source graphemes, source codepoints, or bidi runs.
+                substitutions.AddPlaceholder(
+                    CodePoint.ObjectReplacementChar,
+                    placeholderBidiRun,
+                    textRun,
+                    codePointIndex);
+
+                complete &= positionings.TryAdd(textRun.Font!, substitutions);
+                textRunIndex++;
+                continue;
+            }
+
             if (!DoFontRun(
                 textRun.Slice(text),
                 textRun.Start,
@@ -228,52 +262,12 @@ internal static partial class TextLayout
             font.FontMetrics.UpdatePositions(positionings);
         }
 
-        return BreakLines(text, options, bidiRuns, bidiMap, positionings, layoutMode);
-    }
-
-    /// <summary>
-    /// Lays out the supplied <see cref="TextBox"/> and materializes every glyph into a
-    /// <see cref="List{T}"/>.
-    /// </summary>
-    /// <remarks>
-    /// Prefer the streaming overload <see cref="LayoutText{TVisitor}"/> when the caller only needs
-    /// aggregated state (for example ink bounds), to avoid allocating the list.
-    /// </remarks>
-    /// <param name="textBox">The shaped and line-broken text.</param>
-    /// <param name="options">The text shaping options used to shape <paramref name="textBox"/>.</param>
-    /// <returns>The laid-out glyphs in layout order.</returns>
-    internal static List<GlyphLayout> LayoutText(TextBox textBox, TextOptions options)
-    {
-        GlyphLayoutCollector visitor = new([]);
-        LayoutText(textBox, options, ref visitor);
-        return visitor.Glyphs;
-    }
-
-    /// <summary>
-    /// Lays out the supplied <see cref="TextBox"/> and returns the union of the ink bounds of
-    /// every emitted glyph in a single streaming pass.
-    /// </summary>
-    /// <remarks>
-    /// Equivalent to iterating <see cref="LayoutText(TextBox, TextOptions)"/> and unioning each
-    /// glyph's <see cref="GlyphLayout.BoundingBox"/>, but avoids materializing the glyph list and
-    /// the second iteration pass.
-    /// </remarks>
-    /// <param name="textBox">The shaped and line-broken text.</param>
-    /// <param name="options">The text shaping options used to shape <paramref name="textBox"/>.</param>
-    /// <returns>
-    /// The union of the ink bounds of every laid-out glyph, or <see cref="FontRectangle.Empty"/>
-    /// if no glyphs were emitted.
-    /// </returns>
-    internal static FontRectangle GetBounds(TextBox textBox, TextOptions options)
-    {
-        GlyphBoundsAccumulator visitor = new(options.Dpi);
-        LayoutText(textBox, options, ref visitor);
-        return visitor.Result();
+        return new ShapedText(positionings, bidiRuns, bidiMap, layoutMode);
     }
 
     /// <summary>
     /// Lays out the supplied <see cref="TextBox"/>, streaming each laid-out glyph through the
-    /// supplied <paramref name="visitor"/> in layout order.
+    /// supplied <paramref name="visitor"/> in layout order using the supplied wrapping length for alignment.
     /// </summary>
     /// <remarks>
     /// The visitor type is constrained to a struct implementing <see cref="IGlyphLayoutVisitor"/>
@@ -281,22 +275,32 @@ internal static partial class TextLayout
     /// </remarks>
     /// <typeparam name="TVisitor">The concrete visitor struct type.</typeparam>
     /// <param name="textBox">The shaped and line-broken text.</param>
-    /// <param name="options">The text shaping options used to shape <paramref name="textBox"/>.</param>
-    /// <param name="visitor">The visitor that receives each laid-out glyph.</param>
-    internal static void LayoutText<TVisitor>(TextBox textBox, TextOptions options, ref TVisitor visitor)
+    /// <param name="options">The text options used to lay out <paramref name="textBox"/>.</param>
+    /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
+    /// <param name="visitor">The visitor that receives each positioned glyph.</param>
+    public static void LayoutText<TVisitor>(
+        TextBox textBox,
+        TextOptions options,
+        float wrappingLength,
+        ref TVisitor visitor)
         where TVisitor : struct, IGlyphLayoutVisitor
     {
+        if (textBox.TextLines.Count == 0)
+        {
+            return;
+        }
+
         LayoutMode layoutMode = options.LayoutMode;
 
         Vector2 boxLocation = options.Origin / options.Dpi;
         Vector2 penLocation = boxLocation;
 
-        // If a wrapping length is specified that should be used to determine the
-        // box size to align text within.
+        // When wrapping is enabled, the wrapping length defines the minimum line-box
+        // extent used by alignment.
         float maxScaledAdvance = textBox.ScaledMaxAdvance();
-        if (options.TextAlignment != TextAlignment.Start && options.WrappingLength > 0)
+        if (options.TextAlignment != TextAlignment.Start && wrappingLength > 0)
         {
-            maxScaledAdvance = Math.Max(options.WrappingLength / options.Dpi, maxScaledAdvance);
+            maxScaledAdvance = Math.Max(wrappingLength / options.Dpi, maxScaledAdvance);
         }
 
         TextDirection direction = textBox.TextDirection();
@@ -305,6 +309,7 @@ internal static partial class TextLayout
         {
             for (int i = 0; i < textBox.TextLines.Count; i++)
             {
+                visitor.BeginLine(i);
                 LayoutLineHorizontal(
                     textBox,
                     textBox.TextLines[i],
@@ -315,6 +320,8 @@ internal static partial class TextLayout
                     ref boxLocation,
                     ref penLocation,
                     ref visitor);
+
+                visitor.EndLine();
             }
         }
         else if (layoutMode == LayoutMode.HorizontalBottomTop)
@@ -322,6 +329,7 @@ internal static partial class TextLayout
             int index = 0;
             for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
             {
+                visitor.BeginLine(i);
                 LayoutLineHorizontal(
                     textBox,
                     textBox.TextLines[i],
@@ -332,12 +340,15 @@ internal static partial class TextLayout
                     ref boxLocation,
                     ref penLocation,
                     ref visitor);
+
+                visitor.EndLine();
             }
         }
         else if (layoutMode is LayoutMode.VerticalLeftRight)
         {
             for (int i = 0; i < textBox.TextLines.Count; i++)
             {
+                visitor.BeginLine(i);
                 LayoutLineVertical(
                     textBox,
                     textBox.TextLines[i],
@@ -348,6 +359,8 @@ internal static partial class TextLayout
                     ref boxLocation,
                     ref penLocation,
                     ref visitor);
+
+                visitor.EndLine();
             }
         }
         else if (layoutMode is LayoutMode.VerticalRightLeft)
@@ -355,6 +368,7 @@ internal static partial class TextLayout
             int index = 0;
             for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
             {
+                visitor.BeginLine(i);
                 LayoutLineVertical(
                     textBox,
                     textBox.TextLines[i],
@@ -365,12 +379,15 @@ internal static partial class TextLayout
                     ref boxLocation,
                     ref penLocation,
                     ref visitor);
+
+                visitor.EndLine();
             }
         }
         else if (layoutMode is LayoutMode.VerticalMixedLeftRight)
         {
             for (int i = 0; i < textBox.TextLines.Count; i++)
             {
+                visitor.BeginLine(i);
                 LayoutLineVerticalMixed(
                     textBox,
                     textBox.TextLines[i],
@@ -381,6 +398,8 @@ internal static partial class TextLayout
                     ref boxLocation,
                     ref penLocation,
                     ref visitor);
+
+                visitor.EndLine();
             }
         }
         else
@@ -388,6 +407,7 @@ internal static partial class TextLayout
             int index = 0;
             for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
             {
+                visitor.BeginLine(i);
                 LayoutLineVerticalMixed(
                     textBox,
                     textBox.TextLines[i],
@@ -398,6 +418,8 @@ internal static partial class TextLayout
                     ref boxLocation,
                     ref penLocation,
                     ref visitor);
+
+                visitor.EndLine();
             }
         }
     }
@@ -412,7 +434,7 @@ internal static partial class TextLayout
     /// <param name="textLine">The line being laid out.</param>
     /// <param name="direction">The resolved text direction for this line.</param>
     /// <param name="maxScaledAdvance">The widest scaled line advance in the block (or wrapping length).</param>
-    /// <param name="options">The text shaping and layout options.</param>
+    /// <param name="options">The text options used to position the line.</param>
     /// <param name="index">The zero-based visual index of this line within the block.</param>
     /// <param name="boxLocation">The running top-left position of the glyph boxes; advanced by this method.</param>
     /// <param name="penLocation">The running pen position used for glyph placement; advanced by this method.</param>
@@ -521,21 +543,32 @@ internal static partial class TextLayout
         }
 
         penLocation.X += offsetX;
+        Vector2 boundsLocation = boxLocation;
 
         bool emitted = false;
         for (int i = 0; i < textLine.Count; i++)
         {
-            TextLine.GlyphLayoutData data = textLine[i];
+            GlyphLayoutData data = textLine[i];
+            float layoutAdvance = data.ScaledAdvance;
+
             if (data.IsNewLine)
             {
-                visitor.Visit(new GlyphLayout(
-                    new Glyph(data.Metrics[0], data.PointSize),
-                    boxLocation,
+                FontGlyphMetrics metric = data.Metrics[0];
+
+                // Hard breaks bypass the normal glyph loop, but still need the
+                // current pen position plus the same baseline origin used by glyphs.
+                Vector2 hardBreakGlyphOrigin = penLocation + new Vector2(0, textLine.ScaledMaxAscender);
+
+                visitor.Visit(
+                    new GlyphLayout(
+                    new Glyph(metric, data.PointSize),
+                    boundsLocation,
+                    hardBreakGlyphOrigin,
                     penLocation,
-                    Vector2.Zero,
                     data.ScaledAdvance,
                     yLineAdvance,
                     GlyphLayoutMode.Horizontal,
+                    data.BidiRun.Level,
                     true,
                     data.GraphemeIndex,
                     data.StringIndex));
@@ -544,20 +577,26 @@ internal static partial class TextLayout
                 penLocation.Y += yLineAdvance;
                 boxLocation.X = originX;
                 boxLocation.Y += advanceY;
+                boundsLocation.X = originX;
+                boundsLocation.Y += advanceY;
                 return;
             }
 
             int j = 0;
-            foreach (GlyphMetrics metric in data.Metrics)
+            foreach (FontGlyphMetrics metric in data.Metrics)
             {
-                visitor.Visit(new GlyphLayout(
+                Vector2 glyphOrigin = penLocation + new Vector2(0, textLine.ScaledMaxAscender);
+
+                visitor.Visit(
+                    new GlyphLayout(
                     new Glyph(metric, data.PointSize),
-                    boxLocation,
-                    penLocation + new Vector2(0, textLine.ScaledMaxAscender),
-                    Vector2.Zero,
+                    boundsLocation,
+                    glyphOrigin,
+                    glyphOrigin,
                     data.ScaledAdvance,
                     advanceY,
                     GlyphLayoutMode.Horizontal,
+                    data.BidiRun.Level,
                     i == 0 && j == 0,
                     data.GraphemeIndex,
                     data.StringIndex));
@@ -566,8 +605,9 @@ internal static partial class TextLayout
                 j++;
             }
 
-            boxLocation.X += data.ScaledAdvance;
-            penLocation.X += data.ScaledAdvance;
+            boxLocation.X += layoutAdvance;
+            penLocation.X += layoutAdvance;
+            boundsLocation.X += data.ScaledAdvance;
         }
 
         boxLocation.X = originX;
@@ -590,7 +630,7 @@ internal static partial class TextLayout
     /// <param name="textLine">The line being laid out.</param>
     /// <param name="direction">The resolved text direction for this line.</param>
     /// <param name="maxScaledAdvance">The longest scaled line advance in the block (or wrapping length).</param>
-    /// <param name="options">The text shaping and layout options.</param>
+    /// <param name="options">The text options used to position the line.</param>
     /// <param name="index">The zero-based visual index of this line within the block.</param>
     /// <param name="boxLocation">The running top-left position of the glyph boxes; advanced by this method.</param>
     /// <param name="penLocation">The running pen position used for glyph placement; advanced by this method.</param>
@@ -607,7 +647,6 @@ internal static partial class TextLayout
         ref TVisitor visitor)
         where TVisitor : struct, IGlyphLayoutVisitor
     {
-        float originX = penLocation.X;
         float originY = penLocation.Y;
         float offsetY = 0;
 
@@ -693,12 +732,14 @@ internal static partial class TextLayout
         penLocation.X += offsetX;
 
         float lineOriginX = penLocation.X;
+        Vector2 boundsLocation = boxLocation;
+        float boundsLineOriginX = boundsLocation.X;
 
         bool emitted = false;
 
         // Grapheme-scoped state for transformed glyph alignment.
         //
-        // IMPORTANT: TextLine.GlyphLayoutData is per-codepoint, not per-grapheme.
+        // IMPORTANT: GlyphLayoutData is per-codepoint, not per-grapheme.
         // Complex scripts can therefore produce multiple entries for a single grapheme.
         // For example Devanagari "र्कि" can end up as two entries ("र्" and "कि") even though it
         // visually shapes as a single cluster.
@@ -712,17 +753,30 @@ internal static partial class TextLayout
 
         for (int i = 0; i < textLine.Count; i++)
         {
-            TextLine.GlyphLayoutData data = textLine[i];
+            GlyphLayoutData data = textLine[i];
+            float layoutAdvance = data.ScaledAdvance;
+            float scaledLineHeight = data.ScaledLineHeight / options.LineSpacing;
+
             if (data.IsNewLine)
             {
-                visitor.Visit(new GlyphLayout(
-                    new Glyph(data.Metrics[0], data.PointSize),
-                    boxLocation,
-                    penLocation,
-                    Vector2.Zero,
+                FontGlyphMetrics metric = data.Metrics[0];
+                Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
+
+                // Hard breaks bypass the normal glyph loop, but still need the
+                // current pen position plus the same vertical glyph origin adjustment.
+                Vector2 hardBreakDecorationOrigin = penLocation + new Vector2((unscaledLineHeight - scaledLineHeight) * .5F, 0);
+                Vector2 hardBreakGlyphOrigin = hardBreakDecorationOrigin + new Vector2(0, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
+
+                visitor.Visit(
+                    new GlyphLayout(
+                    new Glyph(metric, data.PointSize),
+                    boundsLocation,
+                    hardBreakGlyphOrigin,
+                    hardBreakDecorationOrigin,
                     xLineAdvance,
                     data.ScaledAdvance,
                     GlyphLayoutMode.Vertical,
+                    data.BidiRun.Level,
                     true,
                     data.GraphemeIndex,
                     data.StringIndex));
@@ -731,6 +785,8 @@ internal static partial class TextLayout
                 boxLocation.Y = originY;
                 penLocation.X += xLineAdvance;
                 penLocation.Y = originY;
+                boundsLocation.X += advanceX;
+                boundsLocation.Y = originY;
                 return;
             }
 
@@ -752,7 +808,7 @@ internal static partial class TextLayout
 
                 for (int k = i; k < textLine.Count; k++)
                 {
-                    TextLine.GlyphLayoutData g = textLine[k];
+                    GlyphLayoutData g = textLine[k];
 
                     if (g.GraphemeIndex != graphemeIndex)
                     {
@@ -782,14 +838,14 @@ internal static partial class TextLayout
 
                     for (int k = i; k < textLine.Count; k++)
                     {
-                        TextLine.GlyphLayoutData g = textLine[k];
+                        GlyphLayoutData g = textLine[k];
 
                         if (g.GraphemeIndex != graphemeIndex)
                         {
                             break;
                         }
 
-                        foreach (GlyphMetrics m in g.Metrics)
+                        foreach (FontGlyphMetrics m in g.Metrics)
                         {
                             Vector2 s = new Vector2(g.PointSize) / m.ScaleFactor;
 
@@ -810,10 +866,13 @@ internal static partial class TextLayout
 
                     float inkWidth = maxX - minX;
 
-                    // Normalize ink minX to 0 and center within the column width.
+                    // Normalize ink minX to 0 and center within the entry's own line box.
+                    // The decoration origin has already centered that entry line box within
+                    // the widest line box, so using the widest line box here would apply the
+                    // mixed-size offset twice.
                     // This is grapheme-correct and avoids centering based only on the "first" entry,
                     // which is not representative for marks like reph in Devanagari.
-                    currentGraphemeAlignX = -minX + ((unscaledLineHeight - inkWidth) * .5F);
+                    currentGraphemeAlignX = -minX + ((scaledLineHeight - inkWidth) * .5F);
                 }
             }
 
@@ -826,20 +885,31 @@ internal static partial class TextLayout
                 // Transformed glyphs are still positioned using horizontal metrics (`AdvanceWidth`) even though
                 // they participate in a vertical flow. `AdvanceWidth` gives us the horizontal pen advance we must
                 // apply between entries inside the transformed grapheme.
-                foreach (GlyphMetrics m in data.Metrics)
+                foreach (FontGlyphMetrics m in data.Metrics)
                 {
                     Vector2 s = new Vector2(data.PointSize) / m.ScaleFactor;
                     entryScaledAdvanceWidth += m.AdvanceWidth * s.X;
                 }
             }
 
-            foreach (GlyphMetrics metric in data.Metrics)
+            foreach (FontGlyphMetrics metric in data.Metrics)
             {
                 // Align the glyph horizontally and vertically centering vertically around the baseline.
                 Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
+                float glyphAlignX = alignX;
 
-                // Offset our in both directions to account for horizontal ink centering and vertical baseline centering.
-                Vector2 offset = new(alignX, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
+                if (!currentGraphemeIsTransformed)
+                {
+                    // Vertical origin fallback places the vertical origin at half the
+                    // horizontal advance. The decoration origin has already centered this
+                    // entry's line box in the column, so center the glyph advance inside it.
+                    glyphAlignX = (scaledLineHeight - (metric.AdvanceWidth * scale.X)) * .5F;
+                }
+
+                // Move the glyph origin without changing the advance or decoration origin.
+                Vector2 glyphOffset = new(glyphAlignX, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
+                Vector2 decorationOrigin = penLocation + new Vector2((unscaledLineHeight - scaledLineHeight) * .5F, 0);
+                Vector2 glyphOrigin = decorationOrigin + glyphOffset;
 
                 float advanceW = advanceX;
 
@@ -851,14 +921,16 @@ internal static partial class TextLayout
                     advanceW = scale.X * metric.AdvanceWidth;
                 }
 
-                visitor.Visit(new GlyphLayout(
+                visitor.Visit(
+                    new GlyphLayout(
                     new Glyph(metric, data.PointSize),
-                    boxLocation,
-                    penLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0),
-                    offset,
+                    boundsLocation,
+                    glyphOrigin,
+                    decorationOrigin,
                     advanceW,
                     data.ScaledAdvance,
                     GlyphLayoutMode.Vertical,
+                    data.BidiRun.Level,
                     i == 0 && j == 0,
                     data.GraphemeIndex,
                     data.StringIndex));
@@ -874,11 +946,18 @@ internal static partial class TextLayout
                 penLocation.X += entryScaledAdvanceWidth;
             }
 
+            if (currentGraphemeIsTransformed)
+            {
+                boundsLocation.X += entryScaledAdvanceWidth;
+            }
+
             if (data.IsLastInGrapheme)
             {
-                penLocation.Y += data.ScaledAdvance;
+                penLocation.Y += layoutAdvance;
                 boxLocation.X = lineOriginX;
                 penLocation.X = lineOriginX;
+                boundsLocation.Y += data.ScaledAdvance;
+                boundsLocation.X = boundsLineOriginX;
             }
         }
 
@@ -902,7 +981,7 @@ internal static partial class TextLayout
     /// <param name="textLine">The line being laid out.</param>
     /// <param name="direction">The resolved text direction for this line.</param>
     /// <param name="maxScaledAdvance">The longest scaled line advance in the block (or wrapping length).</param>
-    /// <param name="options">The text shaping and layout options.</param>
+    /// <param name="options">The text options used to position the line.</param>
     /// <param name="index">The zero-based visual index of this line within the block.</param>
     /// <param name="boxLocation">The running top-left position of the glyph boxes; advanced by this method.</param>
     /// <param name="penLocation">The running pen position used for glyph placement; advanced by this method.</param>
@@ -1002,21 +1081,35 @@ internal static partial class TextLayout
 
         penLocation.Y += offsetY;
         penLocation.X += offsetX;
+        Vector2 boundsLocation = boxLocation;
 
         bool emitted = false;
         for (int i = 0; i < textLine.Count; i++)
         {
-            TextLine.GlyphLayoutData data = textLine[i];
+            GlyphLayoutData data = textLine[i];
+            float layoutAdvance = data.ScaledAdvance;
+            float scaledLineHeight = data.ScaledLineHeight / options.LineSpacing;
+
             if (data.IsNewLine)
             {
-                visitor.Visit(new GlyphLayout(
-                    new Glyph(data.Metrics[0], data.PointSize),
-                    boxLocation,
-                    penLocation,
-                    Vector2.Zero,
+                FontGlyphMetrics metric = data.Metrics[0];
+                Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
+
+                // Hard breaks bypass the normal glyph loop, but still need the
+                // current pen position plus the same vertical glyph origin adjustment.
+                Vector2 hardBreakDecorationOrigin = penLocation + new Vector2((unscaledLineHeight - scaledLineHeight) * .5F, 0);
+                Vector2 hardBreakGlyphOrigin = hardBreakDecorationOrigin + new Vector2(0, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
+
+                visitor.Visit(
+                    new GlyphLayout(
+                    new Glyph(metric, data.PointSize),
+                    boundsLocation,
+                    hardBreakGlyphOrigin,
+                    hardBreakDecorationOrigin,
                     xLineAdvance,
                     data.ScaledAdvance,
                     GlyphLayoutMode.Vertical,
+                    data.BidiRun.Level,
                     true,
                     data.GraphemeIndex,
                     data.StringIndex));
@@ -1025,13 +1118,15 @@ internal static partial class TextLayout
                 boxLocation.Y = originY;
                 penLocation.X += xLineAdvance;
                 penLocation.Y = originY;
+                boundsLocation.X += advanceX;
+                boundsLocation.Y = originY;
                 return;
             }
 
             if (data.IsTransformed)
             {
                 int j = 0;
-                foreach (GlyphMetrics metric in data.Metrics)
+                foreach (FontGlyphMetrics metric in data.Metrics)
                 {
                     // The glyph will be rotated 90 degrees for vertical mixed layout.
                     // We still advance along Y, but the glyphs are laid out sideways in X.
@@ -1040,7 +1135,7 @@ internal static partial class TextLayout
                     // - Take half the difference between the max line height (scaledMaxLineHeight)
                     //   and the current glyph's line height (data.ScaledLineHeight).
                     // - The line height includes both ascender and descender metrics.
-                    float baselineDelta = (unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F;
+                    float baselineDelta = (unscaledLineHeight - scaledLineHeight) * .5F;
 
                     // Adjust the horizontal offset further by considering the descender differences:
                     // - Subtract the current glyph's descender (data.ScaledDescender) to align it properly.
@@ -1048,15 +1143,18 @@ internal static partial class TextLayout
                     float descenderDelta = (Math.Abs(textLine.ScaledMaxDescender) - descenderAbs) * .5F;
 
                     float centerOffsetX = baselineDelta + descenderAbs + descenderDelta;
+                    Vector2 glyphOrigin = penLocation + new Vector2(centerOffsetX, 0);
 
-                    visitor.Visit(new GlyphLayout(
+                    visitor.Visit(
+                        new GlyphLayout(
                         new Glyph(metric, data.PointSize),
-                        boxLocation,
-                        penLocation + new Vector2(centerOffsetX, 0),
-                        Vector2.Zero,
+                        boundsLocation,
+                        glyphOrigin,
+                        glyphOrigin,
                         advanceX,
                         data.ScaledAdvance,
                         GlyphLayoutMode.VerticalRotated,
+                        data.BidiRun.Level,
                         i == 0 && j == 0,
                         data.GraphemeIndex,
                         data.StringIndex));
@@ -1068,20 +1166,29 @@ internal static partial class TextLayout
             else
             {
                 int j = 0;
-                foreach (GlyphMetrics metric in data.Metrics)
+                foreach (FontGlyphMetrics metric in data.Metrics)
                 {
                     // Align the glyph horizontally and vertically centering vertically around the baseline.
                     Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
-                    Vector2 offset = new(0, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
 
-                    visitor.Visit(new GlyphLayout(
+                    // Vertical origin fallback places the vertical origin at half the
+                    // horizontal advance. The decoration origin has already centered this
+                    // entry's line box in the column, so center the glyph advance inside it.
+                    float glyphAlignX = (scaledLineHeight - (metric.AdvanceWidth * scale.X)) * .5F;
+                    Vector2 glyphOffset = new(glyphAlignX, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
+                    Vector2 decorationOrigin = penLocation + new Vector2((unscaledLineHeight - scaledLineHeight) * .5F, 0);
+                    Vector2 glyphOrigin = decorationOrigin + glyphOffset;
+
+                    visitor.Visit(
+                        new GlyphLayout(
                         new Glyph(metric, data.PointSize),
-                        boxLocation,
-                        penLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0),
-                        offset,
+                        boundsLocation,
+                        glyphOrigin,
+                        decorationOrigin,
                         advanceX,
                         data.ScaledAdvance,
                         GlyphLayoutMode.Vertical,
+                        data.BidiRun.Level,
                         i == 0 && j == 0,
                         data.GraphemeIndex,
                         data.StringIndex));
@@ -1091,7 +1198,8 @@ internal static partial class TextLayout
                 }
             }
 
-            penLocation.Y += data.ScaledAdvance;
+            penLocation.Y += layoutAdvance;
+            boundsLocation.Y += data.ScaledAdvance;
         }
 
         boxLocation.Y = originY;
@@ -1155,7 +1263,7 @@ internal static partial class TextLayout
             int graphemeCodePointIndex = 0;
             int charIndex = 0;
 
-            if (graphemeIndex == textRuns[textRunIndex].End)
+            while (textRunIndex < textRuns.Count - 1 && graphemeIndex == textRuns[textRunIndex].End)
             {
                 textRunIndex++;
             }
@@ -1408,938 +1516,5 @@ internal static partial class TextLayout
         }
 
         return offsetY;
-    }
-
-    /// <summary>
-    /// A shaped and line-broken block of text produced by <see cref="ProcessText"/> and consumed
-    /// by <see cref="LayoutText{TVisitor}"/>.
-    /// </summary>
-    internal sealed class TextBox
-    {
-        private float? scaledMaxAdvance;
-
-        private float? minY;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TextBox"/> class.
-        /// </summary>
-        /// <param name="textLines">The shaped, line-broken lines that make up this text box.</param>
-        public TextBox(IReadOnlyList<TextLine> textLines)
-            => this.TextLines = textLines;
-
-        /// <summary>
-        /// Gets the shaped and line-broken lines that make up the text.
-        /// </summary>
-        public IReadOnlyList<TextLine> TextLines { get; }
-
-        /// <summary>
-        /// Returns the widest scaled line advance across all lines. The result is memoized.
-        /// </summary>
-        /// <returns>The widest scaled line advance.</returns>
-        public float ScaledMaxAdvance()
-            => this.scaledMaxAdvance ??= this.TextLines.Max(x => x.ScaledLineAdvance);
-
-        /// <summary>
-        /// Returns the smallest (most negative) scaled Y position encountered across all lines.
-        /// Used to detect ink that extends above the typographic ascender (stacked marks in Tibetan etc.).
-        /// The result is memoized.
-        /// </summary>
-        /// <returns>The smallest scaled Y position in the text box.</returns>
-        public float ScaledMinY()
-            => this.minY ??= this.TextLines.Min(x => x.ScaledMinY);
-
-        /// <summary>
-        /// Returns the resolved text direction of the first glyph in the first line. Used as the
-        /// block-level direction for alignment calculations.
-        /// </summary>
-        /// <returns>The block-level text direction.</returns>
-        public TextDirection TextDirection() => this.TextLines[0][0].TextDirection;
-    }
-
-    /// <summary>
-    /// A shaped line of text — an ordered sequence of <see cref="GlyphLayoutData"/> entries plus
-    /// per-line aggregate metrics (advance, ascender, descender, etc.) used to position the line
-    /// during layout.
-    /// </summary>
-    internal sealed class TextLine
-    {
-        private readonly List<GlyphLayoutData> data;
-        private readonly Dictionary<int, float> advances = [];
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TextLine"/> class with a small default capacity.
-        /// </summary>
-        public TextLine() => this.data = new(16);
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TextLine"/> class with the specified initial
-        /// entry capacity.
-        /// </summary>
-        /// <param name="capacity">Initial capacity for the internal entry list.</param>
-        public TextLine(int capacity) => this.data = new(capacity);
-
-        /// <summary>
-        /// Gets the number of <see cref="GlyphLayoutData"/> entries in this line.
-        /// </summary>
-        public int Count => this.data.Count;
-
-        /// <summary>
-        /// Gets a value indicating whether this line should be skipped during text justification.
-        /// Set by <see cref="Finalize"/> for lines that end a paragraph.
-        /// </summary>
-        public bool SkipJustification { get; private set; }
-
-        /// <summary>
-        /// Gets the sum of scaled advances across all entries in this line.
-        /// </summary>
-        public float ScaledLineAdvance { get; private set; }
-
-        /// <summary>
-        /// Gets the greatest scaled line height across all entries, multiplied by the configured
-        /// line-spacing factor.
-        /// </summary>
-        public float ScaledMaxLineHeight { get; private set; } = -1;
-
-        /// <summary>
-        /// Gets the greatest scaled ascender across all entries in this line.
-        /// </summary>
-        public float ScaledMaxAscender { get; private set; } = -1;
-
-        /// <summary>
-        /// Gets the greatest scaled descender across all entries in this line.
-        /// </summary>
-        public float ScaledMaxDescender { get; private set; } = -1;
-
-        /// <summary>
-        /// Gets the greatest scaled symmetric-metrics delta across all entries in this line.
-        /// Browsers adjust ascender/descender symmetrically for baseline alignment; this captures
-        /// that adjustment.
-        /// </summary>
-        public float ScaledMaxDelta { get; private set; } = float.MinValue;
-
-        /// <summary>
-        /// Gets the smallest (most negative) scaled Y position across all entries in this line.
-        /// Used to detect ink that extends above the typographic ascender (for example stacked
-        /// marks in Tibetan) so the layout engine can reserve extra ascent.
-        /// </summary>
-        public float ScaledMinY { get; private set; }
-
-        /// <summary>
-        /// Gets the <see cref="GlyphLayoutData"/> entry at the given index.
-        /// </summary>
-        /// <param name="index">The zero-based index into this line.</param>
-        /// <returns>The entry at the given index.</returns>
-        public GlyphLayoutData this[int index] => this.data[index];
-
-        /// <summary>
-        /// Appends a shaped entry to this line, updating the aggregated line-level metrics.
-        /// </summary>
-        /// <param name="metrics">The glyph metrics produced by shaping this entry's codepoint.</param>
-        /// <param name="pointSize">The point size at which the entry is rendered.</param>
-        /// <param name="scaledAdvance">The scaled advance contributed by this entry.</param>
-        /// <param name="scaledLineHeight">The scaled line height contributed by this entry (before line-spacing).</param>
-        /// <param name="scaledAscender">The scaled typographic ascender.</param>
-        /// <param name="scaledDescender">The scaled typographic descender.</param>
-        /// <param name="scaledDelta">The symmetric metrics delta applied during line-box construction.</param>
-        /// <param name="bidiRun">The bidi run this entry belongs to.</param>
-        /// <param name="graphemeIndex">The grapheme index in the source text.</param>
-        /// <param name="isLastInGrapheme">Whether this entry is the last codepoint in its grapheme cluster.</param>
-        /// <param name="codePointIndex">The codepoint index in the source text.</param>
-        /// <param name="graphemeCodePointIndex">The index of the codepoint within its grapheme cluster.</param>
-        /// <param name="isTransformed">Whether the entry participates in a transformed (rotated) vertical layout.</param>
-        /// <param name="isDecomposed">Whether the entry was produced by Unicode decomposition.</param>
-        /// <param name="stringIndex">The character index in the source string.</param>
-        /// <param name="layoutMode">The glyph-level layout mode to use for ink bounds computation.</param>
-        /// <param name="lineSpacing">The line-spacing factor to apply to <paramref name="scaledLineHeight"/>.</param>
-        public void Add(
-            IReadOnlyList<GlyphMetrics> metrics,
-            float pointSize,
-            float scaledAdvance,
-            float scaledLineHeight,
-            float scaledAscender,
-            float scaledDescender,
-            float scaledDelta,
-            BidiRun bidiRun,
-            int graphemeIndex,
-            bool isLastInGrapheme,
-            int codePointIndex,
-            int graphemeCodePointIndex,
-            bool isTransformed,
-            bool isDecomposed,
-            int stringIndex,
-            GlyphLayoutMode layoutMode,
-            float lineSpacing)
-        {
-            // Apply LineSpacing to scaledLineHeight before storing
-            scaledLineHeight *= lineSpacing;
-
-            // Reset metrics.
-            // We track the maximum metrics for each line to ensure glyphs can be aligned.
-            if (graphemeCodePointIndex == 0)
-            {
-                // TODO: Check this logic is correct.
-                this.ScaledLineAdvance += scaledAdvance;
-            }
-
-            this.ScaledMaxLineHeight = MathF.Max(this.ScaledMaxLineHeight, scaledLineHeight);
-            this.ScaledMaxAscender = MathF.Max(this.ScaledMaxAscender, scaledAscender);
-            this.ScaledMaxDescender = MathF.Max(this.ScaledMaxDescender, scaledDescender);
-            this.ScaledMaxDelta = MathF.Max(this.ScaledMaxDelta, scaledDelta);
-
-            // Track the true top of the ink in device space (Y down, baseline at 0).
-            // For scripts with stacked marks (Tibetan, etc) this can be significantly
-            // above the typographic ascender, so we cannot trust ascender alone.
-            float scaledMinY = 0;
-            for (int i = 0; i < metrics.Count; i++)
-            {
-                GlyphMetrics metric = metrics[i];
-                if (GlyphMetrics.ShouldSkipGlyphRendering(metric.CodePoint))
-                {
-                    continue;
-                }
-
-                FontRectangle bbox = metric.GetBoundingBox(layoutMode, Vector2.Zero, pointSize);
-                scaledMinY = MathF.Min(scaledMinY, bbox.Y);
-            }
-
-            // ScaledMinY is the minimum ink Y over all glyphs in this line, in Y down.
-            // It is usually <= 0; more negative means more ink above the baseline.
-            if (this.data.Count == 0)
-            {
-                this.ScaledMinY = scaledMinY;
-            }
-            else
-            {
-                this.ScaledMinY = MathF.Min(this.ScaledMinY, scaledMinY);
-            }
-
-            this.data.Add(new(
-                metrics,
-                pointSize,
-                scaledAdvance,
-                scaledLineHeight,
-                scaledAscender,
-                scaledDescender,
-                scaledDelta,
-                scaledMinY,
-                bidiRun,
-                graphemeIndex,
-                isLastInGrapheme,
-                codePointIndex,
-                graphemeCodePointIndex,
-                isTransformed,
-                isDecomposed,
-                stringIndex));
-        }
-
-        /// <summary>
-        /// Inserts all entries from <paramref name="textLine"/> into this line at the given index
-        /// and recomputes aggregated metrics.
-        /// </summary>
-        /// <param name="index">The zero-based index at which to insert.</param>
-        /// <param name="textLine">The line whose entries should be inserted.</param>
-        public void InsertAt(int index, TextLine textLine)
-        {
-            this.data.InsertRange(index, textLine.data);
-            RecalculateLineMetrics(this);
-        }
-
-        /// <summary>
-        /// Returns the cumulative scaled advance up to and including the glyph at the given index.
-        /// Whitespace entries at or after <paramref name="index"/> are skipped so the returned value
-        /// represents the advance at the last non-whitespace glyph before a potential line break.
-        /// </summary>
-        /// <remarks>Results are memoized by index.</remarks>
-        /// <param name="index">The zero-based index to measure up to.</param>
-        /// <returns>The cumulative scaled advance.</returns>
-        public float MeasureAt(int index)
-        {
-            if (this.advances.TryGetValue(index, out float advance))
-            {
-                return advance;
-            }
-
-            if (index >= this.data.Count)
-            {
-                index = this.data.Count - 1;
-            }
-
-            while (index >= 0 && CodePoint.IsWhiteSpace(this.data[index].CodePoint))
-            {
-                // If the index is whitespace, we need to measure at the previous
-                // non-whitespace glyph to ensure we don't break too early.
-                index--;
-            }
-
-            advance = 0;
-            for (int i = 0; i <= index; i++)
-            {
-                advance += this.data[i].ScaledAdvance;
-            }
-
-            this.advances[index] = advance;
-            return advance;
-        }
-
-        /// <summary>
-        /// Splits this line at the first non-whitespace glyph whose cumulative advance meets or
-        /// exceeds <paramref name="length"/>. On success, the split-off tail is returned as a new
-        /// line and removed from this one; both lines have their aggregated metrics recomputed.
-        /// </summary>
-        /// <param name="length">The scaled advance threshold at which to split.</param>
-        /// <param name="result">The trailing portion of the split, or <see langword="null"/> if no split was performed.</param>
-        /// <returns><see langword="true"/> if a split occurred; otherwise <see langword="false"/>.</returns>
-        public bool TrySplitAt(float length, [NotNullWhen(true)] out TextLine? result)
-        {
-            float advance = this.data[0].ScaledAdvance;
-
-            // Ensure at least one glyph is in the line.
-            // trailing whitespace should be ignored as it is trimmed
-            // on finalization.
-            for (int i = 1; i < this.data.Count; i++)
-            {
-                GlyphLayoutData glyph = this.data[i];
-                advance += glyph.ScaledAdvance;
-                if (CodePoint.IsWhiteSpace(glyph.CodePoint))
-                {
-                    continue;
-                }
-
-                if (advance >= length)
-                {
-                    int count = this.data.Count - i;
-                    result = new(count);
-                    result.data.AddRange(this.data.GetRange(i, count));
-                    RecalculateLineMetrics(result);
-
-                    this.data.RemoveRange(i, count);
-                    RecalculateLineMetrics(this);
-                    return true;
-                }
-            }
-
-            result = null;
-            return false;
-        }
-
-        /// <summary>
-        /// Splits this line at the glyph immediately preceding the supplied <see cref="LineBreak"/>
-        /// wrap position. When <paramref name="keepAll"/> is set, the split is delayed until
-        /// the nearest boundary outside a CSS keep-all word unit sequence.
-        /// </summary>
-        /// <param name="lineBreak">The resolved line-break opportunity.</param>
-        /// <param name="keepAll">When <see langword="true"/>, avoid breaking within keep-all word unit sequences.</param>
-        /// <param name="result">The trailing portion of the split, or <see langword="null"/> if no split was performed.</param>
-        /// <returns><see langword="true"/> if a split occurred; otherwise <see langword="false"/>.</returns>
-        public bool TrySplitAt(LineBreak lineBreak, bool keepAll, [NotNullWhen(true)] out TextLine? result)
-        {
-            int index = this.data.Count;
-            while (index > 0)
-            {
-                if (this.data[--index].CodePointIndex == lineBreak.PositionWrap)
-                {
-                    break;
-                }
-            }
-
-            // CSS word-break: keep-all suppresses implicit breaks between typographic letter units.
-            if (index > 0
-                && !lineBreak.Required
-                && keepAll
-                && this.IsKeepAllSuppressedBreak(index))
-            {
-                while (index > 0 && this.IsKeepAllSuppressedBreak(index))
-                {
-                    index--;
-                }
-            }
-
-            if (index == 0)
-            {
-                result = null;
-                return false;
-            }
-
-            // Create a new line ensuring we capture the initial metrics.
-            int count = this.data.Count - index;
-            result = new(count);
-            result.data.AddRange(this.data.GetRange(index, count));
-            RecalculateLineMetrics(result);
-
-            // Remove those items from this line.
-            this.data.RemoveRange(index, count);
-            RecalculateLineMetrics(this);
-
-            return true;
-        }
-
-        /// <summary>
-        /// Returns whether CSS <c>word-break: keep-all</c> suppresses the candidate break before
-        /// the entry at <paramref name="index"/>.
-        /// </summary>
-        /// <remarks>
-        /// See <see href="https://drafts.csswg.org/css-text-4/#word-break-property">CSS Text Module Level 4, word-break</see>.
-        /// </remarks>
-        /// <param name="index">The entry index immediately after the candidate break.</param>
-        /// <returns><see langword="true"/> if the candidate break is within a keep-all word unit sequence.</returns>
-        private bool IsKeepAllSuppressedBreak(int index)
-        {
-            if (index <= 0 || index >= this.data.Count)
-            {
-                return false;
-            }
-
-            return IsKeepAllWordUnit(this.data[index - 1].CodePoint)
-                && IsKeepAllWordUnit(this.data[index].CodePoint);
-        }
-
-        /// <summary>
-        /// Returns whether <paramref name="codePoint"/> participates in a CSS keep-all word unit
-        /// sequence.
-        /// </summary>
-        /// <remarks>
-        /// CSS <c>keep-all</c> uses typographic letter units and the Unicode line-breaking
-        /// classes <c>NU</c>, <c>AL</c>, <c>AI</c>, and <c>ID</c>.
-        /// See <see href="https://www.unicode.org/reports/tr14/#Line_Break_Property_Values">Unicode Standard Annex #14, Line Breaking Classes</see>.
-        /// </remarks>
-        /// <param name="codePoint">The code point to classify.</param>
-        /// <returns><see langword="true"/> if the code point participates in a keep-all word unit sequence.</returns>
-        private static bool IsKeepAllWordUnit(CodePoint codePoint)
-            => CodePoint.IsLetter(codePoint)
-            || CodePoint.IsNumber(codePoint)
-            || CodePoint.GetLineBreakClass(codePoint) is
-                LineBreakClass.Numeric
-                or LineBreakClass.Alphabetic
-                or LineBreakClass.Ambiguous
-                or LineBreakClass.Ideographic;
-
-        /// <summary>
-        /// Removes trailing breaking-whitespace entries from this line. Non-breaking spaces are
-        /// preserved and the first entry is always kept even when whitespace.
-        /// </summary>
-        private void TrimTrailingWhitespace()
-        {
-            int count = this.data.Count;
-            int index = count;
-            while (index > 1)
-            {
-                // Trim trailing breaking whitespace.
-                CodePoint point = this.data[index - 1].CodePoint;
-                if (!CodePoint.IsWhiteSpace(point) || CodePoint.IsNonBreakingSpace(point))
-                {
-                    break;
-                }
-
-                index--;
-            }
-
-            if (index < count)
-            {
-                this.data.RemoveRange(index, count - index);
-            }
-        }
-
-        /// <summary>
-        /// Finalizes this line after line-breaking: trims trailing breaking whitespace, applies
-        /// bidi reordering so entries are in visual order, and recomputes aggregated metrics.
-        /// </summary>
-        /// <param name="skipJustification">
-        /// When <see langword="true"/>, marks the line so <see cref="Justify"/> becomes a no-op
-        /// (used for paragraph-final lines).
-        /// </param>
-        /// <returns>This line, for fluent chaining.</returns>
-        public TextLine Finalize(bool skipJustification = false)
-        {
-            this.SkipJustification = skipJustification;
-            this.TrimTrailingWhitespace();
-            this.BidiReOrder();
-            RecalculateLineMetrics(this);
-            return this;
-        }
-
-        /// <summary>
-        /// Distributes the remaining space between the line advance and the wrapping length across
-        /// either inter-character or inter-word gaps, as configured by
-        /// <see cref="TextOptions.TextJustification"/>.
-        /// </summary>
-        /// <remarks>
-        /// No-op when the line was finalized with <c>skipJustification</c>, when wrapping is
-        /// disabled, when no justification style is selected, or when the line is already at or
-        /// beyond the wrapping length.
-        /// </remarks>
-        /// <param name="options">The text shaping options supplying the wrapping length and justification style.</param>
-        public void Justify(TextOptions options)
-        {
-            if (options.WrappingLength == -1F || options.TextJustification == TextJustification.None)
-            {
-                return;
-            }
-
-            if (this.ScaledLineAdvance == 0)
-            {
-                return;
-            }
-
-            float delta = (options.WrappingLength / options.Dpi) - this.ScaledLineAdvance;
-            if (delta <= 0)
-            {
-                return;
-            }
-
-            // Increase the advance for all non zero-width glyphs but the last.
-            if (options.TextJustification == TextJustification.InterCharacter)
-            {
-                int nonZeroCount = 0;
-                for (int i = 0; i < this.data.Count - 1; i++)
-                {
-                    GlyphLayoutData glyph = this.data[i];
-                    if (!CodePoint.IsZeroWidthJoiner(glyph.CodePoint) && !CodePoint.IsZeroWidthNonJoiner(glyph.CodePoint))
-                    {
-                        nonZeroCount++;
-                    }
-                }
-
-                if (nonZeroCount == 0)
-                {
-                    return;
-                }
-
-                float padding = delta / nonZeroCount;
-                for (int i = 0; i < this.data.Count - 1; i++)
-                {
-                    GlyphLayoutData glyph = this.data[i];
-                    if (!CodePoint.IsZeroWidthJoiner(glyph.CodePoint) && !CodePoint.IsZeroWidthNonJoiner(glyph.CodePoint))
-                    {
-                        glyph.ScaledAdvance += padding;
-                        this.data[i] = glyph;
-                    }
-                }
-
-                RecalculateLineMetrics(this);
-                return;
-            }
-
-            // Increase the advance for all spaces but the last.
-            if (options.TextJustification == TextJustification.InterWord)
-            {
-                // Count all the whitespace characters.
-                int whiteSpaceCount = 0;
-                for (int i = 0; i < this.data.Count - 1; i++)
-                {
-                    GlyphLayoutData glyph = this.data[i];
-                    if (CodePoint.IsWhiteSpace(glyph.CodePoint))
-                    {
-                        whiteSpaceCount++;
-                    }
-                }
-
-                if (whiteSpaceCount == 0)
-                {
-                    return;
-                }
-
-                float padding = delta / whiteSpaceCount;
-                for (int i = 0; i < this.data.Count - 1; i++)
-                {
-                    GlyphLayoutData glyph = this.data[i];
-                    if (CodePoint.IsWhiteSpace(glyph.CodePoint))
-                    {
-                        glyph.ScaledAdvance += padding;
-                        this.data[i] = glyph;
-                    }
-                }
-            }
-
-            RecalculateLineMetrics(this);
-        }
-
-        /// <summary>
-        /// Re-orders the entries in this line from logical to visual order according to the
-        /// Unicode Bidirectional Algorithm (<see href="https://unicode.org/reports/tr9/"/>, rules L1 and L2).
-        /// </summary>
-        public void BidiReOrder()
-        {
-            // Build up the collection of ordered runs.
-            BidiRun run = this.data[0].BidiRun;
-            OrderedBidiRun orderedRun = new(run.Level);
-            OrderedBidiRun? current = orderedRun;
-            for (int i = 0; i < this.data.Count; i++)
-            {
-                GlyphLayoutData g = this.data[i];
-                if (run != g.BidiRun)
-                {
-                    run = g.BidiRun;
-                    current.Next = new(run.Level);
-                    current = current.Next;
-                }
-
-                current.Add(g);
-            }
-
-            // Reorder them into visual order.
-            orderedRun = LinearReOrder(orderedRun);
-
-            // Now perform a recursive reversal of each run.
-            // From the highest level found in the text to the lowest odd level on each line, including intermediate levels
-            // not actually present in the text, reverse any contiguous sequence of characters that are at that level or higher.
-            // https://unicode.org/reports/tr9/#L2
-            int max = 0;
-            int min = int.MaxValue;
-            for (int i = 0; i < this.data.Count; i++)
-            {
-                int level = this.data[i].BidiRun.Level;
-                if (level > max)
-                {
-                    max = level;
-                }
-
-                if ((level & 1) != 0 && level < min)
-                {
-                    min = level;
-                }
-            }
-
-            if (min > max)
-            {
-                min = max;
-            }
-
-            if (max == 0 || (min == max && (max & 1) == 0))
-            {
-                // Nothing to reverse.
-                return;
-            }
-
-            // Now apply the reversal and replace the original contents.
-            int minLevelToReverse = max;
-            while (minLevelToReverse >= min)
-            {
-                current = orderedRun;
-                while (current != null)
-                {
-                    if (current.Level >= minLevelToReverse)
-                    {
-                        current.Reverse();
-                    }
-
-                    current = current.Next;
-                }
-
-                minLevelToReverse--;
-            }
-
-            this.data.Clear();
-            current = orderedRun;
-            while (current != null)
-            {
-                this.data.AddRange(current.AsSlice());
-                current = current.Next;
-            }
-        }
-
-        /// <summary>
-        /// Recomputes the aggregated per-line metrics (advance, max line height, ascender,
-        /// descender, delta, min-Y) from the current entries. Called after any mutation that
-        /// can affect these — split, insert, trim, justify.
-        /// </summary>
-        /// <param name="textLine">The line to recompute metrics for.</param>
-        private static void RecalculateLineMetrics(TextLine textLine)
-        {
-            // Lastly recalculate this line metrics.
-            float advance = 0;
-            float ascender = 0;
-            float descender = 0;
-            float delta = 0;
-            float lineHeight = 0;
-            float minY = 0;
-            for (int i = 0; i < textLine.Count; i++)
-            {
-                GlyphLayoutData glyph = textLine[i];
-                advance += glyph.ScaledAdvance;
-                ascender = MathF.Max(ascender, glyph.ScaledAscender);
-                descender = MathF.Max(descender, glyph.ScaledDescender);
-                delta = MathF.Max(delta, glyph.ScaledDelta);
-                lineHeight = MathF.Max(lineHeight, glyph.ScaledLineHeight);
-                minY = MathF.Min(minY, glyph.ScaledMinY);
-            }
-
-            textLine.ScaledLineAdvance = advance;
-            textLine.ScaledMaxAscender = ascender;
-            textLine.ScaledMaxDescender = descender;
-            textLine.ScaledMaxDelta = delta;
-            textLine.ScaledMaxLineHeight = lineHeight;
-            textLine.ScaledMinY = minY;
-
-            textLine.advances.Clear();
-        }
-
-        /// <summary>
-        /// Reorders a series of runs from logical to visual order, returning the left most run.
-        /// <see href="https://github.com/fribidi/linear-reorder/blob/f2f872257d4d8b8e137fcf831f254d6d4db79d3c/linear-reorder.c"/>
-        /// </summary>
-        /// <param name="line">The ordered bidi run.</param>
-        /// <returns>The <see cref="OrderedBidiRun"/>.</returns>
-        private static OrderedBidiRun LinearReOrder(OrderedBidiRun? line)
-        {
-            BidiRange? range = null;
-            OrderedBidiRun? run = line;
-
-            while (run != null)
-            {
-                OrderedBidiRun? next = run.Next;
-
-                while (range != null && range.Level > run.Level
-                    && range.Previous != null && range.Previous.Level >= run.Level)
-                {
-                    range = BidiRange.MergeWithPrevious(range);
-                }
-
-                if (range != null && range.Level >= run.Level)
-                {
-                    // Attach run to the range.
-                    if ((run.Level & 1) != 0)
-                    {
-                        // Odd, range goes to the right of run.
-                        run.Next = range.Left;
-                        range.Left = run;
-                    }
-                    else
-                    {
-                        // Even, range goes to the left of run.
-                        range.Right!.Next = run;
-                        range.Right = run;
-                    }
-
-                    range.Level = run.Level;
-                }
-                else
-                {
-                    BidiRange r = new();
-                    r.Left = r.Right = run;
-                    r.Level = run.Level;
-                    r.Previous = range;
-                    range = r;
-                }
-
-                run = next;
-            }
-
-            while (range?.Previous != null)
-            {
-                range = BidiRange.MergeWithPrevious(range);
-            }
-
-            // Terminate.
-            range!.Right!.Next = null;
-            return range!.Left!;
-        }
-
-        /// <summary>
-        /// Per-codepoint shaping data stored inside a <see cref="TextLine"/>.
-        /// Each entry corresponds to a single codepoint — complex scripts may map one grapheme to
-        /// multiple entries (tracked via <see cref="GraphemeCodePointIndex"/>).
-        /// </summary>
-        [DebuggerDisplay("{DebuggerDisplay,nq}")]
-        internal struct GlyphLayoutData
-        {
-            /// <summary>
-            /// Initializes a new instance of the <see cref="GlyphLayoutData"/> struct.
-            /// </summary>
-            /// <param name="metrics">The shaped glyph metrics for this codepoint.</param>
-            /// <param name="pointSize">The point size at which the glyph is rendered.</param>
-            /// <param name="scaledAdvance">The scaled advance of this entry.</param>
-            /// <param name="scaledLineHeight">The scaled line height contributed by this entry.</param>
-            /// <param name="scaledAscender">The scaled typographic ascender.</param>
-            /// <param name="scaledDescender">The scaled typographic descender.</param>
-            /// <param name="scaledDelta">The symmetric metrics delta applied during line-box construction.</param>
-            /// <param name="scaledMinY">The minimum scaled Y (topmost ink) across <paramref name="metrics"/>.</param>
-            /// <param name="bidiRun">The resolved bidi run this entry belongs to.</param>
-            /// <param name="graphemeIndex">The grapheme index in the source text.</param>
-            /// <param name="isLastInGrapheme">Whether this is the last codepoint in its grapheme cluster.</param>
-            /// <param name="codePointIndex">The codepoint index in the source text.</param>
-            /// <param name="graphemeCodePointIndex">The index of this codepoint within its grapheme cluster.</param>
-            /// <param name="isTransformed">Whether the entry participates in a transformed vertical layout.</param>
-            /// <param name="isDecomposed">Whether the entry was produced by Unicode decomposition.</param>
-            /// <param name="stringIndex">The UTF-16 character index in the source string.</param>
-            public GlyphLayoutData(
-                IReadOnlyList<GlyphMetrics> metrics,
-                float pointSize,
-                float scaledAdvance,
-                float scaledLineHeight,
-                float scaledAscender,
-                float scaledDescender,
-                float scaledDelta,
-                float scaledMinY,
-                BidiRun bidiRun,
-                int graphemeIndex,
-                bool isLastInGrapheme,
-                int codePointIndex,
-                int graphemeCodePointIndex,
-                bool isTransformed,
-                bool isDecomposed,
-                int stringIndex)
-            {
-                this.Metrics = metrics;
-                this.PointSize = pointSize;
-                this.ScaledAdvance = scaledAdvance;
-                this.ScaledLineHeight = scaledLineHeight;
-                this.ScaledAscender = scaledAscender;
-                this.ScaledDescender = scaledDescender;
-                this.ScaledDelta = scaledDelta;
-                this.ScaledMinY = scaledMinY;
-                this.BidiRun = bidiRun;
-                this.GraphemeIndex = graphemeIndex;
-                this.IsLastInGrapheme = isLastInGrapheme;
-                this.CodePointIndex = codePointIndex;
-                this.GraphemeCodePointIndex = graphemeCodePointIndex;
-                this.IsTransformed = isTransformed;
-                this.IsDecomposed = isDecomposed;
-                this.StringIndex = stringIndex;
-            }
-
-            /// <summary>Gets the source codepoint for this entry.</summary>
-            public readonly CodePoint CodePoint => this.Metrics[0].CodePoint;
-
-            /// <summary>Gets the shaped glyph metrics produced for this codepoint (one codepoint may map to several glyphs).</summary>
-            public IReadOnlyList<GlyphMetrics> Metrics { get; }
-
-            /// <summary>Gets the point size at which this entry is rendered.</summary>
-            public float PointSize { get; }
-
-            /// <summary>Gets or sets the scaled advance of this entry (mutated by justification).</summary>
-            public float ScaledAdvance { get; set; }
-
-            /// <summary>Gets the scaled line height contributed by this entry, before line-spacing is applied.</summary>
-            public float ScaledLineHeight { get; }
-
-            /// <summary>Gets the scaled typographic ascender.</summary>
-            public float ScaledAscender { get; }
-
-            /// <summary>Gets the scaled typographic descender.</summary>
-            public float ScaledDescender { get; }
-
-            /// <summary>Gets the symmetric ascender/descender delta applied during line-box construction.</summary>
-            public float ScaledDelta { get; }
-
-            /// <summary>Gets the smallest (most negative) scaled Y across <see cref="Metrics"/>.</summary>
-            public float ScaledMinY { get; }
-
-            /// <summary>Gets the resolved bidi run this entry belongs to.</summary>
-            public BidiRun BidiRun { get; }
-
-            /// <summary>Gets the text direction derived from <see cref="BidiRun"/>.</summary>
-            public readonly TextDirection TextDirection => (TextDirection)this.BidiRun.Direction;
-
-            /// <summary>Gets the grapheme index in the source text.</summary>
-            public int GraphemeIndex { get; }
-
-            /// <summary>Gets a value indicating whether this is the last codepoint in its grapheme cluster.</summary>
-            public bool IsLastInGrapheme { get; }
-
-            /// <summary>Gets the index of this codepoint within its grapheme cluster (0-based).</summary>
-            public int GraphemeCodePointIndex { get; }
-
-            /// <summary>Gets the codepoint index in the source text.</summary>
-            public int CodePointIndex { get; }
-
-            /// <summary>Gets a value indicating whether the entry participates in a transformed vertical layout.</summary>
-            public bool IsTransformed { get; }
-
-            /// <summary>Gets a value indicating whether the entry was produced by Unicode decomposition.</summary>
-            public bool IsDecomposed { get; }
-
-            /// <summary>Gets the UTF-16 character index in the source string.</summary>
-            public int StringIndex { get; }
-
-            /// <summary>Gets a value indicating whether the codepoint is a line-break character.</summary>
-            public readonly bool IsNewLine => CodePoint.IsNewLine(this.CodePoint);
-
-            private readonly string DebuggerDisplay => FormattableString
-                .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {this.TextDirection} : {this.CodePointIndex}, level: {this.BidiRun.Level}");
-        }
-
-        /// <summary>
-        /// A node in the linked list of contiguous same-level bidi runs used by <see cref="LinearReOrder"/>.
-        /// Each node owns the glyph entries at its bidi embedding level and can be reversed in place.
-        /// </summary>
-        private sealed class OrderedBidiRun
-        {
-            private ArrayBuilder<GlyphLayoutData> info;
-
-            /// <summary>
-            /// Initializes a new instance of the <see cref="OrderedBidiRun"/> class.
-            /// </summary>
-            /// <param name="level">The bidi embedding level for this run.</param>
-            public OrderedBidiRun(int level) => this.Level = level;
-
-            /// <summary>Gets the bidi embedding level of this run.</summary>
-            public int Level { get; }
-
-            /// <summary>Gets or sets the next run in visual order.</summary>
-            public OrderedBidiRun? Next { get; set; }
-
-            /// <summary>Appends an entry to this run.</summary>
-            /// <param name="info">The entry to append.</param>
-            public void Add(GlyphLayoutData info) => this.info.Add(info);
-
-            /// <summary>Returns a slice view over this run's entries.</summary>
-            /// <returns>A slice over the entries.</returns>
-            public ArraySlice<GlyphLayoutData> AsSlice() => this.info.AsSlice();
-
-            /// <summary>Reverses the entries in this run in place (for rule L2).</summary>
-            public void Reverse() => this.AsSlice().Span.Reverse();
-        }
-
-        /// <summary>
-        /// An intermediate grouping of <see cref="OrderedBidiRun"/> links used by the linear-reorder
-        /// algorithm to stitch pairs of same-level ranges together.
-        /// </summary>
-        private sealed class BidiRange
-        {
-            /// <summary>Gets or sets the shared bidi embedding level for this range.</summary>
-            public int Level { get; set; }
-
-            /// <summary>Gets or sets the leftmost run in the range.</summary>
-            public OrderedBidiRun? Left { get; set; }
-
-            /// <summary>Gets or sets the rightmost run in the range.</summary>
-            public OrderedBidiRun? Right { get; set; }
-
-            /// <summary>Gets or sets the previous range in the processing stack.</summary>
-            public BidiRange? Previous { get; set; }
-
-            /// <summary>
-            /// Stitches the current range with its predecessor, producing a single merged range
-            /// whose internal orientation depends on the predecessor's embedding level parity.
-            /// </summary>
-            /// <param name="range">The current range whose <see cref="Previous"/> will be merged.</param>
-            /// <returns>The merged range (always the predecessor instance, reused in place).</returns>
-            public static BidiRange MergeWithPrevious(BidiRange? range)
-            {
-                BidiRange previous = range!.Previous!;
-                BidiRange left;
-                BidiRange right;
-
-                if ((previous.Level & 1) != 0)
-                {
-                    // Odd, previous goes to the right of range.
-                    left = range;
-                    right = previous;
-                }
-                else
-                {
-                    // Even, previous goes to the left of range.
-                    left = previous;
-                    right = range;
-                }
-
-                // Stitch them
-                left.Right!.Next = right.Left;
-                previous.Left = left.Left;
-                previous.Right = right.Right;
-
-                return previous;
-            }
-        }
     }
 }

@@ -135,7 +135,7 @@ internal sealed class SystemFontCollection : IReadOnlySystemFontCollection, IRea
         => ((IReadOnlyFontMetricsCollection)this.collection).GetAllMetrics(name, culture);
 
     /// <inheritdoc/>
-    IEnumerable<FontStyle> IReadOnlyFontMetricsCollection.GetAllStyles(string name, CultureInfo culture)
+    ReadOnlyMemory<FontStyle> IReadOnlyFontMetricsCollection.GetAllStyles(string name, CultureInfo culture)
         => ((IReadOnlyFontMetricsCollection)this.collection).GetAllStyles(name, culture);
 
     /// <inheritdoc/>

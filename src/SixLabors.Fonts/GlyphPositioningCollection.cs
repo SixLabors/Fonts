@@ -97,7 +97,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     /// <param name="isSubstituted">Whether the glyph is the result of a substitution.</param>
     /// <param name="isVerticalSubstitution">Whether the glyph is the result of a vertical substitution.</param>
     /// <param name="isDecomposed">Whether the glyph is the result of a decomposition substitution.</param>
-    /// <param name="metrics">
+    /// <param name="data">
     /// When this method returns, contains the glyph metrics associated with the specified offset,
     /// if the value is found; otherwise, the default value for the type of the metrics parameter.
     /// This parameter is passed uninitialized.
@@ -110,9 +110,9 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         out bool isSubstituted,
         out bool isVerticalSubstitution,
         out bool isDecomposed,
-        [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics)
+        [NotNullWhen(true)] out IReadOnlyList<GlyphPositioningData>? data)
     {
-        List<GlyphMetrics> match = [];
+        List<GlyphPositioningData> match = [];
         pointSize = 0;
         isSubstituted = false;
         isVerticalSubstitution = false;
@@ -132,18 +132,22 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
                 }
 
                 GlyphPositioningData glyph = this.glyphs[i];
-                isSubstituted = glyph.Data.IsSubstituted;
-                isDecomposed = glyph.Data.IsDecomposed;
-
-                foreach (Tag feature in glyph.Data.AppliedFeatures)
+                if (!glyph.Data.IsPlaceholder)
                 {
-                    isVerticalSubstitution |= feature == vert;
-                    isVerticalSubstitution |= feature == vrt2;
-                    isVerticalSubstitution |= feature == vrtr;
+                    isSubstituted = glyph.Data.IsSubstituted;
+                    isDecomposed = glyph.Data.IsDecomposed;
+
+                    foreach (Tag feature in glyph.Data.AppliedFeatures)
+                    {
+                        isVerticalSubstitution |= feature == vert;
+                        isVerticalSubstitution |= feature == vrt2;
+                        isVerticalSubstitution |= feature == vrtr;
+                    }
+
+                    pointSize = glyph.PointSize;
                 }
 
-                pointSize = glyph.PointSize;
-                match.Add(glyph.Metrics);
+                match.Add(glyph);
             }
             else if (match.Count > 0)
             {
@@ -152,7 +156,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
             }
         }
 
-        metrics = match;
+        data = match;
         return match.Count > 0;
     }
 
@@ -208,7 +212,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
                         isVertical |= feature == vrtr;
                     }
 
-                    GlyphMetrics metrics = fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, textDecorations, layoutMode, colorFontSupport);
+                    FontGlyphMetrics metrics = fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, textDecorations, layoutMode, colorFontSupport);
                     {
                         // If the glyphs are fallbacks we don't want them as
                         // we've already captured them on the first run.
@@ -278,6 +282,35 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
             CodePoint codePoint = data.CodePoint;
             ushort id = data.GlyphId;
 
+            if (data.IsPlaceholder)
+            {
+                // Placeholders are synthetic glyphs: they need layout metrics but must not
+                // go through font glyph lookup, fallback resolution, or GPOS positioning.
+                StreamFontMetrics streamFontMetrics = fontMetrics is FileFontMetrics fileFontMetrics
+                    ? fileFontMetrics.StreamFontMetrics
+                    : (StreamFontMetrics)fontMetrics;
+
+                FontGlyphMetrics placeholderMetrics = new PlaceholderGlyphMetrics(
+                    streamFontMetrics,
+                    data.TextRun.Placeholder.GetValueOrDefault(),
+                    font.Size,
+                    this.TextOptions.Dpi,
+                    data.TextRun);
+
+                GlyphShapingBounds placeholderBounds = layoutMode.IsVertical()
+                    ? new(0, 0, 0, placeholderMetrics.AdvanceHeight)
+                    : new(0, 0, placeholderMetrics.AdvanceWidth, 0);
+
+                GlyphShapingData placeholderData = new(data, true)
+                {
+                    Bounds = placeholderBounds,
+                    IsPositioned = true
+                };
+
+                this.glyphs.Add(new(offset, placeholderData, font.Size, placeholderMetrics));
+                continue;
+            }
+
             // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
             // cache the original in the font metrics and only update our collection.
             TextAttributes textAttributes = data.TextRun.TextAttributes;
@@ -291,7 +324,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
                 isVertical |= feature == vrtr;
             }
 
-            GlyphMetrics metrics = fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, textDecorations, layoutMode, colorFontSupport);
+            FontGlyphMetrics metrics = fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, textDecorations, layoutMode, colorFontSupport);
 
             if (metrics.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
             {
@@ -327,7 +360,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         }
 
         ushort glyphId = data.GlyphId;
-        GlyphMetrics m = this.glyphs[index].Metrics;
+        FontGlyphMetrics m = this.glyphs[index].Metrics;
 
         if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
         {
@@ -363,7 +396,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         Tag vrtr = KnownFeatureTags.VerticalAlternatesForRotation;
 
         GlyphPositioningData glyph = this.glyphs[index];
-        GlyphMetrics m = glyph.Metrics;
+        FontGlyphMetrics m = glyph.Metrics;
 
         if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
         {
@@ -398,9 +431,9 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     }
 
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
-    private class GlyphPositioningData
+    public class GlyphPositioningData
     {
-        public GlyphPositioningData(int offset, GlyphShapingData data, float pointSize, GlyphMetrics metrics)
+        public GlyphPositioningData(int offset, GlyphShapingData data, float pointSize, FontGlyphMetrics metrics)
         {
             this.Offset = offset;
             this.Data = data;
@@ -414,7 +447,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
 
         public float PointSize { get; set; }
 
-        public GlyphMetrics Metrics { get; set; }
+        public FontGlyphMetrics Metrics { get; set; }
 
         private string DebuggerDisplay => FormattableString.Invariant($"Offset: {this.Offset}, Data: {this.Data.ToDebuggerDisplay()}");
     }

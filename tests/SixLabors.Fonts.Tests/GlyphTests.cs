@@ -149,8 +149,8 @@ public class GlyphTests
         const string text = "\U0001F469\U0001F3FB\u200D\U0001F91D\u200D\U0001F469\U0001F3FC"; // women holding hands: light skin tone, medium-light skin tone
         const string text2 = "\U0001F46D\U0001F3FB"; // women holding hands: light skin tone
 
-        FontRectangle size = TextMeasurer.MeasureSize(text, new TextOptions(font));
-        FontRectangle size2 = TextMeasurer.MeasureSize(text2, new TextOptions(font));
+        FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font));
+        FontRectangle size2 = TextMeasurer.MeasureBounds(text2, new TextOptions(font));
 
         Assert.Equal(55.652F, size.Width, Comparer);
         Assert.Equal(55.617F, size2.Width, Comparer);

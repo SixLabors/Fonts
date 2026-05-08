@@ -14,7 +14,7 @@ public class Issues_302
         Font font = fontFamily.CreateFont(16, FontStyle.Regular);
         TextOptions renderOptions = new(font);
 
-        Assert.True(TextMeasurer.TryMeasureCharacterBounds(content, renderOptions, out ReadOnlySpan<GlyphBounds> _));
+        Assert.False(TextMeasurer.GetGlyphMetrics(content, renderOptions).IsEmpty);
     }
 #endif
 }

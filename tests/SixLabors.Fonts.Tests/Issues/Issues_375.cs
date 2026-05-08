@@ -13,7 +13,7 @@ public class Issues_375
         TextOptions options = new(font);
 
         FontRectangle bounds = TextMeasurer.MeasureBounds("È", options);
-        FontRectangle size = TextMeasurer.MeasureSize("È", options);
+        FontRectangle size = TextMeasurer.MeasureBounds("È", options);
         FontRectangle advance = TextMeasurer.MeasureAdvance("È", options);
 
         Font fontWoff = TestFonts.GetFont(TestFonts.PermanentMarkerRegularWoff2File, 142);
@@ -21,7 +21,7 @@ public class Issues_375
         TextOptions optionsWoff = new(fontWoff);
 
         FontRectangle boundsWoff = TextMeasurer.MeasureBounds("È", optionsWoff);
-        FontRectangle sizeWoff = TextMeasurer.MeasureSize("È", optionsWoff);
+        FontRectangle sizeWoff = TextMeasurer.MeasureBounds("È", optionsWoff);
         FontRectangle advanceWoff = TextMeasurer.MeasureAdvance("È", optionsWoff);
 
         Assert.Equal(bounds, boundsWoff);

@@ -1,0 +1,204 @@
+// Copyright (c) Six Labors.
+// Licensed under the Six Labors Split License.
+
+using System.Numerics;
+using SixLabors.Fonts.Rendering;
+
+namespace SixLabors.Fonts;
+
+/// <summary>
+/// Represents one laid-out line from a <see cref="TextBlock"/>.
+/// </summary>
+public sealed class LineLayout
+{
+    private readonly TextBox textBox;
+    private readonly TextOptions options;
+    private readonly float wrappingLength;
+    private readonly int lineIndex;
+    private readonly LayoutMode layoutMode;
+    private readonly ReadOnlyMemory<GraphemeMetrics> graphemeMetrics;
+    private readonly ReadOnlyMemory<WordMetrics> wordMetrics;
+    private GlyphMetrics[]? glyphMetrics;
+
+    internal LineLayout(
+        TextBox textBox,
+        TextOptions options,
+        float wrappingLength,
+        int lineIndex,
+        in LineMetrics metrics,
+        ReadOnlyMemory<GraphemeMetrics> graphemeMetrics,
+        ReadOnlyMemory<WordMetrics> wordMetrics)
+    {
+        this.textBox = textBox;
+        this.options = options;
+        this.wrappingLength = wrappingLength;
+        this.lineIndex = lineIndex;
+        this.layoutMode = options.LayoutMode;
+        this.LineMetrics = metrics;
+        this.graphemeMetrics = graphemeMetrics;
+        this.wordMetrics = wordMetrics;
+    }
+
+    /// <summary>
+    /// Gets the measured line metrics.
+    /// </summary>
+    public LineMetrics LineMetrics { get; }
+
+    /// <summary>
+    /// Gets the grapheme metrics entries for this line in final layout order.
+    /// </summary>
+    public ReadOnlySpan<GraphemeMetrics> GraphemeMetrics => this.graphemeMetrics.Span;
+
+    /// <summary>
+    /// Hit tests the supplied point against this line's grapheme advance bounds.
+    /// </summary>
+    /// <param name="point">The point in pixel units.</param>
+    /// <returns>The hit-tested grapheme position.</returns>
+    public TextHit HitTest(Vector2 point)
+        => TextInteraction.HitTestLine(this.lineIndex, this.GraphemeMetrics, point, this.layoutMode);
+
+    /// <summary>
+    /// Gets the caret position for the supplied hit.
+    /// </summary>
+    /// <param name="hit">The hit-tested grapheme position.</param>
+    /// <returns>The caret position in pixel units.</returns>
+    public CaretPosition GetCaretPosition(TextHit hit)
+        => TextInteraction.GetCaretPositionLine(
+            this.lineIndex,
+            this.LineMetrics,
+            this.GraphemeMetrics,
+            hit.GraphemeInsertionIndex,
+            this.layoutMode);
+
+    /// <summary>
+    /// Gets an absolute caret position in the laid-out line.
+    /// </summary>
+    /// <param name="placement">The absolute caret placement.</param>
+    /// <returns>The caret position in pixel units.</returns>
+    public CaretPosition GetCaret(CaretPlacement placement)
+        => TextInteraction.GetCaretLine(
+            this.lineIndex,
+            this.LineMetrics,
+            this.GraphemeMetrics,
+            placement,
+            this.layoutMode,
+            this.textBox.TextDirection());
+
+    /// <summary>
+    /// Moves the supplied caret by the requested operation within this line.
+    /// </summary>
+    /// <param name="caret">The current caret position.</param>
+    /// <param name="movement">The movement operation.</param>
+    /// <returns>The moved caret position in pixel units.</returns>
+    public CaretPosition MoveCaret(CaretPosition caret, CaretMovement movement)
+        => TextInteraction.MoveCaretLine(
+            this.lineIndex,
+            this.LineMetrics,
+            this.GraphemeMetrics,
+            this.wordMetrics.Span,
+            caret,
+            movement,
+            this.layoutMode,
+            this.textBox.TextDirection());
+
+    /// <summary>
+    /// Gets the word metrics for the word-boundary segment containing the supplied hit-tested grapheme position.
+    /// </summary>
+    /// <param name="hit">The hit-tested grapheme position.</param>
+    /// <returns>The word metrics containing the hit grapheme.</returns>
+    public WordMetrics GetWordMetrics(TextHit hit)
+        => TextInteraction.GetWordMetrics(this.wordMetrics.Span, hit.GraphemeIndex);
+
+    /// <summary>
+    /// Gets the word metrics for the word-boundary segment containing the supplied caret position.
+    /// </summary>
+    /// <param name="caret">The caret position.</param>
+    /// <returns>The word metrics containing the caret's grapheme insertion index.</returns>
+    public WordMetrics GetWordMetrics(CaretPosition caret)
+        => TextInteraction.GetWordMetrics(this.wordMetrics.Span, caret.GraphemeIndex);
+
+    /// <summary>
+    /// Gets selection bounds between two hit-tested grapheme positions.
+    /// </summary>
+    /// <param name="anchor">The fixed selection endpoint.</param>
+    /// <param name="focus">The active selection endpoint.</param>
+    /// <returns>A read-only memory region containing the selection bounds in visual order and pixel units.</returns>
+    public ReadOnlyMemory<FontRectangle> GetSelectionBounds(TextHit anchor, TextHit focus)
+        => TextInteraction.GetSelectionBoundsLine(
+            this.LineMetrics,
+            this.GraphemeMetrics,
+            anchor.GraphemeInsertionIndex,
+            focus.GraphemeInsertionIndex,
+            this.layoutMode);
+
+    /// <summary>
+    /// Gets selection bounds between two caret positions.
+    /// </summary>
+    /// <param name="anchor">The fixed selection endpoint.</param>
+    /// <param name="focus">The active selection endpoint.</param>
+    /// <returns>A read-only memory region containing the selection bounds in visual order and pixel units.</returns>
+    public ReadOnlyMemory<FontRectangle> GetSelectionBounds(CaretPosition anchor, CaretPosition focus)
+        => TextInteraction.GetSelectionBoundsLine(
+            this.LineMetrics,
+            this.GraphemeMetrics,
+            anchor.GraphemeIndex,
+            focus.GraphemeIndex,
+            this.layoutMode);
+
+    /// <summary>
+    /// Gets line-local selection bounds for the supplied grapheme metrics.
+    /// </summary>
+    /// <param name="metrics">The grapheme metrics to select.</param>
+    /// <returns>A read-only memory region containing the selection bounds in visual order and pixel units.</returns>
+    public ReadOnlyMemory<FontRectangle> GetSelectionBounds(GraphemeMetrics metrics)
+        => TextInteraction.GetSelectionBoundsLine(
+            this.LineMetrics,
+            metrics,
+            this.layoutMode);
+
+    /// <summary>
+    /// Gets line-local selection bounds for the supplied word metrics.
+    /// </summary>
+    /// <param name="metrics">The word metrics to select.</param>
+    /// <returns>A read-only memory region containing the selection bounds in visual order and pixel units.</returns>
+    public ReadOnlyMemory<FontRectangle> GetSelectionBounds(WordMetrics metrics)
+        => TextInteraction.GetSelectionBoundsLine(
+            this.LineMetrics,
+            this.GraphemeMetrics,
+            metrics.GraphemeStart,
+            metrics.GraphemeEnd,
+            this.layoutMode);
+
+    /// <inheritdoc cref="TextBlock.GetGlyphMetrics(float)"/>
+    public ReadOnlyMemory<GlyphMetrics> GetGlyphMetrics()
+        => this.glyphMetrics ??= TextBlock.GetGlyphMetricsArray(
+            this.textBox,
+            this.options,
+            this.wrappingLength,
+            this.lineIndex);
+
+    /// <summary>
+    /// Renders this line to the supplied glyph renderer.
+    /// </summary>
+    /// <param name="renderer">The target renderer.</param>
+    public void RenderTo(IGlyphRenderer renderer)
+    {
+        FontRectangle bounds = FontRectangle.Empty;
+        ReadOnlySpan<GlyphMetrics> glyphMetrics = this.GetGlyphMetrics().Span;
+
+        for (int i = 0; i < glyphMetrics.Length; i++)
+        {
+            bounds = i == 0
+                ? glyphMetrics[i].Bounds
+                : FontRectangle.Union(bounds, glyphMetrics[i].Bounds);
+        }
+
+        TextBlock.RenderTo(
+            renderer,
+            this.textBox,
+            this.options,
+            this.wrappingLength,
+            bounds,
+            this.lineIndex);
+    }
+}

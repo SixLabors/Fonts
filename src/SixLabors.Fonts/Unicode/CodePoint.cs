@@ -181,6 +181,11 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     public static CodePoint ReplacementChar { get; } = new CodePoint(0xFFFD);
 
+    /// <summary>
+    /// Gets a <see cref="CodePoint"/> instance that represents the Unicode object replacement character U+FFFC.
+    /// </summary>
+    public static CodePoint ObjectReplacementChar { get; } = new CodePoint(0xFFFC);
+
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
     // Operators below are explicit because they may throw.
@@ -557,6 +562,14 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// <returns>The <see cref="LineBreakClass"/>.</returns>
     public static LineBreakClass GetLineBreakClass(in CodePoint codePoint)
         => UnicodeData.GetLineBreakClass(codePoint.value);
+
+    /// <summary>
+    /// Gets the <see cref="WordBreakClass"/> for the given codepoint.
+    /// </summary>
+    /// <param name="codePoint">The codepoint.</param>
+    /// <returns>The <see cref="WordBreakClass"/>.</returns>
+    public static WordBreakClass GetWordBreakClass(in CodePoint codePoint)
+        => UnicodeData.GetWordBreakClass(codePoint.value);
 
     /// <summary>
     /// Gets the <see cref="GraphemeClusterClass"/> for the given codepoint.

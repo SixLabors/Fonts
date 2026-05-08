@@ -13,7 +13,7 @@ public class Issues_269
         // AliceFrancesHMK has invalid subtables.
         Font font = TestFonts.GetFont(TestFonts.AliceFrancesHMKRegularFile, 25);
 
-        FontRectangle size = TextMeasurer.MeasureSize("H", new TextOptions(font));
+        FontRectangle size = TextMeasurer.MeasureBounds("H", new TextOptions(font));
         Assert.Equal(30.6000004F, size.Width, Comparer);
         Assert.Equal(24.75F, size.Height, Comparer);
     }

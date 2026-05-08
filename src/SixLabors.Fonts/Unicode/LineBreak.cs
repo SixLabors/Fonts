@@ -17,11 +17,17 @@ internal readonly struct LineBreak
     /// <param name="positionMeasure">The code point index to measure to</param>
     /// <param name="positionWrap">The code point index to actually break the line at</param>
     /// <param name="required">True if this is a required line break; otherwise false</param>
-    public LineBreak(int positionMeasure, int positionWrap, bool required = false)
+    /// <param name="isHyphenationBreak">True if this is a manual hyphenation break; otherwise false</param>
+    public LineBreak(
+        int positionMeasure,
+        int positionWrap,
+        bool required = false,
+        bool isHyphenationBreak = false)
     {
         this.PositionMeasure = positionMeasure;
         this.PositionWrap = positionWrap;
         this.Required = required;
+        this.IsHyphenationBreak = isHyphenationBreak;
     }
 
     /// <summary>
@@ -40,4 +46,9 @@ internal readonly struct LineBreak
     /// Gets a value indicating whether there should be a forced line break here.
     /// </summary>
     public bool Required { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether this is a manual hyphenation break.
+    /// </summary>
+    public bool IsHyphenationBreak { get; }
 }

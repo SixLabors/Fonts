@@ -3,13 +3,14 @@
 
 using System.Runtime.CompilerServices;
 
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+
 #if SUPPORTS_DRAWING
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tests.TestUtilities;
-using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.Drawing.Text;
-using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 #endif
 
@@ -40,10 +41,8 @@ internal static class TextLayoutTestUtilities
         bool includeGeometry = false,
         bool customDecorations = false,
         [CallerMemberName] string test = "",
-#if SUPPORTS_DRAWING
         Action<Image<Rgba32>> beforeAction = null,
         Action<Image<Rgba32>> afterAction = null,
-#endif
         params object[] properties)
     {
 #if SUPPORTS_DRAWING
@@ -134,8 +133,15 @@ internal static class TextLayoutTestUtilities
             LineSpacing = options.LineSpacing,
             Origin = options.Origin,
             WrappingLength = options.WrappingLength,
+            MaxLines = options.MaxLines,
             WordBreaking = options.WordBreaking,
+            TextHyphenation = options.TextHyphenation,
+            CustomHyphen = options.CustomHyphen,
+            TextEllipsis = options.TextEllipsis,
+            CustomEllipsis = options.CustomEllipsis,
             TextDirection = options.TextDirection,
+            TextBidiMode = options.TextBidiMode,
+            TextInteractionMode = options.TextInteractionMode,
             TextAlignment = options.TextAlignment,
             TextJustification = options.TextJustification,
             HorizontalAlignment = options.HorizontalAlignment,

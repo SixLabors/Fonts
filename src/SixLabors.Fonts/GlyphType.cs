@@ -21,5 +21,10 @@ public enum GlyphType
     /// <summary>
     /// This is a multi-layer colored glyph (emoji).
     /// </summary>
-    Painted
+    Painted,
+
+    /// <summary>
+    /// This is an atomic inline placeholder supplied by the caller.
+    /// </summary>
+    Placeholder
 }

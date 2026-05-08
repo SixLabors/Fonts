@@ -112,6 +112,17 @@ internal sealed class ArabicShaper : DefaultShaper
         this.AddFeature(collection, index, count, MediTag, false);
         this.AddFeature(collection, index, count, Med2Tag, false);
         this.AddFeature(collection, index, count, InitTag, false);
+
+        // HarfBuzz plans these as Arabic-script features, independently of the
+        // generic horizontal feature list. Horizontal runs already get them from
+        // DefaultShaper; forced vertical Arabic needs them here as well.
+        if (collection.TextOptions.LayoutMode.IsVertical())
+        {
+            this.AddFeature(collection, index, count, CaltTag);
+            this.AddFeature(collection, index, count, LigaTag);
+            this.AddFeature(collection, index, count, CligTag);
+        }
+
         this.AddFeature(collection, index, count, MsetTag);
     }
 

@@ -41,6 +41,8 @@ internal class GlyphShapingData
         this.CursiveAttachment = data.CursiveAttachment;
         this.IsSubstituted = data.IsSubstituted;
         this.IsDecomposed = data.IsDecomposed;
+        this.IsPlaceholder = data.IsPlaceholder;
+        this.BidiRun = data.BidiRun;
         this.IsPositioned = data.IsPositioned;
         this.IsKerned = data.IsKerned;
 
@@ -182,6 +184,16 @@ internal class GlyphShapingData
     /// Gets or sets a value indicating whether this glyph is the result of a decomposition substitution
     /// </summary>
     public bool IsDecomposed { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether this glyph represents an inline placeholder.
+    /// </summary>
+    public bool IsPlaceholder { get; set; }
+
+    /// <summary>
+    /// Gets or sets the bidi run assigned to an inline placeholder.
+    /// </summary>
+    public BidiRun BidiRun { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether this glyph has been positioned.

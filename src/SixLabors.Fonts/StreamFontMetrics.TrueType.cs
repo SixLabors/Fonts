@@ -48,7 +48,7 @@ internal partial class StreamFontMetrics
         return interpreter;
     }
 
-    internal void ApplyTrueTypeHinting(HintingMode hintingMode, GlyphMetrics metrics, ref GlyphVector glyphVector, Vector2 scaleXY, float pixelSize)
+    internal void ApplyTrueTypeHinting(HintingMode hintingMode, FontGlyphMetrics metrics, ref GlyphVector glyphVector, Vector2 scaleXY, float pixelSize)
     {
         if (hintingMode == HintingMode.None || this.outlineType != OutlineType.TrueType)
         {
@@ -181,7 +181,7 @@ internal partial class StreamFontMetrics
         return new StreamFontMetrics(tables, glyphVariationProcessor);
     }
 
-    private GlyphMetrics CreateTrueTypeGlyphMetrics(
+    private FontGlyphMetrics CreateTrueTypeGlyphMetrics(
         in CodePoint codePoint,
         ushort glyphId,
         GlyphType glyphType,

@@ -460,7 +460,7 @@ internal class GPosTable : Table
             if (data.CursiveAttachment != -1)
             {
                 int j = data.CursiveAttachment + currentIndex;
-                if (j > count)
+                if (j < index || j >= index + count)
                 {
                     return;
                 }

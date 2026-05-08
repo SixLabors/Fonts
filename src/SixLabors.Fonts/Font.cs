@@ -261,7 +261,7 @@ public sealed class Font
         [NotNullWhen(true)] out Glyph? glyph)
     {
         TextRun textRun = new() { Start = 0, End = 1, Font = this, TextAttributes = textAttributes, TextDecorations = textDecorations };
-        if (this.FontMetrics.TryGetGlyphMetrics(codePoint, textAttributes, textDecorations, layoutMode, support, out GlyphMetrics? metrics))
+        if (this.FontMetrics.TryGetGlyphMetrics(codePoint, textAttributes, textDecorations, layoutMode, support, out FontGlyphMetrics? metrics))
         {
             glyph = new(metrics.CloneForRendering(textRun), this.Size);
             return true;
@@ -357,10 +357,16 @@ public sealed class Font
         }
 
         // Can't find style requested so let's just try returning the default.
-        IEnumerable<FontStyle>? styles = this.Family.GetAvailableStyles();
-        FontStyle defaultStyle = styles.Contains(FontStyle.Regular)
-        ? FontStyle.Regular
-        : styles.First();
+        ReadOnlySpan<FontStyle> styles = this.Family.GetAvailableStyles().Span;
+        FontStyle defaultStyle = styles[0];
+        foreach (FontStyle style in styles)
+        {
+            if (style == FontStyle.Regular)
+            {
+                defaultStyle = FontStyle.Regular;
+                break;
+            }
+        }
 
         this.Family.TryGetMetrics(defaultStyle, out metrics);
         return metrics;

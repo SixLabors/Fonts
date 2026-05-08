@@ -375,6 +375,6 @@ public partial class GSubTableTests
         Font font = TestFonts.GetFont(TestFonts.GSubLookupType2BillionLaughs, 12);
 
         // Act
-        TextMeasurer.MeasureSize("lol", new TextOptions(font));
+        TextMeasurer.MeasureBounds("lol", new TextOptions(font));
     }
 }

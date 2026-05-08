@@ -10,9 +10,32 @@ public class Issues_191
     [Fact]
     public void CanLoadMacintoshGlyphs()
     {
-        Font font = new FontCollection()
-            .AddCollection(TestFonts.HelveticaTTCFile)
-            .First(x => x.GetAvailableStyles().Contains(FontStyle.Regular)).CreateFont(12);
+        ReadOnlyMemory<FontFamily> families = new FontCollection()
+            .AddCollection(TestFonts.HelveticaTTCFile);
+
+        FontFamily family = families.Span[0];
+        foreach (FontFamily candidate in families.Span)
+        {
+            ReadOnlySpan<FontStyle> styles = candidate.GetAvailableStyles().Span;
+            bool hasRegular = false;
+
+            foreach (FontStyle style in styles)
+            {
+                if (style == FontStyle.Regular)
+                {
+                    hasRegular = true;
+                    break;
+                }
+            }
+
+            if (hasRegular)
+            {
+                family = candidate;
+                break;
+            }
+        }
+
+        Font font = family.CreateFont(12);
 
         const ColorFontSupport support = ColorFontSupport.None;
 

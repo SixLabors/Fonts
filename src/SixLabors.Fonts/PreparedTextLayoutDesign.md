@@ -1,0 +1,534 @@
+# Text Measurement and Interaction APIs
+
+This document describes the public measurement and selection surface for laid-out
+text. The intent is that callers can measure, render, hit-test, place carets,
+and draw selections without reimplementing bidi, grapheme, hard-break, or layout
+mode rules outside the library.
+
+All positional metrics exposed by these APIs are in pixel units.
+
+## API Layers
+
+There are four layers:
+
+- `TextMeasurer`: one-shot convenience APIs for measuring a string.
+- `TextBlock`: prepared text that can be measured or rendered repeatedly.
+- `TextMetrics`: the full measurement result for one laid-out text block.
+- `LineLayout`: one laid-out line with line-local measurement and interaction APIs.
+
+Use `TextMeasurer` for simple one-off work. Use `TextBlock` when the same text
+will be measured, rendered, wrapped, or inspected more than once.
+
+## One-Shot Measurement
+
+`TextMeasurer` is the shortest path from text and options to measurements.
+`TextOptions.WrappingLength` controls wrapping for these methods.
+
+```csharp
+TextOptions options = new(font)
+{
+    Origin = new Vector2(20, 30),
+
+    // TextMeasurer reads WrappingLength from TextOptions.
+    WrappingLength = 320
+};
+
+TextMetrics metrics = TextMeasurer.Measure(text, options);
+FontRectangle advance = TextMeasurer.MeasureAdvance(text, options);
+FontRectangle bounds = TextMeasurer.MeasureBounds(text, options);
+FontRectangle renderableBounds = TextMeasurer.MeasureRenderableBounds(text, options);
+```
+
+The aggregate rectangles answer different questions:
+
+- `MeasureAdvance`: the logical line-box advance of the text.
+- `MeasureBounds`: the rendered glyph bounds.
+- `MeasureRenderableBounds`: the union of logical advance and rendered glyph bounds.
+
+Use `MeasureAdvance` for layout flow. Use `MeasureBounds` for tight ink bounds.
+Use `MeasureRenderableBounds` when both typographic advance and rendered glyph
+overshoot must fit.
+
+## Prepared Measurement
+
+`TextBlock` prepares the wrapping-independent text work once. Pass the wrapping
+length to each operation. `TextOptions.WrappingLength` is ignored by the
+constructor.
+
+```csharp
+TextBlock block = new(text, options);
+
+// Each operation supplies the wrapping length; the constructor does not.
+TextMetrics narrow = block.Measure(240);
+TextMetrics wide = block.Measure(480);
+
+FontRectangle narrowBounds = block.MeasureBounds(240);
+FontRectangle wideBounds = block.MeasureBounds(480);
+```
+
+Use `-1` as the wrapping length to disable wrapping.
+
+```csharp
+// -1 disables wrapping for TextBlock operations.
+TextMetrics unwrapped = block.Measure(-1);
+```
+
+`TextBlock` also exposes direct detail APIs when a full `TextMetrics` object is
+not needed:
+
+```csharp
+ReadOnlyMemory<LineMetrics> lines = block.GetLineMetrics(320);
+ReadOnlyMemory<GraphemeMetrics> graphemes = block.GetGraphemeMetrics(320);
+ReadOnlyMemory<WordMetrics> words = block.GetWordMetrics(320);
+ReadOnlyMemory<GlyphMetrics> glyphs = block.GetGlyphMetrics(320);
+```
+
+Method-returned measurement collections use `ReadOnlyMemory<T>` because they are
+snapshots that callers may store with their own layout state. Owner-backed
+properties, such as `TextMetrics.LineMetrics` and `LineLayout.GraphemeMetrics`,
+use `ReadOnlySpan<T>` because the owner object already controls the lifetime.
+
+## TextMetrics
+
+`TextMetrics` is the result to keep when callers need several measurements from
+the same laid-out text.
+
+```csharp
+TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+// These aggregate measurements answer different layout and rendering questions.
+FontRectangle advance = metrics.Advance;
+FontRectangle bounds = metrics.Bounds;
+FontRectangle renderableBounds = metrics.RenderableBounds;
+int lineCount = metrics.LineCount;
+
+ReadOnlySpan<LineMetrics> lines = metrics.LineMetrics;
+ReadOnlySpan<GraphemeMetrics> graphemes = metrics.GraphemeMetrics;
+ReadOnlySpan<WordMetrics> words = metrics.WordMetrics;
+```
+
+The line and grapheme collections are in final layout order. That matters for
+bidi text and reverse line-order layout modes: source order and visual order can
+be different.
+
+`WordMetrics` are in source order because word-boundary navigation is a logical
+text operation. Selection and caret APIs convert those logical metrics back into
+visual geometry when needed.
+
+## Line Metrics
+
+`LineMetrics` describes one laid-out line.
+
+```csharp
+foreach (LineMetrics line in metrics.LineMetrics)
+{
+    // Start and Extent describe the positioned line box.
+    Vector2 start = line.Start;
+    Vector2 extent = line.Extent;
+    float baseline = line.Baseline;
+}
+```
+
+`Start` and `Extent` describe the positioned line box in pixel units. Selection
+and caret APIs use the line box for the cross-axis size, which matches normal
+text editor and browser behavior: selecting mixed font sizes on the same line
+paints a consistent line-height rectangle rather than one rectangle per glyph
+height.
+
+`StringIndex`, `GraphemeIndex`, and `GraphemeCount` describe the source text
+range owned by the line. `GraphemeCount` is not a glyph count.
+
+## Grapheme Metrics
+
+Use `GraphemeMetrics` for text interaction: hit testing, caret positioning,
+range selection, and UI overlays.
+
+```csharp
+foreach (GraphemeMetrics grapheme in metrics.GraphemeMetrics)
+{
+    // Use Advance for interaction and Bounds for rendered ink.
+    FontRectangle advance = grapheme.Advance;
+    FontRectangle bounds = grapheme.Bounds;
+    FontRectangle renderableBounds = grapheme.RenderableBounds;
+    bool isLineBreak = grapheme.IsLineBreak;
+}
+```
+
+The rectangles answer different questions:
+
+- `Advance`: the positioned logical advance rectangle for the grapheme.
+- `Bounds`: the rendered glyph bounds for the grapheme.
+- `RenderableBounds`: the union of advance and rendered glyph bounds.
+
+Use `Advance` for hit targets, carets, and selection geometry. Ink bounds can be
+empty, overhang the advance, or exclude whitespace, so they are not a reliable
+interaction target.
+
+`IsLineBreak` identifies hard-break graphemes that remain in the laid-out
+metrics. Hard breaks at the end of non-empty lines are trimmed with other
+trailing breaking whitespace; hard breaks that own blank lines remain because
+they provide the line geometry for selection and caret behavior.
+
+## Word Metrics
+
+`WordMetrics` describes one Unicode word-boundary segment from UAX #29.
+
+```csharp
+foreach (WordMetrics word in metrics.WordMetrics)
+{
+    FontRectangle advance = word.Advance;
+    FontRectangle bounds = word.Bounds;
+    FontRectangle renderableBounds = word.RenderableBounds;
+    int graphemeStart = word.GraphemeStart;
+    int graphemeEnd = word.GraphemeEnd;
+    int stringStart = word.StringStart;
+    int stringEnd = word.StringEnd;
+}
+```
+
+`Advance`, `Bounds`, and `RenderableBounds` have the same meanings as the
+equivalent `GraphemeMetrics` rectangles, but accumulated across the
+word-boundary segment. Whitespace segments keep their positioned bounds; they
+are not discarded just because they are separators.
+
+All `Start` values on `WordMetrics` are inclusive. All `End` values are exclusive.
+`GraphemeStart` and `GraphemeEnd` are grapheme insertion indices. `StringStart`
+and `StringEnd` are UTF-16 indices into the original text.
+
+Unicode word-boundary segments include separators. For example, `can't stop`
+contains three segments:
+
+```text
+can't
+[space]
+stop
+```
+
+This keeps the raw API aligned with the Unicode standard. Higher-level editor
+commands can choose whether to stop on separator boundaries or skip over them.
+
+## Glyph Metrics
+
+Glyph detail APIs expose laid-out glyph entries.
+
+```csharp
+ReadOnlyMemory<GlyphMetrics> glyphs = metrics.GetGlyphMetrics();
+
+foreach (GlyphMetrics glyph in glyphs.Span)
+{
+    FontRectangle advance = glyph.Advance;
+    FontRectangle bounds = glyph.Bounds;
+    FontRectangle renderableBounds = glyph.RenderableBounds;
+    CodePoint codePoint = glyph.CodePoint;
+}
+```
+
+Use glyph detail for rendering diagnostics, glyph-level visualization, or
+advanced inspection. Do not use glyph entries as character or caret positions:
+ligatures, decomposition, fallback, emoji, and combining marks mean one
+grapheme can map to multiple glyph entries, and multiple source characters can
+map to one visual glyph sequence.
+
+## Per-Line Layout
+
+`TextBlock.GetLineLayouts` returns line objects when callers want line-local
+inspection or interaction.
+
+```csharp
+TextBlock block = new(text, options);
+ReadOnlyMemory<LineLayout> layout = block.GetLineLayouts(320);
+
+foreach (LineLayout line in layout.Span)
+{
+    // LineLayout exposes the slice of grapheme metrics owned by this line.
+    LineMetrics lineMetrics = line.LineMetrics;
+    ReadOnlySpan<GraphemeMetrics> lineGraphemes = line.GraphemeMetrics;
+}
+```
+
+`LineLayout` mirrors the interaction and glyph-detail surface for a single line:
+
+```csharp
+TextHit hit = line.HitTest(point);
+
+// Passing the hit keeps trailing-edge and bidi handling inside the library.
+CaretPosition caret = line.GetCaretPosition(hit);
+CaretPosition next = line.MoveCaret(caret, CaretMovement.Next);
+WordMetrics word = line.GetWordMetrics(hit);
+ReadOnlyMemory<FontRectangle> selection = line.GetSelectionBounds(caret, next);
+ReadOnlyMemory<FontRectangle> wordSelection = line.GetSelectionBounds(word);
+ReadOnlyMemory<GlyphMetrics> glyphs = line.GetGlyphMetrics();
+```
+
+Use the full `TextMetrics` interaction methods for selections that can cross
+line boundaries. Use `LineLayout` when the caller already knows interaction is
+line-local.
+
+## Hit Testing
+
+Hit testing maps a point to the nearest grapheme and side.
+
+```csharp
+TextHit hit = metrics.HitTest(mousePosition);
+
+int lineIndex = hit.LineIndex;
+int graphemeIndex = hit.GraphemeIndex;
+// Use this value for carets and selection endpoints.
+int insertionIndex = hit.GraphemeInsertionIndex;
+```
+
+`GraphemeIndex` identifies the hit grapheme. `GraphemeInsertionIndex` identifies
+the logical caret position represented by the hit. For left-to-right text, the
+trailing side is usually `GraphemeIndex + 1`. For right-to-left text, the
+physical side is reversed, but callers do not need to apply that rule. Use
+`GraphemeInsertionIndex` or pass the `TextHit` directly to caret and selection
+APIs.
+
+For word selection, pass the hit directly to `GetWordMetrics`. This uses the
+grapheme that was hit, so clicking the trailing side of the final grapheme in a
+word still selects that word rather than the following separator segment.
+
+```csharp
+TextHit hit = metrics.HitTest(mousePosition);
+WordMetrics word = metrics.GetWordMetrics(hit);
+ReadOnlyMemory<FontRectangle> selection = metrics.GetSelectionBounds(word);
+```
+
+## Caret Positioning
+
+Caret APIs return positioned caret lines in pixel units. A caret is also the
+navigation token for keyboard/editor interaction.
+
+```csharp
+TextHit hit = metrics.HitTest(mousePosition);
+
+// The hit overload applies the correct grapheme insertion index.
+CaretPosition caret = metrics.GetCaretPosition(hit);
+
+DrawCaret(caret.Start, caret.End);
+
+if (caret.HasSecondary)
+{
+    DrawSecondaryCaret(caret.SecondaryStart, caret.SecondaryEnd);
+}
+```
+
+Use absolute placement when initializing a keyboard caret without a pointer hit.
+
+```csharp
+CaretPosition caret = metrics.GetCaret(CaretPlacement.Start);
+```
+
+At bidi boundaries, one logical insertion position can have two visual edges.
+`CaretPosition` exposes the secondary edge so editor-style callers can choose how
+to present or navigate that boundary without recomputing bidi affinity.
+
+## Caret Movement
+
+`MoveCaret` applies editor-style movement to a caret and returns the new caret.
+
+```csharp
+CaretPosition caret = metrics.GetCaret(CaretPlacement.Start);
+
+// Previous and Next move through logical grapheme insertion positions.
+caret = metrics.MoveCaret(caret, CaretMovement.Next);
+
+// PreviousWord and NextWord move through Unicode word boundaries.
+caret = metrics.MoveCaret(caret, CaretMovement.NextWord);
+
+// LineStart and LineEnd are the Home/End-style line movement operations.
+caret = metrics.MoveCaret(caret, CaretMovement.LineEnd);
+
+// TextStart and TextEnd are the whole-block equivalents.
+caret = metrics.MoveCaret(caret, CaretMovement.TextStart);
+```
+
+`LineUp` and `LineDown` move to adjacent visual lines while preserving the
+caret's requested position on the line.
+
+```csharp
+CaretPosition firstLineEnd = metrics.GetCaret(CaretPlacement.Start);
+firstLineEnd = metrics.MoveCaret(firstLineEnd, CaretMovement.LineEnd);
+
+// Repeated LineDown keeps the original line position even when an intermediate
+// line is shorter and the visible caret has to clamp to that line's end.
+CaretPosition middleLine = metrics.MoveCaret(firstLineEnd, CaretMovement.LineDown);
+CaretPosition finalLine = metrics.MoveCaret(middleLine, CaretMovement.LineDown);
+```
+
+This preserves normal rich-text editor behavior: moving down through a short line
+does not permanently lose the user's original horizontal or vertical line
+position.
+
+## Selection Bounds
+
+Selection APIs return rectangles in visual order and pixel units. The result is
+`ReadOnlyMemory<FontRectangle>` so callers can store it with selection state and
+use `.Span` when drawing.
+
+For pointer selection, use the hit overload. This keeps bidi and trailing-edge
+logic inside the library.
+
+```csharp
+TextHit anchor = metrics.HitTest(mouseDown);
+TextHit focus = metrics.HitTest(mouseMove);
+
+// The hit overload converts both endpoints to logical insertion indices.
+ReadOnlyMemory<FontRectangle> selection = metrics.GetSelectionBounds(anchor, focus);
+
+foreach (FontRectangle rectangle in selection.Span)
+{
+    FillSelectionRectangle(rectangle);
+}
+```
+
+For keyboard selection, keep an anchor caret and move the focus caret.
+
+```csharp
+CaretPosition anchor = metrics.GetCaret(CaretPlacement.Start);
+CaretPosition focus = anchor;
+
+// Shift+Right-style behavior updates only the focus caret.
+focus = metrics.MoveCaret(focus, CaretMovement.Next);
+
+ReadOnlyMemory<FontRectangle> selection = metrics.GetSelectionBounds(anchor, focus);
+```
+
+For word selection, use the word metrics overload.
+
+```csharp
+TextHit hit = metrics.HitTest(doubleClickPosition);
+WordMetrics word = metrics.GetWordMetrics(hit);
+
+ReadOnlyMemory<FontRectangle> selection = metrics.GetSelectionBounds(word);
+```
+
+Do not sort, union, or merge the returned rectangles unless the UI explicitly
+wants a different visual. A single logical selection can be visually
+discontinuous inside one line when it crosses bidi runs. Returning multiple
+rectangles allows browser-style selection where the unselected visual gap stays
+unpainted.
+
+## Bidi Drag Selection
+
+Consider a line whose source text is:
+
+```text
+Tall שלום عرب
+```
+
+In a left-to-right paragraph, the right-to-left run can paint with Arabic before
+Hebrew. When a user drags from the left edge of `Tall` toward the Hebrew word,
+the selection can become visually split:
+
+```text
+[Tall ] عرب [שלום]
+```
+
+Application code should not manually decide which physical edge of the Hebrew
+glyph means "before" or "after". The correct flow is:
+
+```csharp
+TextHit anchor = metrics.HitTest(mouseDown);
+TextHit focus = metrics.HitTest(mouseMove);
+
+// Bidi split selection is represented by the returned rectangle list.
+ReadOnlyMemory<FontRectangle> rectangles = metrics.GetSelectionBounds(anchor, focus);
+```
+
+The hit-test result carries the logical insertion index. The selection result is
+already split into the visual rectangles that should be painted.
+
+## Hard Line Breaks
+
+Hard line breaks that end non-empty lines are trimmed with trailing breaking
+whitespace. Hard line breaks that own blank lines remain as graphemes for source
+ranges, hit testing, caret movement, and selection painting.
+
+For text with two hard breaks in the middle:
+
+```text
+Tall عرب שלום
+
+Small مرحبا שלום
+```
+
+Full selection should paint three visual rows: the first text line, the blank
+line, and the second text line. The line break that ends a non-empty line should
+not add a separate painted box; the line break that owns the blank line should.
+
+Consumers should not special-case this. Draw the rectangles returned by
+`GetSelectionBounds`. Consumers that inspect individual graphemes can use
+`IsLineBreak` to identify the blank-line hard breaks that remain in the metrics.
+
+## Recommended Workflows
+
+For one-off measuring:
+
+```csharp
+// One-shot path for a single layout result.
+TextMetrics metrics = TextMeasurer.Measure(text, options);
+```
+
+For repeated wrapping or rendering:
+
+```csharp
+TextBlock block = new(text, options);
+
+// Reuse the prepared text for each requested wrapping length.
+TextMetrics narrow = block.Measure(240);
+TextMetrics wide = block.Measure(480);
+block.RenderTo(renderer, 480);
+```
+
+For text editor interaction:
+
+```csharp
+TextMetrics metrics = block.Measure(wrappingLength);
+
+TextHit anchor = metrics.HitTest(mouseDown);
+TextHit focus = metrics.HitTest(mouseMove);
+
+// Use hit-based overloads so interaction follows the laid-out bidi result.
+CaretPosition caret = metrics.GetCaretPosition(focus);
+ReadOnlyMemory<FontRectangle> selection = metrics.GetSelectionBounds(anchor, focus);
+```
+
+For keyboard navigation and selection:
+
+```csharp
+TextMetrics metrics = block.Measure(wrappingLength);
+CaretPosition caret = metrics.GetCaret(CaretPlacement.Start);
+CaretPosition anchor = caret;
+
+// The movement operation owns grapheme, line, and hard-break navigation rules.
+caret = metrics.MoveCaret(caret, CaretMovement.LineDown);
+caret = metrics.MoveCaret(caret, CaretMovement.NextWord);
+ReadOnlyMemory<FontRectangle> selection = metrics.GetSelectionBounds(anchor, caret);
+```
+
+For per-line UI:
+
+```csharp
+ReadOnlyMemory<LineLayout> lines = block.GetLineLayouts(wrappingLength);
+
+foreach (LineLayout line in lines.Span)
+{
+    ReadOnlySpan<GraphemeMetrics> graphemes = line.GraphemeMetrics;
+    ReadOnlyMemory<GlyphMetrics> glyphs = line.GetGlyphMetrics();
+}
+```
+
+## Design Principles
+
+- The library owns bidi, grapheme, hard-break, wrapping, and layout-mode rules.
+- Callers should pass points, hits, or logical ranges and draw the returned geometry.
+- Caret movement should flow through `MoveCaret`, not caller-side grapheme arithmetic.
+- Word selection should flow through `GetWordMetrics`, not caller-side Unicode boundary logic.
+- Grapheme metrics are the text interaction unit.
+- Word metrics describe logical source segments and their positioned geometry;
+  selection bounds are the visual geometry.
+- Glyph metrics are rendering-detail data, not caret or character data.
+- Selection rectangles are visual geometry, not a single logical union.
+- Per-line selection uses line-box height so selection remains visually stable
+  across mixed fonts and font sizes.

@@ -46,15 +46,17 @@ public class FontFamilyTests
     [ClassData(typeof(SystemFontFamiliesTheoryData))]
     public void HasPathTests(FontFamily family)
     {
-        Assert.True(family.TryGetPaths(out IEnumerable<string> familyPaths));
-        Assert.NotNull(familyPaths);
-        Assert.True(familyPaths.Any());
+        Assert.True(family.TryGetPaths(out ReadOnlyMemory<string> familyPaths));
+        Assert.False(familyPaths.IsEmpty);
 
-        foreach (FontStyle style in family.GetAvailableStyles())
+        string[] familyPathArray = familyPaths.ToArray();
+        ReadOnlySpan<FontStyle> styles = family.GetAvailableStyles().Span;
+
+        foreach (FontStyle style in styles)
         {
             Font font = family.CreateFont(12, style);
             Assert.True(font.TryGetPath(out string fontPath));
-            Assert.Contains(fontPath, familyPaths);
+            Assert.Contains(fontPath, familyPathArray);
         }
     }
 
@@ -64,7 +66,7 @@ public class FontFamilyTests
 
     [Fact]
     public void Throws_FontException_TryGetPath_WhenDefault()
-        => Assert.Throws<FontException>(() => default(FontFamily).TryGetPaths(out IEnumerable<string> _));
+        => Assert.Throws<FontException>(() => default(FontFamily).TryGetPaths(out ReadOnlyMemory<string> _));
 
     [Fact]
     public void Throws_FontException_TryGetMetrics_WhenDefault()

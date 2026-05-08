@@ -3,6 +3,7 @@
 
 using System.Globalization;
 using SixLabors.Fonts.Tests.Fakes;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests.Issues;
 
@@ -14,21 +15,18 @@ public class Issues_47
     {
         Font font = CreateFont("\t x");
 
-        GlyphRenderer r = new();
-
-        IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
+        TextMetrics metrics = TextMeasurer.Measure(text, new TextOptions(new Font(font, 30))
         {
             WrappingLength = 350,
             HorizontalAlignment = HorizontalAlignment.Left
         });
 
-        float lineYPos = layout[0].PenLocation.Y;
-        foreach (GlyphLayout glyph in layout)
+        for (int lineIndex = 0; lineIndex < metrics.LineMetrics.Length; lineIndex++)
         {
-            if (lineYPos != glyph.PenLocation.Y)
+            if (lineIndex > 0)
             {
-                Assert.False(glyph.IsWhiteSpace());
-                lineYPos = glyph.PenLocation.Y;
+                CodePoint lineStart = CodePoint.DecodeFromUtf16At(text.AsSpan(), metrics.LineMetrics[lineIndex].StringIndex);
+                Assert.False(CodePoint.IsWhiteSpace(lineStart));
             }
         }
     }
@@ -38,27 +36,22 @@ public class Issues_47
     [InlineData("hello world hello world hello world hello world", HorizontalAlignment.Right)]
     [InlineData("hello world hello world hello world hello world", HorizontalAlignment.Center)]
     [InlineData("hello   world   hello   world   hello   hello   world", HorizontalAlignment.Left)]
-    public void NewWrappedLinesShouldNotStartOrEndWithWhiteSpace(string text, HorizontalAlignment horizontalAlignment)
+    public void NewWrappedLineMetricsShouldNotStartWithWhiteSpace(string text, HorizontalAlignment horizontalAlignment)
     {
         Font font = CreateFont("\t x");
 
-        GlyphRenderer r = new();
-
-        IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
+        TextMetrics metrics = TextMeasurer.Measure(text, new TextOptions(new Font(font, 30))
         {
             WrappingLength = 350,
             HorizontalAlignment = horizontalAlignment
         });
 
-        float lineYPos = layout[0].PenLocation.Y;
-        for (int i = 0; i < layout.Count; i++)
+        for (int lineIndex = 0; lineIndex < metrics.LineMetrics.Length; lineIndex++)
         {
-            GlyphLayout glyph = layout[i];
-            if (lineYPos != glyph.PenLocation.Y)
+            if (lineIndex > 0)
             {
-                Assert.False(glyph.IsWhiteSpace());
-                Assert.False(layout[i - 1].IsWhiteSpace());
-                lineYPos = glyph.PenLocation.Y;
+                CodePoint lineStart = CodePoint.DecodeFromUtf16At(text.AsSpan(), metrics.LineMetrics[lineIndex].StringIndex);
+                Assert.False(CodePoint.IsWhiteSpace(lineStart));
             }
         }
     }
@@ -69,39 +62,43 @@ public class Issues_47
         Font font = CreateFont("\t x");
         string text = "   hello world hello world hello world";
 
-        GlyphRenderer r = new();
-
-        IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
+        TextMetrics metrics = TextMeasurer.Measure(text, new TextOptions(new Font(font, 30))
         {
             WrappingLength = 350
         });
 
-        Assert.True(layout[0].IsWhiteSpace());
-        Assert.True(layout[1].IsWhiteSpace());
-        Assert.True(layout[2].IsWhiteSpace());
+        Assert.True(CodePoint.IsWhiteSpace(metrics.GetGlyphMetrics().Span[0].CodePoint));
+        Assert.True(CodePoint.IsWhiteSpace(metrics.GetGlyphMetrics().Span[1].CodePoint));
+        Assert.True(CodePoint.IsWhiteSpace(metrics.GetGlyphMetrics().Span[2].CodePoint));
     }
 
     [Fact]
-    public void WhiteSpaceAtTheEndOfTextShouldBeTrimmed()
+    public void WhiteSpaceAtTheEndOfTextShouldNotContributeToMeasurement()
     {
         Font font = CreateFont("\t x");
         string text = "hello world hello world hello world   ";
+        string trimmed = "hello world hello world hello world";
 
-        GlyphRenderer r = new();
-
-        IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
+        TextOptions options = new(new Font(font, 30))
         {
             WrappingLength = 350
-        });
+        };
 
-        Assert.False(layout[layout.Count - 1].IsWhiteSpace());
-        Assert.False(layout[layout.Count - 2].IsWhiteSpace());
-        Assert.False(layout[layout.Count - 3].IsWhiteSpace());
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+        TextMetrics trimmedMetrics = TextMeasurer.Measure(trimmed, options);
+
+        Assert.Equal(trimmedMetrics.Advance, metrics.Advance);
+        Assert.Equal(trimmedMetrics.Bounds, metrics.Bounds);
+
+        // Trailing breaking whitespace is trimmed from the visual glyph stream,
+        // so the measured glyphs match the explicitly trimmed input.
+        Assert.Equal(trimmedMetrics.GetGlyphMetrics().Length, metrics.GetGlyphMetrics().Length);
+        Assert.False(CodePoint.IsWhiteSpace(metrics.GetGlyphMetrics().Span[^1].CodePoint));
     }
 
     public static Font CreateFont(string text)
     {
-        IFontMetricsCollection fc = (IFontMetricsCollection)new FontCollection();
+        IFontMetricsCollection fc = new FontCollection();
         Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
         return new Font(d, 1F);
     }
