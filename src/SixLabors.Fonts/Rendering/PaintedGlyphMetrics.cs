@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Rendering;
 /// Geometry and paints are supplied in document-space by an interpreter; all layout transforms
 /// (UPEM mapping, DPI/point-size scaling, rotation, final placement) are applied here.
 /// </summary>
-public sealed class PaintedGlyphMetrics : GlyphMetrics
+public sealed class PaintedGlyphMetrics : FontGlyphMetrics
 {
     private readonly IPaintedGlyphSource source;
 
@@ -92,7 +92,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
         => this.source = source;
 
     /// <inheritdoc/>
-    internal override GlyphMetrics CloneForRendering(TextRun textRun)
+    internal override FontGlyphMetrics CloneForRendering(TextRun textRun)
         => new PaintedGlyphMetrics(
             this.FontMetrics,
             this.GlyphId,

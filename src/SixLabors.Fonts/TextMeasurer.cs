@@ -89,67 +89,25 @@ public static class TextMeasurer
         return block.MeasureRenderableBounds(options.WrappingLength);
     }
 
-    /// <inheritdoc cref="MeasureGlyphAdvances(ReadOnlySpan{char}, TextOptions)"/>
-    public static ReadOnlyMemory<GlyphBounds> MeasureGlyphAdvances(string text, TextOptions options)
-        => MeasureGlyphAdvances(text.AsSpan(), options);
+    /// <inheritdoc cref="GetGlyphMetrics(ReadOnlySpan{char}, TextOptions)"/>
+    public static ReadOnlyMemory<GlyphMetrics> GetGlyphMetrics(string text, TextOptions options)
+        => GetGlyphMetrics(text.AsSpan(), options);
 
     /// <summary>
-    /// Measures the positioned logical advance bounds of each laid-out glyph entry in pixel units.
+    /// Gets the positioned metrics of each laid-out glyph entry in pixel units.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
-    /// <returns>A read-only memory region containing the per-entry positioned logical advance bounds of the text if it was to be rendered.</returns>
-    public static ReadOnlyMemory<GlyphBounds> MeasureGlyphAdvances(ReadOnlySpan<char> text, TextOptions options)
+    /// <returns>A read-only memory region containing the per-glyph metrics entries of the text if it was to be rendered.</returns>
+    public static ReadOnlyMemory<GlyphMetrics> GetGlyphMetrics(ReadOnlySpan<char> text, TextOptions options)
     {
         if (text.IsEmpty)
         {
-            return ReadOnlyMemory<GlyphBounds>.Empty;
+            return ReadOnlyMemory<GlyphMetrics>.Empty;
         }
 
         TextBlock block = new(text, options);
-        return block.MeasureGlyphAdvances(options.WrappingLength);
-    }
-
-    /// <inheritdoc cref="MeasureGlyphBounds(ReadOnlySpan{char}, TextOptions)"/>
-    public static ReadOnlyMemory<GlyphBounds> MeasureGlyphBounds(string text, TextOptions options)
-        => MeasureGlyphBounds(text.AsSpan(), options);
-
-    /// <inheritdoc cref="MeasureGlyphRenderableBounds(ReadOnlySpan{char}, TextOptions)"/>
-    public static ReadOnlyMemory<GlyphBounds> MeasureGlyphRenderableBounds(string text, TextOptions options)
-        => MeasureGlyphRenderableBounds(text.AsSpan(), options);
-
-    /// <summary>
-    /// Measures the rendered glyph bounds of each laid-out glyph entry in pixel units.
-    /// </summary>
-    /// <param name="text">The text.</param>
-    /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
-    /// <returns>A read-only memory region containing the per-entry rendered glyph bounds of the text if it was to be rendered.</returns>
-    public static ReadOnlyMemory<GlyphBounds> MeasureGlyphBounds(ReadOnlySpan<char> text, TextOptions options)
-    {
-        if (text.IsEmpty)
-        {
-            return ReadOnlyMemory<GlyphBounds>.Empty;
-        }
-
-        TextBlock block = new(text, options);
-        return block.MeasureGlyphBounds(options.WrappingLength);
-    }
-
-    /// <summary>
-    /// Measures the full renderable bounds of each laid-out glyph entry in pixel units.
-    /// </summary>
-    /// <param name="text">The text.</param>
-    /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
-    /// <returns>A read-only memory region containing the per-entry renderable bounds of the text if it was to be rendered.</returns>
-    public static ReadOnlyMemory<GlyphBounds> MeasureGlyphRenderableBounds(ReadOnlySpan<char> text, TextOptions options)
-    {
-        if (text.IsEmpty)
-        {
-            return ReadOnlyMemory<GlyphBounds>.Empty;
-        }
-
-        TextBlock block = new(text, options);
-        return block.MeasureGlyphRenderableBounds(options.WrappingLength);
+        return block.GetGlyphMetrics(options.WrappingLength);
     }
 
     /// <inheritdoc cref="GetGraphemeMetrics(ReadOnlySpan{char}, TextOptions)"/>

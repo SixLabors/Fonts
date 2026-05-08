@@ -17,15 +17,15 @@ public class Issues_417
 
         TextOptions options = new(font);
 
-        // References values generated using.
+        // Crowbar reports the positioned advance widths, not tight rendered bounds.
         // https://www.corvelsoftware.co.uk/crowbar/
-        ReadOnlySpan<GlyphBounds> advances = TextMeasurer.MeasureGlyphAdvances("Text", options).Span;
+        ReadOnlySpan<GlyphMetrics> glyphs = TextMeasurer.GetGlyphMetrics("Text", options).Span;
 
-        Assert.Equal(4, advances.Length);
-        Assert.Equal(486, advances[0].Bounds.Width);
-        Assert.Equal(544, advances[1].Bounds.Width);
-        Assert.Equal(529, advances[2].Bounds.Width);
-        Assert.Equal(361, advances[3].Bounds.Width);
+        Assert.Equal(4, glyphs.Length);
+        Assert.Equal(486, glyphs[0].Advance.Width);
+        Assert.Equal(544, glyphs[1].Advance.Width);
+        Assert.Equal(529, glyphs[2].Advance.Width);
+        Assert.Equal(361, glyphs[3].Advance.Width);
 
         GlyphRenderer renderer = new();
         TextRenderer.RenderTextTo(renderer, "Text", new TextOptions(font));

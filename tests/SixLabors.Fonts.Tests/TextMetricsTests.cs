@@ -21,9 +21,7 @@ public class TextMetricsTests
         Assert.Equal(FontRectangle.Empty, metrics.Bounds, Comparer);
         Assert.Equal(FontRectangle.Empty, metrics.RenderableBounds, Comparer);
         Assert.Equal(0, metrics.LineCount);
-        Assert.True(metrics.MeasureGlyphAdvances().IsEmpty);
-        Assert.True(metrics.MeasureGlyphBounds().IsEmpty);
-        Assert.True(metrics.MeasureGlyphRenderableBounds().IsEmpty);
+        Assert.True(metrics.GetGlyphMetrics().IsEmpty);
         Assert.True(metrics.GraphemeMetrics.IsEmpty);
         Assert.True(metrics.LineMetrics.IsEmpty);
     }
@@ -42,7 +40,7 @@ public class TextMetricsTests
         Assert.Equal(fromString.Bounds, fromSpan.Bounds, Comparer);
         Assert.Equal(fromString.RenderableBounds, fromSpan.RenderableBounds, Comparer);
         Assert.Equal(fromString.LineCount, fromSpan.LineCount);
-        Assert.Equal(fromString.MeasureGlyphAdvances().Length, fromSpan.MeasureGlyphAdvances().Length);
+        Assert.Equal(fromString.GetGlyphMetrics().Length, fromSpan.GetGlyphMetrics().Length);
         Assert.Equal(fromString.LineMetrics.Length, fromSpan.LineMetrics.Length);
     }
 
@@ -71,47 +69,15 @@ public class TextMetricsTests
     [InlineData("hello")]
     [InlineData("hello world")]
     [InlineData("a b\nc")]
-    public void Measure_MeasureGlyphAdvances_MatchGranularOverload(string text)
+    public void Measure_GetGlyphMetrics_MatchGranularOverload(string text)
     {
         Font font = TextLayoutTests.CreateFont(text);
         TextOptions options = new(font) { Dpi = font.FontMetrics.ScaleFactor };
 
-        ReadOnlySpan<GlyphBounds> expected = TextMeasurer.MeasureGlyphAdvances(text, options).Span;
+        ReadOnlySpan<GlyphMetrics> expected = TextMeasurer.GetGlyphMetrics(text, options).Span;
         TextMetrics metrics = TextMeasurer.Measure(text, options);
 
-        AssertGlyphBoundsEqual(expected, metrics.MeasureGlyphAdvances().Span);
-    }
-
-    [Theory]
-    [InlineData("h")]
-    [InlineData("hello")]
-    [InlineData("hello world")]
-    [InlineData("a b\nc")]
-    public void Measure_MeasureGlyphBounds_MatchGranularOverload(string text)
-    {
-        Font font = TextLayoutTests.CreateFont(text);
-        TextOptions options = new(font) { Dpi = font.FontMetrics.ScaleFactor };
-
-        ReadOnlySpan<GlyphBounds> expected = TextMeasurer.MeasureGlyphBounds(text, options).Span;
-        TextMetrics metrics = TextMeasurer.Measure(text, options);
-
-        AssertGlyphBoundsEqual(expected, metrics.MeasureGlyphBounds().Span);
-    }
-
-    [Theory]
-    [InlineData("h")]
-    [InlineData("hello")]
-    [InlineData("hello world")]
-    [InlineData("a b\nc")]
-    public void Measure_MeasureGlyphRenderableBounds_MatchGranularOverload(string text)
-    {
-        Font font = TextLayoutTests.CreateFont(text);
-        TextOptions options = new(font) { Dpi = font.FontMetrics.ScaleFactor };
-
-        ReadOnlySpan<GlyphBounds> expected = TextMeasurer.MeasureGlyphRenderableBounds(text, options).Span;
-        TextMetrics metrics = TextMeasurer.Measure(text, options);
-
-        AssertGlyphBoundsEqual(expected, metrics.MeasureGlyphRenderableBounds().Span);
+        AssertGlyphMetricsEqual(expected, metrics.GetGlyphMetrics().Span);
     }
 
     [Theory]
@@ -144,23 +110,20 @@ public class TextMetricsTests
     }
 
     [Fact]
-    public void Measure_PerCharacterArrays_HaveMatchingLengthAndCodepoints()
+    public void Measure_GlyphMetrics_ExposeAllRectangles()
     {
         const string text = "hello world\nhello";
         Font font = TextLayoutTests.CreateFont(text);
         TextOptions options = new(font) { Dpi = font.FontMetrics.ScaleFactor };
 
         TextMetrics metrics = TextMeasurer.Measure(text, options);
+        ReadOnlySpan<GlyphMetrics> glyphs = metrics.GetGlyphMetrics().Span;
 
-        int count = metrics.MeasureGlyphAdvances().Length;
-        Assert.Equal(count, metrics.MeasureGlyphBounds().Length);
-        Assert.Equal(count, metrics.MeasureGlyphRenderableBounds().Length);
+        Assert.False(glyphs.IsEmpty);
 
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < glyphs.Length; i++)
         {
-            CodePoint cp = metrics.MeasureGlyphAdvances().Span[i].Codepoint;
-            Assert.Equal(cp, metrics.MeasureGlyphBounds().Span[i].Codepoint);
-            Assert.Equal(cp, metrics.MeasureGlyphRenderableBounds().Span[i].Codepoint);
+            Assert.Equal(FontRectangle.Union(glyphs[i].Advance, glyphs[i].Bounds), glyphs[i].RenderableBounds, Comparer);
         }
     }
 
@@ -185,17 +148,19 @@ public class TextMetricsTests
         Assert.Equal(TextMeasurer.MeasureRenderableBounds(text, options), metrics.RenderableBounds, Comparer);
     }
 
-    private static void AssertGlyphBoundsEqual(ReadOnlySpan<GlyphBounds> expected, ReadOnlySpan<GlyphBounds> actual)
+    private static void AssertGlyphMetricsEqual(ReadOnlySpan<GlyphMetrics> expected, ReadOnlySpan<GlyphMetrics> actual)
     {
         Assert.Equal(expected.Length, actual.Length);
         for (int i = 0; i < expected.Length; i++)
         {
-            GlyphBounds e = expected[i];
-            GlyphBounds a = actual[i];
-            Assert.Equal(e.Codepoint, a.Codepoint);
+            GlyphMetrics e = expected[i];
+            GlyphMetrics a = actual[i];
+            Assert.Equal(e.CodePoint, a.CodePoint);
             Assert.Equal(e.GraphemeIndex, a.GraphemeIndex);
             Assert.Equal(e.StringIndex, a.StringIndex);
+            Assert.Equal(e.Advance, a.Advance, Comparer);
             Assert.Equal(e.Bounds, a.Bounds, Comparer);
+            Assert.Equal(e.RenderableBounds, a.RenderableBounds, Comparer);
         }
     }
 }

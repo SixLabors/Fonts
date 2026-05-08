@@ -18,9 +18,7 @@ public sealed class TextMetrics
     private readonly GraphemeMetrics[] graphemeMetrics;
     private readonly LineMetrics[] lineMetrics;
     private readonly WordMetrics[] wordMetrics;
-    private GlyphBounds[]? glyphAdvances;
-    private GlyphBounds[]? glyphBounds;
-    private GlyphBounds[]? glyphRenderableBounds;
+    private GlyphMetrics[]? glyphMetrics;
 
     internal TextMetrics(
         TextBlock textBlock,
@@ -221,27 +219,10 @@ public sealed class TextMetrics
             metrics.GraphemeEnd,
             this.layoutMode);
 
-    /// <inheritdoc cref="TextBlock.MeasureGlyphAdvances(float)"/>
-    public ReadOnlyMemory<GlyphBounds> MeasureGlyphAdvances()
-        => this.glyphAdvances ??= TextBlock.MeasureGlyphBoundsArray(
+    /// <inheritdoc cref="TextBlock.GetGlyphMetrics(float)"/>
+    public ReadOnlyMemory<GlyphMetrics> GetGlyphMetrics()
+        => this.glyphMetrics ??= TextBlock.GetGlyphMetricsArray(
             this.textBox,
             this.textBlock.Options,
-            this.wrappingLength,
-            TextBlock.GlyphBoundsMeasurement.Advance);
-
-    /// <inheritdoc cref="TextBlock.MeasureGlyphBounds(float)"/>
-    public ReadOnlyMemory<GlyphBounds> MeasureGlyphBounds()
-        => this.glyphBounds ??= TextBlock.MeasureGlyphBoundsArray(
-            this.textBox,
-            this.textBlock.Options,
-            this.wrappingLength,
-            TextBlock.GlyphBoundsMeasurement.Bounds);
-
-    /// <inheritdoc cref="TextBlock.MeasureGlyphRenderableBounds(float)"/>
-    public ReadOnlyMemory<GlyphBounds> MeasureGlyphRenderableBounds()
-        => this.glyphRenderableBounds ??= TextBlock.MeasureGlyphBoundsArray(
-            this.textBox,
-            this.textBlock.Options,
-            this.wrappingLength,
-            TextBlock.GlyphBoundsMeasurement.RenderableBounds);
+            this.wrappingLength);
 }

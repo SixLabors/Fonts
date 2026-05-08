@@ -12,16 +12,6 @@ namespace SixLabors.Fonts;
 public sealed partial class TextBlock
 {
     /// <summary>
-    /// Defines the per-glyph bounds measurement collected by <see cref="GlyphBoundsVisitor"/>.
-    /// </summary>
-    internal enum GlyphBoundsMeasurement
-    {
-        Advance,
-        Bounds,
-        RenderableBounds
-    }
-
-    /// <summary>
     /// Adds a flushed grapheme to its source-order word-boundary segment.
     /// </summary>
     /// <param name="wordSegments">The source-order word-boundary segments.</param>
@@ -380,9 +370,9 @@ public sealed partial class TextBlock
     }
 
     /// <summary>
-    /// Accumulates the union of rendered glyph bounds as glyphs stream from layout.
+    /// Accumulates the rendered rectangle as glyphs stream from layout.
     /// </summary>
-    private struct GlyphBoundsAccumulator : TextLayout.IGlyphLayoutVisitor
+    private struct RenderedRectangleAccumulator : TextLayout.IGlyphLayoutVisitor
     {
         private readonly float dpi;
         private float left;
@@ -392,10 +382,10 @@ public sealed partial class TextBlock
         private bool any;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="GlyphBoundsAccumulator"/> struct.
+        /// Initializes a new instance of the <see cref="RenderedRectangleAccumulator"/> struct.
         /// </summary>
         /// <param name="dpi">The target DPI.</param>
-        public GlyphBoundsAccumulator(float dpi)
+        public RenderedRectangleAccumulator(float dpi)
         {
             this.dpi = dpi;
             this.left = float.MaxValue;
@@ -699,47 +689,41 @@ public sealed partial class TextBlock
     }
 
     /// <summary>
-    /// Builds one per-glyph bounds array while glyphs stream from layout.
+    /// Builds one per-glyph metrics array while glyphs stream from layout.
     /// </summary>
-    private struct GlyphBoundsVisitor : TextLayout.IGlyphLayoutVisitor
+    private struct GlyphMetricsVisitor : TextLayout.IGlyphLayoutVisitor
     {
-        private readonly GlyphBounds[] glyphBounds;
+        private readonly GlyphMetrics[] glyphMetrics;
         private readonly float dpi;
-        private readonly GlyphBoundsMeasurement measurement;
         private readonly int lineIndex;
         private int count;
         private int currentLineIndex;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="GlyphBoundsVisitor"/> struct.
+        /// Initializes a new instance of the <see cref="GlyphMetricsVisitor"/> struct.
         /// </summary>
-        /// <param name="glyphBounds">The target array to fill.</param>
+        /// <param name="glyphMetrics">The target array to fill.</param>
         /// <param name="dpi">The target DPI.</param>
-        /// <param name="measurement">The bounds measurement to collect.</param>
-        public GlyphBoundsVisitor(
-            GlyphBounds[] glyphBounds,
-            float dpi,
-            GlyphBoundsMeasurement measurement)
-            : this(glyphBounds, dpi, measurement, -1)
+        public GlyphMetricsVisitor(
+            GlyphMetrics[] glyphMetrics,
+            float dpi)
+            : this(glyphMetrics, dpi, -1)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="GlyphBoundsVisitor"/> struct.
+        /// Initializes a new instance of the <see cref="GlyphMetricsVisitor"/> struct.
         /// </summary>
-        /// <param name="glyphBounds">The target array to fill.</param>
+        /// <param name="glyphMetrics">The target array to fill.</param>
         /// <param name="dpi">The target DPI.</param>
-        /// <param name="measurement">The bounds measurement to collect.</param>
         /// <param name="lineIndex">The line index to collect.</param>
-        public GlyphBoundsVisitor(
-            GlyphBounds[] glyphBounds,
+        public GlyphMetricsVisitor(
+            GlyphMetrics[] glyphMetrics,
             float dpi,
-            GlyphBoundsMeasurement measurement,
             int lineIndex)
         {
-            this.glyphBounds = glyphBounds;
+            this.glyphMetrics = glyphMetrics;
             this.dpi = dpi;
-            this.measurement = measurement;
             this.lineIndex = lineIndex;
             this.count = 0;
             this.currentLineIndex = -1;
@@ -757,25 +741,18 @@ public sealed partial class TextBlock
                 return;
             }
 
-            FontRectangle bounds;
-            switch (this.measurement)
-            {
-                case GlyphBoundsMeasurement.Advance:
-                    bounds = glyph.MeasureAdvance(this.dpi);
-                    break;
+            FontRectangle advance = glyph.MeasureAdvance(this.dpi);
+            FontRectangle bounds = glyph.MeasureBounds(this.dpi);
+            FontRectangle renderableBounds = FontRectangle.Union(advance, bounds);
 
-                case GlyphBoundsMeasurement.Bounds:
-                    bounds = glyph.MeasureBounds(this.dpi);
-                    break;
+            this.glyphMetrics[this.count] = new GlyphMetrics(
+                glyph.Glyph.GlyphMetrics.CodePoint,
+                advance,
+                bounds,
+                renderableBounds,
+                glyph.GraphemeIndex,
+                glyph.StringIndex);
 
-                default:
-                    FontRectangle glyphBounds = glyph.MeasureBounds(this.dpi);
-                    FontRectangle advance = glyph.MeasureAdvance(this.dpi);
-                    bounds = FontRectangle.Union(advance, glyphBounds);
-                    break;
-            }
-
-            this.glyphBounds[this.count] = new GlyphBounds(glyph.Glyph.GlyphMetrics.CodePoint, bounds, glyph.GraphemeIndex, glyph.StringIndex);
             this.count++;
         }
 

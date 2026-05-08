@@ -148,6 +148,17 @@ internal sealed class TextLineBreakEnumerator
                     this.logicalLine.HyphenationMarkers);
             }
 
+            if (breakAt.Required
+                && this.options.TextInteractionMode == TextInteractionMode.Editor
+                && remaining.Count > 0
+                && remaining[0].IsNewLine
+                && this.textLine.TrySplitTerminalHardBreak(out TextLine? blankLine))
+            {
+                // Consecutive hard breaks need an editable blank line for the break that
+                // ended this segment, plus the next break still waiting in the remainder.
+                remaining.InsertAt(0, blankLine);
+            }
+
             // If 'keepAll' is true then the break could be later than expected.
             this.processed = this.keepAll
                 ? this.processed + Math.Max(this.textLine.Count, breakAt.PositionWrap - this.processed)
@@ -256,6 +267,21 @@ internal sealed class TextLineBreakEnumerator
             }
         }
 
+        if (this.options.TextInteractionMode == TextInteractionMode.Editor
+            && this.textLine.TrySplitTerminalHardBreak(out TextLine? hardBreakLine))
+        {
+            // A terminal Enter has no following glyph for the normal required-break split.
+            // Editor interaction still needs the next blank line as a caret target.
+            this.SetCurrent(
+                this.textLine,
+                true,
+                true,
+                scaledWrappingLength);
+
+            this.textLine = hardBreakLine;
+            return true;
+        }
+
         this.SetCurrent(
             this.textLine,
             true,
@@ -294,7 +320,15 @@ internal sealed class TextLineBreakEnumerator
             skipJustification = true;
         }
 
-        this.current = line.Finalize(skipJustification, this.normalizeDecomposedAdvances);
+        bool preserveTrailingBreakingWhitespace = this.options.TextInteractionMode == TextInteractionMode.Editor;
+
+        // Paragraph layout trims trailing breaking whitespace. Editor interaction keeps
+        // ordinary trailing whitespace addressable so typed spaces can advance the caret.
+        this.current = line.Finalize(
+            skipJustification,
+            this.normalizeDecomposedAdvances,
+            preserveTrailingBreakingWhitespace);
+
         if (!this.current.SkipJustification)
         {
             this.current.Justify(this.options);

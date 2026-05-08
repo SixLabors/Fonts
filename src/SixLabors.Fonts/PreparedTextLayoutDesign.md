@@ -80,7 +80,7 @@ not needed:
 ReadOnlyMemory<LineMetrics> lines = block.GetLineMetrics(320);
 ReadOnlyMemory<GraphemeMetrics> graphemes = block.GetGraphemeMetrics(320);
 ReadOnlyMemory<WordMetrics> words = block.GetWordMetrics(320);
-ReadOnlyMemory<GlyphBounds> glyphBounds = block.MeasureGlyphBounds(320);
+ReadOnlyMemory<GlyphMetrics> glyphs = block.GetGlyphMetrics(320);
 ```
 
 Method-returned measurement collections use `ReadOnlyMemory<T>` because they are
@@ -207,14 +207,20 @@ stop
 This keeps the raw API aligned with the Unicode standard. Higher-level editor
 commands can choose whether to stop on separator boundaries or skip over them.
 
-## Glyph Bounds
+## Glyph Metrics
 
 Glyph detail APIs expose laid-out glyph entries.
 
 ```csharp
-ReadOnlyMemory<GlyphBounds> advances = metrics.MeasureGlyphAdvances();
-ReadOnlyMemory<GlyphBounds> bounds = metrics.MeasureGlyphBounds();
-ReadOnlyMemory<GlyphBounds> renderable = metrics.MeasureGlyphRenderableBounds();
+ReadOnlyMemory<GlyphMetrics> glyphs = metrics.GetGlyphMetrics();
+
+foreach (GlyphMetrics glyph in glyphs.Span)
+{
+    FontRectangle advance = glyph.Advance;
+    FontRectangle bounds = glyph.Bounds;
+    FontRectangle renderableBounds = glyph.RenderableBounds;
+    CodePoint codePoint = glyph.CodePoint;
+}
 ```
 
 Use glyph detail for rendering diagnostics, glyph-level visualization, or
@@ -251,7 +257,7 @@ CaretPosition next = line.MoveCaret(caret, CaretMovement.Next);
 WordMetrics word = line.GetWordMetrics(hit);
 ReadOnlyMemory<FontRectangle> selection = line.GetSelectionBounds(caret, next);
 ReadOnlyMemory<FontRectangle> wordSelection = line.GetSelectionBounds(word);
-ReadOnlyMemory<GlyphBounds> glyphs = line.MeasureGlyphRenderableBounds();
+ReadOnlyMemory<GlyphMetrics> glyphs = line.GetGlyphMetrics();
 ```
 
 Use the full `TextMetrics` interaction methods for selections that can cross
@@ -509,7 +515,7 @@ ReadOnlyMemory<LineLayout> lines = block.GetLineLayouts(wrappingLength);
 foreach (LineLayout line in lines.Span)
 {
     ReadOnlySpan<GraphemeMetrics> graphemes = line.GraphemeMetrics;
-    ReadOnlyMemory<GlyphBounds> glyphs = line.MeasureGlyphBounds();
+    ReadOnlyMemory<GlyphMetrics> glyphs = line.GetGlyphMetrics();
 }
 ```
 

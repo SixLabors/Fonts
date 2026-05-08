@@ -45,6 +45,7 @@ public class TextOptions
         this.CustomHyphen = options.CustomHyphen;
         this.TextDirection = options.TextDirection;
         this.TextBidiMode = options.TextBidiMode;
+        this.TextInteractionMode = options.TextInteractionMode;
         this.TextAlignment = options.TextAlignment;
         this.TextJustification = options.TextJustification;
         this.HorizontalAlignment = options.HorizontalAlignment;
@@ -180,6 +181,11 @@ public class TextOptions
     /// Gets or sets how bidirectional text is resolved.
     /// </summary>
     public TextBidiMode TextBidiMode { get; set; }
+
+    /// <summary>
+    /// Gets or sets how caret movement and selection model trailing breaking whitespace.
+    /// </summary>
+    public TextInteractionMode TextInteractionMode { get; set; }
 
     /// <summary>
     /// Gets or sets the text alignment of the text within the box.

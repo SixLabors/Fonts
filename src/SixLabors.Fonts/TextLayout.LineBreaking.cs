@@ -76,7 +76,7 @@ internal static partial class TextLayout
                         continue;
                     }
 
-                    List<GlyphMetrics> metrics = [];
+                    List<FontGlyphMetrics> metrics = [];
                     for (int i = 0; i < glyphData.Count; i++)
                     {
                         GlyphPositioningCollection.GlyphPositioningData data = glyphData[i];
@@ -105,7 +105,7 @@ internal static partial class TextLayout
                         continue;
                     }
 
-                    GlyphMetrics glyph = metrics[0];
+                    FontGlyphMetrics glyph = metrics[0];
 
                     // Retrieve the current codepoint from the enumerator.
                     // If the glyph represents a substituted codepoint and the substitution is a single codepoint substitution,
@@ -178,7 +178,7 @@ internal static partial class TextLayout
                             CodePoint space = new(0x0020);
                             if (glyph.FontMetrics.TryGetGlyphId(space, out ushort spaceGlyphId))
                             {
-                                GlyphMetrics spaceMetrics = glyph.FontMetrics.GetGlyphMetrics(
+                                FontGlyphMetrics spaceMetrics = glyph.FontMetrics.GetGlyphMetrics(
                                       space,
                                       spaceGlyphId,
                                       glyph.TextAttributes,
@@ -277,7 +277,7 @@ internal static partial class TextLayout
                         float decomposedAdvance = decomposedAdvances[i];
 
                         // Work out the scaled metrics for the glyph.
-                        GlyphMetrics metric = metrics[i];
+                        FontGlyphMetrics metric = metrics[i];
 
                         // Adjust the advance for the last decomposed glyph to add tracking if applicable.
                         // Tracking should only be added once per grapheme, so only on the last codepoint of the grapheme.
@@ -362,7 +362,7 @@ internal static partial class TextLayout
 
                         // Add our metrics to the line.
                         textLine.Add(
-                            isDecomposed ? new GlyphMetrics[] { metric } : metrics,
+                            isDecomposed ? new FontGlyphMetrics[] { metric } : metrics,
                             pointSize,
                             decomposedAdvance,
                             lineHeight,
@@ -551,7 +551,7 @@ internal static partial class TextLayout
     /// <param name="options">The text options used for layout.</param>
     /// <returns>The generated marker entry.</returns>
     internal static GlyphLayoutData CreateGeneratedMarker(
-        GlyphMetrics anchorMetric,
+        FontGlyphMetrics anchorMetric,
         float pointSize,
         BidiRun bidiRun,
         int graphemeIndex,
@@ -565,7 +565,7 @@ internal static partial class TextLayout
     {
         anchorMetric.FontMetrics.TryGetGlyphId(markerCodePoint, out ushort markerGlyphId);
 
-        GlyphMetrics markerMetric = anchorMetric.FontMetrics.GetGlyphMetrics(
+        FontGlyphMetrics markerMetric = anchorMetric.FontMetrics.GetGlyphMetrics(
             markerCodePoint,
             markerGlyphId,
             anchorMetric.TextAttributes,
@@ -618,12 +618,12 @@ internal static partial class TextLayout
         markerAscender -= markerDelta;
         markerDescender -= markerDelta;
 
-        FontRectangle markerBox = GlyphMetrics.ShouldSkipGlyphRendering(markerMetric.CodePoint)
+        FontRectangle markerBox = FontGlyphMetrics.ShouldSkipGlyphRendering(markerMetric.CodePoint)
             ? FontRectangle.Empty
             : markerMetric.GetBoundingBox(markerMode, Vector2.Zero, pointSize);
 
         return new GlyphLayoutData(
-            new GlyphMetrics[] { markerMetric },
+            new FontGlyphMetrics[] { markerMetric },
             pointSize,
             markerAdvance,
             markerLineHeight * options.LineSpacing,

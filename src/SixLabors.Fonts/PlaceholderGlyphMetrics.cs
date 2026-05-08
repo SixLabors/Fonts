@@ -10,7 +10,7 @@ namespace SixLabors.Fonts;
 /// <summary>
 /// Represents synthetic glyph metrics for an atomic inline placeholder.
 /// </summary>
-internal sealed class PlaceholderGlyphMetrics : GlyphMetrics
+internal sealed class PlaceholderGlyphMetrics : FontGlyphMetrics
 {
     private readonly TextPlaceholder placeholder;
     private readonly float pointSize;
@@ -51,7 +51,7 @@ internal sealed class PlaceholderGlyphMetrics : GlyphMetrics
     }
 
     /// <inheritdoc/>
-    internal override GlyphMetrics CloneForRendering(TextRun textRun)
+    internal override FontGlyphMetrics CloneForRendering(TextRun textRun)
         => new PlaceholderGlyphMetrics(
             this.FontMetrics,
             this.placeholder,

@@ -67,9 +67,9 @@ public class Issues_47
             WrappingLength = 350
         });
 
-        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances().Span[0].Codepoint));
-        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances().Span[1].Codepoint));
-        Assert.True(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances().Span[2].Codepoint));
+        Assert.True(CodePoint.IsWhiteSpace(metrics.GetGlyphMetrics().Span[0].CodePoint));
+        Assert.True(CodePoint.IsWhiteSpace(metrics.GetGlyphMetrics().Span[1].CodePoint));
+        Assert.True(CodePoint.IsWhiteSpace(metrics.GetGlyphMetrics().Span[2].CodePoint));
     }
 
     [Fact]
@@ -92,8 +92,8 @@ public class Issues_47
 
         // Trailing breaking whitespace is trimmed from the visual glyph stream,
         // so the measured glyphs match the explicitly trimmed input.
-        Assert.Equal(trimmedMetrics.MeasureGlyphAdvances().Length, metrics.MeasureGlyphAdvances().Length);
-        Assert.False(CodePoint.IsWhiteSpace(metrics.MeasureGlyphAdvances().Span[^1].Codepoint));
+        Assert.Equal(trimmedMetrics.GetGlyphMetrics().Length, metrics.GetGlyphMetrics().Length);
+        Assert.False(CodePoint.IsWhiteSpace(metrics.GetGlyphMetrics().Span[^1].CodePoint));
     }
 
     public static Font CreateFont(string text)

@@ -447,7 +447,7 @@ internal sealed class HangulShaper : DefaultShaper
         TextDecorations textDecorations = data.TextRun.TextDecorations;
         LayoutMode layoutMode = collection.TextOptions.LayoutMode;
         ColorFontSupport colorFontSupport = collection.TextOptions.ColorFontSupport;
-        if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, layoutMode, colorFontSupport, out GlyphMetrics? metrics)
+        if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, layoutMode, colorFontSupport, out FontGlyphMetrics? metrics)
             && metrics.AdvanceWidth == 0)
         {
             return;
@@ -477,7 +477,7 @@ internal sealed class HangulShaper : DefaultShaper
             TextDecorations textDecorations = data.TextRun.TextDecorations;
             LayoutMode layoutMode = collection.TextOptions.LayoutMode;
             ColorFontSupport colorFontSupport = collection.TextOptions.ColorFontSupport;
-            if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, layoutMode, colorFontSupport, out GlyphMetrics? metrics)
+            if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, layoutMode, colorFontSupport, out FontGlyphMetrics? metrics)
                 && metrics.AdvanceWidth != 0)
             {
                 after = true;

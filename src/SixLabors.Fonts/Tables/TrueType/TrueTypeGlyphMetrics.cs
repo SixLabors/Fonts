@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tables.TrueType;
 /// <summary>
 /// Represents a glyph metric from a particular TrueType font face.
 /// </summary>
-public partial class TrueTypeGlyphMetrics : GlyphMetrics
+public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
 {
     private static readonly Vector2 YInverter = new(1, -1);
     private readonly GlyphVector vector;
@@ -109,7 +109,7 @@ public partial class TrueTypeGlyphMetrics : GlyphMetrics
         => this.vector = vector;
 
     /// <inheritdoc/>
-    internal override GlyphMetrics CloneForRendering(TextRun textRun)
+    internal override FontGlyphMetrics CloneForRendering(TextRun textRun)
         => new TrueTypeGlyphMetrics(
             this.FontMetrics,
             this.GlyphId,

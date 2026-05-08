@@ -57,14 +57,14 @@ public class Issues_400
             DrawRectangle(x, bounds, Color.Lime, 2);
         });
 
-        ReadOnlySpan<GlyphBounds> measuredGlyphBounds = TextMeasurer.MeasureGlyphBounds(text, options).Span;
-        GlyphBounds[] glyphBounds = measuredGlyphBounds.ToArray();
+        ReadOnlySpan<GlyphMetrics> measuredGlyphs = TextMeasurer.GetGlyphMetrics(text, options).Span;
+        GlyphMetrics[] glyphs = measuredGlyphs.ToArray();
 
         image.Mutate(x =>
         {
-            for (int i = 0; i < glyphBounds.Length; i++)
+            for (int i = 0; i < glyphs.Length; i++)
             {
-                DrawRectangle(x, glyphBounds[i].Bounds, Color.Orange, 1);
+                DrawRectangle(x, glyphs[i].Bounds, Color.Orange, 1);
             }
         });
     }

@@ -13,7 +13,7 @@ public readonly struct Glyph
 {
     private readonly float pointSize;
 
-    internal Glyph(GlyphMetrics glyphMetrics, float pointSize)
+    internal Glyph(FontGlyphMetrics glyphMetrics, float pointSize)
     {
         this.GlyphMetrics = glyphMetrics;
         this.pointSize = pointSize;
@@ -22,7 +22,7 @@ public readonly struct Glyph
     /// <summary>
     /// Gets the font metrics for this glyph.
     /// </summary>
-    public GlyphMetrics GlyphMetrics { get; }
+    public FontGlyphMetrics GlyphMetrics { get; }
 
     /// <summary>
     /// Calculates the rendered glyph bounds for the specified layout mode and origin.

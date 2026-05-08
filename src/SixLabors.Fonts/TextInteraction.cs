@@ -638,6 +638,42 @@ internal static class TextInteraction
         }
 
         GraphemeMetrics previousOnly = graphemes[previousIndex];
+
+        // Editor-mode hard breaks can create a blank visual line whose only source
+        // ownership is the preceding newline grapheme. A caret requested immediately
+        // after that grapheme should sit at the start of the blank line, not after
+        // the newline marker's trimmed layout box.
+        if (previousOnly.IsLineBreak && graphemeIndex == previousOnly.GraphemeIndex + 1)
+        {
+            Vector2 start;
+            Vector2 end;
+            if (isHorizontal)
+            {
+                float x = IsRightToLeft(previousOnly) ? line.Start.X + line.Extent.X : line.Start.X;
+                start = new Vector2(x, line.Start.Y);
+                end = new Vector2(x, line.Start.Y + line.Extent.Y);
+            }
+            else
+            {
+                float y = IsRightToLeft(previousOnly) ? line.Start.Y + line.Extent.Y : line.Start.Y;
+                start = new Vector2(line.Start.X, y);
+                end = new Vector2(line.Start.X + line.Extent.X, y);
+            }
+
+            // The newline grapheme gives the blank line source ownership, but the
+            // editable insertion point after Enter belongs at the new line start.
+            return new(
+                lineIndex,
+                graphemeIndex,
+                previousOnly.StringIndex,
+                start,
+                end,
+                false,
+                default,
+                default,
+                GetLineNavigationPosition(start, isHorizontal));
+        }
+
         CreateCaretEdge(line, previousOnly, trailing: true, isHorizontal, out Vector2 primaryStart, out Vector2 primaryEnd);
 
         return new(

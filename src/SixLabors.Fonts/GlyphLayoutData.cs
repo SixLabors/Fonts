@@ -38,7 +38,7 @@ internal struct GlyphLayoutData
     /// <param name="stringIndex">The UTF-16 character index in the source string.</param>
     /// <param name="hyphenationMarkerIndex">The marker index to use if this entry becomes a selected soft-hyphen break.</param>
     public GlyphLayoutData(
-        IReadOnlyList<GlyphMetrics> metrics,
+        IReadOnlyList<FontGlyphMetrics> metrics,
         float pointSize,
         float scaledAdvance,
         float scaledLineHeight,
@@ -79,7 +79,7 @@ internal struct GlyphLayoutData
     public readonly CodePoint CodePoint => this.Metrics[0].CodePoint;
 
     /// <summary>Gets the shaped glyph metrics produced for this codepoint (one codepoint may map to several glyphs).</summary>
-    public IReadOnlyList<GlyphMetrics> Metrics { get; }
+    public IReadOnlyList<FontGlyphMetrics> Metrics { get; }
 
     /// <summary>Gets the point size at which this entry is rendered.</summary>
     public float PointSize { get; }

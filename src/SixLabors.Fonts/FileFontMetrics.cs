@@ -140,11 +140,11 @@ internal sealed class FileFontMetrics : FontMetrics
         TextDecorations textDecorations,
         LayoutMode layoutMode,
         ColorFontSupport support,
-        [NotNullWhen(true)] out GlyphMetrics? metrics)
+        [NotNullWhen(true)] out FontGlyphMetrics? metrics)
           => this.fontMetrics.Value.TryGetGlyphMetrics(codePoint, textAttributes, textDecorations, layoutMode, support, out metrics);
 
     /// <inheritdoc />
-    internal override GlyphMetrics GetGlyphMetrics(
+    internal override FontGlyphMetrics GetGlyphMetrics(
         CodePoint codePoint,
         ushort glyphId,
         TextAttributes textAttributes,

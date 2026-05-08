@@ -138,28 +138,12 @@ public sealed partial class TextBlock
     }
 
     /// <summary>
-    /// Measures the positioned logical advance bounds of each laid-out glyph entry.
+    /// Gets the positioned metrics of each laid-out glyph entry.
     /// </summary>
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
-    /// <returns>A read-only memory region containing per-entry positioned logical advance bounds.</returns>
-    public ReadOnlyMemory<GlyphBounds> MeasureGlyphAdvances(float wrappingLength)
-        => this.MeasureGlyphBoundsArray(wrappingLength, GlyphBoundsMeasurement.Advance);
-
-    /// <summary>
-    /// Measures the rendered glyph bounds of each laid-out glyph entry.
-    /// </summary>
-    /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
-    /// <returns>A read-only memory region containing per-entry rendered glyph bounds.</returns>
-    public ReadOnlyMemory<GlyphBounds> MeasureGlyphBounds(float wrappingLength)
-        => this.MeasureGlyphBoundsArray(wrappingLength, GlyphBoundsMeasurement.Bounds);
-
-    /// <summary>
-    /// Measures the full renderable bounds of each laid-out glyph entry.
-    /// </summary>
-    /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
-    /// <returns>A read-only memory region containing per-entry renderable bounds.</returns>
-    public ReadOnlyMemory<GlyphBounds> MeasureGlyphRenderableBounds(float wrappingLength)
-        => this.MeasureGlyphBoundsArray(wrappingLength, GlyphBoundsMeasurement.RenderableBounds);
+    /// <returns>A read-only memory region containing per-glyph metrics entries.</returns>
+    public ReadOnlyMemory<GlyphMetrics> GetGlyphMetrics(float wrappingLength)
+        => this.GetGlyphMetricsArray(wrappingLength);
 
     /// <summary>
     /// Gets the positioned metrics of each laid-out grapheme.
@@ -316,7 +300,7 @@ public sealed partial class TextBlock
             return FontRectangle.Empty;
         }
 
-        GlyphBoundsAccumulator visitor = new(options.Dpi);
+        RenderedRectangleAccumulator visitor = new(options.Dpi);
         TextLayout.LayoutText(textBox, options, wrappingLength, ref visitor);
         return visitor.Result();
     }
@@ -521,33 +505,28 @@ public sealed partial class TextBlock
     }
 
     /// <summary>
-    /// Measures one per-glyph bounds collection by streaming laid-out glyphs.
+    /// Gets one per-glyph metrics collection by streaming laid-out glyphs.
     /// </summary>
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
-    /// <param name="measurement">The bounds measurement to collect.</param>
-    /// <returns>The measured glyph bounds.</returns>
-    internal GlyphBounds[] MeasureGlyphBoundsArray(
-        float wrappingLength,
-        GlyphBoundsMeasurement measurement)
+    /// <returns>The positioned glyph metrics.</returns>
+    internal GlyphMetrics[] GetGlyphMetricsArray(float wrappingLength)
     {
         TextBox textBox = this.BreakLines(wrappingLength);
-        return MeasureGlyphBoundsArray(textBox, this.Options, wrappingLength, measurement);
+        return GetGlyphMetricsArray(textBox, this.Options, wrappingLength);
     }
 
     /// <summary>
-    /// Measures one per-glyph bounds collection by streaming laid-out glyphs.
+    /// Gets one per-glyph metrics collection by streaming laid-out glyphs.
     /// </summary>
     /// <param name="textBox">The shaped and line-broken text box.</param>
     /// <param name="options">The text options used for layout.</param>
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
-    /// <param name="measurement">The bounds measurement to collect.</param>
     /// <param name="lineIndex">The line index to collect, or <c>-1</c> to collect every line.</param>
-    /// <returns>The measured glyph bounds.</returns>
-    internal static GlyphBounds[] MeasureGlyphBoundsArray(
+    /// <returns>The positioned glyph metrics.</returns>
+    internal static GlyphMetrics[] GetGlyphMetricsArray(
         TextBox textBox,
         TextOptions options,
         float wrappingLength,
-        GlyphBoundsMeasurement measurement,
         int lineIndex = -1)
     {
         int count = lineIndex < 0 ? textBox.CountGlyphLayouts() : textBox.TextLines[lineIndex].CountGlyphLayouts();
@@ -556,8 +535,8 @@ public sealed partial class TextBlock
             return [];
         }
 
-        GlyphBounds[] result = new GlyphBounds[count];
-        GlyphBoundsVisitor visitor = new(result, options.Dpi, measurement, lineIndex);
+        GlyphMetrics[] result = new GlyphMetrics[count];
+        GlyphMetricsVisitor visitor = new(result, options.Dpi, lineIndex);
         TextLayout.LayoutText(textBox, options, wrappingLength, ref visitor);
         return result;
     }

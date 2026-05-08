@@ -18,9 +18,7 @@ public sealed class LineLayout
     private readonly LayoutMode layoutMode;
     private readonly ReadOnlyMemory<GraphemeMetrics> graphemeMetrics;
     private readonly ReadOnlyMemory<WordMetrics> wordMetrics;
-    private GlyphBounds[]? glyphAdvances;
-    private GlyphBounds[]? glyphBounds;
-    private GlyphBounds[]? glyphRenderableBounds;
+    private GlyphMetrics[]? glyphMetrics;
 
     internal LineLayout(
         TextBox textBox,
@@ -171,31 +169,12 @@ public sealed class LineLayout
             metrics.GraphemeEnd,
             this.layoutMode);
 
-    /// <inheritdoc cref="TextBlock.MeasureGlyphAdvances(float)"/>
-    public ReadOnlyMemory<GlyphBounds> MeasureGlyphAdvances()
-        => this.glyphAdvances ??= TextBlock.MeasureGlyphBoundsArray(
+    /// <inheritdoc cref="TextBlock.GetGlyphMetrics(float)"/>
+    public ReadOnlyMemory<GlyphMetrics> GetGlyphMetrics()
+        => this.glyphMetrics ??= TextBlock.GetGlyphMetricsArray(
             this.textBox,
             this.options,
             this.wrappingLength,
-            TextBlock.GlyphBoundsMeasurement.Advance,
-            this.lineIndex);
-
-    /// <inheritdoc cref="TextBlock.MeasureGlyphBounds(float)"/>
-    public ReadOnlyMemory<GlyphBounds> MeasureGlyphBounds()
-        => this.glyphBounds ??= TextBlock.MeasureGlyphBoundsArray(
-            this.textBox,
-            this.options,
-            this.wrappingLength,
-            TextBlock.GlyphBoundsMeasurement.Bounds,
-            this.lineIndex);
-
-    /// <inheritdoc cref="TextBlock.MeasureGlyphRenderableBounds(float)"/>
-    public ReadOnlyMemory<GlyphBounds> MeasureGlyphRenderableBounds()
-        => this.glyphRenderableBounds ??= TextBlock.MeasureGlyphBoundsArray(
-            this.textBox,
-            this.options,
-            this.wrappingLength,
-            TextBlock.GlyphBoundsMeasurement.RenderableBounds,
             this.lineIndex);
 
     /// <summary>
@@ -205,13 +184,13 @@ public sealed class LineLayout
     public void RenderTo(IGlyphRenderer renderer)
     {
         FontRectangle bounds = FontRectangle.Empty;
-        ReadOnlySpan<GlyphBounds> glyphBounds = this.MeasureGlyphBounds().Span;
+        ReadOnlySpan<GlyphMetrics> glyphMetrics = this.GetGlyphMetrics().Span;
 
-        for (int i = 0; i < glyphBounds.Length; i++)
+        for (int i = 0; i < glyphMetrics.Length; i++)
         {
             bounds = i == 0
-                ? glyphBounds[i].Bounds
-                : FontRectangle.Union(bounds, glyphBounds[i].Bounds);
+                ? glyphMetrics[i].Bounds
+                : FontRectangle.Union(bounds, glyphMetrics[i].Bounds);
         }
 
         TextBlock.RenderTo(

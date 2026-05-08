@@ -30,7 +30,7 @@ public class Issues_431
 
             // Hard breaks that terminate non-empty lines are trimmed from the visual
             // glyph stream, so the glyph count returns to the visible source glyphs.
-            Assert.Equal(46, metrics.MeasureGlyphAdvances().Length);
+            Assert.Equal(46, metrics.GetGlyphMetrics().Length);
         }
     }
 
@@ -57,7 +57,7 @@ public class Issues_431
 
             // Hard breaks that terminate non-empty lines are trimmed from the visual
             // glyph stream, so the glyph count returns to the visible source glyphs.
-            Assert.Equal(46, metrics.MeasureGlyphAdvances().Length);
+            Assert.Equal(46, metrics.GetGlyphMetrics().Length);
         }
     }
 }

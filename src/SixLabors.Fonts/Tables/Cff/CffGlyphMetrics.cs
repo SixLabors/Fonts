@@ -10,7 +10,7 @@ namespace SixLabors.Fonts.Tables.Cff;
 /// <summary>
 /// Represents a glyph metric from a particular Compact Font Face.
 /// </summary>
-internal class CffGlyphMetrics : GlyphMetrics
+internal class CffGlyphMetrics : FontGlyphMetrics
 {
     private CffGlyphData glyphData;
 
@@ -108,7 +108,7 @@ internal class CffGlyphMetrics : GlyphMetrics
         => this.glyphData = glyphData;
 
     /// <inheritdoc/>
-    internal override GlyphMetrics CloneForRendering(TextRun textRun)
+    internal override FontGlyphMetrics CloneForRendering(TextRun textRun)
         => new CffGlyphMetrics(
             this.FontMetrics,
             this.GlyphId,

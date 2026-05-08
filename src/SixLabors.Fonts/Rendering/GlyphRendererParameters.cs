@@ -15,7 +15,7 @@ namespace SixLabors.Fonts.Rendering;
 public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParameters>
 {
     internal GlyphRendererParameters(
-        GlyphMetrics metrics,
+        FontGlyphMetrics metrics,
         TextRun textRun,
         float pointSize,
         float dpi,

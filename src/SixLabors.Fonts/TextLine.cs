@@ -160,7 +160,7 @@ internal sealed class TextLine
     /// <param name="lineSpacing">The line-spacing factor to apply to <paramref name="scaledLineHeight"/>.</param>
     /// <param name="hyphenationMarkerIndex">The marker index to use if this entry becomes a selected soft-hyphen break.</param>
     public void Add(
-        IReadOnlyList<GlyphMetrics> metrics,
+        IReadOnlyList<FontGlyphMetrics> metrics,
         float pointSize,
         float scaledAdvance,
         float scaledLineHeight,
@@ -201,8 +201,8 @@ internal sealed class TextLine
         float scaledMinY = 0;
         for (int i = 0; i < metrics.Count; i++)
         {
-            GlyphMetrics metric = metrics[i];
-            if (GlyphMetrics.ShouldSkipGlyphRendering(metric.CodePoint))
+            FontGlyphMetrics metric = metrics[i];
+            if (FontGlyphMetrics.ShouldSkipGlyphRendering(metric.CodePoint))
             {
                 continue;
             }
@@ -259,7 +259,7 @@ internal sealed class TextLine
         bool isVerticalMixedLayout,
         float lineSpacing)
     {
-        GlyphMetrics placeholderGlyph = placeholder.Metrics;
+        FontGlyphMetrics placeholderGlyph = placeholder.Metrics;
         bool isPlaceholderHorizontal = isHorizontalLayout || isVerticalMixedLayout;
         float placeholderAdvance = isPlaceholderHorizontal
             ? placeholderGlyph.AdvanceWidth
@@ -299,7 +299,7 @@ internal sealed class TextLine
         // Placeholders share the source codepoint offset at their insertion point,
         // but they do not consume source grapheme, codepoint, or UTF-16 indexes.
         this.Add(
-            new GlyphMetrics[] { placeholderGlyph },
+            new FontGlyphMetrics[] { placeholderGlyph },
             placeholder.PointSize,
             placeholderAdvance,
             placeholderLineHeight,
@@ -440,13 +440,21 @@ internal sealed class TextLine
     /// <summary>
     /// Removes trailing breakable whitespace from the line.
     /// </summary>
-    private void RemoveTrailingBreakingWhitespace()
+    /// <param name="preserveTrailingBreakingWhitespace">
+    /// When <see langword="true"/>, keeps ordinary trailing breaking whitespace for editor interaction.
+    /// </param>
+    private void RemoveTrailingBreakingWhitespace(bool preserveTrailingBreakingWhitespace = false)
     {
         int index = this.data.Count;
         while (index > 1)
         {
             CodePoint point = this.data[index - 1].CodePoint;
             if (!CodePoint.IsWhiteSpace(point) || CodePoint.IsNonBreakingSpace(point))
+            {
+                break;
+            }
+
+            if (preserveTrailingBreakingWhitespace && !CodePoint.IsNewLine(point))
             {
                 break;
             }
@@ -571,6 +579,37 @@ internal sealed class TextLine
     }
 
     /// <summary>
+    /// Splits a terminal hard-break grapheme into its own line.
+    /// </summary>
+    /// <param name="result">The terminal hard-break line, or <see langword="null"/> if no split was performed.</param>
+    /// <returns><see langword="true"/> if a terminal hard break was split; otherwise <see langword="false"/>.</returns>
+    public bool TrySplitTerminalHardBreak([NotNullWhen(true)] out TextLine? result)
+    {
+        int end = this.data.Count - 1;
+        if (end <= 0 || !this.data[end].IsNewLine)
+        {
+            result = null;
+            return false;
+        }
+
+        int graphemeIndex = this.data[end].GraphemeIndex;
+        int start = end;
+        while (start > 0 && this.data[start - 1].GraphemeIndex == graphemeIndex)
+        {
+            start--;
+        }
+
+        int count = this.data.Count - start;
+        result = new(count);
+        result.data.AddRange(this.data.GetRange(start, count));
+        RecalculateLineMetrics(result);
+
+        this.data.RemoveRange(start, count);
+        RecalculateLineMetrics(this);
+        return true;
+    }
+
+    /// <summary>
     /// Returns whether CSS <c>word-break: keep-all</c> suppresses the candidate break before
     /// the entry at <paramref name="index"/>.
     /// </summary>
@@ -611,8 +650,8 @@ internal sealed class TextLine
             or LineBreakClass.Ideographic;
 
     /// <summary>
-    /// Finalizes this line after line-breaking: trims trailing breaking whitespace, applies
-    /// bidi reordering so entries are in visual order, and recomputes aggregated metrics.
+    /// Finalizes this line after line-breaking: trims trailing breaking whitespace when requested,
+    /// applies bidi reordering so entries are in visual order, and recomputes aggregated metrics.
     /// </summary>
     /// <param name="skipJustification">
     /// When <see langword="true"/>, marks the line so <see cref="Justify"/> becomes a no-op
@@ -621,11 +660,17 @@ internal sealed class TextLine
     /// <param name="normalizeDecomposedAdvances">
     /// When <see langword="true"/>, moves decomposed grapheme advances to the final visual entry.
     /// </param>
+    /// <param name="preserveTrailingBreakingWhitespace">
+    /// When <see langword="true"/>, keeps ordinary trailing breaking whitespace in the finalized line.
+    /// </param>
     /// <returns>This line, for fluent chaining.</returns>
-    public TextLine Finalize(bool skipJustification = false, bool normalizeDecomposedAdvances = false)
+    public TextLine Finalize(
+        bool skipJustification = false,
+        bool normalizeDecomposedAdvances = false,
+        bool preserveTrailingBreakingWhitespace = false)
     {
         this.SkipJustification = skipJustification;
-        this.RemoveTrailingBreakingWhitespace();
+        this.RemoveTrailingBreakingWhitespace(preserveTrailingBreakingWhitespace);
         this.BidiReOrder();
 
         if (normalizeDecomposedAdvances)

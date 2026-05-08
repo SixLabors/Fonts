@@ -141,6 +141,7 @@ internal static class TextLayoutTestUtilities
             CustomEllipsis = options.CustomEllipsis,
             TextDirection = options.TextDirection,
             TextBidiMode = options.TextBidiMode,
+            TextInteractionMode = options.TextInteractionMode,
             TextAlignment = options.TextAlignment,
             TextJustification = options.TextJustification,
             HorizontalAlignment = options.HorizontalAlignment,

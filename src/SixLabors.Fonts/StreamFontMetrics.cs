@@ -32,7 +32,7 @@ internal partial class StreamFontMetrics : FontMetrics
     private readonly OutlineType outlineType;
 
     // https://docs.microsoft.com/en-us/typography/opentype/spec/otff#font-tables
-    private readonly ConcurrentDictionary<(int CodePoint, ushort Id, TextAttributes Attributes, ColorFontSupport ColorSupport, bool IsVerticalLayout), GlyphMetrics> glyphCache;
+    private readonly ConcurrentDictionary<(int CodePoint, ushort Id, TextAttributes Attributes, ColorFontSupport ColorSupport, bool IsVerticalLayout), FontGlyphMetrics> glyphCache;
     private readonly ConcurrentDictionary<(int CodePoint, int NextCodePoint), (bool Success, ushort GlyphId, bool SkipNextCodePoint)> glyphIdCache;
     private readonly ConcurrentDictionary<ushort, (bool Success, CodePoint CodePoint)> codePointCache;
     private SvgGlyphSource? svgGlyphSource;
@@ -324,7 +324,7 @@ internal partial class StreamFontMetrics : FontMetrics
         TextDecorations textDecorations,
         LayoutMode layoutMode,
         ColorFontSupport support,
-        [NotNullWhen(true)] out GlyphMetrics? metrics)
+        [NotNullWhen(true)] out FontGlyphMetrics? metrics)
     {
         // We return metrics for the special glyph representing a missing character, commonly known as .notdef.
         this.TryGetGlyphId(codePoint, out ushort glyphId);
@@ -333,7 +333,7 @@ internal partial class StreamFontMetrics : FontMetrics
     }
 
     /// <inheritdoc/>
-    internal override GlyphMetrics GetGlyphMetrics(
+    internal override FontGlyphMetrics GetGlyphMetrics(
         CodePoint codePoint,
         ushort glyphId,
         TextAttributes textAttributes,
@@ -817,7 +817,7 @@ internal partial class StreamFontMetrics : FontMetrics
         LayoutMode layoutMode)
         => (codePoint.Value, glyphId, textAttributes, colorSupport, AdvancedTypographicUtils.IsVerticalGlyph(codePoint, layoutMode));
 
-    private GlyphMetrics CreateGlyphMetrics(
+    private FontGlyphMetrics CreateGlyphMetrics(
         in CodePoint codePoint,
         ushort glyphId,
         GlyphType glyphType,

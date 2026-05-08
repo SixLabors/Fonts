@@ -121,6 +121,122 @@ public class TextBlockTests
     }
 
     [Fact]
+    public void TextInteractionMode_Paragraph_TrimsTrailingSpacesAtLineEnd()
+    {
+        const string text = "Alpha   Beta";
+        float wrappingLength = GetWrappingLengthAfterTrailingSpaces(text);
+        TextOptions options = Options(wrappingLength);
+        TextBlock block = new(text, options);
+
+        ReadOnlySpan<LineLayout> lines = block.GetLineLayouts(wrappingLength).Span;
+
+        // Paragraph interaction follows normal paragraph layout: the line breaks
+        // after the spaces, then those spaces stop contributing interaction stops.
+        Assert.Equal("Alpha".Length, lines[0].GraphemeMetrics.Length);
+        Assert.Equal("Alpha".Length - 1, lines[0].GraphemeMetrics[^1].StringIndex);
+    }
+
+    [Fact]
+    public void TextInteractionMode_Editor_PreservesTrailingSpacesAtLineEnd()
+    {
+        const string text = "Alpha   Beta";
+        float wrappingLength = GetWrappingLengthAfterTrailingSpaces(text);
+        TextOptions options = Options(wrappingLength);
+        options.TextInteractionMode = TextInteractionMode.Editor;
+        TextBlock block = new(text, options);
+
+        ReadOnlySpan<LineLayout> lines = block.GetLineLayouts(wrappingLength).Span;
+
+        // Editor interaction keeps typed trailing spaces in the line so caret
+        // movement can step through them before wrapping to the next visual line.
+        Assert.Equal("Alpha   ".Length, lines[0].GraphemeMetrics.Length);
+        Assert.Equal("Alpha   ".Length - 1, lines[0].GraphemeMetrics[^1].StringIndex);
+    }
+
+    [Fact]
+    public void TextInteractionMode_Editor_TrimsHardBreakMarker()
+    {
+        const string text = "Alpha   \nBeta";
+        TextOptions options = Options(-1);
+        options.TextInteractionMode = TextInteractionMode.Editor;
+        TextBlock block = new(text, options);
+
+        ReadOnlySpan<LineLayout> lines = block.GetLineLayouts(-1).Span;
+
+        // Editor interaction preserves the spaces before the forced break, but
+        // the hard-break marker itself is still a separator rather than line content.
+        Assert.Equal("Alpha   ".Length, lines[0].GraphemeMetrics.Length);
+        Assert.Equal("Alpha   ".Length - 1, lines[0].GraphemeMetrics[^1].StringIndex);
+        Assert.Equal(text.IndexOf('B'), lines[1].GraphemeMetrics[0].StringIndex);
+    }
+
+    [Fact]
+    public void TextInteractionMode_Editor_TerminalHardBreakCreatesBlankLine()
+    {
+        const string text = "Alpha\n";
+        TextOptions options = Options(-1);
+        options.TextInteractionMode = TextInteractionMode.Editor;
+        TextBlock block = new(text, options);
+
+        ReadOnlySpan<LineLayout> lines = block.GetLineLayouts(-1).Span;
+
+        // Editor interaction needs a terminal Enter to create the next editable
+        // visual line. The hard break is therefore moved to its own blank line.
+        Assert.Equal(2, lines.Length);
+        Assert.Equal("Alpha".Length, lines[0].GraphemeMetrics.Length);
+        Assert.Single(lines[1].GraphemeMetrics.ToArray());
+        Assert.True(lines[1].GraphemeMetrics[0].IsLineBreak);
+    }
+
+    [Fact]
+    public void TextInteractionMode_Editor_CaretAfterTerminalHardBreakUsesBlankLineStart()
+    {
+        const string text = "Alpha\n";
+        TextOptions options = Options(-1);
+        options.TextInteractionMode = TextInteractionMode.Editor;
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        CaretPosition caret = metrics.GetCaret(CaretPlacement.Start);
+        for (int i = 0; i < text.Length; i++)
+        {
+            caret = metrics.MoveCaret(caret, CaretMovement.Next);
+        }
+
+        LineMetrics blankLine = metrics.LineMetrics[1];
+
+        // The terminal newline owns the blank line in editor mode, but the caret
+        // after Enter should appear where typed text will begin on that new line.
+        Assert.Equal(text.Length, caret.GraphemeIndex);
+        Assert.Equal(new Vector2(blankLine.Start.X, blankLine.Start.Y), caret.Start, Comparer);
+        Assert.Equal(new Vector2(blankLine.Start.X, blankLine.Start.Y + blankLine.Extent.Y), caret.End, Comparer);
+    }
+
+    [Fact]
+    public void TextInteractionMode_Editor_ConsecutiveTerminalHardBreaksCreateBlankLines()
+    {
+        const string text = "Alpha\n\n";
+        TextOptions options = Options(-1);
+        options.TextInteractionMode = TextInteractionMode.Editor;
+        TextMetrics metrics = TextMeasurer.Measure(text, options);
+
+        CaretPosition caret = metrics.GetCaret(CaretPlacement.Start);
+        for (int i = 0; i < text.Length; i++)
+        {
+            caret = metrics.MoveCaret(caret, CaretMovement.Next);
+        }
+
+        // Each terminal Enter creates its own editable blank line. The caret after
+        // two hard breaks should therefore land on the third visual line immediately.
+        Assert.Equal(3, metrics.LineMetrics.Length);
+
+        LineMetrics finalBlankLine = metrics.LineMetrics[2];
+
+        Assert.Equal(text.Length, caret.GraphemeIndex);
+        Assert.Equal(new Vector2(finalBlankLine.Start.X, finalBlankLine.Start.Y), caret.Start, Comparer);
+        Assert.Equal(new Vector2(finalBlankLine.Start.X, finalBlankLine.Start.Y + finalBlankLine.Extent.Y), caret.End, Comparer);
+    }
+
+    [Fact]
     public void EnumerateLineLayouts_EmptyText_ReturnsNoLines()
     {
         TextBlock block = new(string.Empty, Options(-1));
@@ -212,7 +328,7 @@ public class TextBlockTests
 
         // LineLayout rendering must be usable for manual-flow consumers that
         // render only the current enumerated line rather than the whole block.
-        Assert.Equal(line.MeasureGlyphBounds().Length, lineRenderer.GlyphRects.Count);
+        Assert.Equal(line.GetGlyphMetrics().Length, lineRenderer.GlyphRects.Count);
         Assert.True(blockRenderer.GlyphRects.Count > lineRenderer.GlyphRects.Count);
     }
 
@@ -223,20 +339,10 @@ public class TextBlockTests
         const float wrappingLength = 70;
         TextBlock block = new(text, Options(-1));
 
-        ReadOnlySpan<GlyphBounds> expectedAdvances = TextMeasurer.MeasureGlyphAdvances(text, Options(wrappingLength)).Span;
-        ReadOnlySpan<GlyphBounds> actualAdvances = block.MeasureGlyphAdvances(wrappingLength).Span;
+        ReadOnlySpan<GlyphMetrics> expectedGlyphMetrics = TextMeasurer.GetGlyphMetrics(text, Options(wrappingLength)).Span;
+        ReadOnlySpan<GlyphMetrics> actualGlyphMetrics = block.GetGlyphMetrics(wrappingLength).Span;
 
-        AssertGlyphBoundsEqual(expectedAdvances, actualAdvances);
-
-        ReadOnlySpan<GlyphBounds> expectedBounds = TextMeasurer.MeasureGlyphBounds(text, Options(wrappingLength)).Span;
-        ReadOnlySpan<GlyphBounds> actualBounds = block.MeasureGlyphBounds(wrappingLength).Span;
-
-        AssertGlyphBoundsEqual(expectedBounds, actualBounds);
-
-        ReadOnlySpan<GlyphBounds> expectedRenderableBounds = TextMeasurer.MeasureGlyphRenderableBounds(text, Options(wrappingLength)).Span;
-        ReadOnlySpan<GlyphBounds> actualRenderableBounds = block.MeasureGlyphRenderableBounds(wrappingLength).Span;
-
-        AssertGlyphBoundsEqual(expectedRenderableBounds, actualRenderableBounds);
+        AssertGlyphMetricsEqual(expectedGlyphMetrics, actualGlyphMetrics);
 
         ReadOnlySpan<GraphemeMetrics> expectedGraphemeMetrics = TextMeasurer.GetGraphemeMetrics(text, Options(wrappingLength)).Span;
         ReadOnlySpan<GraphemeMetrics> actualGraphemeMetrics = block.GetGraphemeMetrics(wrappingLength).Span;
@@ -261,7 +367,7 @@ public class TextBlockTests
         // full word would not. With hyphenation disabled, U+00AD remains source-mapping data
         // only and must not become a line break or a visible marker.
         Assert.Equal(1, metrics.LineCount);
-        Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('-')));
+        Assert.Equal(0, CountGlyphs(metrics.GetGlyphMetrics().Span, new CodePoint('-')));
     }
 
     [Fact]
@@ -284,8 +390,8 @@ public class TextBlockTests
         // custom codepoint while keeping that same source mapping, so selection and caret
         // APIs still see one grapheme.
         Assert.Equal(2, metrics.LineCount);
-        Assert.Equal(1, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('*')));
-        Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('-')));
+        Assert.Equal(1, CountGlyphs(metrics.GetGlyphMetrics().Span, new CodePoint('*')));
+        Assert.Equal(0, CountGlyphs(metrics.GetGlyphMetrics().Span, new CodePoint('-')));
         Assert.Equal(5, softHyphen.StringIndex);
     }
 
@@ -303,7 +409,7 @@ public class TextBlockTests
         // selected must stay invisible; otherwise hard-break layout would grow a marker
         // that the source text did not ask to display at that point.
         Assert.Equal(2, metrics.LineCount);
-        Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('*')));
+        Assert.Equal(0, CountGlyphs(metrics.GetGlyphMetrics().Span, new CodePoint('*')));
     }
 
     [Fact]
@@ -343,7 +449,7 @@ public class TextBlockTests
         // first visual line. Standard ellipsis should replace the tail of that
         // final visible line with one U+2026 marker.
         Assert.Equal(1, metrics.LineCount);
-        Assert.Equal(1, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint(0x2026)));
+        Assert.Equal(1, CountGlyphs(metrics.GetGlyphMetrics().Span, new CodePoint(0x2026)));
     }
 
     [Fact]
@@ -360,8 +466,8 @@ public class TextBlockTests
         // Custom ellipsis uses the supplied codepoint instead of the standard
         // marker while preserving the same max-lines truncation behavior.
         Assert.Equal(1, metrics.LineCount);
-        Assert.Equal(1, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint('*')));
-        Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint(0x2026)));
+        Assert.Equal(1, CountGlyphs(metrics.GetGlyphMetrics().Span, new CodePoint('*')));
+        Assert.Equal(0, CountGlyphs(metrics.GetGlyphMetrics().Span, new CodePoint(0x2026)));
     }
 
     [Fact]
@@ -378,7 +484,7 @@ public class TextBlockTests
         // visible line is simply clipped at the selected line boundary with no
         // generated marker.
         Assert.Equal(1, metrics.LineCount);
-        Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint(0x2026)));
+        Assert.Equal(0, CountGlyphs(metrics.GetGlyphMetrics().Span, new CodePoint(0x2026)));
     }
 
     [Fact]
@@ -394,7 +500,7 @@ public class TextBlockTests
         // The marker is only generated when MaxLines actually hides source text.
         // A fitting paragraph keeps its original glyph stream unchanged.
         Assert.Equal(1, metrics.LineCount);
-        Assert.Equal(0, CountGlyphs(metrics.MeasureGlyphAdvances().Span, new CodePoint(0x2026)));
+        Assert.Equal(0, CountGlyphs(metrics.GetGlyphMetrics().Span, new CodePoint(0x2026)));
     }
 
     [Fact]
@@ -406,14 +512,14 @@ public class TextBlockTests
         options.TextBidiMode = TextBidiMode.Normal;
 
         TextMetrics metrics = TextMeasurer.Measure(text, options);
-        ReadOnlySpan<GlyphBounds> glyphs = metrics.MeasureGlyphAdvances().Span;
+        ReadOnlySpan<GlyphMetrics> glyphs = metrics.GetGlyphMetrics().Span;
 
         // Normal bidi uses RTL as the paragraph direction, but Latin remains a
         // strong LTR run. The run may be right-aligned by layout, but its glyph
         // order is still the readable source order.
-        Assert.Equal(new CodePoint('a'), glyphs[0].Codepoint);
-        Assert.Equal(new CodePoint('b'), glyphs[1].Codepoint);
-        Assert.Equal(new CodePoint('c'), glyphs[2].Codepoint);
+        Assert.Equal(new CodePoint('a'), glyphs[0].CodePoint);
+        Assert.Equal(new CodePoint('b'), glyphs[1].CodePoint);
+        Assert.Equal(new CodePoint('c'), glyphs[2].CodePoint);
     }
 
     [Fact]
@@ -425,14 +531,14 @@ public class TextBlockTests
         options.TextBidiMode = TextBidiMode.Override;
 
         TextMetrics metrics = TextMeasurer.Measure(text, options);
-        ReadOnlySpan<GlyphBounds> glyphs = metrics.MeasureGlyphAdvances().Span;
+        ReadOnlySpan<GlyphMetrics> glyphs = metrics.GetGlyphMetrics().Span;
 
         // Override feeds the bidi algorithm with the requested strong direction
         // for real text. Under RTL override, Latin no longer forms an LTR run,
         // so the final visual glyph order is reversed.
-        Assert.Equal(new CodePoint('f'), glyphs[0].Codepoint);
-        Assert.Equal(new CodePoint('e'), glyphs[1].Codepoint);
-        Assert.Equal(new CodePoint('d'), glyphs[2].Codepoint);
+        Assert.Equal(new CodePoint('f'), glyphs[0].CodePoint);
+        Assert.Equal(new CodePoint('e'), glyphs[1].CodePoint);
+        Assert.Equal(new CodePoint('d'), glyphs[2].CodePoint);
     }
 
     [Fact]
@@ -446,14 +552,14 @@ public class TextBlockTests
         };
 
         TextMetrics metrics = TextMeasurer.Measure(text, options);
-        ReadOnlySpan<GlyphBounds> glyphs = metrics.MeasureGlyphAdvances().Span;
+        ReadOnlySpan<GlyphMetrics> glyphs = metrics.GetGlyphMetrics().Span;
 
         // Normal bidi keeps Hebrew as a strong RTL run inside the LTR paragraph.
         // The first visual glyph is therefore the final Hebrew grapheme in the
         // source phrase, not the first source grapheme.
-        Assert.Equal(new CodePoint('ו'), glyphs[0].Codepoint);
-        Assert.Equal(new CodePoint('ה'), glyphs[1].Codepoint);
-        Assert.Equal(new CodePoint('ד'), glyphs[2].Codepoint);
+        Assert.Equal(new CodePoint('ו'), glyphs[0].CodePoint);
+        Assert.Equal(new CodePoint('ה'), glyphs[1].CodePoint);
+        Assert.Equal(new CodePoint('ד'), glyphs[2].CodePoint);
     }
 
     [Fact]
@@ -467,41 +573,35 @@ public class TextBlockTests
         };
 
         TextMetrics metrics = TextMeasurer.Measure(text, options);
-        ReadOnlySpan<GlyphBounds> glyphs = metrics.MeasureGlyphAdvances().Span;
+        ReadOnlySpan<GlyphMetrics> glyphs = metrics.GetGlyphMetrics().Span;
 
         // LTR override forces the Hebrew letters through LTR bidi resolution,
         // visibly reversing the normal RTL run order.
-        Assert.Equal(new CodePoint('א'), glyphs[0].Codepoint);
-        Assert.Equal(new CodePoint('ב'), glyphs[1].Codepoint);
-        Assert.Equal(new CodePoint('ג'), glyphs[2].Codepoint);
+        Assert.Equal(new CodePoint('א'), glyphs[0].CodePoint);
+        Assert.Equal(new CodePoint('ב'), glyphs[1].CodePoint);
+        Assert.Equal(new CodePoint('ג'), glyphs[2].CodePoint);
     }
 
     [Fact]
-    public void GetLineLayouts_MeasureGlyphBounds_MatchBlockSlices()
+    public void GetLineLayouts_GetGlyphMetrics_MatchBlockSlices()
     {
         const string text = "Hello\nWorld";
         TextBlock block = new(text, Options(-1));
 
         ReadOnlySpan<LineLayout> lines = block.GetLineLayouts(-1).Span;
-        ReadOnlySpan<GlyphBounds> expectedAdvances = block.MeasureGlyphAdvances(-1).Span;
-        ReadOnlySpan<GlyphBounds> expectedBounds = block.MeasureGlyphBounds(-1).Span;
-        ReadOnlySpan<GlyphBounds> expectedRenderableBounds = block.MeasureGlyphRenderableBounds(-1).Span;
+        ReadOnlySpan<GlyphMetrics> expectedGlyphMetrics = block.GetGlyphMetrics(-1).Span;
 
         int glyphIndex = 0;
         for (int i = 0; i < lines.Length; i++)
         {
-            ReadOnlySpan<GlyphBounds> lineAdvances = lines[i].MeasureGlyphAdvances().Span;
-            ReadOnlySpan<GlyphBounds> lineBounds = lines[i].MeasureGlyphBounds().Span;
-            ReadOnlySpan<GlyphBounds> lineRenderableBounds = lines[i].MeasureGlyphRenderableBounds().Span;
+            ReadOnlySpan<GlyphMetrics> lineGlyphMetrics = lines[i].GetGlyphMetrics().Span;
 
-            AssertGlyphBoundsEqual(expectedAdvances.Slice(glyphIndex, lineAdvances.Length), lineAdvances);
-            AssertGlyphBoundsEqual(expectedBounds.Slice(glyphIndex, lineBounds.Length), lineBounds);
-            AssertGlyphBoundsEqual(expectedRenderableBounds.Slice(glyphIndex, lineRenderableBounds.Length), lineRenderableBounds);
+            AssertGlyphMetricsEqual(expectedGlyphMetrics.Slice(glyphIndex, lineGlyphMetrics.Length), lineGlyphMetrics);
 
-            glyphIndex += lineAdvances.Length;
+            glyphIndex += lineGlyphMetrics.Length;
         }
 
-        Assert.Equal(expectedAdvances.Length, glyphIndex);
+        Assert.Equal(expectedGlyphMetrics.Length, glyphIndex);
     }
 
     [Fact]
@@ -1191,9 +1291,7 @@ public class TextBlockTests
         Assert.Equal(FontRectangle.Empty, metrics.Bounds, Comparer);
         Assert.Equal(FontRectangle.Empty, metrics.RenderableBounds, Comparer);
         Assert.Equal(0, metrics.LineCount);
-        Assert.True(metrics.MeasureGlyphAdvances().IsEmpty);
-        Assert.True(metrics.MeasureGlyphBounds().IsEmpty);
-        Assert.True(metrics.MeasureGlyphRenderableBounds().IsEmpty);
+        Assert.True(metrics.GetGlyphMetrics().IsEmpty);
         Assert.True(metrics.GraphemeMetrics.IsEmpty);
         Assert.True(metrics.LineMetrics.IsEmpty);
         Assert.True(metrics.WordMetrics.IsEmpty);
@@ -1204,17 +1302,27 @@ public class TextBlockTests
         Assert.True(block.GetLineMetrics(100).IsEmpty);
         Assert.True(block.GetWordMetrics(100).IsEmpty);
 
-        Assert.True(block.MeasureGlyphAdvances(100).IsEmpty);
-
-        Assert.True(block.MeasureGlyphBounds(100).IsEmpty);
-
-        Assert.True(block.MeasureGlyphRenderableBounds(100).IsEmpty);
+        Assert.True(block.GetGlyphMetrics(100).IsEmpty);
 
         Assert.True(block.GetGraphemeMetrics(100).IsEmpty);
     }
 
     private static TextOptions Options(float wrappingLength)
         => new(Font) { WrappingLength = wrappingLength };
+
+    private static float GetWrappingLengthAfterTrailingSpaces(string text)
+    {
+        TextOptions options = Options(-1);
+        int firstNonSpaceAfterBreak = text.IndexOf('B');
+        string lineWithSpaces = text[..firstNonSpaceAfterBreak];
+        string lineWithNextGrapheme = text[..(firstNonSpaceAfterBreak + 1)];
+        float widthBeforeNextGrapheme = TextMeasurer.MeasureAdvance(lineWithSpaces, options).Width;
+        float widthAfterNextGrapheme = TextMeasurer.MeasureAdvance(lineWithNextGrapheme, options).Width;
+
+        // The width is after the trailing-space break opportunity but before the next
+        // grapheme, forcing the first line to own only "Alpha   " before finalization.
+        return widthBeforeNextGrapheme + ((widthAfterNextGrapheme - widthBeforeNextGrapheme) * 0.5F);
+    }
 
     private static GraphemeMetrics FindGrapheme(ReadOnlySpan<GraphemeMetrics> graphemes, int graphemeIndex)
     {
@@ -1242,12 +1350,12 @@ public class TextBlockTests
         return false;
     }
 
-    private static int CountGlyphs(ReadOnlySpan<GlyphBounds> glyphs, CodePoint codePoint)
+    private static int CountGlyphs(ReadOnlySpan<GlyphMetrics> glyphs, CodePoint codePoint)
     {
         int count = 0;
         for (int i = 0; i < glyphs.Length; i++)
         {
-            if (glyphs[i].Codepoint == codePoint)
+            if (glyphs[i].CodePoint == codePoint)
             {
                 count++;
             }
@@ -1271,27 +1379,27 @@ public class TextBlockTests
         Assert.Equal(expected.Bounds, actual.Bounds, Comparer);
         Assert.Equal(expected.RenderableBounds, actual.RenderableBounds, Comparer);
         Assert.Equal(expected.LineCount, actual.LineCount);
-        AssertGlyphBoundsEqual(expected.MeasureGlyphAdvances().Span, actual.MeasureGlyphAdvances().Span);
-        AssertGlyphBoundsEqual(expected.MeasureGlyphBounds().Span, actual.MeasureGlyphBounds().Span);
-        AssertGlyphBoundsEqual(expected.MeasureGlyphRenderableBounds().Span, actual.MeasureGlyphRenderableBounds().Span);
+        AssertGlyphMetricsEqual(expected.GetGlyphMetrics().Span, actual.GetGlyphMetrics().Span);
         AssertGraphemeMetricsEqual(expected.GraphemeMetrics, actual.GraphemeMetrics);
         AssertLineMetricsEqual(expected.LineMetrics, actual.LineMetrics);
         AssertWordMetricsEqual(expected.WordMetrics, actual.WordMetrics);
     }
 
-    private static void AssertGlyphBoundsEqual(ReadOnlySpan<GlyphBounds> expected, ReadOnlySpan<GlyphBounds> actual)
+    private static void AssertGlyphMetricsEqual(ReadOnlySpan<GlyphMetrics> expected, ReadOnlySpan<GlyphMetrics> actual)
     {
         Assert.Equal(expected.Length, actual.Length);
         for (int i = 0; i < expected.Length; i++)
         {
-            AssertGlyphBoundsEqual(expected[i], actual[i]);
+            AssertGlyphMetricsEqual(expected[i], actual[i]);
         }
     }
 
-    private static void AssertGlyphBoundsEqual(GlyphBounds expected, GlyphBounds actual)
+    private static void AssertGlyphMetricsEqual(GlyphMetrics expected, GlyphMetrics actual)
     {
-        Assert.Equal(expected.Codepoint, actual.Codepoint);
+        Assert.Equal(expected.CodePoint, actual.CodePoint);
+        Assert.Equal(expected.Advance, actual.Advance, Comparer);
         Assert.Equal(expected.Bounds, actual.Bounds, Comparer);
+        Assert.Equal(expected.RenderableBounds, actual.RenderableBounds, Comparer);
         Assert.Equal(expected.GraphemeIndex, actual.GraphemeIndex);
         Assert.Equal(expected.StringIndex, actual.StringIndex);
     }

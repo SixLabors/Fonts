@@ -553,7 +553,7 @@ internal static partial class TextLayout
 
             if (data.IsNewLine)
             {
-                GlyphMetrics metric = data.Metrics[0];
+                FontGlyphMetrics metric = data.Metrics[0];
 
                 // Hard breaks bypass the normal glyph loop, but still need the
                 // current pen position plus the same baseline origin used by glyphs.
@@ -583,7 +583,7 @@ internal static partial class TextLayout
             }
 
             int j = 0;
-            foreach (GlyphMetrics metric in data.Metrics)
+            foreach (FontGlyphMetrics metric in data.Metrics)
             {
                 Vector2 glyphOrigin = penLocation + new Vector2(0, textLine.ScaledMaxAscender);
 
@@ -759,7 +759,7 @@ internal static partial class TextLayout
 
             if (data.IsNewLine)
             {
-                GlyphMetrics metric = data.Metrics[0];
+                FontGlyphMetrics metric = data.Metrics[0];
                 Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
 
                 // Hard breaks bypass the normal glyph loop, but still need the
@@ -845,7 +845,7 @@ internal static partial class TextLayout
                             break;
                         }
 
-                        foreach (GlyphMetrics m in g.Metrics)
+                        foreach (FontGlyphMetrics m in g.Metrics)
                         {
                             Vector2 s = new Vector2(g.PointSize) / m.ScaleFactor;
 
@@ -885,14 +885,14 @@ internal static partial class TextLayout
                 // Transformed glyphs are still positioned using horizontal metrics (`AdvanceWidth`) even though
                 // they participate in a vertical flow. `AdvanceWidth` gives us the horizontal pen advance we must
                 // apply between entries inside the transformed grapheme.
-                foreach (GlyphMetrics m in data.Metrics)
+                foreach (FontGlyphMetrics m in data.Metrics)
                 {
                     Vector2 s = new Vector2(data.PointSize) / m.ScaleFactor;
                     entryScaledAdvanceWidth += m.AdvanceWidth * s.X;
                 }
             }
 
-            foreach (GlyphMetrics metric in data.Metrics)
+            foreach (FontGlyphMetrics metric in data.Metrics)
             {
                 // Align the glyph horizontally and vertically centering vertically around the baseline.
                 Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
@@ -1092,7 +1092,7 @@ internal static partial class TextLayout
 
             if (data.IsNewLine)
             {
-                GlyphMetrics metric = data.Metrics[0];
+                FontGlyphMetrics metric = data.Metrics[0];
                 Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
 
                 // Hard breaks bypass the normal glyph loop, but still need the
@@ -1126,7 +1126,7 @@ internal static partial class TextLayout
             if (data.IsTransformed)
             {
                 int j = 0;
-                foreach (GlyphMetrics metric in data.Metrics)
+                foreach (FontGlyphMetrics metric in data.Metrics)
                 {
                     // The glyph will be rotated 90 degrees for vertical mixed layout.
                     // We still advance along Y, but the glyphs are laid out sideways in X.
@@ -1166,7 +1166,7 @@ internal static partial class TextLayout
             else
             {
                 int j = 0;
-                foreach (GlyphMetrics metric in data.Metrics)
+                foreach (FontGlyphMetrics metric in data.Metrics)
                 {
                     // Align the glyph horizontally and vertically centering vertically around the baseline.
                     Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
