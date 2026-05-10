@@ -1218,15 +1218,15 @@ public class TextLayoutTests
         TextLayoutTestUtilities.TestImage(
             340,
             180,
-            image => image.Mutate(x =>
+            image => image.Mutate(x => x.Paint(canvas =>
             {
-                RectangularPolygon lineBox = new(
+                RectanglePolygon lineBox = new(
                     0,
                     line.Start.Y,
                     340,
                     line.LineHeight);
 
-                RectangularPolygon lineBoxBase = new(
+                RectanglePolygon lineBoxBase = new(
                     0,
                     lineBase.Start.Y,
                     340,
@@ -1235,31 +1235,31 @@ public class TextLayoutTests
                 // Green is the actual line box for the layout that contains the
                 // placeholder. It shows whether the object caused this line to
                 // reserve more vertical space.
-                x.Fill(Color.Green.WithAlpha(.15F), lineBox);
+                canvas.Fill(Brushes.Solid(Color.Green.WithAlpha(.15F)), lineBox);
 
                 // Blue is the same text measured without the placeholder. This
                 // gives a stable reference for the surrounding font line box
                 // that top/middle/bottom alignment should use.
-                x.Fill(Color.LightBlue.WithAlpha(.95F), lineBoxBase);
+                canvas.Fill(Brushes.Solid(Color.LightBlue.WithAlpha(.95F)), lineBoxBase);
 
-                x.Draw(Color.Gray, 1, lineBox);
-                x.Fill(Color.Black, glyphs);
+                canvas.Draw(Pens.Solid(Color.Gray, 1), lineBox);
+                canvas.DrawGlyphs(Brushes.Solid(Color.Black), Pens.Solid(Color.Black, 1F), glyphs);
 
                 // The black outline is the caller-owned inline object bounds
                 // returned by the public glyph-bounds API.
-                RectangularPolygon box = new(
+                RectanglePolygon box = new(
                     placeholderBounds.X,
                     placeholderBounds.Y,
                     placeholderBounds.Width,
                     placeholderBounds.Height);
 
-                x.Draw(Color.Black, 1, box);
+                canvas.Draw(Pens.Solid(Color.Black, 1), box);
 
                 // Red is the baseline for the surrounding text without the
                 // placeholder. Baseline-relative modes should align to this.
                 float baseline = lineBase.Start.Y + lineBase.Baseline;
-                x.DrawLine(Color.Red, 1, new PointF(0, baseline), new PointF(340, baseline));
-            }),
+                canvas.DrawLine(Pens.Solid(Color.Red, 1), new PointF(0, baseline), new PointF(340, baseline));
+            })),
             properties: alignment.ToString().ToLowerInvariant());
 
         // The visual output shows the reserved object space; the measured data
@@ -1324,15 +1324,15 @@ public class TextLayoutTests
         TextLayoutTestUtilities.TestImage(
             340,
             260,
-            image => image.Mutate(x =>
+            image => image.Mutate(x => x.Paint(canvas =>
             {
-                RectangularPolygon lineBox = new(
+                RectanglePolygon lineBox = new(
                     0,
                     line.Start.Y,
                     340,
                     line.LineHeight);
 
-                RectangularPolygon lineBoxBase = new(
+                RectanglePolygon lineBoxBase = new(
                     0,
                     lineBase.Start.Y,
                     340,
@@ -1341,32 +1341,32 @@ public class TextLayoutTests
                 // Green is the expanded line box for the placeholder layout.
                 // It should grow enough that the second line does not overlap
                 // the oversized inline object.
-                x.Fill(Color.Green.WithAlpha(.15F), lineBox);
+                canvas.Fill(Brushes.Solid(Color.Green.WithAlpha(.15F)), lineBox);
 
                 // Blue is the normal surrounding text line box. Top, middle,
                 // and bottom align against this box before any oversized object
                 // growth is applied to the actual line.
-                x.Fill(Color.LightBlue.WithAlpha(.95F), lineBoxBase);
+                canvas.Fill(Brushes.Solid(Color.LightBlue.WithAlpha(.95F)), lineBoxBase);
 
-                x.Draw(Color.Gray, 1, lineBox);
-                x.Fill(Color.Black, glyphs);
+                canvas.Draw(Pens.Solid(Color.Gray, 1), lineBox);
+                canvas.DrawGlyphs(Brushes.Solid(Color.Black), Pens.Solid(Color.Black, 1F), glyphs);
 
                 // The black outline is intentionally taller than the normal
                 // text line so this visual test shows both alignment and line
                 // growth in the same output.
-                RectangularPolygon box = new(
+                RectanglePolygon box = new(
                     placeholderBounds.X,
                     placeholderBounds.Y,
                     placeholderBounds.Width,
                     placeholderBounds.Height);
 
-                x.Draw(Color.Black, 1, box);
+                canvas.Draw(Pens.Solid(Color.Black, 1), box);
 
                 // Red is the baseline for the surrounding text without the
                 // placeholder; these modes should not align to it directly.
                 float baseline = lineBase.Start.Y + lineBase.Baseline;
-                x.DrawLine(Color.Red, 1, new PointF(0, baseline), new PointF(340, baseline));
-            }),
+                canvas.DrawLine(Pens.Solid(Color.Red, 1), new PointF(0, baseline), new PointF(340, baseline));
+            })),
             properties: alignment.ToString().ToLowerInvariant());
 
         // The oversized visual still represents one atomic inline object.
@@ -1415,37 +1415,35 @@ public class TextLayoutTests
         LineMetrics[] metrics = TextMeasurer.GetLineMetrics(text, options).ToArray();
 
         void DrawLineBoxes(Image<Rgba32> image)
-        {
-            for (int i = 0; i < metrics.Length; i++)
+            => image.Mutate(x => x.Paint(canvas =>
             {
-                LineMetrics m = metrics[i];
-                Color startColor = i == 0
-                    ? Color.Lime
-                    : Color.Cyan;
-
-                Color endColor = i == 0
-                    ? Color.Magenta
-                    : Color.Yellow;
-
-                PointF gradientStart = new(m.Start.X, m.Start.Y);
-                PointF gradientEnd = new(m.Start.X + m.Extent.X, m.Start.Y + m.Extent.Y);
-
-                LinearGradientBrush fill = new(
-                    gradientStart,
-                    gradientEnd,
-                    GradientRepetitionMode.None,
-                    new ColorStop(0, startColor),
-                    new ColorStop(1, endColor));
-
-                RectangularPolygon box = new(m.Start.X, m.Start.Y, m.Extent.X, m.Extent.Y);
-
-                image.Mutate(x =>
+                for (int i = 0; i < metrics.Length; i++)
                 {
-                    x.Fill(fill, box);
-                    x.Draw(Color.Black, 2, box);
-                });
-            }
-        }
+                    LineMetrics m = metrics[i];
+                    Color startColor = i == 0
+                        ? Color.Lime
+                        : Color.Cyan;
+
+                    Color endColor = i == 0
+                        ? Color.Magenta
+                        : Color.Yellow;
+
+                    PointF gradientStart = new(m.Start.X, m.Start.Y);
+                    PointF gradientEnd = new(m.Start.X + m.Extent.X, m.Start.Y + m.Extent.Y);
+
+                    LinearGradientBrush fill = new(
+                        gradientStart,
+                        gradientEnd,
+                        GradientRepetitionMode.None,
+                        new ColorStop(0, startColor),
+                        new ColorStop(1, endColor));
+
+                    RectanglePolygon box = new(m.Start.X, m.Start.Y, m.Extent.X, m.Extent.Y);
+
+                    canvas.Fill(fill, box);
+                    canvas.Draw(Pens.Solid(Color.Black, 2), box);
+                }
+            }));
 
         TextLayoutTestUtilities.TestLayout(
             text,
@@ -1489,48 +1487,46 @@ public class TextLayoutTests
         TextMetrics metrics = TextMeasurer.Measure(text, options);
 
         void DrawSelections(Image<Rgba32> image)
-        {
-            ReadOnlySpan<GraphemeMetrics> graphemes = metrics.GraphemeMetrics;
-            for (int i = 0; i < graphemes.Length; i++)
+            => image.Mutate(x => x.Paint(canvas =>
             {
-                GraphemeMetrics grapheme = graphemes[i];
-                ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(grapheme).Span;
-                if (selection.IsEmpty)
+                ReadOnlySpan<GraphemeMetrics> graphemes = metrics.GraphemeMetrics;
+                for (int i = 0; i < graphemes.Length; i++)
                 {
-                    continue;
+                    GraphemeMetrics grapheme = graphemes[i];
+                    ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(grapheme).Span;
+                    if (selection.IsEmpty)
+                    {
+                        continue;
+                    }
+
+                    FontRectangle bounds = selection[0];
+                    PointF gradientStart = new(bounds.Left, bounds.Top);
+                    PointF gradientEnd = layoutMode.IsHorizontal()
+                        ? new(bounds.Right, bounds.Top)
+                        : new(bounds.Left, bounds.Bottom);
+
+                    // Vary the gradient by visual grapheme order so bidi reordering is visible.
+                    Color startColor = (i & 1) == 0
+                        ? Color.Lime
+                        : Color.Cyan;
+
+                    Color endColor = (i & 1) == 0
+                        ? Color.Magenta
+                        : Color.Yellow;
+
+                    LinearGradientBrush fill = new(
+                        gradientStart,
+                        gradientEnd,
+                        GradientRepetitionMode.None,
+                        new ColorStop(0, startColor),
+                        new ColorStop(1, endColor));
+
+                    RectanglePolygon box = new(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+
+                    canvas.Fill(fill, box);
+                    canvas.Draw(Pens.Solid(Color.Black, 1), box);
                 }
-
-                FontRectangle bounds = selection[0];
-                PointF gradientStart = new(bounds.Left, bounds.Top);
-                PointF gradientEnd = layoutMode.IsHorizontal()
-                    ? new(bounds.Right, bounds.Top)
-                    : new(bounds.Left, bounds.Bottom);
-
-                // Vary the gradient by visual grapheme order so bidi reordering is visible.
-                Color startColor = (i & 1) == 0
-                    ? Color.Lime
-                    : Color.Cyan;
-
-                Color endColor = (i & 1) == 0
-                    ? Color.Magenta
-                    : Color.Yellow;
-
-                LinearGradientBrush fill = new(
-                    gradientStart,
-                    gradientEnd,
-                    GradientRepetitionMode.None,
-                    new ColorStop(0, startColor),
-                    new ColorStop(1, endColor));
-
-                RectangularPolygon box = new(bounds.X, bounds.Y, bounds.Width, bounds.Height);
-
-                image.Mutate(x =>
-                {
-                    x.Fill(fill, box);
-                    x.Draw(Color.Black, 1, box);
-                });
-            }
-        }
+            }));
 
         TextLayoutTestUtilities.TestLayout(
             text,
@@ -1571,18 +1567,21 @@ public class TextLayoutTests
         {
             CaretPosition anchor = metrics.GetCaret(CaretPlacement.Start);
             CaretPosition focus = metrics.MoveCaret(anchor, CaretMovement.TextEnd);
-            ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(anchor, focus).Span;
 
             // The first hard break ends a measuring text line and should not paint
             // its own box. The second hard break owns the empty line between text
             // lines, so full-text selection should include a visible blank-line box.
-            for (int i = 0; i < selection.Length; i++)
+            image.Mutate(x => x.Paint(canvas =>
             {
-                FontRectangle bounds = selection[i];
-                RectangularPolygon box = new(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+                ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(anchor, focus).Span;
+                for (int i = 0; i < selection.Length; i++)
+                {
+                    FontRectangle bounds = selection[i];
+                    RectanglePolygon box = new(bounds.X, bounds.Y, bounds.Width, bounds.Height);
 
-                image.Mutate(x => x.Fill(Color.LightBlue, box));
-            }
+                    canvas.Fill(Brushes.Solid(Color.LightBlue), box);
+                }
+            }));
         }
 
         TextLayoutTestUtilities.TestLayout(
@@ -1646,16 +1645,17 @@ public class TextLayoutTests
         TextHit focus = metrics.HitTest(focusPoint);
 
         void DrawSelection(Image<Rgba32> image)
-        {
-            ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(anchor, focus).Span;
-            for (int i = 0; i < selection.Length; i++)
+            => image.Mutate(x => x.Paint(canvas =>
             {
-                FontRectangle bounds = selection[i];
-                RectangularPolygon box = new(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+                ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(anchor, focus).Span;
+                for (int i = 0; i < selection.Length; i++)
+                {
+                    FontRectangle bounds = selection[i];
+                    RectanglePolygon box = new(bounds.X, bounds.Y, bounds.Width, bounds.Height);
 
-                image.Mutate(x => x.Fill(Color.LightBlue, box));
-            }
-        }
+                    canvas.Fill(Brushes.Solid(Color.LightBlue), box);
+                }
+            }));
 
         TextLayoutTestUtilities.TestLayout(
             text,
@@ -1734,13 +1734,13 @@ public class TextLayoutTests
             CaretPosition start = metrics.GetCaret(CaretPlacement.Start);
             CaretPosition end = metrics.GetCaret(CaretPlacement.End);
 
-            image.Mutate(x =>
+            image.Mutate(x => x.Paint(canvas =>
             {
                 // Solid carets make absolute start/end placement easy to compare
                 // between LTR and RTL paragraph directions.
-                DrawCaret(x, start, Color.Lime, 3, dashed: false);
-                DrawCaret(x, end, Color.Magenta, 3, dashed: false);
-            });
+                DrawCaret(canvas, start, Color.Lime, 3, dashed: false);
+                DrawCaret(canvas, end, Color.Magenta, 3, dashed: false);
+            }));
         }
 
         TextLayoutTestUtilities.TestLayout(
@@ -1819,26 +1819,26 @@ public class TextLayoutTests
             CaretPosition lineStartFromHebrewRun = metrics.MoveCaret(secondLineHebrewRunCaret, CaretMovement.LineStart);
             CaretPosition lineEndFromHebrewRun = metrics.MoveCaret(secondLineHebrewRunCaret, CaretMovement.LineEnd);
 
-            image.Mutate(x =>
+            image.Mutate(x => x.Paint(canvas =>
             {
                 // Blue starts from a hit on ל in שלום and moves to the caret after ו.
-                DrawCaret(x, nextFromHebrewRun, Color.Blue, 3, dashed: true);
+                DrawCaret(canvas, nextFromHebrewRun, Color.Blue, 3, dashed: true);
 
                 // Cyan starts from a hit on ל in שלום and moves to the word boundary after ם.
-                DrawCaret(x, nextWordFromHebrewRun, Color.Cyan, 3, dashed: true);
+                DrawCaret(canvas, nextWordFromHebrewRun, Color.Cyan, 3, dashed: true);
 
                 // Red starts from a hit on ب in عرب and moves one source-order grapheme toward ر.
-                DrawCaret(x, previousFromArabicRun, Color.Red, 3, dashed: true);
+                DrawCaret(canvas, previousFromArabicRun, Color.Red, 3, dashed: true);
 
                 // Purple starts from a hit on ب in عرب and moves to the word boundary before ع.
-                DrawCaret(x, previousWordFromArabicRun, Color.Purple, 3, dashed: true);
+                DrawCaret(canvas, previousWordFromArabicRun, Color.Purple, 3, dashed: true);
 
                 // Lime starts from a hit on ב in אבג and moves to the second-line start.
-                DrawCaret(x, lineStartFromHebrewRun, Color.Lime, 2, dashed: true);
+                DrawCaret(canvas, lineStartFromHebrewRun, Color.Lime, 2, dashed: true);
 
                 // Magenta starts from a hit on ב in אבג and moves to the second-line end.
-                DrawCaret(x, lineEndFromHebrewRun, Color.Magenta, 2, dashed: true);
-            });
+                DrawCaret(canvas, lineEndFromHebrewRun, Color.Magenta, 2, dashed: true);
+            }));
         }
 
         TextLayoutTestUtilities.TestLayout(
@@ -1887,12 +1887,12 @@ public class TextLayoutTests
         TextLayoutTestUtilities.TestImage(
             620,
             360,
-            image => image.Mutate(x =>
+            image => image.Mutate(x => x.Paint(canvas =>
             {
-                x.Fill(Color.White);
-                x.Draw(Color.DarkSlateGray, 1, new RectangularPolygon(pageLeft, pageTop, pageRight - pageLeft, pageBottom - pageTop));
-                x.Fill(Color.SteelBlue.WithAlpha(.16F), new EllipsePolygon(circleX, circleY, circleRadius, circleRadius));
-                x.Draw(Color.SteelBlue, 2, new EllipsePolygon(circleX, circleY, circleRadius, circleRadius));
+                canvas.Fill(Brushes.Solid(Color.White));
+                canvas.Draw(Pens.Solid(Color.DarkSlateGray, 1), new RectanglePolygon(pageLeft, pageTop, pageRight - pageLeft, pageBottom - pageTop));
+                canvas.Fill(Brushes.Solid(Color.SteelBlue.WithAlpha(.16F)), new EllipsePolygon(circleX, circleY, circleRadius, circleRadius));
+                canvas.Draw(Pens.Solid(Color.SteelBlue, 2), new EllipsePolygon(circleX, circleY, circleRadius, circleRadius));
 
                 // A horizontal band can be split by the obstacle into at most
                 // two usable slots. Keep these buffers outside the row loop so
@@ -1979,23 +1979,24 @@ public class TextLayoutTests
                         // Text is drawn from the line's source mapping at the slot origin,
                         // showing that one prepared block can feed arbitrary row widths
                         // without re-preparing the original paragraph.
-                        x.Fill(Color.SteelBlue.WithAlpha(.28F), new RectangularPolygon(slotLeft, y, slotWidth, line.LineMetrics.LineHeight));
-                        x.DrawText(
+                        canvas.Fill(Brushes.Solid(Color.SteelBlue.WithAlpha(.28F)), new RectanglePolygon(slotLeft, y, slotWidth, line.LineMetrics.LineHeight));
+                        canvas.DrawText(
                             new RichTextOptions(font)
                             {
                                 Origin = new(slotLeft, y),
                                 WrappingLength = -1,
                                 LineSpacing = options.LineSpacing
                             },
-                            text[stringStart..stringEnd],
-                            Color.Black);
+                            text.AsSpan()[stringStart..stringEnd],
+                            Brushes.Solid(Color.Black),
+                            pen: null);
 
                         rowHeight = Math.Max(rowHeight, line.LineMetrics.LineHeight);
                     }
 
                     y += rowHeight;
                 }
-            }));
+            })));
     }
 
     [Fact]
@@ -2025,27 +2026,25 @@ public class TextLayoutTests
         TextMetrics metrics = TextMeasurer.Measure(text, options);
 
         void DrawSelections(Image<Rgba32> image)
-        {
-            foreach (WordMetrics word in metrics.WordMetrics)
+            => image.Mutate(x => x.Paint(canvas =>
             {
-                ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(word).Span;
-
-                // UAX #29 word segments include separators. Drawing every returned
-                // range with an outline makes the apostrophe in "can't" and the
-                // intervening spaces visible in the rendered output.
-                for (int i = 0; i < selection.Length; i++)
+                foreach (WordMetrics word in metrics.WordMetrics)
                 {
-                    FontRectangle bounds = selection[i];
-                    RectangularPolygon box = new(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+                    ReadOnlySpan<FontRectangle> selection = metrics.GetSelectionBounds(word).Span;
 
-                    image.Mutate(x =>
+                    // UAX #29 word segments include separators. Drawing every returned
+                    // range with an outline makes the apostrophe in "can't" and the
+                    // intervening spaces visible in the rendered output.
+                    for (int i = 0; i < selection.Length; i++)
                     {
-                        x.Fill(Color.LightBlue, box);
-                        x.Draw(Color.Black, 1, box);
-                    });
+                        FontRectangle bounds = selection[i];
+                        RectanglePolygon box = new(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+
+                        canvas.Fill(Brushes.Solid(Color.LightBlue), box);
+                        canvas.Draw(Pens.Solid(Color.Black, 1), box);
+                    }
                 }
-            }
-        }
+            }));
 
         TextLayoutTestUtilities.TestLayout(
             text,
@@ -3152,22 +3151,22 @@ public class TextLayoutTests
 #endif
 
     private static void DrawCaret(
-        IImageProcessingContext context,
+        DrawingCanvas canvas,
         CaretPosition caret,
         Color color,
         float thickness,
         bool dashed)
     {
-        DrawCaretLine(context, caret.Start, caret.End, color, thickness, dashed);
+        DrawCaretLine(canvas, caret.Start, caret.End, color, thickness, dashed);
 
         if (caret.HasSecondary)
         {
-            DrawCaretLine(context, caret.SecondaryStart, caret.SecondaryEnd, color, thickness, dashed);
+            DrawCaretLine(canvas, caret.SecondaryStart, caret.SecondaryEnd, color, thickness, dashed);
         }
     }
 
     private static void DrawCaretLine(
-        IImageProcessingContext context,
+        DrawingCanvas canvas,
         Vector2 start,
         Vector2 end,
         Color color,
@@ -3176,7 +3175,7 @@ public class TextLayoutTests
     {
         if (!dashed)
         {
-            context.DrawLine(color, thickness, new PointF(start.X, start.Y), new PointF(end.X, end.Y));
+            canvas.DrawLine(Pens.Solid(color, thickness), new PointF(start.X, start.Y), new PointF(end.X, end.Y));
             return;
         }
 
@@ -3194,7 +3193,7 @@ public class TextLayoutTests
             Vector2 dashStart = start + (step * distance);
             Vector2 dashEnd = start + (step * MathF.Min(distance + dash, length));
 
-            context.DrawLine(color, thickness, new PointF(dashStart.X, dashStart.Y), new PointF(dashEnd.X, dashEnd.Y));
+            canvas.DrawLine(Pens.Solid(color, thickness), new PointF(dashStart.X, dashStart.Y), new PointF(dashEnd.X, dashEnd.Y));
         }
     }
 

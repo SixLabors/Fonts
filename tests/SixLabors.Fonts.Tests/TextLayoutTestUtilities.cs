@@ -72,19 +72,26 @@ internal static class TextLayoutTestUtilities
 
         beforeAction?.Invoke(img);
 
-        img.Mutate(ctx => ctx.DrawText(FromTextOptions(options, customDecorations), text, Color.Black));
-
-        if (options.WrappingLength > 0)
+        img.Mutate(ctx => ctx.Paint(canvas =>
         {
-            if (!options.LayoutMode.IsHorizontal())
+            canvas.DrawText(
+                FromTextOptions(options, customDecorations),
+                text,
+                Brushes.Solid(Color.Black),
+                pen: null);
+
+            if (options.WrappingLength > 0)
             {
-                img.Mutate(x => x.DrawLine(Color.Red, 1, new(0, wrappingLength), new(width, wrappingLength)));
+                if (!options.LayoutMode.IsHorizontal())
+                {
+                    canvas.DrawLine(Pens.Solid(Color.Red, 1), new(0, wrappingLength), new(width, wrappingLength));
+                }
+                else
+                {
+                    canvas.DrawLine(Pens.Solid(Color.Red, 1), new(wrappingLength, 0), new(wrappingLength, height));
+                }
             }
-            else
-            {
-                img.Mutate(x => x.DrawLine(Color.Red, 1, new(wrappingLength, 0), new(wrappingLength, height)));
-            }
-        }
+        }));
 
         afterAction?.Invoke(img);
 
@@ -102,19 +109,22 @@ internal static class TextLayoutTestUtilities
 
         IReadOnlyList<GlyphPathCollection> glyphs = TextBuilder.GenerateGlyphs(text, options);
 
-        img2.Mutate(ctx => ctx.Fill(Color.Black, glyphs));
-
-        if (options.WrappingLength > 0)
+        img2.Mutate(ctx => ctx.Paint(canvas =>
         {
-            if (!options.LayoutMode.IsHorizontal())
+            canvas.DrawGlyphs(Brushes.Solid(Color.Black), Pens.Solid(Color.Black, 1F), glyphs);
+
+            if (options.WrappingLength > 0)
             {
-                img2.Mutate(x => x.DrawLine(Color.Red, 1, new(0, wrappingLength), new(width, wrappingLength)));
+                if (!options.LayoutMode.IsHorizontal())
+                {
+                    canvas.DrawLine(Pens.Solid(Color.Red, 1), new(0, wrappingLength), new(width, wrappingLength));
+                }
+                else
+                {
+                    canvas.DrawLine(Pens.Solid(Color.Red, 1), new(wrappingLength, 0), new(wrappingLength, height));
+                }
             }
-            else
-            {
-                img2.Mutate(x => x.DrawLine(Color.Red, 1, new(wrappingLength, 0), new(wrappingLength, height)));
-            }
-        }
+        }));
 
         img2.DebugSave("png", test, properties: [.. extended]);
         img2.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: [.. extended]);

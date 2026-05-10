@@ -93,10 +93,12 @@ public class TextAlignmentTests
         string text)
     {
         Image<Rgba32> image = new(width, height);
-        image.Mutate(x => x.Fill(Color.White));
-
-        Draw(image, font, vertical, horizontal, wrappingWidth, text);
-        image.Mutate(x => x.Draw(Color.LightGray, 1, new RectangularPolygon(0, 0, width - 1, height - 1)));
+        image.Mutate(x => x.Paint(canvas =>
+        {
+            canvas.Fill(Brushes.Solid(Color.White));
+            Draw(canvas, width, height, font, vertical, horizontal, wrappingWidth, text);
+            canvas.Draw(Pens.Solid(Color.LightGray, 1), new RectanglePolygon(0, 0, width - 1, height - 1));
+        }));
 
         return image;
     }
@@ -108,7 +110,9 @@ public class TextAlignmentTests
     }
 
     private static void Draw(
-        Image<Rgba32> image,
+        DrawingCanvas canvas,
+        int imageWidth,
+        int imageHeight,
         Font font,
         VerticalAlignment vertical,
         HorizontalAlignment horizontal,
@@ -118,16 +122,16 @@ public class TextAlignmentTests
         float x = horizontal switch
         {
             HorizontalAlignment.Left => 0,
-            HorizontalAlignment.Center => image.Width / 2F,
-            HorizontalAlignment.Right => image.Width,
+            HorizontalAlignment.Center => imageWidth / 2F,
+            HorizontalAlignment.Right => imageWidth,
             _ => 0,
         };
 
         float y = vertical switch
         {
             VerticalAlignment.Top => 0,
-            VerticalAlignment.Center => image.Height / 2F,
-            VerticalAlignment.Bottom => image.Height,
+            VerticalAlignment.Center => imageHeight / 2F,
+            VerticalAlignment.Bottom => imageHeight,
             _ => 0,
         };
 
@@ -147,22 +151,21 @@ public class TextAlignmentTests
         IReadOnlyList<GlyphPathCollection> glyphPaths = TextBuilder.GenerateGlyphs(text, textOptions);
         TextRenderer.RenderTextTo(boundsRenderer, text, textOptions);
 
-        image.Mutate(x => x.Fill(Color.Black, glyphPaths));
-        Color boundsColor = Color.Fuchsia.WithAlpha(.5F);
-        image.Mutate(x => x.Draw(boundsColor, 1, boundsRenderer.Boxes));
-        image.Mutate(x => x.Draw(Color.Lime, 1, boundsRenderer.TextBox));
+        canvas.DrawGlyphs(Brushes.Solid(Color.Black), Pens.Solid(Color.Black, 1F), glyphPaths);
+        canvas.Draw(Pens.Solid(Color.Fuchsia.WithAlpha(.5F), 1), boundsRenderer.Boxes);
+        canvas.Draw(Pens.Solid(Color.Lime, 1), boundsRenderer.TextBox);
     }
 
     private sealed class BoundsRenderer : IGlyphRenderer
     {
         private readonly List<FontRectangle> glyphRectangles = [];
 
-        public IPathCollection Boxes => new PathCollection(this.glyphRectangles.Select(x => new RectangularPolygon(x.X, x.Y, x.Width, x.Height)));
+        public IPathCollection Boxes => new PathCollection(this.glyphRectangles.Select(x => new RectanglePolygon(x.X, x.Y, x.Width, x.Height)));
 
         public IPath TextBox { get; private set; }
 
         public void BeginText(in FontRectangle bounds)
-            => this.TextBox = new RectangularPolygon(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+            => this.TextBox = new RectanglePolygon(bounds.X, bounds.Y, bounds.Width, bounds.Height);
 
         public bool BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters)
         {

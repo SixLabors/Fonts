@@ -498,11 +498,10 @@ public sealed partial class TextBlock
     /// <param name="metrics">The word metrics to inspect.</param>
     /// <returns><see langword="true"/> when a grapheme has been accumulated for the segment.</returns>
     private static bool HasWordMetrics(in WordMetrics metrics)
-    {
+
         // Default WordMetrics has no source range. Any real word segment has an exclusive end
         // index, so the range is the sentinel that avoids treating FontRectangle.Empty as geometry.
-        return metrics.GraphemeEnd != 0 || metrics.StringEnd != 0;
-    }
+        => metrics.GraphemeEnd != 0 || metrics.StringEnd != 0;
 
     /// <summary>
     /// Gets one per-glyph metrics collection by streaming laid-out glyphs.
