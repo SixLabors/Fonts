@@ -15,6 +15,8 @@ SixLabors.Fonts
 
 **SixLabors.Fonts** is a cross-platform library for loading, measuring, and laying out fonts and text. It supports TrueType and OpenType fonts (including CFF1 and CFF2 outlines), WOFF/WOFF2 web fonts, variable fonts, color fonts (COLR v0/v1 and SVG), and TrueType hinting. The library provides a full OpenType layout engine with GSUB/GPOS support, advanced text shaping for complex scripts, and bidirectional text rendering.
 
+Fonts also exposes high-level text layout primitives for applications that need more than a single bounding box. Callers can measure advance, ink bounds, renderable bounds, lines, words, graphemes, and glyphs; reuse prepared text across multiple wrapping widths; inspect the resolved font used to shape and render fallback glyphs; and use built-in hit testing, caret placement, and selection geometry.
+
 ## License
   
 - Fonts is licensed under the [Six Labors Split License, Version 1.0](https://github.com/SixLabors/Fonts/blob/main/LICENSE)  
@@ -106,6 +108,11 @@ git lfs pull
 - Support for ligatures and kerning.
 - Support for rendering left to right, right to left, and bidirectional text.
 - Support for line breaking based on [UAX 14](https://www.unicode.org/reports/tr14/).
+- Support for reusable prepared text layout via `TextBlock`.
+- Text measurement APIs for advance bounds, ink bounds, renderable bounds, line metrics, word metrics, grapheme metrics, and glyph metrics.
+- Glyph and grapheme metrics expose the resolved font used to shape and render each entry, including fallback fonts.
+- Text interaction helpers for hit testing, caret positioning, caret movement, and selection bounds.
+- Support for wrapping, trimming, ellipsis, hyphenation, tab width, tracking, line height, and horizontal and vertical layout modes.
 
 ## API Examples
 
