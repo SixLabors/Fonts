@@ -50,36 +50,32 @@ public class Issues_400
         FontRectangle bounds = TextMeasurer.MeasureBounds(text, options);
         FontRectangle renderableBounds = TextMeasurer.MeasureRenderableBounds(text, options);
 
-        image.Mutate(x =>
-        {
-            DrawRectangle(x, renderableBounds, Color.Magenta, 3);
-            DrawRectangle(x, advance, Color.DeepSkyBlue, 2);
-            DrawRectangle(x, bounds, Color.Lime, 2);
-        });
-
         ReadOnlySpan<GlyphMetrics> measuredGlyphs = TextMeasurer.GetGlyphMetrics(text, options).Span;
         GlyphMetrics[] glyphs = measuredGlyphs.ToArray();
 
-        image.Mutate(x =>
+        image.Mutate(x => x.Paint(canvas =>
         {
+            DrawRectangle(canvas, renderableBounds, Color.Magenta, 3);
+            DrawRectangle(canvas, advance, Color.DeepSkyBlue, 2);
+            DrawRectangle(canvas, bounds, Color.Lime, 2);
+
             for (int i = 0; i < glyphs.Length; i++)
             {
-                DrawRectangle(x, glyphs[i].Bounds, Color.Orange, 1);
+                DrawRectangle(canvas, glyphs[i].Bounds, Color.Orange, 1);
             }
-        });
+        }));
     }
 
-    private static void DrawRectangle(IImageProcessingContext context, FontRectangle rectangle, Color color, float thickness)
+    private static void DrawRectangle(DrawingCanvas canvas, FontRectangle rectangle, Color color, float thickness)
     {
         if (rectangle.IsEmpty)
         {
             return;
         }
 
-        context.Draw(
-            color,
-            thickness,
-            new RectangularPolygon(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height));
+        canvas.Draw(
+            Pens.Solid(color, thickness),
+            new RectanglePolygon(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height));
     }
 #endif
 }

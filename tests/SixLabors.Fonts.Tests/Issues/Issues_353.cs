@@ -43,27 +43,29 @@ public class Issues_353
             Assert.True(m.Extent.Y > 0, "Extent.Y should be positive.");
         }
 
-        void DrawLineMetrics(Image<Rgba32> image)
-        {
+        void DrawLineMetrics(Image<Rgba32> image) =>
+
             // Draw four separate lines for ascender(orange), baseline (red), descender (blue),
             // and line bottom (green).
-            for (int i = 0; i < l.Length; i++)
+            image.Mutate(x => x.Paint(canvas =>
             {
-                LineMetrics m = l[i];
+                for (int i = 0; i < l.Length; i++)
+                {
+                    LineMetrics m = l[i];
 
-                float ascent = m.Start.Y + m.Ascender;
-                float baseline = m.Start.Y + m.Baseline;
-                float descender = m.Start.Y + m.Descender;
-                float lineBottom = m.Start.Y + m.LineHeight;
-                float start = m.Start.X;
-                float end = m.Start.X + m.Extent.X;
+                    float ascent = m.Start.Y + m.Ascender;
+                    float baseline = m.Start.Y + m.Baseline;
+                    float descender = m.Start.Y + m.Descender;
+                    float lineBottom = m.Start.Y + m.LineHeight;
+                    float start = m.Start.X;
+                    float end = m.Start.X + m.Extent.X;
 
-                image.Mutate(x => x.DrawLine(Color.Orange, 1, new(start, ascent), new(end, ascent)));
-                image.Mutate(x => x.DrawLine(Color.Red, 1, new(start, baseline), new(end, baseline)));
-                image.Mutate(x => x.DrawLine(Color.Blue, 1, new(start, descender), new(end, descender)));
-                image.Mutate(x => x.DrawLine(Color.Green, 1, new(start, lineBottom), new(end, lineBottom)));
-            }
-        }
+                    canvas.DrawLine(Pens.Solid(Color.Orange, 1), new(start, ascent), new(end, ascent));
+                    canvas.DrawLine(Pens.Solid(Color.Red, 1), new(start, baseline), new(end, baseline));
+                    canvas.DrawLine(Pens.Solid(Color.Blue, 1), new(start, descender), new(end, descender));
+                    canvas.DrawLine(Pens.Solid(Color.Green, 1), new(start, lineBottom), new(end, lineBottom));
+                }
+            }));
 
         TextLayoutTestUtilities.TestLayout(
             text,
