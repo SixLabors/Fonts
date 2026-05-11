@@ -351,6 +351,26 @@ public class TextBlockTests
     }
 
     [Fact]
+    public void CharacterMeasurements_ExposeResolvedFallbackFont()
+    {
+        FontCollection collection = new();
+        FontFamily hebrew = TestFonts.GetFontFamily(collection, TestFonts.NotoSansHebrewRegular);
+        Font primary = TextLayoutTests.CreateFont("A");
+        Font fallback = hebrew.CreateFont(12);
+        TextOptions options = new(primary)
+        {
+            FallbackFontFamilies = [hebrew]
+        };
+
+        TextMetrics metrics = TextMeasurer.Measure("Aא", options);
+        GlyphMetrics hebrewGlyph = FindGlyph(metrics.GetGlyphMetrics().Span, 1);
+        GraphemeMetrics hebrewGrapheme = FindGrapheme(metrics.GraphemeMetrics, 1);
+
+        Assert.Equal(fallback.Name, hebrewGlyph.Font.Name);
+        Assert.Equal(fallback.Name, hebrewGrapheme.Font.Name);
+    }
+
+    [Fact]
     public void TextHyphenation_None_IgnoresSoftHyphenBreak()
     {
         const string text = "extra\u00ADordinary";
@@ -1337,6 +1357,19 @@ public class TextBlockTests
         throw new InvalidOperationException("The expected grapheme was not measured.");
     }
 
+    private static GlyphMetrics FindGlyph(ReadOnlySpan<GlyphMetrics> glyphs, int stringIndex)
+    {
+        for (int i = 0; i < glyphs.Length; i++)
+        {
+            if (glyphs[i].StringIndex == stringIndex)
+            {
+                return glyphs[i];
+            }
+        }
+
+        throw new InvalidOperationException("The expected glyph was not measured.");
+    }
+
     private static bool SelectionContains(ReadOnlySpan<FontRectangle> selection, Vector2 point)
     {
         for (int i = 0; i < selection.Length; i++)
@@ -1400,6 +1433,7 @@ public class TextBlockTests
         Assert.Equal(expected.Advance, actual.Advance, Comparer);
         Assert.Equal(expected.Bounds, actual.Bounds, Comparer);
         Assert.Equal(expected.RenderableBounds, actual.RenderableBounds, Comparer);
+        Assert.Equal(expected.Font.Name, actual.Font.Name);
         Assert.Equal(expected.GraphemeIndex, actual.GraphemeIndex);
         Assert.Equal(expected.StringIndex, actual.StringIndex);
     }
@@ -1412,6 +1446,7 @@ public class TextBlockTests
             Assert.Equal(expected[i].Advance, actual[i].Advance, Comparer);
             Assert.Equal(expected[i].Bounds, actual[i].Bounds, Comparer);
             Assert.Equal(expected[i].RenderableBounds, actual[i].RenderableBounds, Comparer);
+            Assert.Equal(expected[i].Font.Name, actual[i].Font.Name);
             Assert.Equal(expected[i].GraphemeIndex, actual[i].GraphemeIndex);
             Assert.Equal(expected[i].StringIndex, actual[i].StringIndex);
             Assert.Equal(expected[i].BidiLevel, actual[i].BidiLevel);

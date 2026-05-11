@@ -21,6 +21,7 @@ internal struct GlyphLayoutData
     /// Initializes a new instance of the <see cref="GlyphLayoutData"/> struct.
     /// </summary>
     /// <param name="metrics">The shaped glyph metrics for this codepoint.</param>
+    /// <param name="font">The font used to shape and render this entry.</param>
     /// <param name="pointSize">The point size at which the glyph is rendered.</param>
     /// <param name="scaledAdvance">The scaled advance of this entry.</param>
     /// <param name="scaledLineHeight">The scaled line height contributed by this entry.</param>
@@ -39,6 +40,7 @@ internal struct GlyphLayoutData
     /// <param name="hyphenationMarkerIndex">The marker index to use if this entry becomes a selected soft-hyphen break.</param>
     public GlyphLayoutData(
         IReadOnlyList<FontGlyphMetrics> metrics,
+        Font font,
         float pointSize,
         float scaledAdvance,
         float scaledLineHeight,
@@ -57,6 +59,7 @@ internal struct GlyphLayoutData
         int hyphenationMarkerIndex = NoHyphenationMarker)
     {
         this.Metrics = metrics;
+        this.Font = font;
         this.PointSize = pointSize;
         this.ScaledAdvance = scaledAdvance;
         this.ScaledLineHeight = scaledLineHeight;
@@ -80,6 +83,9 @@ internal struct GlyphLayoutData
 
     /// <summary>Gets the shaped glyph metrics produced for this codepoint (one codepoint may map to several glyphs).</summary>
     public IReadOnlyList<FontGlyphMetrics> Metrics { get; }
+
+    /// <summary>Gets the font used to shape and render this entry.</summary>
+    public Font Font { get; }
 
     /// <summary>Gets the point size at which this entry is rendered.</summary>
     public float PointSize { get; }

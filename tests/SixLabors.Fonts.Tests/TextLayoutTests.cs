@@ -236,15 +236,14 @@ public class TextLayoutTests
     public void GetGlyphMetrics()
     {
         const string text = "a b\nc";
+        Font font = CreateFont(text);
         GlyphMetrics[] expectedGlyphMetrics =
         [
-            new(new CodePoint('a'), FontRectangle.Empty, new FontRectangle(10, 0, 10, 10), FontRectangle.Empty, 0, 0),
-            new(new CodePoint(' '), FontRectangle.Empty, new FontRectangle(40, 0, 30, 10), FontRectangle.Empty, 1, 1),
-            new(new CodePoint('b'), FontRectangle.Empty, new FontRectangle(70, 0, 10, 10), FontRectangle.Empty, 2, 2),
-            new(new CodePoint('c'), FontRectangle.Empty, new FontRectangle(10, 30, 10, 10), FontRectangle.Empty, 4, 4),
+            new(new CodePoint('a'), FontRectangle.Empty, new FontRectangle(10, 0, 10, 10), FontRectangle.Empty, font, 0, 0),
+            new(new CodePoint(' '), FontRectangle.Empty, new FontRectangle(40, 0, 30, 10), FontRectangle.Empty, font, 1, 1),
+            new(new CodePoint('b'), FontRectangle.Empty, new FontRectangle(70, 0, 10, 10), FontRectangle.Empty, font, 2, 2),
+            new(new CodePoint('c'), FontRectangle.Empty, new FontRectangle(10, 30, 10, 10), FontRectangle.Empty, font, 4, 4),
         ];
-
-        Font font = CreateFont(text);
 
         ReadOnlySpan<GlyphMetrics> glyphs = TextMeasurer.GetGlyphMetrics(
             text.AsSpan(),

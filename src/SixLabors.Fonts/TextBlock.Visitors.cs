@@ -77,6 +77,7 @@ public sealed partial class TextBlock
         private int stringIndex;
         private int bidiLevel;
         private bool isLineBreak;
+        private Font? font;
         private FontRectangle advanceBounds;
         private FontRectangle bounds;
         private bool hasCurrent;
@@ -95,6 +96,7 @@ public sealed partial class TextBlock
             this.stringIndex = 0;
             this.bidiLevel = 0;
             this.isLineBreak = false;
+            this.font = null;
             this.advanceBounds = FontRectangle.Empty;
             this.bounds = FontRectangle.Empty;
             this.hasCurrent = false;
@@ -174,6 +176,7 @@ public sealed partial class TextBlock
             this.stringIndex = glyph.StringIndex;
             this.bidiLevel = glyph.BidiLevel;
             this.isLineBreak = CodePoint.IsNewLine(glyph.CodePoint);
+            this.font = glyph.Font;
             this.advanceBounds = advanceBounds;
             this.bounds = bounds;
             this.hasCurrent = true;
@@ -197,6 +200,7 @@ public sealed partial class TextBlock
                 this.advanceBounds,
                 this.bounds,
                 renderableBounds,
+                this.font!,
                 this.graphemeIndex,
                 this.stringIndex,
                 this.bidiLevel,
@@ -750,6 +754,7 @@ public sealed partial class TextBlock
                 advance,
                 bounds,
                 renderableBounds,
+                glyph.Font,
                 glyph.GraphemeIndex,
                 glyph.StringIndex);
 
