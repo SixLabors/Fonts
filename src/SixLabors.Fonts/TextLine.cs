@@ -142,6 +142,7 @@ internal sealed class TextLine
     /// Appends a shaped entry to this line, updating the aggregated line-level metrics.
     /// </summary>
     /// <param name="metrics">The glyph metrics produced by shaping this entry's codepoint.</param>
+    /// <param name="font">The font used to shape and render this entry.</param>
     /// <param name="pointSize">The point size at which the entry is rendered.</param>
     /// <param name="scaledAdvance">The scaled advance contributed by this entry.</param>
     /// <param name="scaledLineHeight">The scaled line height contributed by this entry (before line-spacing).</param>
@@ -161,6 +162,7 @@ internal sealed class TextLine
     /// <param name="hyphenationMarkerIndex">The marker index to use if this entry becomes a selected soft-hyphen break.</param>
     public void Add(
         IReadOnlyList<FontGlyphMetrics> metrics,
+        Font font,
         float pointSize,
         float scaledAdvance,
         float scaledLineHeight,
@@ -224,6 +226,7 @@ internal sealed class TextLine
 
         this.data.Add(new(
             metrics,
+            font,
             pointSize,
             scaledAdvance,
             scaledLineHeight,
@@ -300,6 +303,7 @@ internal sealed class TextLine
         // but they do not consume source grapheme, codepoint, or UTF-16 indexes.
         this.Add(
             new FontGlyphMetrics[] { placeholderGlyph },
+            placeholder.Font,
             placeholder.PointSize,
             placeholderAdvance,
             placeholderLineHeight,
@@ -419,6 +423,7 @@ internal sealed class TextLine
             anchor.StringIndex,
             markerCodePoint,
             options.LayoutMode,
+            anchor.Font,
             options);
 
         while (this.data.Count > 0 &&

@@ -562,6 +562,7 @@ internal static partial class TextLayout
                 visitor.Visit(
                     new GlyphLayout(
                     new Glyph(metric, data.PointSize),
+                    data.Font,
                     boundsLocation,
                     hardBreakGlyphOrigin,
                     penLocation,
@@ -590,6 +591,7 @@ internal static partial class TextLayout
                 visitor.Visit(
                     new GlyphLayout(
                     new Glyph(metric, data.PointSize),
+                    data.Font,
                     boundsLocation,
                     glyphOrigin,
                     glyphOrigin,
@@ -770,6 +772,7 @@ internal static partial class TextLayout
                 visitor.Visit(
                     new GlyphLayout(
                     new Glyph(metric, data.PointSize),
+                    data.Font,
                     boundsLocation,
                     hardBreakGlyphOrigin,
                     hardBreakDecorationOrigin,
@@ -924,6 +927,7 @@ internal static partial class TextLayout
                 visitor.Visit(
                     new GlyphLayout(
                     new Glyph(metric, data.PointSize),
+                    data.Font,
                     boundsLocation,
                     glyphOrigin,
                     decorationOrigin,
@@ -1103,6 +1107,7 @@ internal static partial class TextLayout
                 visitor.Visit(
                     new GlyphLayout(
                     new Glyph(metric, data.PointSize),
+                    data.Font,
                     boundsLocation,
                     hardBreakGlyphOrigin,
                     hardBreakDecorationOrigin,
@@ -1148,6 +1153,7 @@ internal static partial class TextLayout
                     visitor.Visit(
                         new GlyphLayout(
                         new Glyph(metric, data.PointSize),
+                        data.Font,
                         boundsLocation,
                         glyphOrigin,
                         glyphOrigin,
@@ -1182,6 +1188,7 @@ internal static partial class TextLayout
                     visitor.Visit(
                         new GlyphLayout(
                         new Glyph(metric, data.PointSize),
+                        data.Font,
                         boundsLocation,
                         glyphOrigin,
                         decorationOrigin,

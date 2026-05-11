@@ -13,6 +13,7 @@ internal readonly struct GlyphLayout
 {
     internal GlyphLayout(
         Glyph glyph,
+        Font font,
         Vector2 advanceOrigin,
         Vector2 glyphOrigin,
         Vector2 decorationOrigin,
@@ -25,6 +26,7 @@ internal readonly struct GlyphLayout
         int stringIndex)
     {
         this.Glyph = glyph;
+        this.Font = font;
         this.CodePoint = glyph.GlyphMetrics.CodePoint;
         this.AdvanceOrigin = advanceOrigin;
         this.GlyphOrigin = glyphOrigin;
@@ -42,6 +44,11 @@ internal readonly struct GlyphLayout
     /// Gets the font-specific glyph for this laid-out glyph entry.
     /// </summary>
     public Glyph Glyph { get; }
+
+    /// <summary>
+    /// Gets the font used to render this laid-out glyph entry.
+    /// </summary>
+    public Font Font { get; }
 
     /// <summary>
     /// Gets the code point represented by this glyph.

@@ -236,7 +236,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
                             : new(0, 0, metrics.AdvanceWidth, 0);
 
                         // Track the number of inserted glyphs at the offset so we can correctly increment our position.
-                        this.glyphs.Insert(i += replacementCount, new(offset, new(shape, true) { Bounds = bounds }, pointSize, metrics.CloneForRendering(shape.TextRun)));
+                        this.glyphs.Insert(i += replacementCount, new(offset, new(shape, true) { Bounds = bounds }, font, pointSize, metrics.CloneForRendering(shape.TextRun)));
                         replacementCount++;
                     }
                 }
@@ -307,7 +307,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
                     IsPositioned = true
                 };
 
-                this.glyphs.Add(new(offset, placeholderData, font.Size, placeholderMetrics));
+                this.glyphs.Add(new(offset, placeholderData, font, font.Size, placeholderMetrics));
                 continue;
             }
 
@@ -336,7 +336,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
                 ? new(0, 0, 0, metrics.AdvanceHeight)
                 : new(0, 0, metrics.AdvanceWidth, 0);
 
-            this.glyphs.Add(new(offset, new(data, true) { Bounds = bounds }, font.Size, metrics.CloneForRendering(data.TextRun)));
+            this.glyphs.Add(new(offset, new(data, true) { Bounds = bounds }, font, font.Size, metrics.CloneForRendering(data.TextRun)));
         }
 
         return !hasFallBacks;
@@ -433,10 +433,11 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     public class GlyphPositioningData
     {
-        public GlyphPositioningData(int offset, GlyphShapingData data, float pointSize, FontGlyphMetrics metrics)
+        public GlyphPositioningData(int offset, GlyphShapingData data, Font font, float pointSize, FontGlyphMetrics metrics)
         {
             this.Offset = offset;
             this.Data = data;
+            this.Font = font;
             this.PointSize = pointSize;
             this.Metrics = metrics;
         }
@@ -444,6 +445,8 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         public int Offset { get; set; }
 
         public GlyphShapingData Data { get; set; }
+
+        public Font Font { get; set; }
 
         public float PointSize { get; set; }
 

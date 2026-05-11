@@ -177,6 +177,7 @@ public class TextMeasurerReferenceTests
                 new FontRectangle(0, 0, 8.8477f, 12f),
                 new FontRectangle(1.1719f, 2.0889f, 6.4922f, 8.5664f),
                 new FontRectangle(0f, 0f, 8.8477f, 12f),
+                Font,
                 0,
                 0),
             new(
@@ -184,6 +185,7 @@ public class TextMeasurerReferenceTests
                 new FontRectangle(8.8477f, 0, 3.0293f, 12f),
                 new FontRectangle(9.7852f, 1.8311f, 1.1719f, 8.8242f),
                 new FontRectangle(8.8477f, 0f, 3.0293f, 12f),
+                Font,
                 1,
                 1),
             new(
@@ -191,6 +193,7 @@ public class TextMeasurerReferenceTests
                 new FontRectangle(11.877f, 0, 3.1699f, 12f),
                 new FontRectangle(12.7559f, 2.0889f, 1.3945f, 8.7305f),
                 new FontRectangle(11.877f, 0f, 3.1699f, 12f),
+                Font,
                 2,
                 2),
         ];
@@ -210,6 +213,7 @@ public class TextMeasurerReferenceTests
                 new FontRectangle(0, 0, 8.8477f, 12f),
                 new FontRectangle(1.1719f, 2.0889f, 6.4922f, 8.5664f),
                 new FontRectangle(0, 0, 8.8477f, 12f),
+                Font,
                 0,
                 0,
                 0,
@@ -218,6 +222,7 @@ public class TextMeasurerReferenceTests
                 new FontRectangle(8.8477f, 0, 3.0293f, 12f),
                 new FontRectangle(9.7852f, 1.8311f, 1.1719f, 8.8242f),
                 new FontRectangle(8.8477f, 0, 3.0293f, 12f),
+                Font,
                 1,
                 1,
                 0,
@@ -226,6 +231,7 @@ public class TextMeasurerReferenceTests
                 new FontRectangle(11.877f, 0, 3.1699f, 12f),
                 new FontRectangle(12.7559f, 2.0889f, 1.3945f, 8.7305f),
                 new FontRectangle(11.877f, 0, 3.1699f, 12f),
+                Font,
                 2,
                 2,
                 0,

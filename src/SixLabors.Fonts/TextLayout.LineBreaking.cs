@@ -269,6 +269,8 @@ internal static partial class TextLayout
                     int graphemeCodePointMax = CodePoint.GetCodePointCount(grapheme) - 1;
 
                     // For non-decomposed glyphs the length is always 1.
+                    int glyphDataIndex = 0;
+
                     for (int i = 0; i < decomposedAdvances.Length; i++)
                     {
                         // Determine if this is the last codepoint in the grapheme.
@@ -277,7 +279,13 @@ internal static partial class TextLayout
                         float decomposedAdvance = decomposedAdvances[i];
 
                         // Work out the scaled metrics for the glyph.
-                        FontGlyphMetrics metric = metrics[i];
+                        while (glyphData[glyphDataIndex].Data.IsPlaceholder)
+                        {
+                            glyphDataIndex++;
+                        }
+
+                        GlyphPositioningCollection.GlyphPositioningData positionedGlyph = glyphData[glyphDataIndex];
+                        FontGlyphMetrics metric = positionedGlyph.Metrics;
 
                         // Adjust the advance for the last decomposed glyph to add tracking if applicable.
                         // Tracking should only be added once per grapheme, so only on the last codepoint of the grapheme.
@@ -357,12 +365,14 @@ internal static partial class TextLayout
                                 stringIndex,
                                 hyphenationMarkerCodePoint.Value,
                                 shapedText.LayoutMode,
+                                positionedGlyph.Font,
                                 options));
                         }
 
                         // Add our metrics to the line.
                         textLine.Add(
                             isDecomposed ? new FontGlyphMetrics[] { metric } : metrics,
+                            positionedGlyph.Font,
                             pointSize,
                             decomposedAdvance,
                             lineHeight,
@@ -380,6 +390,8 @@ internal static partial class TextLayout
                             mode,
                             options.LineSpacing,
                             hyphenationMarkerIndex);
+
+                        glyphDataIndex++;
                     }
 
                     codePointIndex++;
@@ -548,6 +560,7 @@ internal static partial class TextLayout
     /// <param name="stringIndex">The UTF-16 source index to map the marker to.</param>
     /// <param name="markerCodePoint">The marker codepoint to create.</param>
     /// <param name="layoutMode">The layout mode used to calculate marker orientation.</param>
+    /// <param name="font">The font used to shape and render the marker.</param>
     /// <param name="options">The text options used for layout.</param>
     /// <returns>The generated marker entry.</returns>
     internal static GlyphLayoutData CreateGeneratedMarker(
@@ -561,6 +574,7 @@ internal static partial class TextLayout
         int stringIndex,
         CodePoint markerCodePoint,
         LayoutMode layoutMode,
+        Font font,
         TextOptions options)
     {
         anchorMetric.FontMetrics.TryGetGlyphId(markerCodePoint, out ushort markerGlyphId);
@@ -624,6 +638,7 @@ internal static partial class TextLayout
 
         return new GlyphLayoutData(
             new FontGlyphMetrics[] { markerMetric },
+            font,
             pointSize,
             markerAdvance,
             markerLineHeight * options.LineSpacing,

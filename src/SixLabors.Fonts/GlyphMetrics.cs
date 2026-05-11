@@ -17,6 +17,7 @@ public readonly struct GlyphMetrics
     /// <param name="advance">The positioned logical advance rectangle for the glyph entry in pixel units.</param>
     /// <param name="bounds">The rendered rectangle for the glyph entry in pixel units.</param>
     /// <param name="renderableBounds">The union of the positioned logical advance rectangle and rendered rectangle in pixel units.</param>
+    /// <param name="font">The font used to render the glyph entry.</param>
     /// <param name="graphemeIndex">The grapheme index in the original text.</param>
     /// <param name="stringIndex">The UTF-16 index in the original text where the glyph entry begins.</param>
     internal GlyphMetrics(
@@ -24,6 +25,7 @@ public readonly struct GlyphMetrics
         in FontRectangle advance,
         in FontRectangle bounds,
         in FontRectangle renderableBounds,
+        Font font,
         int graphemeIndex,
         int stringIndex)
     {
@@ -31,6 +33,7 @@ public readonly struct GlyphMetrics
         this.Advance = advance;
         this.Bounds = bounds;
         this.RenderableBounds = renderableBounds;
+        this.Font = font;
         this.GraphemeIndex = graphemeIndex;
         this.StringIndex = stringIndex;
     }
@@ -54,6 +57,11 @@ public readonly struct GlyphMetrics
     /// Gets the union of the positioned logical advance rectangle and rendered rectangle in pixel units.
     /// </summary>
     public FontRectangle RenderableBounds { get; }
+
+    /// <summary>
+    /// Gets the font used to render the glyph entry.
+    /// </summary>
+    public Font Font { get; }
 
     /// <summary>
     /// Gets the zero-based grapheme index in the original text.
