@@ -317,7 +317,7 @@ public static partial class Generator
         { 0x1cf9, IPC.Top }
     };
 
-    private static bool Check(dynamic pattern, dynamic value)
+    private static bool Check(object pattern, object? value)
     {
         // TODO:This is nasty. Port to use the harfbuzz approach using Function<CodePoint, bool>
         if (pattern is Dictionary<string, object> dictionary && dictionary.TryGetValue("not", out object? not))
@@ -326,12 +326,7 @@ public static partial class Generator
             {
                 foreach (object item in list)
                 {
-                    if (value is int i && item is int i2 && i == i2)
-                    {
-                        return false;
-                    }
-
-                    if (value is GC gc && item is GC gc2 && gc == gc2)
+                    if (object.Equals(value, item))
                     {
                         return false;
                     }
@@ -341,35 +336,28 @@ public static partial class Generator
             }
             else
             {
-                if (value is int i && not is int i2)
-                {
-                    return i != i2;
-                }
-
-                if (value is GC gc && not is GC gc2)
-                {
-                    return gc != gc2;
-                }
+                return !object.Equals(value, not);
             }
         }
 
-        return value == pattern;
+        return object.Equals(value, pattern);
     }
 
-    private static bool Matches(dynamic pattern, Codepoint code)
+    private static bool Matches(object pattern, Codepoint code)
     {
         if (pattern is int i)
         {
-            pattern = new Dictionary<string, int> { { "U", i } };
+            pattern = new Dictionary<string, object> { { "U", i } };
         }
         else if (pattern is ISC isc)
         {
-            pattern = new Dictionary<string, dynamic> { { "UISC", isc } };
+            pattern = new Dictionary<string, object> { { "UISC", isc } };
         }
 
-        foreach (string? key in pattern.Keys)
+        Dictionary<string, object> dictionary = (Dictionary<string, object>)pattern;
+        foreach (string key in dictionary.Keys)
         {
-            if (!Check(pattern[key], GetCodeValue(code, key)))
+            if (!Check(dictionary[key], GetCodeValue(code, key)))
             {
                 return false;
             }
