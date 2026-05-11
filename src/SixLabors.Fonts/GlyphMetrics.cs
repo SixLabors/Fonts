@@ -17,7 +17,7 @@ public readonly struct GlyphMetrics
     /// <param name="advance">The positioned logical advance rectangle for the glyph entry in pixel units.</param>
     /// <param name="bounds">The rendered rectangle for the glyph entry in pixel units.</param>
     /// <param name="renderableBounds">The union of the positioned logical advance rectangle and rendered rectangle in pixel units.</param>
-    /// <param name="font">The font used to render the glyph entry.</param>
+    /// <param name="font">The font used to shape and render the glyph entry.</param>
     /// <param name="graphemeIndex">The grapheme index in the original text.</param>
     /// <param name="stringIndex">The UTF-16 index in the original text where the glyph entry begins.</param>
     internal GlyphMetrics(
@@ -59,7 +59,7 @@ public readonly struct GlyphMetrics
     public FontRectangle RenderableBounds { get; }
 
     /// <summary>
-    /// Gets the font used to render the glyph entry.
+    /// Gets the font used to shape and render the glyph entry.
     /// </summary>
     public Font Font { get; }
 

@@ -46,7 +46,7 @@ internal readonly struct GlyphLayout
     public Glyph Glyph { get; }
 
     /// <summary>
-    /// Gets the font used to render this laid-out glyph entry.
+    /// Gets the font used to shape and render this laid-out glyph entry.
     /// </summary>
     public Font Font { get; }
 

@@ -14,7 +14,7 @@ public readonly struct GraphemeMetrics
     /// <param name="advance">The positioned logical advance rectangle for the grapheme in pixel units.</param>
     /// <param name="bounds">The rendered glyph bounds for the grapheme in pixel units.</param>
     /// <param name="renderableBounds">The union of the positioned logical advance bounds and rendered glyph bounds in pixel units.</param>
-    /// <param name="font">The font used for the grapheme's first glyph entry.</param>
+    /// <param name="font">The font used to shape and render the grapheme.</param>
     /// <param name="graphemeIndex">The grapheme index in the original text.</param>
     /// <param name="stringIndex">The UTF-16 index in the original text where the grapheme begins.</param>
     /// <param name="bidiLevel">The resolved bidi embedding level.</param>
@@ -55,7 +55,7 @@ public readonly struct GraphemeMetrics
     public FontRectangle RenderableBounds { get; }
 
     /// <summary>
-    /// Gets the font used for the grapheme's first glyph entry.
+    /// Gets the font used to shape and render the grapheme.
     /// </summary>
     public Font Font { get; }
 
