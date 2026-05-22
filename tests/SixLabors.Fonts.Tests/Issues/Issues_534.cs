@@ -7,5 +7,11 @@ public class Issues_534
 {
     [Fact]
     public void ShouldLoadFontWithSvgTableHavingZeroEntries()
-        => TestFonts.GetFont(TestFonts.Issues.Issue534, 12);
+    {
+        Font font = TestFonts.GetFont(TestFonts.Issues.Issue534, 12);
+
+        FontRectangle size = TextMeasurer.MeasureBounds("ABCabc123", new TextOptions(font));
+
+        Assert.NotEqual(FontRectangle.Empty, size);
+    }
 }
