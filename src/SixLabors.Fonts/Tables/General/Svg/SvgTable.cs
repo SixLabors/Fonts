@@ -74,8 +74,8 @@ internal class SvgTable : Table
     /// Loads the SVG table from the specified binary reader.
     /// </summary>
     /// <param name="reader">The binary reader positioned at the start of the SVG table.</param>
-    /// <returns>The <see cref="SvgTable"/>.</returns>
-    public static SvgTable Load(BigEndianBinaryReader reader)
+    /// <returns>The <see cref="SvgTable"/>, or <see langword="null"/> if the table is not valid in the font.</returns>
+    public static SvgTable? Load(BigEndianBinaryReader reader)
     {
         // HEADER
         // | Type     | Name              | Description                                               |
@@ -99,6 +99,12 @@ internal class SvgTable : Table
         // | Entry[numEntries] | entries    | Array of SVG Document Index Entries(sorted by startGlyphID).|
         reader.Seek(svgDocIndexOffset, SeekOrigin.Begin);
         ushort numEntries = reader.ReadUInt16();
+        if (numEntries == 0)
+        {
+            // The spec says the number of entries must be non-zero.
+            return null;
+        }
+
         SvgDocumentIndexEntry[] entries = new SvgDocumentIndexEntry[numEntries];
 
         // SVG Document Index Entry
