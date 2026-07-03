@@ -22,27 +22,27 @@ public class Issues_383
         };
 
         // OK
-        TextRenderer.RenderTextTo(new NoOpGlyphRenderer(), "i", textOption);
+        TextRenderer.RenderTo(new NoOpGlyphRenderer(), "i", textOption);
 
         // OK
-        TextRenderer.RenderTextTo(new NoOpGlyphRenderer(), "v", textOption);
+        TextRenderer.RenderTo(new NoOpGlyphRenderer(), "v", textOption);
 
         // raise ArgumentOutOfRangeException
-        TextRenderer.RenderTextTo(new NoOpGlyphRenderer(), "a", textOption);
+        TextRenderer.RenderTo(new NoOpGlyphRenderer(), "a", textOption);
 
         textOption.WrappingLength = 9.0F;
 
         // OK
-        TextRenderer.RenderTextTo(new NoOpGlyphRenderer(), "i", textOption);
+        TextRenderer.RenderTo(new NoOpGlyphRenderer(), "i", textOption);
 
         // raise ArgumentOutOfRangeException
-        TextRenderer.RenderTextTo(new NoOpGlyphRenderer(), "v", textOption);
+        TextRenderer.RenderTo(new NoOpGlyphRenderer(), "v", textOption);
 
         // OK
-        TextRenderer.RenderTextTo(new NoOpGlyphRenderer(), "i\r\nv", textOption);
+        TextRenderer.RenderTo(new NoOpGlyphRenderer(), "i\r\nv", textOption);
 
         // raise ArgumentOutOfRangeException
-        TextRenderer.RenderTextTo(new NoOpGlyphRenderer(), "v\r\ni", textOption);
+        TextRenderer.RenderTo(new NoOpGlyphRenderer(), "v\r\ni", textOption);
     }
 }
 

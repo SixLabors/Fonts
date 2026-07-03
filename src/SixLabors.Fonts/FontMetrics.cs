@@ -111,6 +111,23 @@ public abstract class FontMetrics
     public abstract float ItalicAngle { get; }
 
     /// <summary>
+    /// Attempts to get the OpenType table data for the specified tag.
+    /// </summary>
+    /// <param name="tag">The table tag.</param>
+    /// <param name="table">
+    /// When this method returns, contains the table data if the table exists; otherwise, the default value.
+    /// This parameter is passed uninitialized.
+    /// </param>
+    /// <returns><see langword="true"/> if the table exists; otherwise, <see langword="false"/>.</returns>
+    public abstract bool TryGetTableData(Tag tag, out ReadOnlyMemory<byte> table);
+
+    /// <summary>
+    /// Opens a readable stream positioned at the font face data.
+    /// </summary>
+    /// <returns>A readable stream positioned at the font face data.</returns>
+    public abstract Stream OpenStream();
+
+    /// <summary>
     /// Gets the specified glyph id matching the codepoint.
     /// </summary>
     /// <param name="codePoint">The codepoint.</param>
@@ -209,6 +226,29 @@ public abstract class FontMetrics
     /// </returns>
     public abstract bool TryGetGlyphMetrics(
         CodePoint codePoint,
+        TextAttributes textAttributes,
+        TextDecorations textDecorations,
+        LayoutMode layoutMode,
+        ColorFontSupport support,
+        [NotNullWhen(true)] out FontGlyphMetrics? metrics);
+
+    /// <summary>
+    /// Gets the glyph metrics for a given glyph id.
+    /// </summary>
+    /// <param name="glyphId">The glyph identifier.</param>
+    /// <param name="textAttributes">The text attributes applied to the glyph.</param>
+    /// <param name="textDecorations">The text decorations applied to the glyph.</param>
+    /// <param name="layoutMode">The layout mode applied to the glyph.</param>
+    /// <param name="support">Options for enabling color font support during layout and rendering.</param>
+    /// <param name="metrics">
+    /// When this method returns, contains the metrics for the given glyph id and color support if the metrics
+    /// are found; otherwise the default value. This parameter is passed uninitialized.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if the face contains glyph metrics for the specified glyph id; otherwise, <see langword="false"/>.
+    /// </returns>
+    public abstract bool TryGetGlyphMetrics(
+        ushort glyphId,
         TextAttributes textAttributes,
         TextDecorations textDecorations,
         LayoutMode layoutMode,

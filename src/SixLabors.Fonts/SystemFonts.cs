@@ -1,7 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts;
 
@@ -21,6 +23,63 @@ public static class SystemFonts
     /// Gets the collection of <see cref="FontFamily"/>s installed on current system.
     /// </summary>
     public static IEnumerable<FontFamily> Families => Collection.Families;
+
+    /// <summary>
+    /// Gets the names of font families installed on current system.
+    /// </summary>
+    /// <param name="checkForUpdates">Whether the operating system should check for updates to the system font collection.</param>
+    /// <returns>The installed system font family names.</returns>
+    public static string[] GetFamilyNames(bool checkForUpdates = false)
+    {
+        if (checkForUpdates && Native.SystemFontMatcher.TryGetFamilyFaces(checkForUpdates, out Native.NativeSystemFontFace[]? faces))
+        {
+            HashSet<string> names = new(StringComparer.OrdinalIgnoreCase);
+
+            foreach (Native.NativeSystemFontFace face in faces)
+            {
+                names.Add(face.FamilyName);
+            }
+
+            return [.. names];
+        }
+
+        List<string> collectionNames = [];
+
+        foreach (FontFamily family in Families)
+        {
+            collectionNames.Add(family.Name);
+        }
+
+        return [.. collectionNames];
+    }
+
+    /// <summary>
+    /// Gets the operating system default font family name.
+    /// </summary>
+    /// <returns>The default font family name.</returns>
+    /// <exception cref="InvalidOperationException">No system font families are available.</exception>
+    public static string GetDefaultFamilyName()
+    {
+        if (TryGetDefaultFamilyName(out string? familyName))
+        {
+            return familyName;
+        }
+
+        foreach (FontFamily family in Families)
+        {
+            return family.Name;
+        }
+
+        throw new InvalidOperationException("No system font families are available.");
+    }
+
+    /// <summary>
+    /// Tries to get the operating system default font family name.
+    /// </summary>
+    /// <param name="familyName">The operating system default font family name.</param>
+    /// <returns><see langword="true"/> when the operating system returned a default font family name.</returns>
+    public static bool TryGetDefaultFamilyName([NotNullWhen(true)] out string? familyName)
+        => Native.SystemFontMatcher.TryGetDefaultFamilyName(out familyName);
 
     /// <inheritdoc cref="IReadOnlyFontCollection.Get(string)"/>
     public static FontFamily Get(string name) => GetByCulture(name, CultureInfo.InvariantCulture);
@@ -59,6 +118,10 @@ public static class SystemFonts
     /// <inheritdoc cref="IReadOnlyFontCollection.TryGetByCulture(string, CultureInfo, out FontFamily)" />
     public static bool TryGetByCulture(string fontFamily, CultureInfo culture, out FontFamily family)
         => Collection.TryGetByCulture(fontFamily, culture, out family);
+
+    /// <inheritdoc cref="IReadOnlySystemFontCollection.TryMatchCharacter(CodePoint, FontStyle, string?, CultureInfo?, out FontMatch)" />
+    public static bool TryMatchCharacter(CodePoint codePoint, FontStyle style, string? familyName, CultureInfo? culture, out FontMatch match)
+        => Collection.TryMatchCharacter(codePoint, style, familyName, culture, out match);
 
     /// <summary>
     /// Create a new instance of the <see cref="Font"/> for the named font family with regular styling.

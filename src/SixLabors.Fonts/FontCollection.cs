@@ -3,7 +3,6 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using SixLabors.Fonts.Tables;
 
 namespace SixLabors.Fonts;
 
@@ -13,7 +12,7 @@ namespace SixLabors.Fonts;
 public sealed class FontCollection : IFontCollection, IFontMetricsCollection
 {
     private readonly HashSet<string> searchDirectories = [];
-    private readonly HashSet<FontMetrics> metricsCollection = [];
+    private readonly HashSet<FontCollectionEntry> metricsCollection = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FontCollection"/> class.
@@ -143,6 +142,29 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
 
     /// <inheritdoc/>
     void IFontMetricsCollection.AddMetrics(FontMetrics metrics)
+        => this.AddMetrics(metrics, familyName: null);
+
+    /// <inheritdoc/>
+    void IFontMetricsCollection.AddMetrics(FontMetrics metrics, string familyName)
+    {
+        Guard.NotNull(familyName, nameof(familyName));
+        this.AddMetrics(metrics, familyName, style: null);
+    }
+
+    /// <inheritdoc/>
+    void IFontMetricsCollection.AddMetrics(FontMetrics metrics, string familyName, FontStyle style)
+    {
+        Guard.NotNull(familyName, nameof(familyName));
+        this.AddMetrics(metrics, familyName, style);
+    }
+
+    /// <summary>
+    /// Adds the font metrics to this collection.
+    /// </summary>
+    /// <param name="metrics">The font metrics to add.</param>
+    /// <param name="familyName">The explicit family name to use for collection lookups, or <see langword="null"/> to use the font description.</param>
+    /// <param name="style">The explicit style to use for collection lookups, or <see langword="null"/> to use the font description.</param>
+    private void AddMetrics(FontMetrics metrics, string? familyName, FontStyle? style = null)
     {
         Guard.NotNull(metrics, nameof(metrics));
 
@@ -153,17 +175,27 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
 
         lock (this.metricsCollection)
         {
-            this.metricsCollection.Add(metrics);
+            this.metricsCollection.Add(new FontCollectionEntry(metrics, familyName, style));
         }
     }
 
     /// <inheritdoc/>
     bool IReadOnlyFontMetricsCollection.TryGetMetrics(string name, CultureInfo culture, FontStyle style, [NotNullWhen(true)] out FontMetrics? metrics)
     {
-        metrics = ((IReadOnlyFontMetricsCollection)this).GetAllMetrics(name, culture)
-            .FirstOrDefault(x => x.Description.Style == style);
+        Guard.NotNull(name, nameof(name));
+        StringComparer comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(culture);
 
-        return metrics != null;
+        foreach (FontCollectionEntry entry in this.metricsCollection)
+        {
+            if (entry.GetStyle() == style && comparer.Equals(entry.GetFamilyName(culture), name))
+            {
+                metrics = entry.Metrics;
+                return true;
+            }
+        }
+
+        metrics = null;
+        return false;
     }
 
     /// <inheritdoc/>
@@ -173,17 +205,26 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         StringComparer comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(culture);
 
         return this.metricsCollection
-            .Where(x => comparer.Equals(x.Description.FontFamily(culture), name))
+            .Where(x => comparer.Equals(x.GetFamilyName(culture), name))
+            .Select(x => x.Metrics)
             .ToArray();
     }
 
     /// <inheritdoc/>
     ReadOnlyMemory<FontStyle> IReadOnlyFontMetricsCollection.GetAllStyles(string name, CultureInfo culture)
-        => ((IReadOnlyFontMetricsCollection)this).GetAllMetrics(name, culture).Select(x => x.Description.Style).ToArray();
+    {
+        Guard.NotNull(name, nameof(name));
+        StringComparer comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(culture);
+
+        return this.metricsCollection
+            .Where(x => comparer.Equals(x.GetFamilyName(culture), name))
+            .Select(x => x.GetStyle())
+            .ToArray();
+    }
 
     /// <inheritdoc/>
     IEnumerator<FontMetrics> IReadOnlyFontMetricsCollection.GetEnumerator()
-        => this.metricsCollection.GetEnumerator();
+        => this.metricsCollection.Select(x => x.Metrics).GetEnumerator();
 
     internal void AddSearchDirectories(IEnumerable<string> directories)
     {
@@ -202,7 +243,7 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
 
     private FontFamily AddImpl(Stream stream, CultureInfo culture, out FontDescription description)
     {
-        StreamFontMetrics metrics = StreamFontMetrics.LoadFont(stream);
+        MemoryFontMetrics metrics = new(stream);
         description = metrics.Description;
 
         return ((IFontMetricsCollection)this).AddMetrics(metrics, culture);
@@ -239,18 +280,16 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         CultureInfo culture,
         out ReadOnlyMemory<FontDescription> descriptions)
     {
-        long startPos = stream.Position;
-        using BigEndianBinaryReader reader = new(stream, true);
-        TtcHeader ttcHeader = TtcHeader.Read(reader);
-        FontDescription[] result = new FontDescription[(int)ttcHeader.NumFonts];
-        FontFamily[] installedFamilies = new FontFamily[(int)ttcHeader.NumFonts];
+        ReadOnlyMemory<MemoryFontMetrics> fontMetrics = MemoryFontMetrics.LoadFontCollection(stream);
+        ReadOnlySpan<MemoryFontMetrics> fonts = fontMetrics.Span;
+
+        FontDescription[] result = new FontDescription[fonts.Length];
+        FontFamily[] installedFamilies = new FontFamily[fonts.Length];
         int familyCount = 0;
-        for (int i = 0; i < ttcHeader.NumFonts; ++i)
+        for (int i = 0; i < fonts.Length; ++i)
         {
-            stream.Position = startPos + ttcHeader.OffsetTable[i];
-            StreamFontMetrics instance = StreamFontMetrics.LoadFont(stream);
-            FontFamily family = ((IFontMetricsCollection)this).AddMetrics(instance, culture);
-            result[i] = instance.Description;
+            result[i] = fonts[i].Description;
+            FontFamily family = ((IFontMetricsCollection)this).AddMetrics(fonts[i], culture);
 
             if (!installedFamilies.AsSpan(0, familyCount).Contains(family))
             {
@@ -264,7 +303,7 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
 
     private FontFamily[] FamiliesByCultureImpl(CultureInfo culture)
         => [.. this.metricsCollection
-        .Select(x => x.Description.FontFamily(culture))
+        .Select(x => x.GetFamilyName(culture))
         .Distinct()
         .Select(x => new FontFamily(x, this, culture))];
 
@@ -274,7 +313,7 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         StringComparer comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(culture);
 
         string? match = this.metricsCollection
-            .Select(x => x.Description.FontFamily(culture))
+            .Select(x => x.GetFamilyName(culture))
             .FirstOrDefault(x => comparer.Equals(name, x));
 
         if (match != null)
@@ -295,5 +334,61 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         }
 
         throw new FontFamilyNotFoundException(name, this.searchDirectories);
+    }
+
+    /// <summary>
+    /// Stores font metrics with an optional collection family name override.
+    /// </summary>
+    private readonly struct FontCollectionEntry : IEquatable<FontCollectionEntry>
+    {
+        private readonly string? familyName;
+        private readonly FontStyle? style;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FontCollectionEntry"/> struct.
+        /// </summary>
+        /// <param name="metrics">The font metrics.</param>
+        /// <param name="familyName">The explicit family name, or <see langword="null"/> to use the font description.</param>
+        /// <param name="style">The explicit style, or <see langword="null"/> to use the font description.</param>
+        public FontCollectionEntry(FontMetrics metrics, string? familyName, FontStyle? style)
+        {
+            this.Metrics = metrics;
+            this.familyName = familyName;
+            this.style = style;
+        }
+
+        /// <summary>
+        /// Gets the font metrics.
+        /// </summary>
+        public FontMetrics Metrics { get; }
+
+        /// <summary>
+        /// Gets the family name to use for collection lookups.
+        /// </summary>
+        /// <param name="culture">The culture used to read font-description family names.</param>
+        /// <returns>The collection family name.</returns>
+        public string GetFamilyName(CultureInfo culture)
+            => this.familyName ?? this.Metrics.Description.FontFamily(culture);
+
+        /// <summary>
+        /// Gets the style to use for collection lookups.
+        /// </summary>
+        /// <returns>The collection style.</returns>
+        public FontStyle GetStyle()
+            => this.style ?? this.Metrics.Description.Style;
+
+        /// <inheritdoc/>
+        public bool Equals(FontCollectionEntry other)
+            => EqualityComparer<FontMetrics>.Default.Equals(this.Metrics, other.Metrics)
+            && StringComparer.Ordinal.Equals(this.familyName, other.familyName)
+            && this.style == other.style;
+
+        /// <inheritdoc/>
+        public override bool Equals(object? obj)
+            => obj is FontCollectionEntry entry && this.Equals(entry);
+
+        /// <inheritdoc/>
+        public override int GetHashCode()
+            => HashCode.Combine(this.Metrics, this.familyName, this.style);
     }
 }

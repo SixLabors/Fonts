@@ -15,11 +15,9 @@ public static class FontCollectionExtensions
     /// <returns>The <see cref="FontCollection"/> containing the system fonts.</returns>
     public static FontCollection AddSystemFonts(this FontCollection collection)
     {
-        // This cast is safe because our underlying SystemFontCollection implements
-        // both interfaces separately.
-        foreach (FontMetrics metric in (IReadOnlyFontMetricsCollection)SystemFonts.Collection)
+        foreach (SystemFontFamilyMetrics metric in ((SystemFontCollection)SystemFonts.Collection).GetAllFamilyMetrics())
         {
-            ((IFontMetricsCollection)collection).AddMetrics(metric);
+            ((IFontMetricsCollection)collection).AddMetrics(metric.Metrics, metric.FamilyName, metric.Style);
         }
 
         collection.AddSearchDirectories(SystemFonts.Collection.SearchDirectories);
@@ -36,13 +34,13 @@ public static class FontCollectionExtensions
     public static FontCollection AddSystemFonts(this FontCollection collection, Predicate<FontMetrics> match)
     {
         bool isMatch = false;
-        foreach (FontMetrics metric in (IReadOnlyFontMetricsCollection)SystemFonts.Collection)
+        foreach (SystemFontFamilyMetrics metric in ((SystemFontCollection)SystemFonts.Collection).GetAllFamilyMetrics())
         {
-            bool currentMatch = match(metric);
+            bool currentMatch = match(metric.Metrics);
             isMatch |= currentMatch;
             if (currentMatch)
             {
-                ((IFontMetricsCollection)collection).AddMetrics(metric);
+                ((IFontMetricsCollection)collection).AddMetrics(metric.Metrics, metric.FamilyName, metric.Style);
             }
         }
 

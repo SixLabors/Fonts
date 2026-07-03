@@ -28,7 +28,7 @@ public class Issues_417
         Assert.Equal(361, glyphs[3].Advance.Width);
 
         GlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, "Text", new TextOptions(font));
+        TextRenderer.RenderTo(renderer, "Text", new TextOptions(font));
 
         int[] expectedGlyphIndices = [55, 72, 91, 87];
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);

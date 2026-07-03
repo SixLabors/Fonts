@@ -2,7 +2,9 @@
 // Licensed under the Six Labors Split License.
 
 using System.Collections;
+using System.Globalization;
 using System.Runtime.InteropServices;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests;
 
@@ -15,6 +17,36 @@ public class SystemFontCollectionTests
     {
         Assert.True(SystemFonts.Collection.Families.Any());
         Assert.Equal(SystemFonts.Collection.Families, SystemFonts.Families);
+    }
+
+    [Fact]
+    public void SystemFonts_CanGetFamilyNames()
+    {
+        string[] familyNames = SystemFonts.GetFamilyNames();
+
+        Assert.NotEmpty(familyNames);
+        Assert.All(familyNames, name => Assert.False(string.IsNullOrWhiteSpace(name)));
+        Assert.Equal(
+            SystemFonts.Families.Select(x => x.Name).OrderBy(x => x, StringComparer.OrdinalIgnoreCase),
+            familyNames.OrderBy(x => x, StringComparer.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void SystemFonts_CanResolveFontFromFamilyNames()
+    {
+        string familyName = SystemFonts.GetFamilyNames().First();
+
+        Assert.True(SystemFonts.TryGet(familyName, out FontFamily family));
+        Assert.False(family.GetAvailableStyles().IsEmpty);
+    }
+
+    [Fact]
+    public void SystemFonts_CanGetDefaultFamilyName()
+    {
+        string familyName = SystemFonts.GetDefaultFamilyName();
+
+        Assert.False(string.IsNullOrWhiteSpace(familyName));
+        Assert.NotNull(SystemFonts.CreateFont(familyName, 12F));
     }
 
     [Fact]
@@ -65,6 +97,52 @@ public class SystemFontCollectionTests
 
         font = SystemFonts.CreateFont(family.Name, family.Culture, 12F, FontStyle.Regular);
         Assert.NotNull(font);
+    }
+
+    [Fact]
+    public void SystemFonts_TryMatchCharacter_Windows_MatchesEmojiFallback()
+    {
+        if (!TestEnvironment.IsWindows)
+        {
+            return;
+        }
+
+        CodePoint codePoint = new(0x1F600);
+
+        Assert.True(SystemFonts.TryMatchCharacter(
+            codePoint,
+            FontStyle.Regular,
+            "Segoe UI",
+            CultureInfo.GetCultureInfo("en-US"),
+            out FontMatch match));
+
+        Font font = match.Family.CreateFont(12F, match.Style);
+
+        Assert.True(font.TryGetGlyphId(codePoint, out ushort glyphId));
+        Assert.NotEqual(0, glyphId);
+    }
+
+    [Fact]
+    public void SystemFonts_TryMatchCharacter_MatchesBasicLatinOnSupportedPlatforms()
+    {
+        if (!TestEnvironment.IsWindows && !TestEnvironment.IsLinux && !TestEnvironment.IsMacOS)
+        {
+            return;
+        }
+
+        CodePoint codePoint = new('A');
+
+        Assert.True(SystemFonts.TryMatchCharacter(
+            codePoint,
+            FontStyle.Regular,
+            familyName: null,
+            CultureInfo.GetCultureInfo("en-US"),
+            out FontMatch match));
+
+        Font font = match.Family.CreateFont(12F, match.Style);
+
+        Assert.True(font.TryGetGlyphId(codePoint, out ushort glyphId));
+        Assert.NotEqual(0, glyphId);
     }
 
     [Fact]
@@ -131,6 +209,14 @@ public class SystemFontCollectionTests
 
     [Fact]
     [AppContextSwitch("Switch.SixLabors.Fonts.DoNotUseNativeSystemFontsEnumeration", true)]
+    public void NativeSystemFontEnumerationSwitch_DisablesNativeFamilyEnumeration()
+    {
+        Assert.False(SixLabors.Fonts.Native.SystemFontMatcher.TryGetFamilyNames(false, out _));
+        Assert.False(SixLabors.Fonts.Native.SystemFontMatcher.TryGetFamilyFaces(false, out _));
+    }
+
+    [Fact]
+    [AppContextSwitch("Switch.SixLabors.Fonts.DoNotUseNativeSystemFontsEnumeration", true)]
     public void SystemFonts_FontFamilyNotFound_ThrowsWithSearchDirectories()
     {
         static void Action() => new SystemFontCollection().Get("AFontThatDoesNotExist");
@@ -157,19 +243,6 @@ public class SystemFontCollectionTests
         {
             Assert.Contains(@"/system/fonts/", exception.Message, StringComparison.OrdinalIgnoreCase);
             Assert.Contains(exception.SearchDirectories, e => e.Contains("/system/fonts/", StringComparison.OrdinalIgnoreCase));
-        }
-    }
-
-    [Fact]
-    public void SystemFonts_FontFamilyNotFound_ThrowsWithoutSearchDirectories()
-    {
-        static void Action() => new SystemFontCollection().Get("AFontThatDoesNotExist");
-
-        FontFamilyNotFoundException exception = Assert.Throws<FontFamilyNotFoundException>(Action);
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            Assert.DoesNotContain("/Library/Fonts/", exception.Message);
-            Assert.Empty(exception.SearchDirectories);
         }
     }
 }

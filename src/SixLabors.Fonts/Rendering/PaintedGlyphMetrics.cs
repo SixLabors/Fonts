@@ -109,29 +109,19 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
             textRun);
 
     /// <inheritdoc/>
-    internal override void RenderTo(
+    internal override void RenderOutlineTo(
         IGlyphRenderer renderer,
-        int graphemeIndex,
         Vector2 glyphOrigin,
-        Vector2 decorationOrigin,
         GlyphLayoutMode mode,
-        TextOptions options)
+        float scaledPPEM,
+        HintingMode hintingMode)
     {
-        if (ShouldSkipGlyphRendering(this.CodePoint))
+        if (!this.source.TryGetPaintedGlyph(this.GlyphId, out PaintedGlyph glyph, out PaintedCanvasMetadata canvas))
         {
             return;
         }
 
-        float pointSize = this.TextRun.Font?.Size ?? options.Font.Size;
-        float dpi = options.Dpi;
-
-        // Device-space placement.
-        glyphOrigin *= dpi;
-        decorationOrigin *= dpi;
-
-        float scaledPpem = this.GetScaledSize(pointSize, dpi);
-        Vector2 scale = new Vector2(scaledPpem) / this.ScaleFactor; // uniform
-
+        Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor; // uniform
         Matrix3x2 rotation = GetRotationMatrix(mode);
 
         // Layout similarity: uniform scale then rotation; translation added below.
@@ -139,28 +129,16 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
         layout *= rotation;
         layout.Translation = (this.Offset * scale) + glyphOrigin;
 
-        // Bounds in device space for BeginGlyph.
-        FontRectangle box = this.GetBoundingBox(mode, glyphOrigin, scaledPpem);
-        GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode, graphemeIndex);
+        FontRectangle box = this.GetBoundingBox(mode, glyphOrigin, scaledPPEM);
 
-        if (renderer.BeginGlyph(in box, in parameters))
-        {
-            if (!UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint)
-                && this.source.TryGetPaintedGlyph(this.GlyphId, out PaintedGlyph glyph, out PaintedCanvasMetadata canvas))
-            {
-                // Source-to-UPEM: viewBox mapping (uniform "meet"), optional y-flip, optional root transform.
-                Matrix3x2 s2u = ComputeSourceToUpem(canvas, this.UnitsPerEm);
+        // Source-to-UPEM: viewBox mapping (uniform "meet"), optional y-flip, optional root transform.
+        Matrix3x2 s2u = ComputeSourceToUpem(canvas, this.UnitsPerEm);
 
-                // Full transform from source doc-space to device space.
-                Matrix3x2 total = s2u * layout;
+        // Full transform from source doc-space to device space.
+        Matrix3x2 total = s2u * layout;
 
-                // Stream layers and commands with correct transforms.
-                StreamPaintedGlyph(glyph, in box, renderer, total);
-            }
-
-            renderer.EndGlyph();
-            this.RenderDecorationsTo(renderer, decorationOrigin, mode, rotation, scaledPpem, options);
-        }
+        // Stream layers and commands with correct transforms.
+        StreamPaintedGlyph(glyph, in box, renderer, total);
     }
 
     /// <summary>

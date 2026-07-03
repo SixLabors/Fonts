@@ -1,4 +1,4 @@
-// Copyright (c) Six Labors.
+﻿// Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
@@ -57,6 +57,7 @@ public class TextOptions
         this.FeatureTags = new List<Tag>(options.FeatureTags);
         this.TextRuns = new List<TextRun>(options.TextRuns);
         this.DecorationPositioningMode = options.DecorationPositioningMode;
+        this.TextDecorationSkipInk = options.TextDecorationSkipInk;
     }
 
     /// <summary>
@@ -229,6 +230,13 @@ public class TextOptions
     /// Gets or sets the positioning mode used for rendering decorations.
     /// </summary>
     public DecorationPositioningMode DecorationPositioningMode { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether underline and overline decorations skip over
+    /// glyph ink, leaving gaps around descenders and ascenders that cross the decoration.
+    /// Defaults to <see cref="TextDecorationSkipInk.Auto"/>.
+    /// </summary>
+    public TextDecorationSkipInk TextDecorationSkipInk { get; set; } = TextDecorationSkipInk.Auto;
 
     /// <summary>
     /// Gets or sets the color font support options.

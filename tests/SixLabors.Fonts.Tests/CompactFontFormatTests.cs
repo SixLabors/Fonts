@@ -19,7 +19,7 @@ public class CompactFontFormatTests
         ColorGlyphRenderer renderer = new();
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);

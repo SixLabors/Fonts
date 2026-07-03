@@ -53,7 +53,7 @@ public partial class GSubTableTests
     public void CanShapeBalineseText(string input, int[] expectedGlyphIndices)
     {
         ColorGlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(BalineseFontTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(BalineseFontTTF));
 
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
         for (int i = 0; i < expectedGlyphIndices.Length; i++)

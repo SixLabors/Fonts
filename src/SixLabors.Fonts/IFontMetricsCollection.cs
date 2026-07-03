@@ -23,4 +23,19 @@ internal interface IFontMetricsCollection : IReadOnlyFontMetricsCollection
     /// </summary>
     /// <param name="metrics">The font metrics to add.</param>
     public void AddMetrics(FontMetrics metrics);
+
+    /// <summary>
+    /// Adds the font metrics to the <see cref="IFontMetricsCollection"/> under the specified family name.
+    /// </summary>
+    /// <param name="metrics">The font metrics to add.</param>
+    /// <param name="familyName">The family name to use for collection lookups.</param>
+    public void AddMetrics(FontMetrics metrics, string familyName);
+
+    /// <summary>
+    /// Adds the font metrics to the <see cref="IFontMetricsCollection"/> under the specified family name and style.
+    /// </summary>
+    /// <param name="metrics">The font metrics to add.</param>
+    /// <param name="familyName">The family name to use for collection lookups.</param>
+    /// <param name="style">The style to use for collection lookups.</param>
+    public void AddMetrics(FontMetrics metrics, string familyName, FontStyle style);
 }

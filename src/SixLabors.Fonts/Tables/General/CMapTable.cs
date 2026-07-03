@@ -100,23 +100,32 @@ internal sealed class CMapTable : Table
     /// </summary>
     /// <param name="codePoint">The code point to look up.</param>
     /// <param name="glyphId">When this method returns, contains the glyph ID if found.</param>
-    /// <returns><see langword="true"/> if a non-zero glyph ID was found; otherwise, <see langword="false"/>.</returns>
+    /// <returns><see langword="true"/> if a glyph ID was found; otherwise, <see langword="false"/>.</returns>
     private bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
     {
+        bool foundFallback = false;
+
         foreach (CMapSubTable t in this.Tables)
         {
             // Keep looking until we have an index that's not the fallback.
             // Regardless of the encoding scheme, character codes that do
             // not correspond to any glyph in the font should be mapped to glyph index 0.
             // The glyph at this location must be a special glyph representing a missing character, commonly known as .notdef.
-            if (t.TryGetGlyphId(codePoint, out glyphId) && glyphId > 0)
+            if (!t.TryGetGlyphId(codePoint, out glyphId))
+            {
+                continue;
+            }
+
+            if (glyphId > 0)
             {
                 return true;
             }
+
+            foundFallback = true;
         }
 
         glyphId = 0;
-        return false;
+        return foundFallback;
     }
 
     /// <summary>

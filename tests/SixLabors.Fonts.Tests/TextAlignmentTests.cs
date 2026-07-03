@@ -149,7 +149,7 @@ public class TextAlignmentTests
         };
 
         IReadOnlyList<GlyphPathCollection> glyphPaths = TextBuilder.GenerateGlyphs(text, textOptions);
-        TextRenderer.RenderTextTo(boundsRenderer, text, textOptions);
+        TextRenderer.RenderTo(boundsRenderer, text, textOptions);
 
         canvas.DrawGlyphs(Brushes.Solid(Color.Black), Pens.Solid(Color.Black, 1F), glyphPaths);
         canvas.Draw(Pens.Solid(Color.Fuchsia.WithAlpha(.5F), 1), boundsRenderer.Boxes);

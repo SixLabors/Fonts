@@ -216,6 +216,20 @@ public sealed class Font
         => this.TryGetGlyph(codePoint, textAttributes, TextDecorations.None, LayoutMode.HorizontalTopBottom, support, out glyph);
 
     /// <summary>
+    /// Gets the glyph identifier for the given code point.
+    /// </summary>
+    /// <param name="codePoint">The code point of the character.</param>
+    /// <param name="glyphId">
+    /// When this method returns, contains the glyph identifier for the given code point if the glyph
+    /// is found; otherwise <value>0</value>. This parameter is passed uninitialized.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if the face contains a glyph for the specified code point; otherwise, <see langword="false"/>.
+    /// </returns>
+    public bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
+        => this.FontMetrics.TryGetGlyphId(codePoint, out glyphId);
+
+    /// <summary>
     /// Gets the glyph for the given codepoint.
     /// </summary>
     /// <param name="codePoint">The code point of the character.</param>
@@ -260,9 +274,12 @@ public sealed class Font
         ColorFontSupport support,
         [NotNullWhen(true)] out Glyph? glyph)
     {
-        TextRun textRun = new() { Start = 0, End = 1, Font = this, TextAttributes = textAttributes, TextDecorations = textDecorations };
-        if (this.FontMetrics.TryGetGlyphMetrics(codePoint, textAttributes, textDecorations, layoutMode, support, out FontGlyphMetrics? metrics))
+        FontMetrics fontMetrics = this.FontMetrics;
+        if (fontMetrics.TryGetGlyphId(codePoint, out ushort glyphId))
         {
+            TextRun textRun = new() { Start = 0, End = 1, Font = this, TextAttributes = textAttributes, TextDecorations = textDecorations };
+            FontGlyphMetrics metrics = fontMetrics.GetGlyphMetrics(codePoint, glyphId, textAttributes, textDecorations, layoutMode, support);
+
             glyph = new(metrics.CloneForRendering(textRun), this.Size);
             return true;
         }
@@ -317,6 +334,7 @@ public sealed class Font
             {
                 StreamFontMetrics s => s,
                 FileFontMetrics f => f.StreamFontMetrics,
+                MemoryFontMetrics m => m.StreamFontMetrics,
                 _ => null
             };
 

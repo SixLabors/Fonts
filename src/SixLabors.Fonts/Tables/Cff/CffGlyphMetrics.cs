@@ -126,52 +126,26 @@ internal class CffGlyphMetrics : FontGlyphMetrics
             this.GlyphType);
 
     /// <inheritdoc/>
-    internal override void RenderTo(
+    internal override void RenderOutlineTo(
         IGlyphRenderer renderer,
-        int graphemeIndex,
         Vector2 glyphOrigin,
-        Vector2 decorationOrigin,
         GlyphLayoutMode mode,
-        TextOptions options)
+        float scaledPPEM,
+        HintingMode hintingMode)
     {
-        // https://www.unicode.org/faq/unsup_char.html
-        if (ShouldSkipGlyphRendering(this.CodePoint))
-        {
-            return;
-        }
-
-        float pointSize = this.TextRun.Font?.Size ?? options.Font.Size;
-        float dpi = options.Dpi;
-
-        glyphOrigin *= dpi;
-        decorationOrigin *= dpi;
-        float scaledPPEM = this.GetScaledSize(pointSize, dpi);
-
         Matrix3x2 rotation = GetRotationMatrix(mode);
-        FontRectangle box = this.GetBoundingBox(mode, glyphOrigin, scaledPPEM);
-        GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode, graphemeIndex);
+        Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
 
-        if (renderer.BeginGlyph(in box, in parameters))
+        // Apply the CFF FontMatrix to convert charstring coordinates to design units.
+        // The normalized FontMatrix (fontMatrix * unitsPerEM) is identity for the default
+        // [0.001, 0, 0, 0.001, 0, 0] with upm=1000.
+        if (this.glyphData.FontMatrix is double[] fm)
         {
-            if (!UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint))
-            {
-                Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
-
-                // Apply the CFF FontMatrix to convert charstring coordinates to design units.
-                // The normalized FontMatrix (fontMatrix * unitsPerEM) is identity for the default
-                // [0.001, 0, 0, 0.001, 0, 0] with upm=1000.
-                if (this.glyphData.FontMatrix is double[] fm)
-                {
-                    float upm = this.UnitsPerEm;
-                    scale *= new Vector2((float)(fm[0] * upm), (float)(fm[3] * upm));
-                }
-
-                Vector2 scaledOffset = this.Offset * scale;
-                this.glyphData.RenderTo(renderer, glyphOrigin, scale, scaledOffset, rotation);
-            }
-
-            renderer.EndGlyph();
-            this.RenderDecorationsTo(renderer, decorationOrigin, mode, rotation, scaledPPEM, options);
+            float upm = this.UnitsPerEm;
+            scale *= new Vector2((float)(fm[0] * upm), (float)(fm[3] * upm));
         }
+
+        Vector2 scaledOffset = this.Offset * scale;
+        this.glyphData.RenderTo(renderer, glyphOrigin, scale, scaledOffset, rotation);
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) Six Labors.
+﻿// Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
 using System.Globalization;
@@ -611,7 +611,7 @@ public class TextLayoutTests
 
         GlyphRenderer glyphRenderer = new();
         TextRenderer renderer = new(glyphRenderer);
-        renderer.RenderText(
+        renderer.Render(
             text,
             new TextOptions(new Font(font, 1))
             {
@@ -1159,6 +1159,7 @@ public class TextLayoutTests
         Assert.Throws<ArgumentException>(() => TextMeasurer.MeasureAdvance(text, options));
     }
 
+#if SUPPORTS_DRAWING
     [Theory]
     [InlineData(TextPlaceholderAlignment.Baseline)]
     [InlineData(TextPlaceholderAlignment.AboveBaseline)]
@@ -1265,7 +1266,9 @@ public class TextLayoutTests
         // also exposes one object-replacement glyph at the insertion point.
         Assert.Equal(1, CountGlyphs(metrics.GetGlyphMetrics().Span, CodePoint.ObjectReplacementChar));
     }
+#endif
 
+#if SUPPORTS_DRAWING
     [Theory]
     [InlineData(TextPlaceholderAlignment.Baseline)]
     [InlineData(TextPlaceholderAlignment.AboveBaseline)]
@@ -1371,6 +1374,7 @@ public class TextLayoutTests
         // The oversized visual still represents one atomic inline object.
         Assert.Equal(1, CountGlyphs(metrics.GetGlyphMetrics().Span, CodePoint.ObjectReplacementChar));
     }
+#endif
 
     [Theory]
     [InlineData(LayoutMode.HorizontalTopBottom)]
@@ -2956,7 +2960,7 @@ public class TextLayoutTests
         {
             CaptureGlyphRectangleBuilder glyphBuilder = new();
             TextRenderer renderer = new(glyphBuilder);
-            renderer.RenderText(text, options);
+            renderer.Render(text, options);
             return glyphBuilder.GlyphRectangles;
         }
 

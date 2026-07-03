@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Globalization;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests;
 
@@ -43,6 +44,38 @@ public class FontCollectionTests
         Assert.Equal("Carter One", description.FontFamilyInvariantCulture);
         Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
         Assert.Equal(FontStyle.Regular, description.Style);
+    }
+
+    [Fact]
+    public void AddViaStreamAddMemoryFontFileInstances()
+    {
+        FontCollection sut = new();
+        using Stream s = TestFonts.CarterOneFileData();
+        FontFamily family = sut.Add(s, out FontDescription description);
+
+        IEnumerable<FontMetrics> allInstances = ((IReadOnlyFontMetricsCollection)sut).GetAllMetrics(family.Name, CultureInfo.InvariantCulture);
+
+        Assert.All(allInstances, i =>
+        {
+            MemoryFontMetrics font = Assert.IsType<MemoryFontMetrics>(i);
+        });
+    }
+
+    [Fact]
+    public void AddViaStreamCanUseFontAfterSourceDisposed()
+    {
+        FontCollection sut = new();
+        FontFamily family;
+
+        using (Stream stream = TestFonts.CarterOneFileData())
+        {
+            family = sut.Add(stream);
+        }
+
+        Font font = family.CreateFont(12);
+
+        Assert.True(font.TryGetGlyphId(new CodePoint('A'), out ushort glyphId));
+        Assert.NotEqual(0, glyphId);
     }
 
     [Fact]

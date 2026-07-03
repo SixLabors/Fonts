@@ -24,7 +24,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [21324, 10264, 1, 10264, 14, 14, 1, 9, 16956, 14, 14, 10];
 
         // act
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontCFF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(this.hangulFontCFF));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -43,7 +43,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [21324, 10264, 1, 10264, 14, 14, 1, 9, 16956, 14, 14, 10];
 
         // act
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontCFF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(this.hangulFontCFF));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -62,7 +62,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [23511, 23860, 24202];
 
         // act
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontCFF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(this.hangulFontCFF));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -84,7 +84,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [23168, 23789, 24065];
 
         // act
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontCFF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(this.hangulFontCFF));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -103,7 +103,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [1443, 23759, 23954];
 
         // act
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontCFF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(this.hangulFontCFF));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -125,7 +125,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [2953, 636, 3, 636, 16, 16, 3, 11, 2077, 16, 16, 12];
 
         // act
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(this.hangulFontTTF));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -144,7 +144,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [2953, 636, 3, 636, 16, 16, 3, 11, 2077, 16, 16, 12];
 
         // act
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(this.hangulFontTTF));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -163,7 +163,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [21150, 21436, 21569];
 
         // act
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(this.hangulFontTTF));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -185,7 +185,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [20667, 21294, 21569];
 
         // act
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(this.hangulFontTTF));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -204,7 +204,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [20665, 21150, 21435];
 
         // act
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(this.hangulFontTTF));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -223,7 +223,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [20665, 21150, 21436, 21569];
 
         // act
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(this.hangulFontTTF));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -242,7 +242,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [20665, 636];
 
         // act
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(this.hangulFontTTF));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -261,7 +261,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [20665, 637];
 
         // act
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(this.hangulFontTTF));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -280,7 +280,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [2986, 20665, 21620, 3078];
 
         // act
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(this.hangulFontTTF));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);

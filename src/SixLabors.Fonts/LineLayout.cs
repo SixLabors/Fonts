@@ -1,4 +1,4 @@
-// Copyright (c) Six Labors.
+﻿// Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
@@ -43,6 +43,12 @@ public sealed class LineLayout
     /// Gets the measured line metrics.
     /// </summary>
     public LineMetrics LineMetrics { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether underline and overline decorations skip over glyph ink
+    /// when this line is rendered.
+    /// </summary>
+    public TextDecorationSkipInk TextDecorationSkipInk => this.options.TextDecorationSkipInk;
 
     /// <summary>
     /// Gets the grapheme metrics entries for this line in final layout order.

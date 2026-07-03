@@ -96,7 +96,7 @@ internal partial class StreamFontMetrics
         }
     }
 
-    private static StreamFontMetrics LoadTrueTypeFont(FontReader reader)
+    private static StreamFontMetrics LoadTrueTypeFont(FontReader reader, FontSource source)
     {
         // Load using recommended order for best performance.
         // https://learn.microsoft.com/en-gb/typography/opentype/spec/recom#optimized-table-ordering
@@ -178,7 +178,7 @@ internal partial class StreamFontMetrics
             glyphVariationProcessor = new GlyphVariationProcessor(itemVariationStore, fvar, avar, gvar, hvar, vvar, mvar, cvar);
         }
 
-        return new StreamFontMetrics(tables, glyphVariationProcessor);
+        return new StreamFontMetrics(tables, source, glyphVariationProcessor);
     }
 
     private FontGlyphMetrics CreateTrueTypeGlyphMetrics(

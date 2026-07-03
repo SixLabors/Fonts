@@ -28,7 +28,7 @@ public class BidiAlgorithmTests
         ];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(arabicFont));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -52,7 +52,7 @@ public class BidiAlgorithmTests
         ];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(arabicFont));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -77,7 +77,7 @@ public class BidiAlgorithmTests
         ];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(arabicFont));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -97,7 +97,7 @@ public class BidiAlgorithmTests
         int[] expectedGlyphIndices = [403, 405, 407, 409, 411, 413, 415, 417, 419, 421];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(arabicFont));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -117,7 +117,7 @@ public class BidiAlgorithmTests
         int[] expectedGlyphIndices = [2317, 3631, 2380, 2345, 2345, 2485, 3, 2264, 2265, 2266, 2267, 3, 2379, 2540, 2247, 2260, 3, 2842, 2286];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(arabicFont));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -137,7 +137,7 @@ public class BidiAlgorithmTests
         int[] expectedGlyphIndices = [2271, 2268, 2264, 3, 32, 3, 2322, 2271, 3, 14, 3, 2329, 2264, 2264];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(arabicFont));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
