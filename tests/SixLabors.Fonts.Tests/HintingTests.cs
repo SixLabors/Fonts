@@ -1,7 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Numerics;
 using System.Text;
+using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests;
@@ -69,5 +71,59 @@ public class HintingTests
             text,
             options,
             properties: name);
+    }
+
+    // The TrueType bytecode interpreter is pooled and reused across renders for the same
+    // font. When a pooled interpreter is reused for a different pixel size it re-runs the
+    // font's prep (CVT) program, which must execute from the same pristine state as a freshly
+    // created interpreter. If transient interpreter state (twilight zone, storage, rounding
+    // state, zone pointers, ...) is not reset first, the prep result — and therefore the
+    // hinted glyph outline — depends on which sizes were rendered previously on that
+    // interpreter. Because interpreters are shared through a pool, that made hinting output
+    // non-deterministic when a single font family was rendered concurrently from multiple
+    // threads
+    [Fact]
+    public void Hinting_OutputIsIndependentOfPreviouslyRenderedSizes()
+    {
+        const string text = "The quick brown fox 12345";
+        const float dpi = 150F;
+        const float targetSize = 7F;
+        const float otherSize = 12F;
+
+        static List<Vector2> RenderControlPoints(string text, float size, float dpi, float? warmUpSize)
+        {
+            FontCollection collection = new();
+            FontFamily family = collection.Add(TestFonts.Arial);
+
+            if (warmUpSize is { } w)
+            {
+                RenderTo(family, text, w, dpi, new GlyphRenderer());
+            }
+
+            GlyphRenderer renderer = new();
+            RenderTo(family, text, size, dpi, renderer);
+            return renderer.ControlPoints;
+        }
+
+        static void RenderTo(FontFamily family, string text, float size, float dpi, GlyphRenderer renderer)
+        {
+            Font font = family.CreateFont(size);
+            TextOptions options = new(font)
+            {
+                Dpi = dpi,
+                HintingMode = HintingMode.Standard,
+            };
+
+            TextRenderer.RenderTextTo(renderer, text, options);
+        }
+
+        // Render the target size on a font whose interpreter has processed nothing else.
+        List<Vector2> reference = RenderControlPoints(text, targetSize, dpi, warmUpSize: null);
+
+        // Render the same target size, but on a font whose pooled interpreter has already
+        // processed a different size. With a correct per-size reset this is byte-for-byte equal.
+        List<Vector2> afterOtherSize = RenderControlPoints(text, targetSize, dpi, warmUpSize: otherSize);
+
+        Assert.Equal(reference, afterOtherSize);
     }
 }

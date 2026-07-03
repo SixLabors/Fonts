@@ -55,6 +55,13 @@ internal partial class TrueTypeInterpreter
     // (see WS instruction) so that prep state is preserved across glyphs.
     private int[] storage;
     private int[]? prepStorage;
+
+    // Snapshot of the storage area immediately after the font program (fpgm) runs. A freshly
+    // created interpreter executes fpgm once, which may seed storage locations that the prep
+    // (CVT) program later reads. When a pooled interpreter is reused for a new pixel size the
+    // prep program is re-run, so storage must be restored to this post-fpgm baseline rather
+    // than being left in its previous (glyph-modified) state.
+    private int[] fpgmStorage;
     private bool inGlyphProgram;
 
     private IReadOnlyList<ushort> contours;
@@ -131,6 +138,7 @@ internal partial class TrueTypeInterpreter
         this.twilight = new Zone(maxTwilightPoints, isTwilight: true);
         this.controlValueTable = [];
         this.baseControlValueTable = [];
+        this.fpgmStorage = [];
         this.contours = [];
     }
 
@@ -148,7 +156,13 @@ internal partial class TrueTypeInterpreter
     /// </summary>
     /// <param name="instructions">The raw font program bytecode.</param>
     public void InitializeFunctionDefs(byte[] instructions)
-        => this.Execute(new StackInstructionStream(instructions, 0), false, true);
+    {
+        this.Execute(new StackInstructionStream(instructions, 0), false, true);
+
+        // Capture the post-fpgm storage so it can be restored whenever the prep program is
+        // re-run for a new size on a reused (pooled) interpreter.
+        this.fpgmStorage = (int[])this.storage.Clone();
+    }
 
     /// <summary>
     /// Scales the Control Value Table and executes the prep (CVT) program.
@@ -181,9 +195,39 @@ internal partial class TrueTypeInterpreter
 
         this.scale = scale;
         this.ppem = (int)Math.Round(ppem);
-        this.zp0 = this.zp1 = this.zp2 = this.points;
         this.state.Reset();
         this.stack.Clear();
+
+        // Restore the interpreter to the same state a freshly created interpreter would be in
+        // immediately before running the prep program. A pooled interpreter may have been used
+        // to hint glyphs at a previous size, leaving behind storage writes, twilight points,
+        // rounding state and zone pointers. The prep program reads and builds on this state, so
+        // without restoring it the prep result — and therefore the hinted outline — depends on
+        // the interpreter's history. That made hinting non-deterministic when a font family was
+        // rendered concurrently from a shared interpreter pool (see issue #484).
+        this.ResetTwilightZone();
+        if (this.storage.Length == this.fpgmStorage.Length)
+        {
+            Array.Copy(this.fpgmStorage, this.storage, this.fpgmStorage.Length);
+        }
+        else
+        {
+            this.storage = (int[])this.fpgmStorage.Clone();
+        }
+
+        this.prepStorage = null;
+        this.inGlyphProgram = false;
+        this.callStackSize = 0;
+        this.fdotp = 0;
+        this.roundThreshold = 0;
+        this.roundPhase = 0;
+        this.roundPeriod = 0;
+        this.iupXCalled = false;
+        this.iupYCalled = false;
+        this.isComposite = false;
+        this.contours = [];
+        this.points = default;
+        this.zp0 = this.zp1 = this.zp2 = this.points;
 
         if (cvProgram != null)
         {
