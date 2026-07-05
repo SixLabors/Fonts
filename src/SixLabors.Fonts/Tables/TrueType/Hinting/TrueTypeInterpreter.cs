@@ -21,10 +21,11 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting;
 /// <para>
 /// This implementation matches the behavior of FreeType's v40 subpixel hinting interpreter,
 /// with horizontal hinting disabled and full vertical TrueType instruction processing preserved.
-/// It follows the v40 model in which outlines are adjusted primarily along the Y-axis and
-/// instructions operate without backward compatibility constraints. This corresponds to
-/// FreeType's configuration where <c>TT_CONFIG_OPTION_SUBPIXEL_HINTING</c> selects the
-/// minimal (v40) engine and <c>backward_compatibility</c> is forced to zero.
+/// Backward compatibility mode is active by default, exactly as in FreeType's minimal (v40)
+/// engine: X-axis moves are ignored, no point moves after both IUP calls, and SHPIX/DELTAP
+/// execute only in their gated forms. Fonts opt out per FreeType's rules by executing
+/// INSTCTRL selector 3 (the native ClearType waiver) in the prep program, or temporarily
+/// within a single glyph program.
 /// </para>
 ///
 /// <para>
@@ -750,9 +751,12 @@ internal partial class TrueTypeInterpreter
                     int value = this.stack.Pop();
 
                     // FreeType restricts selectors 1-2 to the prep (CVT) program only.
-                    // Selector 3 (NativeClearType) can also be set during prep.
-                    // Glyph programs cannot modify instruction control flags.
-                    if (selector is >= 1 and <= 3 && !this.inGlyphProgram)
+                    // Selector 3 (NativeClearType) is additionally honored inside glyph
+                    // programs: native ClearType fonts may sign the backward-compatibility
+                    // waiver for a single glyph (FreeType Ins_INSTCTRL, tt_coderange_glyph).
+                    // Because the graphics state is restored from the prep snapshot before
+                    // each glyph program, such a toggle is naturally temporary.
+                    if (selector is >= 1 and <= 3 && (!this.inGlyphProgram || selector == 3))
                     {
                         int bit = 1 << (selector - 1);
 
@@ -2061,6 +2065,16 @@ internal partial class TrueTypeInterpreter
                     if ((selector & 0x800) != 0)
                     {
                         result |= 1 << 18;
+                    }
+
+                    // Selector bit 12: ClearType hinting and grayscale rendering.
+                    // FreeType sets this whenever the render mode is not monochrome or LCD;
+                    // our rasterization is always symmetric grayscale, so it is always set.
+                    // ClearType-era prep programs branch on this to select grayscale-safe
+                    // hinting instead of LCD-specific pixel tweaks.
+                    if ((selector & 0x1000) != 0)
+                    {
+                        result |= 1 << 19;
                     }
 
                     this.stack.Push(result);
