@@ -162,11 +162,15 @@ internal partial class TrueTypeInterpreter
     /// <param name="cvProgram">The raw prep program bytecode, or <see langword="null"/> if absent.</param>
     public void SetControlValueTable(short[]? cvt, float scale, float ppem, byte[]? cvProgram)
     {
-        if (this.scale == scale || cvt == null)
+        if (this.scale == scale)
         {
             return;
         }
-        else
+
+        // A missing CVT table must not skip the prep program: fonts may carry a prep
+        // program without control values, and prep still establishes the graphics state,
+        // storage, and twilight points that glyph programs build on.
+        if (cvt != null)
         {
             if (this.controlValueTable.Length == 0 && cvt.Length > 0)
             {
@@ -175,15 +179,51 @@ internal partial class TrueTypeInterpreter
 
             for (int i = 0; i < cvt.Length; i++)
             {
-                this.controlValueTable[i] = cvt[i] * scale;
+                // Match FreeType's tt_size_run_prep CVT scaling, which produces 26.6
+                // fixed-point pixel values (FT_MulFix rounds to the nearest 1/64).
+                // Scaling in unquantized float lets control values land on the other
+                // side of a rounding boundary, flipping prep's round-to-grid decisions
+                // for some sizes (Arial's x-height at 13 ppem rounds to 8px instead of
+                // FreeType's 7px). FreeType notes the operation is "very sensitive to
+                // rounding".
+                this.controlValueTable[i] = MathF.Round(cvt[i] * scale * 64F) / 64F;
             }
+        }
+        else
+        {
+            this.controlValueTable = [];
         }
 
         this.scale = scale;
         this.ppem = (int)Math.Round(ppem);
-        this.zp0 = this.zp1 = this.zp2 = this.points;
         this.state.Reset();
         this.stack.Clear();
+
+        // Restore the interpreter to the same state a freshly created interpreter would be in
+        // immediately before running the prep program. A pooled interpreter may have been used
+        // to hint glyphs at a previous size, leaving behind storage writes, twilight points,
+        // rounding state and zone pointers. The prep program reads and builds on this state, so
+        // without restoring it the prep result — and therefore the hinted outline — depends on
+        // the interpreter's history. That made hinting non-deterministic when a font family was
+        // rendered concurrently from a shared interpreter pool (see issue #484).
+        // FreeType does the same in tt_size_run_prep (ttobjs.c): it zeroes the twilight zone
+        // and the storage area before every prep execution, deliberately discarding any
+        // storage writes made by the font program (fpgm).
+        this.ResetTwilightZone();
+        Array.Clear(this.storage, 0, this.storage.Length);
+        this.prepStorage = null;
+        this.inGlyphProgram = false;
+        this.callStackSize = 0;
+        this.fdotp = 0;
+        this.roundThreshold = 0;
+        this.roundPhase = 0;
+        this.roundPeriod = 0;
+        this.iupXCalled = false;
+        this.iupYCalled = false;
+        this.isComposite = false;
+        this.contours = [];
+        this.points = default;
+        this.zp0 = this.zp1 = this.zp2 = this.points;
 
         if (cvProgram != null)
         {
