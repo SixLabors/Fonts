@@ -32,13 +32,34 @@ internal static partial class FontConfigSystemFontMatcher
     private const int FcMatchPattern = 0;
     private const int FcSetSystem = 0;
     private const int FcResultMatch = 0;
+    private const int FcResultNoId = 3;
+    private const int FcTypeString = 3;
     private const int FcWeightNormal = 80;
     private const int FcWeightDemiBold = 180;
     private const int FcWeightBold = 200;
     private const int FcSlantRoman = 0;
     private const int FcSlantItalic = 100;
     private const int FcWidthNormal = 100;
+
+    /// <summary>
+    /// The first Fontconfig version (2.13.93) that locks internally. Older versions are not
+    /// thread safe and calls into them are serialized, matching Skia's FCLocker behavior.
+    /// </summary>
+    private const int FontConfigThreadSafeVersion = 21393;
+
     private static readonly Lazy<IntPtr> LazyConfig = new(CreateConfig, isThreadSafe: true);
+
+    /// <summary>
+    /// Serializes Fontconfig calls on library versions older than
+    /// <see cref="FontConfigThreadSafeVersion"/>.
+    /// </summary>
+    private static readonly object FontConfigLock = new();
+
+    /// <summary>
+    /// Whether the loaded Fontconfig version requires external locking. FcGetVersion has
+    /// always been thread safe.
+    /// </summary>
+    private static readonly Lazy<bool> LazyRequiresLock = new(() => FcGetVersion() < FontConfigThreadSafeVersion, isThreadSafe: true);
 
     /// <summary>
     /// Tries to get the Linux default font family name.
@@ -180,40 +201,50 @@ internal static partial class FontConfigSystemFontMatcher
             return false;
         }
 
-        IntPtr fontSetPointer = FcConfigGetFonts(config, FcSetSystem);
-        if (fontSetPointer == IntPtr.Zero)
+        bool lockTaken = false;
+
+        try
         {
-            return false;
-        }
-
-        FontConfigFontSet fontSet = Marshal.PtrToStructure<FontConfigFontSet>(fontSetPointer);
-        HashSet<string> names = new(StringComparer.Ordinal);
-
-        for (int i = 0; i < fontSet.FontCount; i++)
-        {
-            IntPtr pattern = Marshal.ReadIntPtr(fontSet.Fonts, i * IntPtr.Size);
-
-            if (pattern != IntPtr.Zero
-                && FcPatternGetString(pattern, FamilyProperty, id: 0, out IntPtr family) == FcResultMatch
-                && family != IntPtr.Zero)
+            EnterFontConfigLock(ref lockTaken);
+            IntPtr fontSetPointer = FcConfigGetFonts(config, FcSetSystem);
+            if (fontSetPointer == IntPtr.Zero)
             {
-                string? familyName = Marshal.PtrToStringUTF8(family);
+                return false;
+            }
 
-                if (!string.IsNullOrEmpty(familyName))
+            FontConfigFontSet fontSet = Marshal.PtrToStructure<FontConfigFontSet>(fontSetPointer);
+            HashSet<string> names = new(StringComparer.Ordinal);
+
+            for (int i = 0; i < fontSet.FontCount; i++)
+            {
+                IntPtr pattern = Marshal.ReadIntPtr(fontSet.Fonts, i * IntPtr.Size);
+
+                if (pattern != IntPtr.Zero
+                    && FcPatternGetString(pattern, FamilyProperty, id: 0, out IntPtr family) == FcResultMatch
+                    && family != IntPtr.Zero)
                 {
-                    names.Add(familyName);
+                    string? familyName = Marshal.PtrToStringUTF8(family);
+
+                    if (!string.IsNullOrEmpty(familyName))
+                    {
+                        names.Add(familyName);
+                    }
                 }
             }
-        }
 
-        if (names.Count == 0)
+            if (names.Count == 0)
+            {
+                return false;
+            }
+
+            familyNames = new string[names.Count];
+            names.CopyTo(familyNames);
+            return true;
+        }
+        finally
         {
-            return false;
+            ExitFontConfigLock(lockTaken);
         }
-
-        familyNames = new string[names.Count];
-        names.CopyTo(familyNames);
-        return true;
     }
 
     /// <summary>
@@ -232,57 +263,67 @@ internal static partial class FontConfigSystemFontMatcher
             return false;
         }
 
-        IntPtr fontSetPointer = FcConfigGetFonts(config, FcSetSystem);
-        if (fontSetPointer == IntPtr.Zero)
+        bool lockTaken = false;
+
+        try
         {
-            return false;
-        }
-
-        FontConfigFontSet fontSet = Marshal.PtrToStructure<FontConfigFontSet>(fontSetPointer);
-        List<NativeSystemFontFace> results = [];
-
-        for (int i = 0; i < fontSet.FontCount; i++)
-        {
-            IntPtr pattern = Marshal.ReadIntPtr(fontSet.Fonts, i * IntPtr.Size);
-
-            if (pattern == IntPtr.Zero
-                || FcPatternGetString(pattern, FamilyProperty, id: 0, out IntPtr family) != FcResultMatch
-                || family == IntPtr.Zero
-                || FcPatternGetString(pattern, FileProperty, id: 0, out IntPtr file) != FcResultMatch
-                || file == IntPtr.Zero)
+            EnterFontConfigLock(ref lockTaken);
+            IntPtr fontSetPointer = FcConfigGetFonts(config, FcSetSystem);
+            if (fontSetPointer == IntPtr.Zero)
             {
-                continue;
+                return false;
             }
 
-            string? familyName = Marshal.PtrToStringUTF8(family);
-            string? path = Marshal.PtrToStringUTF8(file);
+            FontConfigFontSet fontSet = Marshal.PtrToStructure<FontConfigFontSet>(fontSetPointer);
+            List<NativeSystemFontFace> results = [];
 
-            if (string.IsNullOrEmpty(familyName) || string.IsNullOrEmpty(path))
+            for (int i = 0; i < fontSet.FontCount; i++)
             {
-                continue;
+                IntPtr pattern = Marshal.ReadIntPtr(fontSet.Fonts, i * IntPtr.Size);
+
+                if (pattern == IntPtr.Zero
+                    || FcPatternGetString(pattern, FamilyProperty, id: 0, out IntPtr family) != FcResultMatch
+                    || family == IntPtr.Zero
+                    || FcPatternGetString(pattern, FileProperty, id: 0, out IntPtr file) != FcResultMatch
+                    || file == IntPtr.Zero)
+                {
+                    continue;
+                }
+
+                string? familyName = Marshal.PtrToStringUTF8(family);
+                string? path = Marshal.PtrToStringUTF8(file);
+
+                if (string.IsNullOrEmpty(familyName) || string.IsNullOrEmpty(path))
+                {
+                    continue;
+                }
+
+                int faceIndex = FcPatternGetInteger(pattern, IndexProperty, id: 0, out int index) == FcResultMatch
+                    ? index
+                    : 0;
+
+                FontStyle style = ToFontStyle(pattern);
+
+                results.Add(new NativeSystemFontFace(
+                    familyName,
+                    path,
+                    style,
+                    GetStyleScore(pattern, style),
+                    faceIndex));
             }
 
-            int faceIndex = FcPatternGetInteger(pattern, IndexProperty, id: 0, out int index) == FcResultMatch
-                ? index
-                : 0;
+            if (results.Count == 0)
+            {
+                return false;
+            }
 
-            FontStyle style = ToFontStyle(pattern);
-
-            results.Add(new NativeSystemFontFace(
-                familyName,
-                path,
-                style,
-                GetStyleScore(pattern, style),
-                faceIndex));
+            faces = [.. results];
+            return true;
         }
-
-        if (results.Count == 0)
+        finally
         {
-            return false;
+            ExitFontConfigLock(lockTaken);
         }
-
-        faces = [.. results];
-        return true;
     }
 
     /// <summary>
@@ -301,11 +342,15 @@ internal static partial class FontConfigSystemFontMatcher
             return false;
         }
 
-        IntPtr pattern = FcPatternCreate();
+        bool lockTaken = false;
+        IntPtr pattern = IntPtr.Zero;
         IntPtr matchedPattern = IntPtr.Zero;
 
         try
         {
+            EnterFontConfigLock(ref lockTaken);
+            pattern = FcPatternCreate();
+
             if (pattern == IntPtr.Zero
                 || FcPatternAddInteger(pattern, WeightProperty, FcWeightNormal) == 0
                 || FcPatternAddInteger(pattern, SlantProperty, FcSlantRoman) == 0
@@ -343,6 +388,8 @@ internal static partial class FontConfigSystemFontMatcher
             {
                 FcPatternDestroy(pattern);
             }
+
+            ExitFontConfigLock(lockTaken);
         }
     }
 
@@ -374,20 +421,28 @@ internal static partial class FontConfigSystemFontMatcher
             return false;
         }
 
-        IntPtr pattern = FcPatternCreate();
-        IntPtr charSet = FcCharSetCreate();
+        bool lockTaken = false;
+        IntPtr pattern = IntPtr.Zero;
+        IntPtr charSet = IntPtr.Zero;
         IntPtr langSet = IntPtr.Zero;
         IntPtr matchedPattern = IntPtr.Zero;
 
         try
         {
+            EnterFontConfigLock(ref lockTaken);
+            pattern = FcPatternCreate();
+            charSet = FcCharSetCreate();
+
             if (pattern == IntPtr.Zero || charSet == IntPtr.Zero)
             {
                 return false;
             }
 
+            // The requested family gets a weak binding so that character coverage outranks
+            // family loyalty during matching; with a strong binding the requested family can
+            // win the match even when it cannot render the character. Mirrors Skia.
             if (!string.IsNullOrEmpty(familyName)
-                && FcPatternAddString(pattern, FamilyProperty, familyName) == 0)
+                && !TryAddWeakFamily(pattern, familyName))
             {
                 return false;
             }
@@ -426,6 +481,13 @@ internal static partial class FontConfigSystemFontMatcher
                 return false;
             }
 
+            // Fontconfig always returns some font; only accept it when it can actually
+            // render the requested character. Mirrors Skia's FontContainsCharacter.
+            if (!FontContainsCharacter(matchedPattern, (uint)codePoint.Value))
+            {
+                return false;
+            }
+
             if (FcPatternGetString(matchedPattern, FamilyProperty, id: 0, out IntPtr family) != FcResultMatch
                 || family == IntPtr.Zero)
             {
@@ -457,6 +519,8 @@ internal static partial class FontConfigSystemFontMatcher
             {
                 FcPatternDestroy(pattern);
             }
+
+            ExitFontConfigLock(lockTaken);
         }
     }
 
@@ -471,8 +535,11 @@ internal static partial class FontConfigSystemFontMatcher
             return IntPtr.Zero;
         }
 
+        bool lockTaken = false;
+
         try
         {
+            EnterFontConfigLock(ref lockTaken);
             return FcInitLoadConfigAndFonts();
         }
         catch (DllNotFoundException)
@@ -482,6 +549,90 @@ internal static partial class FontConfigSystemFontMatcher
         catch (EntryPointNotFoundException)
         {
             return IntPtr.Zero;
+        }
+        finally
+        {
+            ExitFontConfigLock(lockTaken);
+        }
+    }
+
+    /// <summary>
+    /// Enters the Fontconfig serialization lock when the loaded library version requires it.
+    /// </summary>
+    /// <param name="lockTaken">Set to <see langword="true"/> when the lock was entered.</param>
+    private static void EnterFontConfigLock(ref bool lockTaken)
+    {
+        if (LazyRequiresLock.Value)
+        {
+            Monitor.Enter(FontConfigLock, ref lockTaken);
+        }
+    }
+
+    /// <summary>
+    /// Exits the Fontconfig serialization lock when it was entered.
+    /// </summary>
+    /// <param name="lockTaken">Whether the lock was entered.</param>
+    private static void ExitFontConfigLock(bool lockTaken)
+    {
+        if (lockTaken)
+        {
+            Monitor.Exit(FontConfigLock);
+        }
+    }
+
+    /// <summary>
+    /// Adds a family name to a pattern with a weak binding, so that character coverage
+    /// outranks family loyalty during matching. Fontconfig copies the value.
+    /// </summary>
+    /// <param name="pattern">The pattern.</param>
+    /// <param name="familyName">The family name.</param>
+    /// <returns>Non-zero on success; otherwise, zero.</returns>
+    private static bool TryAddWeakFamily(IntPtr pattern, string familyName)
+    {
+        IntPtr utf8 = Marshal.StringToCoTaskMemUTF8(familyName);
+
+        try
+        {
+            FontConfigValue value = new()
+            {
+                Type = FcTypeString,
+                Value = utf8
+            };
+
+            return FcPatternAddWeak(pattern, FamilyProperty, value, append: 0) != 0;
+        }
+        finally
+        {
+            Marshal.FreeCoTaskMem(utf8);
+        }
+    }
+
+    /// <summary>
+    /// Gets whether a matched font pattern can render the requested character, checking
+    /// every character set on the pattern.
+    /// </summary>
+    /// <param name="font">The matched font pattern.</param>
+    /// <param name="character">The Unicode code point.</param>
+    /// <returns><see langword="true"/> if a character set contains the code point.</returns>
+    private static bool FontContainsCharacter(IntPtr font, uint character)
+    {
+        for (int charSetId = 0; ; charSetId++)
+        {
+            int result = FcPatternGetCharSet(font, CharSetProperty, charSetId, out IntPtr charSet);
+            if (result == FcResultNoId)
+            {
+                return false;
+            }
+
+            if (result != FcResultMatch)
+            {
+                continue;
+            }
+
+            if (charSet != IntPtr.Zero && FcCharSetHasChar(charSet, character) != 0)
+            {
+                return true;
+            }
         }
     }
 
@@ -592,14 +743,25 @@ internal static partial class FontConfigSystemFontMatcher
     private static partial void FcPatternDestroy(IntPtr pattern);
 
     /// <summary>
-    /// Adds a string value to a font pattern.
+    /// Gets the Fontconfig library version as a single integer
+    /// (<c>major * 10000 + minor * 100 + revision</c>).
+    /// </summary>
+    /// <returns>The Fontconfig version.</returns>
+    [LibraryImport(FontConfigLibrary)]
+    private static partial int FcGetVersion();
+
+    /// <summary>
+    /// Adds a value to a font pattern with a weak binding. Weakly bound values rank below
+    /// strongly bound ones during matching, letting other criteria such as character
+    /// coverage take precedence.
     /// </summary>
     /// <param name="pattern">The pattern.</param>
     /// <param name="name">The object name.</param>
-    /// <param name="value">The string value.</param>
+    /// <param name="value">The value to add. Fontconfig stores a copy.</param>
+    /// <param name="append">Non-zero to append the value after existing values.</param>
     /// <returns>Non-zero on success; otherwise, zero.</returns>
     [LibraryImport(FontConfigLibrary, StringMarshalling = StringMarshalling.Utf8)]
-    private static partial int FcPatternAddString(IntPtr pattern, string name, string value);
+    private static partial int FcPatternAddWeak(IntPtr pattern, string name, FontConfigValue value, int append);
 
     /// <summary>
     /// Adds an integer value to a font pattern.
@@ -677,6 +839,26 @@ internal static partial class FontConfigSystemFontMatcher
     private static partial int FcCharSetAddChar(IntPtr charSet, uint codePoint);
 
     /// <summary>
+    /// Gets whether a character set contains a Unicode code point.
+    /// </summary>
+    /// <param name="charSet">The character set.</param>
+    /// <param name="codePoint">The Unicode code point.</param>
+    /// <returns>Non-zero when the code point is present; otherwise, zero.</returns>
+    [LibraryImport(FontConfigLibrary)]
+    private static partial int FcCharSetHasChar(IntPtr charSet, uint codePoint);
+
+    /// <summary>
+    /// Gets a character set from a font pattern without transferring ownership.
+    /// </summary>
+    /// <param name="pattern">The pattern.</param>
+    /// <param name="name">The object name.</param>
+    /// <param name="id">The value index.</param>
+    /// <param name="charSet">The character set, owned by the pattern.</param>
+    /// <returns>The Fontconfig result.</returns>
+    [LibraryImport(FontConfigLibrary, StringMarshalling = StringMarshalling.Utf8)]
+    private static partial int FcPatternGetCharSet(IntPtr pattern, string name, int id, out IntPtr charSet);
+
+    /// <summary>
     /// Creates an empty language set.
     /// </summary>
     /// <returns>The created language set.</returns>
@@ -725,6 +907,25 @@ internal static partial class FontConfigSystemFontMatcher
     /// <returns>The matched pattern.</returns>
     [LibraryImport(FontConfigLibrary)]
     private static partial IntPtr FcFontMatch(IntPtr config, IntPtr pattern, out int result);
+
+    /// <summary>
+    /// Represents the Fontconfig <c>FcValue</c> layout: an <c>FcType</c> discriminant followed
+    /// by a pointer-sized union. The union starts at offset 8 on 64-bit platforms because it
+    /// is pointer aligned.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    private struct FontConfigValue
+    {
+        /// <summary>
+        /// The <c>FcType</c> discriminant of <see cref="Value"/>.
+        /// </summary>
+        public int Type;
+
+        /// <summary>
+        /// The union payload; a native string pointer for <c>FcTypeString</c>.
+        /// </summary>
+        public IntPtr Value;
+    }
 
     /// <summary>
     /// Represents the Fontconfig <c>FcFontSet</c> layout.

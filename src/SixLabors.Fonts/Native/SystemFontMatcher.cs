@@ -46,12 +46,6 @@ internal static class SystemFontMatcher
     /// <returns><see langword="true"/> if the operating system returned family names; otherwise, <see langword="false"/>.</returns>
     public static bool TryGetFamilyNames(bool checkForUpdates, [NotNullWhen(true)] out string[]? familyNames)
     {
-        if (!UseNativeSystemFontEnumeration())
-        {
-            familyNames = null;
-            return false;
-        }
-
         if (OperatingSystem.IsWindows())
         {
             return DirectWriteSystemFontMatcher.TryGetFamilyNames(checkForUpdates, out familyNames);
@@ -79,12 +73,6 @@ internal static class SystemFontMatcher
     /// <returns><see langword="true"/> if the operating system returned font faces; otherwise, <see langword="false"/>.</returns>
     public static bool TryGetFamilyFaces(bool checkForUpdates, [NotNullWhen(true)] out NativeSystemFontFace[]? faces)
     {
-        if (!UseNativeSystemFontEnumeration())
-        {
-            faces = null;
-            return false;
-        }
-
         if (OperatingSystem.IsWindows())
         {
             return DirectWriteSystemFontMatcher.TryGetFamilyFaces(checkForUpdates, out faces);
@@ -102,17 +90,6 @@ internal static class SystemFontMatcher
 
         faces = null;
         return false;
-    }
-
-    /// <summary>
-    /// Returns whether native system font enumeration is enabled.
-    /// </summary>
-    /// <returns><see langword="true"/> when native system font enumeration is enabled.</returns>
-    public static bool UseNativeSystemFontEnumeration()
-    {
-        bool forceDirectoryEnumeration = AppContext.TryGetSwitch("Switch.SixLabors.Fonts.DoNotUseNativeSystemFontsEnumeration", out bool isEnabled) && isEnabled;
-
-        return !forceDirectoryEnumeration;
     }
 
     /// <summary>

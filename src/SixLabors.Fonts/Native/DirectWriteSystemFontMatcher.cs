@@ -1233,8 +1233,19 @@ internal static partial class DirectWriteSystemFontMatcher
             return false;
         }
 
-        if (fontFile.GetLoader(out IDWriteLocalFontFileLoader? loader) < 0 || loader is null)
+        IDWriteLocalFontFileLoader? loader;
+        try
         {
+            if (fontFile.GetLoader(out loader) < 0 || loader is null)
+            {
+                return false;
+            }
+        }
+        catch (InvalidCastException)
+        {
+            // GetLoader returns IDWriteFontFileLoader; the marshaller queries it for
+            // IDWriteLocalFontFileLoader. Non-local loaders (remote or in-memory fonts)
+            // fail that query and have no file path, so the face is skipped.
             return false;
         }
 
@@ -1490,19 +1501,24 @@ internal static partial class DirectWriteSystemFontMatcher
     }
 
     /// <summary>
-    /// Disposes a source-generated COM wrapper obtained from DirectWrite.
+    /// Marks the point at which a source-generated COM wrapper obtained from DirectWrite is
+    /// no longer used. The underlying COM references are released by the garbage collector.
     /// </summary>
-    /// <param name="value">The COM wrapper to dispose.</param>
+    /// <remarks>
+    /// Deterministic release is intentionally NOT performed. Source-generated COM wrappers
+    /// are ComWrappers-based <see cref="ComObject"/> instances: Marshal.ReleaseComObject is
+    /// invalid, IDisposable is not implemented, and <see cref="ComObject.FinalRelease"/> is
+    /// a no-op on the runtime-cached wrappers the generated marshalling produces. Marshalling
+    /// with UniqueComInterfaceMarshaller to enable FinalRelease was tried and crashed with an
+    /// access violation on .NET 8: FinalRelease on a wrapper whose interface pointers were
+    /// cached by dynamic interface dispatch over-releases the native object, and unrelated
+    /// wrapper finalizers then release freed memory. Wrapper lifetime therefore follows the
+    /// garbage collector, which matches how the runtime intends cached wrappers to be used.
+    /// </remarks>
+    /// <param name="value">The COM wrapper that is no longer used.</param>
     [SupportedOSPlatform("windows")]
     private static void DisposeComWrapper(object? value)
-    {
-        // Source-generated COM wrappers are backed by ComWrappers rather than classic
-        // runtime-callable wrappers, so Marshal.ReleaseComObject is not valid here.
-        if (value is IDisposable disposable)
-        {
-            disposable.Dispose();
-        }
-    }
+        => _ = value;
 
     /// <summary>
     /// Creates a DirectWrite factory.

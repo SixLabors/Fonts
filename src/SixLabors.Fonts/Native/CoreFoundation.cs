@@ -12,9 +12,16 @@ internal static partial class CoreFoundation
 
     /// <summary>
     /// Defines Core Foundation number storage types used by native font metadata.
+    /// The native <c>CFNumberType</c> is a <c>CFIndex</c>, which is 8 bytes on 64-bit
+    /// platforms, so the enum must be backed by <see cref="long"/> to match the ABI.
     /// </summary>
-    internal enum CFNumberType
+    internal enum CFNumberType : long
     {
+        /// <summary>
+        /// A signed 32-bit integer value.
+        /// </summary>
+        SInt32 = 3,
+
         /// <summary>
         /// A Core Graphics floating-point value.
         /// </summary>
@@ -95,6 +102,18 @@ internal static partial class CoreFoundation
     public static partial bool CFNumberGetDoubleValue(IntPtr number, CFNumberType theType, out double value);
 
     /// <summary>
+    /// Copies a Core Foundation number into a signed 32-bit integer value.
+    /// </summary>
+    /// <param name="number">The number to read.</param>
+    /// <param name="theType">The requested output type.</param>
+    /// <param name="value">The converted value.</param>
+    /// <returns><see langword="true"/> when conversion succeeds; otherwise, <see langword="false"/>.</returns>
+    [LibraryImport(CoreFoundationFramework, EntryPoint = "CFNumberGetValue")]
+    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [return: MarshalAs(UnmanagedType.I1)]
+    public static partial bool CFNumberGetIntValue(IntPtr number, CFNumberType theType, out int value);
+
+    /// <summary>
     /// Returns the number (in terms of UTF-16 code pairs) of Unicode characters in a string.
     /// </summary>
     /// <param name="theString">The string to examine.</param>
@@ -135,41 +154,6 @@ internal static partial class CoreFoundation
         nint numberOfCharacters);
 
     /// <summary>
-    /// Copies the character contents of a string to a local C string buffer after converting the characters to a given encoding.
-    /// </summary>
-    /// <param name="theString">The string whose contents you wish to access.</param>
-    /// <param name="buffer">
-    /// The C string buffer into which to copy the string. On return, the buffer contains the converted characters. If there is an error in conversion, the buffer contains only partial results.
-    /// The buffer must be large enough to contain the converted characters and a NUL terminator. For example, if the string is <c>Toby</c>, the buffer must be at least 5 bytes long.
-    /// </param>
-    /// <param name="bufferSize">The length of <paramref name="buffer"/> in bytes.</param>
-    /// <param name="encoding">The string encoding to which the character contents of <paramref name="theString"/> should be converted. The encoding must specify an 8-bit encoding.</param>
-    /// <returns><see langword="true"/> upon success or <see langword="false"/> if the conversion fails or the provided buffer is too small.</returns>
-    /// <remarks>This function is useful when you need your own copy of a string’s character data as a C string. You also typically call it as a "backup" when a prior call to the <see cref="CFStringGetCStringPtr"/> function fails.</remarks>
-    [LibraryImport(CoreFoundationFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
-    [return: MarshalAs(UnmanagedType.I1)]
-    public static unsafe partial bool CFStringGetCString(IntPtr theString, byte* buffer, long bufferSize, CFStringEncoding encoding);
-
-    /// <summary>
-    /// Quickly obtains a pointer to a C-string buffer containing the characters of a string in a given encoding.
-    /// </summary>
-    /// <param name="theString">The string whose contents you wish to access.</param>
-    /// <param name="encoding">The string encoding to which the character contents of <paramref name="theString"/> should be converted. The encoding must specify an 8-bit encoding.</param>
-    /// <returns>A pointer to a C string or <c>NULL</c> if the internal storage of <paramref name="theString"/> does not allow this to be returned efficiently.</returns>
-    /// <remarks>
-    /// <para>
-    /// This function either returns the requested pointer immediately, with no memory allocations and no copying, in constant time, or returns <c>NULL</c>. If the latter is the result, call an alternative function such as the <see cref="CFStringGetCString"/> function to extract the characters.
-    /// </para>
-    /// <para>
-    /// Whether or not this function returns a valid pointer or <c>NULL</c> depends on many factors, all of which depend on how the string was created and its properties. In addition, the function result might change between different releases and on different platforms. So do not count on receiving a non-<c>NULL</c> result from this function under any circumstances.
-    /// </para>
-    /// </remarks>
-    [LibraryImport(CoreFoundationFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
-    public static partial IntPtr CFStringGetCStringPtr(IntPtr theString, CFStringEncoding encoding);
-
-    /// <summary>
     /// Releases a Core Foundation object.
     /// </summary>
     /// <param name="cf">A CFType object to release. This value must not be <c>NULL</c>.</param>
@@ -195,29 +179,4 @@ internal static partial class CoreFoundation
     [LibraryImport(CoreFoundationFramework)]
     [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
     public static partial ulong CFURLGetTypeID();
-
-    /// <summary>
-    /// Creates an immutable string from an encoded byte buffer.
-    /// </summary>
-    /// <param name="allocator">The allocator to use, or <c>NULL</c> for the default allocator.</param>
-    /// <param name="bytes">The encoded string bytes.</param>
-    /// <param name="numberOfBytes">The number of bytes to read from <paramref name="bytes"/>.</param>
-    /// <param name="encoding">The string encoding used by <paramref name="bytes"/>.</param>
-    /// <param name="isExternalRepresentation">Whether the bytes contain an external representation.</param>
-    /// <returns>
-    /// A retained <c>CFString</c>, or <c>NULL</c> on error. The caller is responsible for releasing
-    /// the returned string.
-    /// </returns>
-    /// <remarks>
-    /// Core Foundation follows the Create Rule for this API, so a non-<c>NULL</c> result must be
-    /// released with <see cref="CFRelease"/>.
-    /// </remarks>
-    [LibraryImport(CoreFoundationFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
-    public static unsafe partial IntPtr CFStringCreateWithBytes(
-        IntPtr allocator,
-        byte* bytes,
-        nint numberOfBytes,
-        CFStringEncoding encoding,
-        byte isExternalRepresentation);
 }

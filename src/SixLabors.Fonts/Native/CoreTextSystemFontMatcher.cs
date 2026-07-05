@@ -217,12 +217,14 @@ internal static class CoreTextSystemFontMatcher
         IntPtr urlAttribute = GetStringConstant("kCTFontURLAttribute");
         IntPtr traitsAttribute = GetStringConstant("kCTFontTraitsAttribute");
         IntPtr weightTrait = GetStringConstant("kCTFontWeightTrait");
+        IntPtr symbolicTrait = GetStringConstant("kCTFontSymbolicTrait");
 
         if (fontNameAttribute == IntPtr.Zero
             || familyNameAttribute == IntPtr.Zero
             || urlAttribute == IntPtr.Zero
             || traitsAttribute == IntPtr.Zero
-            || weightTrait == IntPtr.Zero)
+            || weightTrait == IntPtr.Zero
+            || symbolicTrait == IntPtr.Zero)
         {
             return false;
         }
@@ -270,29 +272,40 @@ internal static class CoreTextSystemFontMatcher
                         continue;
                     }
 
-                    IntPtr font = CTFontCreateWithFontDescriptor(descriptor, size: 0, matrix: IntPtr.Zero);
+                    GetDescriptorTraits(descriptor, traitsAttribute, weightTrait, symbolicTrait, out double weight, out uint? symbolicTraits);
 
-                    try
+                    // The traits dictionary exposes the symbolic traits without instantiating
+                    // a font; instantiate one only for descriptors that do not carry them.
+                    if (symbolicTraits is null)
                     {
-                        if (font == IntPtr.Zero)
+                        IntPtr font = CTFontCreateWithFontDescriptor(descriptor, size: 0, matrix: IntPtr.Zero);
+
+                        try
                         {
-                            continue;
+                            if (font != IntPtr.Zero)
+                            {
+                                symbolicTraits = CTFontGetSymbolicTraits(font);
+                            }
                         }
-
-                        FontStyle style = ToFontStyle(CTFontGetSymbolicTraits(font));
-                        double weight = GetDescriptorWeight(descriptor, traitsAttribute, weightTrait);
-
-                        results.Add(new NativeSystemFontFace(
-                            familyName,
-                            path,
-                            style,
-                            GetStyleScore(weight, style),
-                            faceIndex));
+                        finally
+                        {
+                            ReleaseIfNeeded(font);
+                        }
                     }
-                    finally
+
+                    if (symbolicTraits is null)
                     {
-                        ReleaseIfNeeded(font);
+                        continue;
                     }
+
+                    FontStyle style = ToFontStyle(symbolicTraits.Value);
+
+                    results.Add(new NativeSystemFontFace(
+                        familyName,
+                        path,
+                        style,
+                        GetStyleScore(weight, style),
+                        faceIndex));
                 }
                 finally
                 {
@@ -573,32 +586,50 @@ internal static class CoreTextSystemFontMatcher
     }
 
     /// <summary>
-    /// Gets the CoreText weight value from a descriptor's traits dictionary.
+    /// Gets the weight and symbolic traits from a descriptor's traits dictionary with a
+    /// single attribute copy.
     /// </summary>
     /// <param name="descriptor">The CoreText font descriptor.</param>
     /// <param name="traitsAttribute">The traits attribute key.</param>
     /// <param name="weightTrait">The weight trait key.</param>
-    /// <returns>The CoreText weight value, or the regular weight when the descriptor does not expose one.</returns>
-    private static double GetDescriptorWeight(IntPtr descriptor, IntPtr traitsAttribute, IntPtr weightTrait)
+    /// <param name="symbolicTrait">The symbolic trait key.</param>
+    /// <param name="weight">The CoreText weight value, or the regular weight when the descriptor does not expose one.</param>
+    /// <param name="symbolicTraits">The symbolic traits, or <see langword="null"/> when the descriptor does not expose them.</param>
+    private static void GetDescriptorTraits(
+        IntPtr descriptor,
+        IntPtr traitsAttribute,
+        IntPtr weightTrait,
+        IntPtr symbolicTrait,
+        out double weight,
+        out uint? symbolicTraits)
     {
+        weight = CTFontRegularWeight;
+        symbolicTraits = null;
+
         IntPtr traits = CTFontDescriptorCopyAttribute(descriptor, traitsAttribute);
 
         try
         {
             if (traits == IntPtr.Zero || CFGetTypeID(traits) != CFDictionaryGetTypeID())
             {
-                return CTFontRegularWeight;
+                return;
             }
 
-            if (!CFDictionaryGetValueIfPresent(traits, weightTrait, out IntPtr weight)
-                || weight == IntPtr.Zero
-                || CFGetTypeID(weight) != CFNumberGetTypeID()
-                || !CFNumberGetDoubleValue(weight, CFNumberType.CGFloat, out double value))
+            if (CFDictionaryGetValueIfPresent(traits, weightTrait, out IntPtr weightNumber)
+                && weightNumber != IntPtr.Zero
+                && CFGetTypeID(weightNumber) == CFNumberGetTypeID()
+                && CFNumberGetDoubleValue(weightNumber, CFNumberType.CGFloat, out double weightValue))
             {
-                return CTFontRegularWeight;
+                weight = weightValue;
             }
 
-            return value;
+            if (CFDictionaryGetValueIfPresent(traits, symbolicTrait, out IntPtr symbolicNumber)
+                && symbolicNumber != IntPtr.Zero
+                && CFGetTypeID(symbolicNumber) == CFNumberGetTypeID()
+                && CFNumberGetIntValue(symbolicNumber, CFNumberType.SInt32, out int symbolicValue))
+            {
+                symbolicTraits = unchecked((uint)symbolicValue);
+            }
         }
         finally
         {

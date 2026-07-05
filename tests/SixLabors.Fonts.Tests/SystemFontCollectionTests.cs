@@ -208,15 +208,6 @@ public class SystemFontCollectionTests
     }
 
     [Fact]
-    [AppContextSwitch("Switch.SixLabors.Fonts.DoNotUseNativeSystemFontsEnumeration", true)]
-    public void NativeSystemFontEnumerationSwitch_DisablesNativeFamilyEnumeration()
-    {
-        Assert.False(SixLabors.Fonts.Native.SystemFontMatcher.TryGetFamilyNames(false, out _));
-        Assert.False(SixLabors.Fonts.Native.SystemFontMatcher.TryGetFamilyFaces(false, out _));
-    }
-
-    [Fact]
-    [AppContextSwitch("Switch.SixLabors.Fonts.DoNotUseNativeSystemFontsEnumeration", true)]
     public void SystemFonts_FontFamilyNotFound_ThrowsWithSearchDirectories()
     {
         static void Action() => new SystemFontCollection().Get("AFontThatDoesNotExist");
