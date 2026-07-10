@@ -175,6 +175,14 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
                     float pixelSize = scaledPPEM / 72F;
                     this.FontMetrics.ApplyTrueTypeHinting(this.GetHintingMode(options.HintingMode), this, ref clone, scale, pixelSize);
 
+                    // Synthesize an oblique (faux italic) slant when requested but unavailable.
+                    // Applied after hinting so the hinter operates on the upright outline.
+                    float skew = this.GetObliqueSkew();
+                    if (skew != 0F)
+                    {
+                        GlyphVector.TransformInPlace(ref clone, CreateObliqueMatrix(skew));
+                    }
+
                     // Rotation must happen after hinting.
                     GlyphVector.TransformInPlace(ref clone, rotation);
                     return clone;
