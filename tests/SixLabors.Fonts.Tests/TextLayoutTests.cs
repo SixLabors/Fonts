@@ -3018,7 +3018,7 @@ public class TextLayoutTests
 
         public TextDecorations EnabledDecorations() => TextDecorations.None;
 
-        public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
+        public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness, ReadOnlyMemory<float> intersections)
         {
         }
 

@@ -22,14 +22,6 @@ public abstract class FontGlyphMetrics
     private const float PointsPerInch = 72F;
 
     /// <summary>
-    /// The clearance left on each side of glyph ink when a decoration skips over it,
-    /// expressed as a fraction of the em. The clearance scales with the text size so the
-    /// line visibly clears the ink at any size, and is independent of the decoration
-    /// thickness so heavier lines do not open wider gaps.
-    /// </summary>
-    private const float SkipInkClearanceEmFraction = 1F / 24F;
-
-    /// <summary>
     /// Negates the y-axis to convert between the y-up font coordinate space and the y-down
     /// device coordinate space.
     /// </summary>
@@ -399,6 +391,7 @@ public abstract class FontGlyphMetrics
         // is emitted instead of decoding the outline a second time afterwards.
         TextDecorationGeometry decorationGeometry = this.ComputeDecorationGeometry(
             renderer.EnabledDecorations(),
+            textRun,
             decorationOrigin,
             mode,
             rotation,
@@ -452,9 +445,9 @@ public abstract class FontGlyphMetrics
             renderer.EndGlyph();
 
             // Emit in the fixed underline, strikethrough, overline order relied upon by renderers.
-            EmitDecoration(renderer, decorationGeometry.Underline, underlineInk, isVerticalLayout, scaledPPEM);
-            EmitDecoration(renderer, decorationGeometry.Strikeout, null, isVerticalLayout, scaledPPEM);
-            EmitDecoration(renderer, decorationGeometry.Overline, overlineInk, isVerticalLayout, scaledPPEM);
+            EmitDecoration(renderer, decorationGeometry.Underline, underlineInk);
+            EmitDecoration(renderer, decorationGeometry.Strikeout, null);
+            EmitDecoration(renderer, decorationGeometry.Overline, overlineInk);
         }
         finally
         {
@@ -489,6 +482,7 @@ public abstract class FontGlyphMetrics
     /// typographic conventions. The renderer may override which decorations are enabled. Overline thickness is derived
     /// from underline metrics if not explicitly specified.</remarks>
     /// <param name="enabledDecorations">The decorations the renderer reports as enabled.</param>
+    /// <param name="textRun">The text run styling this glyph, consulted for per-decoration geometry overrides.</param>
     /// <param name="location">The position, in device pixels, where the decorations should be rendered relative to the glyph.</param>
     /// <param name="mode">The layout mode that determines the orientation and positioning of the decorations (e.g., horizontal, vertical,
     /// or vertical rotated).</param>
@@ -504,6 +498,7 @@ public abstract class FontGlyphMetrics
     /// <returns>The positioned decoration lines; absent entries are disabled or degenerate.</returns>
     private TextDecorationGeometry ComputeDecorationGeometry(
         TextDecorations enabledDecorations,
+        TextRun textRun,
         Vector2 location,
         GlyphLayoutMode mode,
         Matrix3x2 transform,
@@ -654,6 +649,15 @@ public abstract class FontGlyphMetrics
                 return null;
             }
 
+            // A run may override the metric-derived thickness (for example when it is drawn with an
+            // explicit stroke width). The override is already in device pixels, so it replaces the
+            // scaled metric thickness directly and flows on to the skip-ink band and gap clearance,
+            // both of which key off the line thickness.
+            if (textRun.GetDecorationOptions(decorations)?.Thickness is float overrideThickness)
+            {
+                calcThickness = overrideThickness;
+            }
+
             return new TextDecorationLine(decorations, start, end, calcThickness);
         }
 
@@ -738,21 +742,18 @@ public abstract class FontGlyphMetrics
     }
 
     /// <summary>
-    /// Emits a decoration line to the renderer. When an ink collector observed outline
-    /// geometry crossing the decoration band, the line is emitted as segments that skip the
-    /// ink; otherwise it is emitted whole.
+    /// Emits a decoration line to the renderer as the full, untrimmed line together with the
+    /// intervals where the glyph's ink crosses the decoration band. Skip-ink carving is deferred to
+    /// the renderer so that a gap can be widened by the drawn thickness and extended across the
+    /// boundary into an adjacent glyph, which a per-glyph carve here could not do.
     /// </summary>
     /// <param name="renderer">The glyph renderer that receives the decoration drawing commands.</param>
     /// <param name="line">The positioned decoration line, if the decoration is enabled.</param>
     /// <param name="ink">The ink collector teed into the outline emission, if skip-ink applies to this line.</param>
-    /// <param name="isVerticalLayout">Whether the decoration runs vertically, banding on x instead of y.</param>
-    /// <param name="scaledPPEM">The scaled pixels-per-em value the glyph was rendered at.</param>
     private static void EmitDecoration(
         IGlyphRenderer renderer,
         in TextDecorationLine? line,
-        GlyphIntersectionCollector? ink,
-        bool isVerticalLayout,
-        float scaledPPEM)
+        GlyphIntersectionCollector? ink)
     {
         if (line is null)
         {
@@ -760,104 +761,8 @@ public abstract class FontGlyphMetrics
         }
 
         TextDecorationLine value = line.Value;
-        if (ink is not null)
-        {
-            ReadOnlySpan<float> intervals = ink.BuildIntersectionSpan();
-            if (!intervals.IsEmpty)
-            {
-                EmitSegmentedDecoration(renderer, value, intervals, isVerticalLayout, scaledPPEM);
-                return;
-            }
-        }
-
-        renderer.SetDecoration(value.Decoration, value.Start, value.End, value.Thickness);
-    }
-
-    /// <summary>
-    /// Emits a decoration line as segments that avoid the glyph's ink: each ink interval
-    /// within the decoration band is widened by <see cref="SkipInkClearanceEmFraction"/> of
-    /// the em on both sides so the line visibly clears the ink, and every remaining piece of
-    /// the line is emitted. Nothing is dropped by length; when the widened gaps swallow the
-    /// entire line, nothing is emitted.
-    /// </summary>
-    /// <param name="renderer">The glyph renderer that receives the decoration drawing commands.</param>
-    /// <param name="line">The positioned decoration line.</param>
-    /// <param name="ink">The merged, sorted ink interval pairs along the line axis, in device pixels.</param>
-    /// <param name="isVerticalLayout">Whether the decoration runs vertically, banding on x instead of y.</param>
-    /// <param name="scaledPPEM">The scaled pixels-per-em value the glyph was rendered at.</param>
-    private static void EmitSegmentedDecoration(
-        IGlyphRenderer renderer,
-        TextDecorationLine line,
-        ReadOnlySpan<float> ink,
-        bool isVerticalLayout,
-        float scaledPPEM)
-    {
-        Vector2 start = line.Start;
-        Vector2 end = line.End;
-        float thickness = line.Thickness;
-
-        // The decoration extent along the line axis.
-        float lineStart;
-        float lineEnd;
-        if (isVerticalLayout)
-        {
-            lineStart = Math.Min(start.Y, end.Y);
-            lineEnd = Math.Max(start.Y, end.Y);
-        }
-        else
-        {
-            lineStart = Math.Min(start.X, end.X);
-            lineEnd = Math.Max(start.X, end.X);
-        }
-
-        // The em size in device pixels; scaledPPEM is point size multiplied by dpi.
-        float emSizePixels = scaledPPEM / PointsPerInch;
-        float clearance = emSizePixels * SkipInkClearanceEmFraction;
-
-        void EmitSegment(float from, float to)
-        {
-            from = Math.Max(from, lineStart);
-            to = Math.Min(to, lineEnd);
-            if (to <= from)
-            {
-                return;
-            }
-
-            Vector2 segmentStart = isVerticalLayout ? new Vector2(start.X, from) : new Vector2(from, start.Y);
-            Vector2 segmentEnd = isVerticalLayout ? new Vector2(end.X, to) : new Vector2(to, end.Y);
-            renderer.SetDecoration(line.Decoration, segmentStart, segmentEnd, thickness);
-        }
-
-        // Widen each ink interval by the clearance, merge gaps that overlap after widening,
-        // and emit the pieces of the line that remain between them.
-        float cursor = lineStart;
-        float gapStart = 0F;
-        float gapEnd = float.MinValue;
-        bool hasGap = false;
-        for (int i = 0; i < ink.Length; i += 2)
-        {
-            float expandedStart = ink[i] - clearance;
-            float expandedEnd = ink[i + 1] + clearance;
-            if (hasGap && expandedStart <= gapEnd)
-            {
-                gapEnd = Math.Max(gapEnd, expandedEnd);
-                continue;
-            }
-
-            if (hasGap)
-            {
-                EmitSegment(cursor, Math.Max(cursor, gapStart));
-                cursor = Math.Max(cursor, gapEnd);
-            }
-
-            gapStart = expandedStart;
-            gapEnd = expandedEnd;
-            hasGap = true;
-        }
-
-        EmitSegment(cursor, Math.Max(cursor, gapStart));
-        cursor = Math.Max(cursor, gapEnd);
-        EmitSegment(cursor, lineEnd);
+        ReadOnlyMemory<float> intersections = ink is not null ? ink.BuildIntersectionSpan() : default;
+        renderer.SetDecoration(value.Decoration, value.Start, value.End, value.Thickness, intersections);
     }
 
     /// <summary>

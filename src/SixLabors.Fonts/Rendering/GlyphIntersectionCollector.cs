@@ -6,24 +6,30 @@ using System.Numerics;
 namespace SixLabors.Fonts.Rendering;
 
 /// <summary>
-/// A glyph renderer that computes the along-line intervals where glyph ink crosses a band,
-/// without rasterizing anything. The band lies across the line axis: horizontal lines band on
-/// y and collect x extents; vertical lines band on x and collect y extents. Ink is measured as
-/// filled coverage, not just boundary geometry: the extents of outline segments inside the band
-/// are unioned with the nonzero-winding inside spans along each band edge, so a wide filled
-/// shape whose boundary only crosses the band at its sides still covers the span between the
-/// crossings, matching Skia's <c>GetIntercepts</c> semantics. Glyphs whose reported bounds do
-/// not touch the band are skipped before their outlines are decoded, so runs pay outline cost
-/// only for the glyphs that can contribute. Instances are reusable: <see cref="Reset"/>
-/// rearms the collector for a new band without allocating, so a render loop can share one
-/// collector across every glyph it decorates.
+/// A glyph renderer that computes, per outline contour, the along-line interval spanned by the
+/// contour's ink where it crosses a band, without rasterizing anything. This measures the ink that
+/// a decoration line would cross so the line can be interrupted around it, as CSS
+/// <c>text-decoration-skip-ink</c> requires. The band lies across the line axis: horizontal lines
+/// band on y and collect x extents; vertical lines band on x and collect y extents. Each contour
+/// contributes a single <c>[min, max]</c> interval bounding every place its outline reaches into
+/// the band: the extent is grown by each crossing of the band's two edges and by every flattened
+/// outline point that lies inside the band. A single bounding interval per contour tracks the ink
+/// tightly and leaves no hole over it, so the decoration line can never be drawn across a stroke
+/// that crosses it. The counter of a filled contour is bridged rather than threaded, keeping the
+/// line from fragmenting: the spec leaves the exact gaps UA-defined and allows widening or dropping
+/// ones that would be too small to be useful. Overlapping contour intervals are merged when the
+/// span is built, and the consumer widens each by a clearance and re-merges, which also absorbs the
+/// sub-pixel slack of the fixed curve flattening. Instances are reusable: <see cref="Reset"/> rearms
+/// the collector for a new band without allocating, so a render loop can share one collector across
+/// every glyph it decorates.
 /// </summary>
 internal sealed class GlyphIntersectionCollector : IGlyphRenderer
 {
     /// <summary>
-    /// The number of line segments a Bezier curve is subdivided into when intersecting the
-    /// band. Decoration skipping tolerates sub-pixel error, so a fixed subdivision avoids the
-    /// cost of adaptive flattening.
+    /// The number of line segments a Bezier curve is subdivided into when locating its crossings
+    /// of the band edges and its points inside the band. Decoration skipping tolerates sub-pixel
+    /// error, which the consumer's clearance absorbs, so a fixed subdivision avoids the cost of
+    /// adaptive flattening.
     /// </summary>
     private const int CurveSegments = 24;
 
@@ -31,18 +37,6 @@ internal sealed class GlyphIntersectionCollector : IGlyphRenderer
     private float bandEnd;
     private bool vertical;
     private readonly List<(float Start, float End)> intervals = [];
-
-    /// <summary>
-    /// Signed crossings of the outline with the scan line along the band's start edge, used to
-    /// reconstruct the filled spans at that edge via the nonzero winding rule.
-    /// </summary>
-    private readonly List<(float Position, int Direction)> bandStartCrossings = [];
-
-    /// <summary>
-    /// Signed crossings of the outline with the scan line along the band's end edge, used to
-    /// reconstruct the filled spans at that edge via the nonzero winding rule.
-    /// </summary>
-    private readonly List<(float Position, int Direction)> bandEndCrossings = [];
 
     /// <summary>
     /// Reusable buffer holding the merged interval pairs produced by
@@ -54,10 +48,18 @@ internal sealed class GlyphIntersectionCollector : IGlyphRenderer
     private Vector2 figureStart;
 
     /// <summary>
-    /// Whether a figure has been started and not yet closed. Winding reconstruction needs
-    /// every contour closed, so an unterminated figure is closed implicitly.
+    /// Whether a figure has been started and not yet closed. Its bounding interval is finalized
+    /// when the figure closes, so an unterminated figure is closed implicitly.
     /// </summary>
     private bool figureOpen;
+
+    /// <summary>
+    /// The along-line extent of the current figure's ink inside the band, grown as the outline is
+    /// decoded. Empty (<see cref="figureLeft"/> greater than <see cref="figureRight"/>) until the
+    /// figure first reaches the band.
+    /// </summary>
+    private float figureLeft;
+    private float figureRight;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GlyphIntersectionCollector"/> class with
@@ -95,9 +97,9 @@ internal sealed class GlyphIntersectionCollector : IGlyphRenderer
         this.bandEnd = Math.Max(lowerLimit, upperLimit);
         this.vertical = vertical;
         this.intervals.Clear();
-        this.bandStartCrossings.Clear();
-        this.bandEndCrossings.Clear();
         this.figureOpen = false;
+        this.figureLeft = float.MaxValue;
+        this.figureRight = float.MinValue;
     }
 
     /// <inheritdoc/>
@@ -143,6 +145,8 @@ internal sealed class GlyphIntersectionCollector : IGlyphRenderer
         this.currentPoint = point;
         this.figureStart = point;
         this.figureOpen = true;
+        this.figureLeft = float.MaxValue;
+        this.figureRight = float.MinValue;
     }
 
     /// <inheritdoc/>
@@ -205,7 +209,7 @@ internal sealed class GlyphIntersectionCollector : IGlyphRenderer
     public TextDecorations EnabledDecorations() => TextDecorations.None;
 
     /// <inheritdoc/>
-    public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
+    public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness, ReadOnlyMemory<float> intersections)
     {
     }
 
@@ -222,19 +226,13 @@ internal sealed class GlyphIntersectionCollector : IGlyphRenderer
     /// that need the values to escape must copy them.
     /// </summary>
     /// <returns>The flattened interval pairs, or an empty span when nothing crossed the band.</returns>
-    public ReadOnlySpan<float> BuildIntersectionSpan()
+    public ReadOnlyMemory<float> BuildIntersectionSpan()
     {
         this.CloseOpenFigure();
 
-        // Convert the edge crossings into filled spans and union them with the segment
-        // extents so interiors that dodge the band (boundary crossing only at the sides)
-        // still count as ink.
-        this.AppendWindingSpans(this.bandStartCrossings);
-        this.AppendWindingSpans(this.bandEndCrossings);
-
         if (this.intervals.Count == 0)
         {
-            return [];
+            return ReadOnlyMemory<float>.Empty;
         }
 
         this.intervals.Sort(static (a, b) => a.Start.CompareTo(b.Start));
@@ -263,13 +261,12 @@ internal sealed class GlyphIntersectionCollector : IGlyphRenderer
 
         this.merged[count++] = start;
         this.merged[count++] = end;
-        return new ReadOnlySpan<float>(this.merged, 0, count);
+        return new ReadOnlyMemory<float>(this.merged, 0, count);
     }
 
     /// <summary>
-    /// Intersects one outline segment with the band. Records the along-line extent of the
-    /// portion inside the band, and any signed crossings of the band's edge scan lines for
-    /// later winding reconstruction of the filled spans.
+    /// Grows the current figure's along-line extent by one outline segment: by each point at which
+    /// the segment crosses either band edge, and by either endpoint that lies inside the band.
     /// </summary>
     /// <param name="from">The segment start point.</param>
     /// <param name="to">The segment end point.</param>
@@ -280,54 +277,30 @@ internal sealed class GlyphIntersectionCollector : IGlyphRenderer
         float fromLine = this.vertical ? from.Y : from.X;
         float toLine = this.vertical ? to.Y : to.X;
 
-        // Edge crossings are recorded regardless of the extent rejection below: a segment
-        // passing straight through the band still bounds the filled span at each edge.
-        AddCrossing(this.bandStartCrossings, this.bandStart, fromBand, toBand, fromLine, toLine);
-        AddCrossing(this.bandEndCrossings, this.bandEnd, fromBand, toBand, fromLine, toLine);
+        this.ExpandCrossing(this.bandStart, fromBand, toBand, fromLine, toLine);
+        this.ExpandCrossing(this.bandEnd, fromBand, toBand, fromLine, toLine);
 
-        float minBand = Math.Min(fromBand, toBand);
-        float maxBand = Math.Max(fromBand, toBand);
-        if (maxBand < this.bandStart || minBand > this.bandEnd)
+        if (fromBand > this.bandStart && fromBand < this.bandEnd)
         {
-            return;
+            this.Expand(fromLine);
         }
 
-        float start = fromLine;
-        float end = toLine;
-
-        // Clip the segment parametrically to the band; the line coordinate varies linearly
-        // with t, so the clipped endpoints bound the extent of the portion inside the band.
-        float deltaBand = toBand - fromBand;
-        if (deltaBand != 0F)
+        if (toBand > this.bandStart && toBand < this.bandEnd)
         {
-            float deltaLine = toLine - fromLine;
-            float t0 = Math.Clamp((this.bandStart - fromBand) / deltaBand, 0F, 1F);
-            float t1 = Math.Clamp((this.bandEnd - fromBand) / deltaBand, 0F, 1F);
-            start = fromLine + (deltaLine * t0);
-            end = fromLine + (deltaLine * t1);
+            this.Expand(toLine);
         }
-
-        this.intervals.Add((Math.Min(start, end), Math.Max(start, end)));
     }
 
     /// <summary>
-    /// Records the signed crossing of one outline segment with an edge scan line, if any. The
-    /// half-open rule (start side inclusive, end side exclusive) counts each crossing exactly
-    /// once across the shared endpoints of consecutive segments.
+    /// Grows the current figure's along-line extent by the point at which a segment crosses one
+    /// band edge, if it crosses it at all.
     /// </summary>
-    /// <param name="crossings">The crossing list for the edge.</param>
     /// <param name="edge">The edge's cross-axis coordinate.</param>
     /// <param name="fromBand">The segment start on the cross axis.</param>
     /// <param name="toBand">The segment end on the cross axis.</param>
     /// <param name="fromLine">The segment start on the line axis.</param>
     /// <param name="toLine">The segment end on the line axis.</param>
-    private static void AddCrossing(
-        List<(float Position, int Direction)> crossings,
-        float edge,
-        float fromBand,
-        float toBand,
-        float fromLine,
-        float toLine)
+    private void ExpandCrossing(float edge, float fromBand, float toBand, float fromLine, float toLine)
     {
         bool fromBelow = fromBand <= edge;
         bool toBelow = toBand <= edge;
@@ -337,45 +310,29 @@ internal sealed class GlyphIntersectionCollector : IGlyphRenderer
         }
 
         float t = (edge - fromBand) / (toBand - fromBand);
-        float position = fromLine + ((toLine - fromLine) * t);
-        crossings.Add((position, fromBelow ? 1 : -1));
+        this.Expand(fromLine + ((toLine - fromLine) * t));
     }
 
     /// <summary>
-    /// Reconstructs the filled spans along one edge scan line from its signed crossings using
-    /// the nonzero winding rule, and appends them to the interval list. The crossings are
-    /// consumed so a repeated build does not double count them.
+    /// Grows the current figure's along-line extent to include one coordinate.
     /// </summary>
-    /// <param name="crossings">The crossing list for the edge.</param>
-    private void AppendWindingSpans(List<(float Position, int Direction)> crossings)
+    /// <param name="line">The along-line coordinate to include.</param>
+    private void Expand(float line)
     {
-        if (crossings.Count > 1)
+        if (line < this.figureLeft)
         {
-            crossings.Sort(static (a, b) => a.Position.CompareTo(b.Position));
-
-            int winding = 0;
-            float spanStart = 0F;
-            foreach ((float position, int direction) in crossings)
-            {
-                int previous = winding;
-                winding += direction;
-                if (previous == 0 && winding != 0)
-                {
-                    spanStart = position;
-                }
-                else if (previous != 0 && winding == 0)
-                {
-                    this.intervals.Add((spanStart, position));
-                }
-            }
+            this.figureLeft = line;
         }
 
-        crossings.Clear();
+        if (line > this.figureRight)
+        {
+            this.figureRight = line;
+        }
     }
 
     /// <summary>
-    /// Closes the open figure, if any, by intersecting its implicit closing edge with the
-    /// band. Winding reconstruction requires every contour to be closed.
+    /// Closes the open figure, if any, by intersecting its implicit closing edge with the band and
+    /// then committing its bounding extent as one interval when the figure reached the band.
     /// </summary>
     private void CloseOpenFigure()
     {
@@ -388,6 +345,14 @@ internal sealed class GlyphIntersectionCollector : IGlyphRenderer
             }
 
             this.currentPoint = this.figureStart;
+
+            if (this.figureLeft < this.figureRight)
+            {
+                this.intervals.Add((this.figureLeft, this.figureRight));
+            }
+
+            this.figureLeft = float.MaxValue;
+            this.figureRight = float.MinValue;
         }
     }
 }

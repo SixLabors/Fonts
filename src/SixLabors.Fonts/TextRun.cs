@@ -45,6 +45,19 @@ public class TextRun
     public TextPlaceholder? Placeholder { get; set; }
 
     /// <summary>
+    /// Gets the geometry overrides to apply to the specified decoration, or <see langword="null"/>
+    /// to use the values derived from the font's metrics.
+    /// </summary>
+    /// <remarks>
+    /// The base implementation returns <see langword="null"/> for every decoration. Derived runs can
+    /// override this to supply values sourced from styling that the font metrics do not describe, such
+    /// as an explicit stroke width.
+    /// </remarks>
+    /// <param name="decoration">The decoration to retrieve overrides for.</param>
+    /// <returns>The <see cref="TextDecorationOptions"/> for the decoration, or <see langword="null"/>.</returns>
+    public virtual TextDecorationOptions? GetDecorationOptions(TextDecorations decoration) => null;
+
+    /// <summary>
     /// Returns the slice of the given text representing this <see cref="TextRun"/>.
     /// </summary>
     /// <param name="text">The text to slice.</param>

@@ -140,6 +140,6 @@ internal sealed class TeeGlyphRenderer : IGlyphRenderer
     public TextDecorations EnabledDecorations() => this.primary.EnabledDecorations();
 
     /// <inheritdoc/>
-    public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
-        => this.primary.SetDecoration(textDecorations, start, end, thickness);
+    public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness, ReadOnlyMemory<float> intersections)
+        => this.primary.SetDecoration(textDecorations, start, end, thickness, intersections);
 }

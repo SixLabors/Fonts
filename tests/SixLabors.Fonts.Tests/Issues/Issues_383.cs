@@ -92,7 +92,7 @@ internal class NoOpGlyphRenderer : IGlyphRenderer
     {
     }
 
-    public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
+    public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness, ReadOnlyMemory<float> intersections)
     {
     }
 

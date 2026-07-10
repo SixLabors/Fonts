@@ -130,8 +130,8 @@ internal struct TransformingGlyphRenderer : IGlyphRenderer
         => this.renderer.EnabledDecorations();
 
     /// <inheritdoc/>
-    public readonly void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
-        => this.renderer.SetDecoration(textDecorations, this.Transform(start), this.Transform(end), thickness);
+    public readonly void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness, ReadOnlyMemory<float> intersections)
+        => this.renderer.SetDecoration(textDecorations, this.Transform(start), this.Transform(end), thickness, intersections);
 
     /// <summary>
     /// Applies the scale, offset, transform matrix, and Y-axis inversion to the given point.
