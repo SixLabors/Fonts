@@ -132,6 +132,7 @@ internal class CffGlyphMetrics : FontGlyphMetrics
         Vector2 glyphOrigin,
         Vector2 decorationOrigin,
         GlyphLayoutMode mode,
+        float layoutAdvance,
         TextOptions options)
     {
         // https://www.unicode.org/faq/unsup_char.html
@@ -145,6 +146,7 @@ internal class CffGlyphMetrics : FontGlyphMetrics
 
         glyphOrigin *= dpi;
         decorationOrigin *= dpi;
+        layoutAdvance *= dpi;
         float scaledPPEM = this.GetScaledSize(pointSize, dpi);
 
         Matrix3x2 rotation = GetRotationMatrix(mode);
@@ -171,7 +173,7 @@ internal class CffGlyphMetrics : FontGlyphMetrics
             }
 
             renderer.EndGlyph();
-            this.RenderDecorationsTo(renderer, decorationOrigin, mode, rotation, scaledPPEM, options);
+            this.RenderDecorationsTo(renderer, decorationOrigin, mode, rotation, scaledPPEM, layoutAdvance, options);
         }
     }
 }

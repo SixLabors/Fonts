@@ -313,6 +313,10 @@ public abstract class FontGlyphMetrics
     /// <param name="glyphOrigin">The origin used to render the glyph outline.</param>
     /// <param name="decorationOrigin">The origin used to render text decorations.</param>
     /// <param name="mode">The glyph layout mode to render using.</param>
+    /// <param name="layoutAdvance">
+    /// The laid-out advance for this glyph in DPI-normalized units, including any tracking applied during layout.
+    /// Used to size text decorations so they span the full space between glyphs.
+    /// </param>
     /// <param name="options">The options used to influence the rendering of this glyph.</param>
     internal abstract void RenderTo(
         IGlyphRenderer renderer,
@@ -320,6 +324,7 @@ public abstract class FontGlyphMetrics
         Vector2 glyphOrigin,
         Vector2 decorationOrigin,
         GlyphLayoutMode mode,
+        float layoutAdvance,
         TextOptions options);
 
     /// <summary>
@@ -335,6 +340,7 @@ public abstract class FontGlyphMetrics
     /// or vertical rotated).</param>
     /// <param name="transform">The transformation matrix applied to the decoration coordinates before rendering.</param>
     /// <param name="scaledPPEM">The scaled pixels-per-em value used to adjust decoration size and positioning for the current rendering context.</param>
+    /// <param name="decorationLength">The length of the decoration line in device pixels, derived from the laid-out glyph advance so that decorations span any tracking applied between glyphs.</param>
     /// <param name="options">Additional text rendering options that may influence decoration appearance or behavior.</param>
     protected void RenderDecorationsTo(
         IGlyphRenderer renderer,
@@ -342,17 +348,13 @@ public abstract class FontGlyphMetrics
         GlyphLayoutMode mode,
         Matrix3x2 transform,
         float scaledPPEM,
+        float decorationLength,
         TextOptions options)
     {
         bool perGlyph = options.DecorationPositioningMode == DecorationPositioningMode.GlyphFont;
         FontMetrics fontMetrics = perGlyph
             ? this.FontMetrics
             : options.Font.FontMetrics;
-
-        // The scale factor for the decoration length is treated separately from other factors
-        // as it is used to scale the length of the decoration line.
-        // This must always be derived from the glyph's own scale factor to ensure correct length.
-        Vector2 lengthScaleFactor = this.ScaleFactor;
 
         // These factors determine horizontal and vertical scaling and offset for the decorations.
         // and are either per-glyph or derived from the common font metrics.
@@ -390,19 +392,19 @@ public abstract class FontGlyphMetrics
             // For vertical layout we need to draw a vertical line.
             if (isVerticalLayout)
             {
-                float length = mode == GlyphLayoutMode.VerticalRotated ? this.AdvanceWidth : this.AdvanceHeight;
+                // The decoration length is the laid-out advance (including tracking) so that
+                // the line spans the full space between glyphs rather than only the glyph advance.
+                float length = decorationLength;
                 if (length == 0)
                 {
                     return (Vector2.Zero, Vector2.Zero, 0);
                 }
 
-                Vector2 lengthScale = new Vector2(scaledPPEM) / lengthScaleFactor;
                 Vector2 scale = new Vector2(scaledPPEM) / scaleFactor;
 
                 // Undo the vertical offset applied when laying out the text.
                 Vector2 scaledOffset = (offset + new Vector2(decoratorPosition, 0)) * scale;
 
-                length *= lengthScale.Y;
                 thickness *= scale.X;
 
                 Vector2 tl = new(scaledOffset.X, scaledOffset.Y);
@@ -429,17 +431,15 @@ public abstract class FontGlyphMetrics
             }
             else
             {
-                float length = this.AdvanceWidth;
+                float length = decorationLength;
                 if (length == 0)
                 {
                     return (Vector2.Zero, Vector2.Zero, 0);
                 }
 
-                Vector2 lengthScale = new Vector2(scaledPPEM) / lengthScaleFactor;
                 Vector2 scale = new Vector2(scaledPPEM) / scaleFactor;
                 Vector2 scaledOffset = (offset + new Vector2(0, decoratorPosition)) * scale;
 
-                length *= lengthScale.X;
                 thickness *= scale.Y;
 
                 Vector2 tl = new(scaledOffset.X, scaledOffset.Y);

@@ -115,6 +115,7 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
         Vector2 glyphOrigin,
         Vector2 decorationOrigin,
         GlyphLayoutMode mode,
+        float layoutAdvance,
         TextOptions options)
     {
         if (ShouldSkipGlyphRendering(this.CodePoint))
@@ -128,6 +129,7 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
         // Device-space placement.
         glyphOrigin *= dpi;
         decorationOrigin *= dpi;
+        layoutAdvance *= dpi;
 
         float scaledPpem = this.GetScaledSize(pointSize, dpi);
         Vector2 scale = new Vector2(scaledPpem) / this.ScaleFactor; // uniform
@@ -159,7 +161,7 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
             }
 
             renderer.EndGlyph();
-            this.RenderDecorationsTo(renderer, decorationOrigin, mode, rotation, scaledPpem, options);
+            this.RenderDecorationsTo(renderer, decorationOrigin, mode, rotation, scaledPpem, layoutAdvance, options);
         }
     }
 

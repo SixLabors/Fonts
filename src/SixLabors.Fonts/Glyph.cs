@@ -42,6 +42,7 @@ public readonly struct Glyph
     /// <param name="glyphOrigin">The origin used to render the glyph outline.</param>
     /// <param name="decorationOrigin">The origin used to render text decorations.</param>
     /// <param name="mode">The glyph layout mode to render using.</param>
+    /// <param name="layoutAdvance">The laid-out advance for this glyph in DPI-normalized units, including any tracking, used to size text decorations.</param>
     /// <param name="options">The options to render using.</param>
     internal void RenderTo(
         IGlyphRenderer surface,
@@ -49,6 +50,7 @@ public readonly struct Glyph
         Vector2 glyphOrigin,
         Vector2 decorationOrigin,
         GlyphLayoutMode mode,
+        float layoutAdvance,
         TextOptions options)
-        => this.GlyphMetrics.RenderTo(surface, graphemeIndex, glyphOrigin, decorationOrigin, mode, options);
+        => this.GlyphMetrics.RenderTo(surface, graphemeIndex, glyphOrigin, decorationOrigin, mode, layoutAdvance, options);
 }

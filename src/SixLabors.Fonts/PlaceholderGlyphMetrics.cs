@@ -66,6 +66,7 @@ internal sealed class PlaceholderGlyphMetrics : FontGlyphMetrics
         Vector2 glyphOrigin,
         Vector2 decorationOrigin,
         GlyphLayoutMode mode,
+        float layoutAdvance,
         TextOptions options)
     {
         // Placeholders reserve layout space only; the caller owns the object rendering.

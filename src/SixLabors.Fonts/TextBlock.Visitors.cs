@@ -802,7 +802,8 @@ public sealed partial class TextBlock
                 return;
             }
 
-            glyph.Glyph.RenderTo(this.renderer, glyph.GraphemeIndex, glyph.GlyphOrigin, glyph.DecorationOrigin, glyph.LayoutMode, this.options);
+            float layoutAdvance = glyph.LayoutMode == GlyphLayoutMode.Horizontal ? glyph.AdvanceX : glyph.AdvanceY;
+            glyph.Glyph.RenderTo(this.renderer, glyph.GraphemeIndex, glyph.GlyphOrigin, glyph.DecorationOrigin, glyph.LayoutMode, layoutAdvance, this.options);
         }
 
         /// <inheritdoc/>

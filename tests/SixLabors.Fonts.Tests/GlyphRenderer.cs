@@ -81,7 +81,7 @@ public class GlyphRenderer : IGlyphRenderer
     public TextDecorations EnabledDecorations()
         => this.parameters.TextRun.TextDecorations;
 
-    public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
+    public virtual void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
     {
     }
 
