@@ -23,6 +23,14 @@ public abstract class FontGlyphMetrics
     /// </summary>
     private const float SyntheticObliqueSkew = 0.24932839F;
 
+    /// <summary>
+    /// The outward outline offset, expressed as a fraction of the em size, applied to synthesize
+    /// a bold (faux bold) weight when a bold style is requested but the resolved font face provides
+    /// no bold face. The value is tuned to visually approximate a real bold weight, mirroring the
+    /// CSS <c>font-synthesis: weight</c> behavior used by web browsers.
+    /// </summary>
+    private const float SyntheticBoldEmScale = 0.021F;
+
     internal FontGlyphMetrics(
         StreamFontMetrics font,
         ushort glyphId,
@@ -284,6 +292,35 @@ public abstract class FontGlyphMetrics
     }
 
     /// <summary>
+    /// Gets a value indicating whether a bold (faux bold) weight must be synthesized for this
+    /// glyph. This is <c>true</c> only when the associated text run requests a bold style that the
+    /// resolved font face does not itself provide, mirroring the CSS <c>font-synthesis: weight</c>
+    /// behavior used by web browsers.
+    /// </summary>
+    /// <returns><c>true</c> if bold synthesis is required; otherwise <c>false</c>.</returns>
+    internal bool ShouldSynthesizeBold()
+    {
+        Font? font = this.TextRun?.Font;
+        if (font is null)
+        {
+            return false;
+        }
+
+        bool requestedBold = (font.RequestedStyle & FontStyle.Bold) == FontStyle.Bold;
+        bool resolvedBold = (this.FontMetrics.Description.Style & FontStyle.Bold) == FontStyle.Bold;
+        return requestedBold && !resolvedBold;
+    }
+
+    /// <summary>
+    /// Gets the outward outline offset, in pixels, used to synthesize a bold (faux bold) weight for
+    /// this glyph, or <c>0</c> when no synthesis is required.
+    /// </summary>
+    /// <param name="scaledPointSize">The scaled point size, mapped to pixels by the caller.</param>
+    /// <returns>The emboldening strength in pixels.</returns>
+    internal float GetSyntheticBoldStrength(float scaledPointSize)
+        => this.ShouldSynthesizeBold() ? SyntheticBoldEmScale * this.UnitsPerEm * (scaledPointSize / this.ScaleFactor.X) : 0F;
+
+    /// <summary>
     /// Calculates the glyph bounding box in device-space (Y-down) coordinates,
     /// given the layout mode, render origin, and scaled point size.
     /// </summary>
@@ -322,6 +359,14 @@ public abstract class FontGlyphMetrics
 
         // 2) Rotate for vertical rotated layout.
         Vector2 offsetUp = this.Offset;
+
+        // Inflate the ink bounds by the synthetic bold offset (in font units) so that the reported
+        // bounds enclose the emboldened outline produced during rendering.
+        if (this.ShouldSynthesizeBold())
+        {
+            float inflate = SyntheticBoldEmScale * this.UnitsPerEm;
+            b = new Bounds(b.Min - new Vector2(inflate), b.Max + new Vector2(inflate));
+        }
 
         // Apply synthetic oblique (faux italic) shear before rotation so that the reported ink
         // bounds match the sheared outline produced during rendering.

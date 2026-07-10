@@ -157,7 +157,12 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
         FontRectangle box = this.GetBoundingBox(mode, glyphOrigin, scaledPPEM);
         GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode, graphemeIndex);
 
-        if (renderer.BeginGlyph(in box, in parameters))
+        // Synthesize a bold (faux bold) weight when requested but unavailable by dilating the
+        // outline through a decorator. Decorations continue to use the original renderer.
+        float boldStrength = this.GetSyntheticBoldStrength(scaledPPEM);
+        IGlyphRenderer target = boldStrength > 0F ? new EmboldeningGlyphRenderer(renderer, boldStrength) : renderer;
+
+        if (target.BeginGlyph(in box, in parameters))
         {
             if (!UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint))
             {
@@ -194,7 +199,7 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
                 int endOfContour = -1;
                 for (int i = 0; i < scaledVector.EndPoints.Count; i++)
                 {
-                    renderer.BeginFigure();
+                    target.BeginFigure();
                     int startOfContour = endOfContour + 1;
                     endOfContour = endPoints[i];
 
@@ -204,19 +209,19 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
 
                     if (controlPoints[endOfContour].OnCurve)
                     {
-                        renderer.MoveTo(curr);
+                        target.MoveTo(curr);
                     }
                     else
                     {
                         if (controlPoints[startOfContour].OnCurve)
                         {
-                            renderer.MoveTo(next);
+                            target.MoveTo(next);
                         }
                         else
                         {
                             // If both first and last points are off-curve, start at their middle.
                             Vector2 startPoint = (curr + next) * .5F;
-                            renderer.MoveTo(startPoint);
+                            target.MoveTo(startPoint);
                         }
                     }
 
@@ -233,7 +238,7 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
                         if (controlPoints[currentIndex].OnCurve)
                         {
                             // This is a straight line.
-                            renderer.LineTo(curr);
+                            target.LineTo(curr);
                         }
                         else
                         {
@@ -243,7 +248,7 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
                             if (!controlPoints[prevIndex].OnCurve)
                             {
                                 prev2 = (curr + prev) * .5F;
-                                renderer.LineTo(prev2);
+                                target.LineTo(prev2);
                             }
 
                             if (!controlPoints[nextIndex].OnCurve)
@@ -251,16 +256,16 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
                                 next2 = (curr + next) * .5F;
                             }
 
-                            renderer.LineTo(prev2);
-                            renderer.QuadraticBezierTo(curr, next2);
+                            target.LineTo(prev2);
+                            target.QuadraticBezierTo(curr, next2);
                         }
                     }
 
-                    renderer.EndFigure();
+                    target.EndFigure();
                 }
             }
 
-            renderer.EndGlyph();
+            target.EndGlyph();
             this.RenderDecorationsTo(renderer, decorationOrigin, mode, rotation, scaledPPEM, options);
         }
     }

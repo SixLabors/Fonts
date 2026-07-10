@@ -157,7 +157,12 @@ internal class CffGlyphMetrics : FontGlyphMetrics
         FontRectangle box = this.GetBoundingBox(mode, glyphOrigin, scaledPPEM);
         GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode, graphemeIndex);
 
-        if (renderer.BeginGlyph(in box, in parameters))
+        // Synthesize a bold (faux bold) weight when requested but unavailable by dilating the
+        // outline through a decorator. Decorations continue to use the original renderer.
+        float boldStrength = this.GetSyntheticBoldStrength(scaledPPEM);
+        IGlyphRenderer target = boldStrength > 0F ? new EmboldeningGlyphRenderer(renderer, boldStrength) : renderer;
+
+        if (target.BeginGlyph(in box, in parameters))
         {
             if (!UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint))
             {
@@ -173,10 +178,10 @@ internal class CffGlyphMetrics : FontGlyphMetrics
                 }
 
                 Vector2 scaledOffset = this.Offset * scale;
-                this.glyphData.RenderTo(renderer, glyphOrigin, scale, scaledOffset, transform);
+                this.glyphData.RenderTo(target, glyphOrigin, scale, scaledOffset, transform);
             }
 
-            renderer.EndGlyph();
+            target.EndGlyph();
             this.RenderDecorationsTo(renderer, decorationOrigin, mode, rotation, scaledPPEM, options);
         }
     }
