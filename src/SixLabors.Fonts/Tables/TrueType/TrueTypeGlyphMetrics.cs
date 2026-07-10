@@ -154,6 +154,13 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
             float pixelSize = scaledPPEM / 72F;
             this.FontMetrics.ApplyTrueTypeHinting(this.GetHintingMode(hintingMode), this, ref clone, scale, pixelSize);
 
+            // Apply synthetic oblique after hinting so the hinter operates on the upright outline.
+            float skew = this.GetObliqueSkew();
+            if (skew != 0F)
+            {
+                GlyphVector.TransformInPlace(ref clone, CreateObliqueMatrix(skew));
+            }
+
             // Rotation must happen after hinting.
             GlyphVector.TransformInPlace(ref clone, rotation);
             return clone;
@@ -162,10 +169,19 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
         IList<ControlPoint> controlPoints = scaledVector.ControlPoints;
         IReadOnlyList<ushort> endPoints = scaledVector.EndPoints;
 
+        float boldStrength = this.GetSyntheticBoldStrength(scaledPPEM);
+        EmboldeningGlyphRenderer? emboldening = null;
+        IGlyphRenderer target = renderer;
+        if (boldStrength > 0F)
+        {
+            emboldening = new EmboldeningGlyphRenderer(renderer, boldStrength);
+            target = emboldening;
+        }
+
         int endOfContour = -1;
         for (int i = 0; i < scaledVector.EndPoints.Count; i++)
         {
-            renderer.BeginFigure();
+            target.BeginFigure();
             int startOfContour = endOfContour + 1;
             endOfContour = endPoints[i];
 
@@ -175,19 +191,19 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
 
             if (controlPoints[endOfContour].OnCurve)
             {
-                renderer.MoveTo(curr);
+                target.MoveTo(curr);
             }
             else
             {
                 if (controlPoints[startOfContour].OnCurve)
                 {
-                    renderer.MoveTo(next);
+                    target.MoveTo(next);
                 }
                 else
                 {
                     // If both first and last points are off-curve, start at their middle.
                     Vector2 startPoint = (curr + next) * .5F;
-                    renderer.MoveTo(startPoint);
+                    target.MoveTo(startPoint);
                 }
             }
 
@@ -204,7 +220,7 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
                 if (controlPoints[currentIndex].OnCurve)
                 {
                     // This is a straight line.
-                    renderer.LineTo(curr);
+                    target.LineTo(curr);
                 }
                 else
                 {
@@ -214,7 +230,7 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
                     if (!controlPoints[prevIndex].OnCurve)
                     {
                         prev2 = (curr + prev) * .5F;
-                        renderer.LineTo(prev2);
+                        target.LineTo(prev2);
                     }
 
                     if (!controlPoints[nextIndex].OnCurve)
@@ -222,12 +238,15 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
                         next2 = (curr + next) * .5F;
                     }
 
-                    renderer.LineTo(prev2);
-                    renderer.QuadraticBezierTo(curr, next2);
+                    target.LineTo(prev2);
+                    target.QuadraticBezierTo(curr, next2);
                 }
             }
 
-            renderer.EndFigure();
+            target.EndFigure();
         }
+
+        // Emit the completed fill group before FontGlyphMetrics ends the glyph.
+        emboldening?.CompleteOutline();
     }
 }
