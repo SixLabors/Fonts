@@ -107,10 +107,10 @@ public class FontSynthesisTests
         Font italic = new(family, 48, FontStyle.Italic);
 
         GlyphRenderer regularRenderer = new();
-        TextRenderer.RenderTextTo(regularRenderer, text, new TextOptions(regular) { HintingMode = HintingMode.None });
+        TextRenderer.RenderTo(regularRenderer, text, new TextOptions(regular) { HintingMode = HintingMode.None });
 
         GlyphRenderer italicRenderer = new();
-        TextRenderer.RenderTextTo(italicRenderer, text, new TextOptions(italic) { HintingMode = HintingMode.None });
+        TextRenderer.RenderTo(italicRenderer, text, new TextOptions(italic) { HintingMode = HintingMode.None });
 
         List<Vector2> r = regularRenderer.ControlPoints;
         List<Vector2> i = italicRenderer.ControlPoints;
@@ -267,10 +267,10 @@ public class FontSynthesisTests
         Font bold = new(family, 48, FontStyle.Bold);
 
         GlyphRenderer regularRenderer = new();
-        TextRenderer.RenderTextTo(regularRenderer, text, new TextOptions(regular) { HintingMode = HintingMode.None });
+        TextRenderer.RenderTo(regularRenderer, text, new TextOptions(regular) { HintingMode = HintingMode.None });
 
         GlyphRenderer boldRenderer = new();
-        TextRenderer.RenderTextTo(boldRenderer, text, new TextOptions(bold) { HintingMode = HintingMode.None });
+        TextRenderer.RenderTo(boldRenderer, text, new TextOptions(bold) { HintingMode = HintingMode.None });
 
         List<Vector2> r = regularRenderer.ControlPoints;
         List<Vector2> b = boldRenderer.ControlPoints;
