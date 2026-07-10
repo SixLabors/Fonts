@@ -148,6 +148,12 @@ internal class CffGlyphMetrics : FontGlyphMetrics
         float scaledPPEM = this.GetScaledSize(pointSize, dpi);
 
         Matrix3x2 rotation = GetRotationMatrix(mode);
+
+        // Synthesize an oblique (faux italic) slant when requested but unavailable by shearing
+        // the outline in the glyph's Y-up space before rotation is applied.
+        float skew = this.GetObliqueSkew();
+        Matrix3x2 transform = skew != 0F ? CreateObliqueMatrix(skew) * rotation : rotation;
+
         FontRectangle box = this.GetBoundingBox(mode, glyphOrigin, scaledPPEM);
         GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode, graphemeIndex);
 
@@ -167,7 +173,7 @@ internal class CffGlyphMetrics : FontGlyphMetrics
                 }
 
                 Vector2 scaledOffset = this.Offset * scale;
-                this.glyphData.RenderTo(renderer, glyphOrigin, scale, scaledOffset, rotation);
+                this.glyphData.RenderTo(renderer, glyphOrigin, scale, scaledOffset, transform);
             }
 
             renderer.EndGlyph();
