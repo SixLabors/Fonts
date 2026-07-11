@@ -139,7 +139,7 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
         float scaledPPEM,
         HintingMode hintingMode)
     {
-        Matrix3x2 rotation = GetRotationMatrix(mode);
+        Matrix3x2 transform = this.GetOutlineTransform(mode);
         GlyphVector scaledVector = this.scaledVectorCache.GetOrAdd(scaledPPEM, _ =>
         {
             // Create a scaled deep copy of the vector so that we do not alter
@@ -154,15 +154,9 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
             float pixelSize = scaledPPEM / 72F;
             this.FontMetrics.ApplyTrueTypeHinting(this.GetHintingMode(hintingMode), this, ref clone, scale, pixelSize);
 
-            // Apply synthetic oblique after hinting so the hinter operates on the upright outline.
-            float skew = this.GetObliqueSkew();
-            if (skew != 0F)
-            {
-                GlyphVector.TransformInPlace(ref clone, CreateObliqueMatrix(skew));
-            }
-
-            // Rotation must happen after hinting.
-            GlyphVector.TransformInPlace(ref clone, rotation);
+            // The shared outline transform applies synthetic oblique before layout rotation.
+            // Both happen after hinting so the hinter always receives the upright outline.
+            GlyphVector.TransformInPlace(ref clone, transform);
             return clone;
         });
 
@@ -174,79 +168,86 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
         IGlyphRenderer target = renderer;
         if (boldStrength > 0F)
         {
-            emboldening = new EmboldeningGlyphRenderer(renderer, boldStrength);
+            emboldening = EmboldeningGlyphRenderer.Rent(renderer, boldStrength);
             target = emboldening;
         }
 
-        int endOfContour = -1;
-        for (int i = 0; i < scaledVector.EndPoints.Count; i++)
+        try
         {
-            target.BeginFigure();
-            int startOfContour = endOfContour + 1;
-            endOfContour = endPoints[i];
-
-            Vector2 prev;
-            Vector2 curr = (YInverter * controlPoints[endOfContour].Point) + glyphOrigin;
-            Vector2 next = (YInverter * controlPoints[startOfContour].Point) + glyphOrigin;
-
-            if (controlPoints[endOfContour].OnCurve)
+            int endOfContour = -1;
+            for (int i = 0; i < scaledVector.EndPoints.Count; i++)
             {
-                target.MoveTo(curr);
-            }
-            else
-            {
-                if (controlPoints[startOfContour].OnCurve)
+                target.BeginFigure();
+                int startOfContour = endOfContour + 1;
+                endOfContour = endPoints[i];
+
+                Vector2 prev;
+                Vector2 curr = (YInverter * controlPoints[endOfContour].Point) + glyphOrigin;
+                Vector2 next = (YInverter * controlPoints[startOfContour].Point) + glyphOrigin;
+
+                if (controlPoints[endOfContour].OnCurve)
                 {
-                    target.MoveTo(next);
+                    target.MoveTo(curr);
                 }
                 else
                 {
-                    // If both first and last points are off-curve, start at their middle.
-                    Vector2 startPoint = (curr + next) * .5F;
-                    target.MoveTo(startPoint);
-                }
-            }
-
-            int length = endOfContour - startOfContour + 1;
-            for (int p = 0; p < length; p++)
-            {
-                prev = curr;
-                curr = next;
-                int currentIndex = startOfContour + p;
-                int nextIndex = startOfContour + ((p + 1) % length);
-                int prevIndex = startOfContour + ((length + p - 1) % length);
-                next = (YInverter * controlPoints[nextIndex].Point) + glyphOrigin;
-
-                if (controlPoints[currentIndex].OnCurve)
-                {
-                    // This is a straight line.
-                    target.LineTo(curr);
-                }
-                else
-                {
-                    Vector2 prev2 = prev;
-                    Vector2 next2 = next;
-
-                    if (!controlPoints[prevIndex].OnCurve)
+                    if (controlPoints[startOfContour].OnCurve)
                     {
-                        prev2 = (curr + prev) * .5F;
+                        target.MoveTo(next);
+                    }
+                    else
+                    {
+                        // If both first and last points are off-curve, start at their middle.
+                        Vector2 startPoint = (curr + next) * .5F;
+                        target.MoveTo(startPoint);
+                    }
+                }
+
+                int length = endOfContour - startOfContour + 1;
+                for (int p = 0; p < length; p++)
+                {
+                    prev = curr;
+                    curr = next;
+                    int currentIndex = startOfContour + p;
+                    int nextIndex = startOfContour + ((p + 1) % length);
+                    int prevIndex = startOfContour + ((length + p - 1) % length);
+                    next = (YInverter * controlPoints[nextIndex].Point) + glyphOrigin;
+
+                    if (controlPoints[currentIndex].OnCurve)
+                    {
+                        // This is a straight line.
+                        target.LineTo(curr);
+                    }
+                    else
+                    {
+                        Vector2 prev2 = prev;
+                        Vector2 next2 = next;
+
+                        if (!controlPoints[prevIndex].OnCurve)
+                        {
+                            prev2 = (curr + prev) * .5F;
+                            target.LineTo(prev2);
+                        }
+
+                        if (!controlPoints[nextIndex].OnCurve)
+                        {
+                            next2 = (curr + next) * .5F;
+                        }
+
                         target.LineTo(prev2);
+                        target.QuadraticBezierTo(curr, next2);
                     }
-
-                    if (!controlPoints[nextIndex].OnCurve)
-                    {
-                        next2 = (curr + next) * .5F;
-                    }
-
-                    target.LineTo(prev2);
-                    target.QuadraticBezierTo(curr, next2);
                 }
+
+                target.EndFigure();
             }
 
-            target.EndFigure();
+            // Emit the completed fill group before FontGlyphMetrics ends the glyph.
+            emboldening?.CompleteOutline();
         }
-
-        // Emit the completed fill group before FontGlyphMetrics ends the glyph.
-        emboldening?.CompleteOutline();
+        finally
+        {
+            emboldening?.Release();
+        }
     }
 }

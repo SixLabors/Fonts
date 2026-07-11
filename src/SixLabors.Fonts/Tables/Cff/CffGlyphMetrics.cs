@@ -133,12 +133,7 @@ internal class CffGlyphMetrics : FontGlyphMetrics
         float scaledPPEM,
         HintingMode hintingMode)
     {
-        Matrix3x2 rotation = GetRotationMatrix(mode);
-
-        // Apply synthetic oblique before layout rotation so the slant remains relative to the
-        // glyph's upright coordinate system.
-        float skew = this.GetObliqueSkew();
-        Matrix3x2 transform = skew != 0F ? CreateObliqueMatrix(skew) * rotation : rotation;
+        Matrix3x2 transform = this.GetOutlineTransform(mode);
 
         Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
 
@@ -157,9 +152,16 @@ internal class CffGlyphMetrics : FontGlyphMetrics
         {
             // Flush through the supplied renderer before glyph completion so skip-ink observes
             // the same synthesized outline as the drawing renderer.
-            EmboldeningGlyphRenderer target = new(renderer, boldStrength);
-            this.glyphData.RenderTo(target, glyphOrigin, scale, scaledOffset, transform);
-            target.CompleteOutline();
+            EmboldeningGlyphRenderer target = EmboldeningGlyphRenderer.Rent(renderer, boldStrength);
+            try
+            {
+                this.glyphData.RenderTo(target, glyphOrigin, scale, scaledOffset, transform);
+                target.CompleteOutline();
+            }
+            finally
+            {
+                target.Release();
+            }
         }
         else
         {

@@ -12,25 +12,29 @@ namespace SixLabors.Fonts.Rendering;
 /// used by web browsers.
 /// </summary>
 /// <remarks>
-/// Outline contours are buffered per fill group (a color layer, or the whole glyph when no
-/// layers are present) so that the group's overall winding can be determined. Every point,
-/// including off-curve control points, is then shifted along the local outline normal using a
-/// mitred offset, which grows the filled area while shrinking any counters, just as a real bold
-/// weight would. The dilated contours are replayed to the wrapped renderer, preserving the
-/// original segment types.
+/// Outline contours are buffered per fill group so their overall winding can be determined.
+/// The points are then moved using the same bounded lateral-bisector algorithm as FreeType's
+/// <c>FT_Outline_EmboldenXY</c>, and replayed with their original segment types.
 /// </remarks>
 internal sealed class EmboldeningGlyphRenderer : IGlyphRenderer
 {
-    private readonly IGlyphRenderer inner;
-    private readonly float strength;
-    private readonly List<Contour> group = new();
+    private static readonly ObjectPool<EmboldeningGlyphRenderer> Pool = new(new PooledObjectPolicy());
+
+    private readonly List<Contour> group = [];
+    private readonly List<Contour> availableContours = [];
+    private IGlyphRenderer inner = null!;
+    private float strength;
     private Contour? current;
+
+    private EmboldeningGlyphRenderer()
+    {
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EmboldeningGlyphRenderer"/> class.
     /// </summary>
     /// <param name="inner">The renderer that receives the dilated outline.</param>
-    /// <param name="strength">The outward offset applied to each outline edge, in pixels.</param>
+    /// <param name="strength">The total x/y outline strength, in pixels.</param>
     public EmboldeningGlyphRenderer(IGlyphRenderer inner, float strength)
     {
         this.inner = inner;
@@ -44,6 +48,25 @@ internal sealed class EmboldeningGlyphRenderer : IGlyphRenderer
         Quadratic,
         Cubic,
     }
+
+    /// <summary>
+    /// Rents a renderer configured to forward the emboldened outline to the given renderer.
+    /// </summary>
+    /// <param name="inner">The renderer that receives the dilated outline.</param>
+    /// <param name="strength">The total x/y outline strength, in pixels.</param>
+    /// <returns>The configured renderer.</returns>
+    public static EmboldeningGlyphRenderer Rent(IGlyphRenderer inner, float strength)
+    {
+        EmboldeningGlyphRenderer renderer = Pool.Get();
+        renderer.inner = inner;
+        renderer.strength = strength;
+        return renderer;
+    }
+
+    /// <summary>
+    /// Returns this renderer and its retained contour buffers to the shared pool.
+    /// </summary>
+    public void Release() => Pool.Return(this);
 
     /// <inheritdoc/>
     public void BeginText(in FontRectangle bounds) => this.inner.BeginText(in bounds);
@@ -74,7 +97,7 @@ internal sealed class EmboldeningGlyphRenderer : IGlyphRenderer
     }
 
     /// <inheritdoc/>
-    public void BeginFigure() => this.current = new Contour();
+    public void BeginFigure() => this.current = this.GetContour();
 
     /// <inheritdoc/>
     public void MoveTo(Vector2 point) => this.Add(SegmentType.Move, point);
@@ -117,67 +140,130 @@ internal sealed class EmboldeningGlyphRenderer : IGlyphRenderer
     /// </summary>
     public void CompleteOutline() => this.Flush();
 
-    private static Vector2[] Offset(List<Vector2> points, float strength)
+    /// <summary>
+    /// Moves one contour's points using FreeType's bounded lateral-bisector dilation.
+    /// </summary>
+    /// <param name="points">The contour points, including off-curve control points.</param>
+    /// <param name="strength">The total x/y outline strength.</param>
+    /// <param name="trueTypeOrientation">
+    /// <see langword="true"/> when the complete outline uses FreeType's TrueType orientation;
+    /// otherwise <see langword="false"/> for PostScript orientation.
+    /// </param>
+    private static void Embolden(List<Vector2> points, float strength, bool trueTypeOrientation)
     {
-        int n = points.Count;
-        Vector2[] result = new Vector2[n];
-        for (int i = 0; i < n; i++)
+        // FreeType treats the requested value as the total increase and moves points using half
+        // that amount in each axis. The remaining movement comes from the local edge bisector.
+        strength *= .5F;
+
+        int first = 0;
+        int last = points.Count - 1;
+        int i = last;
+        int j = first;
+        int anchorIndex = -1;
+        Vector2 incoming = default;
+        Vector2 anchor = default;
+        float incomingLength = 0F;
+        float anchorLength = 0F;
+
+        // This is a direct float translation of FT_Outline_EmboldenXY. j examines successive
+        // points, i advances only when points are moved, and anchorIndex closes the contour after
+        // coincident points have been skipped.
+        while (j != i && i != anchorIndex)
         {
-            Vector2 p = points[i];
-            Vector2 e1 = Normalize(p - points[(i - 1 + n) % n]);
-            Vector2 e2 = Normalize(points[(i + 1) % n] - p);
-
-            // Edge normals (rotate each edge direction by -90 degrees).
-            Vector2 n1 = new(e1.Y, -e1.X);
-            Vector2 n2 = new(e2.Y, -e2.X);
-            Vector2 sum = n1 + n2;
-
-            Vector2 direction;
-            if (sum == Vector2.Zero)
+            Vector2 outgoing;
+            float outgoingLength;
+            if (j != anchorIndex)
             {
-                direction = n1 == Vector2.Zero ? n2 : n1;
+                outgoing = points[j] - points[i];
+                outgoingLength = outgoing.Length();
+                if (outgoingLength == 0F)
+                {
+                    j = j < last ? j + 1 : first;
+                    continue;
+                }
+
+                outgoing /= outgoingLength;
             }
             else
             {
-                // Mitre so that each adjacent edge moves out by exactly the strength.
-                // The denominator is clamped to tame the mitre spike at sharp corners.
-                float d = 1F + Vector2.Dot(n1, n2);
-                direction = sum / MathF.Max(d, 0.25F);
+                outgoing = anchor;
+                outgoingLength = anchorLength;
             }
 
-            result[i] = p + (strength * direction);
+            if (incomingLength != 0F)
+            {
+                if (anchorIndex < 0)
+                {
+                    anchorIndex = i;
+                    anchor = incoming;
+                    anchorLength = incomingLength;
+                }
+
+                float dot = Vector2.Dot(incoming, outgoing);
+                Vector2 shift = default;
+
+                // FreeType leaves turns of roughly 160 degrees or more untouched. This avoids
+                // unstable bisectors where two edges almost reverse direction.
+                if (dot > -0.9375F)
+                {
+                    float denominator = dot + 1F;
+                    shift = new Vector2(incoming.Y + outgoing.Y, incoming.X + outgoing.X);
+
+                    if (trueTypeOrientation)
+                    {
+                        shift.X = -shift.X;
+                    }
+                    else
+                    {
+                        shift.Y = -shift.Y;
+                    }
+
+                    float cross = (outgoing.X * incoming.Y) - (outgoing.Y * incoming.X);
+                    if (trueTypeOrientation)
+                    {
+                        cross = -cross;
+                    }
+
+                    // Limit each component by the shorter adjacent edge. FreeType uses this
+                    // branch to stop collapsing segments from producing unbounded corner spikes.
+                    float length = MathF.Min(incomingLength, outgoingLength);
+                    shift.X = (strength * cross) <= (length * denominator)
+                        ? shift.X * strength / denominator
+                        : shift.X * length / cross;
+
+                    shift.Y = (strength * cross) <= (length * denominator)
+                        ? shift.Y * strength / denominator
+                        : shift.Y * length / cross;
+                }
+
+                Vector2 delta = new(strength + shift.X, strength + shift.Y);
+                while (i != j)
+                {
+                    points[i] += delta;
+                    i = i < last ? i + 1 : first;
+                }
+            }
+            else
+            {
+                i = j;
+            }
+
+            incoming = outgoing;
+            incomingLength = outgoingLength;
+            j = j < last ? j + 1 : first;
         }
-
-        return result;
-    }
-
-    private static Vector2 Normalize(Vector2 v)
-    {
-        float length = v.Length();
-        return length < 1e-6F ? Vector2.Zero : v / length;
-    }
-
-    private static float SignedArea(List<Vector2> points)
-    {
-        float area = 0F;
-        for (int i = 0, j = points.Count - 1; i < points.Count; j = i++)
-        {
-            area += (points[j].X * points[i].Y) - (points[i].X * points[j].Y);
-        }
-
-        return area * 0.5F;
     }
 
     private void Add(SegmentType type, Vector2 p0)
     {
-        Contour contour = this.current ??= new Contour();
+        Contour contour = this.current ??= this.GetContour();
         contour.Segments.Add((type, 1));
         contour.Points.Add(p0);
     }
 
     private void Add(SegmentType type, Vector2 p0, Vector2 p1)
     {
-        Contour contour = this.current ??= new Contour();
+        Contour contour = this.current ??= this.GetContour();
         contour.Segments.Add((type, 2));
         contour.Points.Add(p0);
         contour.Points.Add(p1);
@@ -185,11 +271,24 @@ internal sealed class EmboldeningGlyphRenderer : IGlyphRenderer
 
     private void Add(SegmentType type, Vector2 p0, Vector2 p1, Vector2 p2)
     {
-        Contour contour = this.current ??= new Contour();
+        Contour contour = this.current ??= this.GetContour();
         contour.Segments.Add((type, 3));
         contour.Points.Add(p0);
         contour.Points.Add(p1);
         contour.Points.Add(p2);
+    }
+
+    private Contour GetContour()
+    {
+        int index = this.availableContours.Count - 1;
+        if (index >= 0)
+        {
+            Contour contour = this.availableContours[index];
+            this.availableContours.RemoveAt(index);
+            return contour;
+        }
+
+        return new Contour();
     }
 
     private void Flush()
@@ -199,22 +298,33 @@ internal sealed class EmboldeningGlyphRenderer : IGlyphRenderer
             return;
         }
 
-        // Grow the fill outward regardless of the source outline's winding convention:
-        // a positive total area means the group is wound counter-clockwise, for which the
-        // edge normals already point outward, otherwise the offset direction is reversed.
-        // Only on-curve anchor points are used so that extreme cubic control points cannot
-        // distort the winding calculation.
-        float area = 0F;
+        // FreeType determines one orientation for the complete outline using the non-zero winding
+        // rule and the polygon formed by every point, including off-curve control points. Using the
+        // group orientation makes outer contours grow while oppositely wound counters shrink.
+        double area = 0D;
         foreach (Contour contour in this.group)
         {
-            area += SignedArea(contour.Anchors());
+            List<Vector2> points = contour.Points;
+            Vector2 previous = points[^1];
+            for (int i = 0; i < points.Count; i++)
+            {
+                Vector2 current = points[i];
+                area += ((double)current.Y - previous.Y) * (current.X + previous.X);
+                previous = current;
+            }
         }
 
-        float signedStrength = (area >= 0F ? 1F : -1F) * this.strength;
+        bool hasOrientation = area != 0D;
+        bool trueTypeOrientation = area < 0D;
 
         foreach (Contour contour in this.group)
         {
-            Vector2[] offset = Offset(contour.Points, signedStrength);
+            List<Vector2> points = contour.Points;
+            if (hasOrientation)
+            {
+                Embolden(points, this.strength, trueTypeOrientation);
+            }
+
             this.inner.BeginFigure();
 
             int index = 0;
@@ -223,16 +333,16 @@ internal sealed class EmboldeningGlyphRenderer : IGlyphRenderer
                 switch (type)
                 {
                     case SegmentType.Move:
-                        this.inner.MoveTo(offset[index]);
+                        this.inner.MoveTo(points[index]);
                         break;
                     case SegmentType.Line:
-                        this.inner.LineTo(offset[index]);
+                        this.inner.LineTo(points[index]);
                         break;
                     case SegmentType.Quadratic:
-                        this.inner.QuadraticBezierTo(offset[index], offset[index + 1]);
+                        this.inner.QuadraticBezierTo(points[index], points[index + 1]);
                         break;
                     case SegmentType.Cubic:
-                        this.inner.CubicBezierTo(offset[index], offset[index + 1], offset[index + 2]);
+                        this.inner.CubicBezierTo(points[index], points[index + 1], points[index + 2]);
                         break;
                 }
 
@@ -242,31 +352,59 @@ internal sealed class EmboldeningGlyphRenderer : IGlyphRenderer
             this.inner.EndFigure();
         }
 
+        this.RecycleGroup();
+    }
+
+    private void Reset()
+    {
+        if (this.current is not null)
+        {
+            this.current.Clear();
+            this.availableContours.Add(this.current);
+            this.current = null;
+        }
+
+        this.RecycleGroup();
+        this.inner = null!;
+        this.strength = 0F;
+    }
+
+    private void RecycleGroup()
+    {
+        // Keep each contour's backing arrays with the pooled renderer so subsequent glyphs
+        // only overwrite retained storage instead of allocating per contour.
+        foreach (Contour contour in this.group)
+        {
+            contour.Clear();
+            this.availableContours.Add(contour);
+        }
+
         this.group.Clear();
     }
 
     private sealed class Contour
     {
-        public List<Vector2> Points { get; } = new();
+        public List<Vector2> Points { get; } = [];
 
-        public List<(SegmentType Type, int Count)> Segments { get; } = new();
+        public List<(SegmentType Type, int Count)> Segments { get; } = [];
 
-        /// <summary>
-        /// Gets the on-curve anchor points of the contour, i.e. the endpoint of each segment,
-        /// which describe the contour's winding independently of any off-curve control points.
-        /// </summary>
-        /// <returns>The anchor points.</returns>
-        public List<Vector2> Anchors()
+        public void Clear()
         {
-            List<Vector2> anchors = new(this.Segments.Count);
-            int index = 0;
-            foreach ((SegmentType _, int count) in this.Segments)
-            {
-                index += count;
-                anchors.Add(this.Points[index - 1]);
-            }
+            this.Points.Clear();
+            this.Segments.Clear();
+        }
+    }
 
-            return anchors;
+    private sealed class PooledObjectPolicy : IPooledObjectPolicy<EmboldeningGlyphRenderer>
+    {
+        /// <inheritdoc/>
+        public EmboldeningGlyphRenderer Create() => new();
+
+        /// <inheritdoc/>
+        public bool Return(EmboldeningGlyphRenderer obj)
+        {
+            obj.Reset();
+            return true;
         }
     }
 }

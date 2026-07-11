@@ -29,18 +29,20 @@ public abstract class FontGlyphMetrics
 
     /// <summary>
     /// The horizontal shear applied to synthesize an oblique (faux italic) slant when an italic
-    /// style is requested but the resolved font face provides no italic face. This equals the
-    /// tangent of a 14 degree slant, matching the default oblique angle used by web browsers.
+    /// style is requested but the resolved font face provides no italic face. Chromium and
+    /// SkParagraph use an exact quarter shear, which produces an angle of approximately 14.036
+    /// degrees.
     /// </summary>
-    private const float SyntheticObliqueSkew = 0.24932839F;
+    private const float SyntheticObliqueSkew = 1F / 4F;
 
     /// <summary>
-    /// The outward outline offset, expressed as a fraction of the em size, applied to synthesize
-    /// a bold (faux bold) weight when a bold style is requested but the resolved font face provides
-    /// no bold face. The value is tuned to visually approximate a real bold weight, mirroring the
-    /// CSS <c>font-synthesis: weight</c> behavior used by web browsers.
+    /// The outline strength, expressed as a fraction of the em size, applied to synthesize a bold
+    /// (faux bold) weight when a bold style is requested but the resolved font face provides no
+    /// bold face. The divisor of 31 retains FreeType's dilation behavior while matching the
+    /// synthesized weight produced by Chromium's DirectWrite backend more closely than desktop
+    /// FreeType's divisor of 24 or Skia Android's divisor of 34.
     /// </summary>
-    private const float SyntheticBoldEmScale = 0.021F;
+    private const float SyntheticBoldEmScale = 1F / 31F;
 
     internal FontGlyphMetrics(
         StreamFontMetrics font,
@@ -314,6 +316,13 @@ public abstract class FontGlyphMetrics
     /// <returns><c>true</c> if bold synthesis is required; otherwise <c>false</c>.</returns>
     internal bool ShouldSynthesizeBold()
     {
+        // Chromium deliberately leaves color emoji at their authored weight. Applying outline
+        // dilation to a painted glyph would also distort each independently colored layer.
+        if (this.GlyphType == GlyphType.Painted)
+        {
+            return false;
+        }
+
         Font? font = this.TextRun?.Font;
         if (font is null)
         {
@@ -326,8 +335,9 @@ public abstract class FontGlyphMetrics
     }
 
     /// <summary>
-    /// Gets the outward outline offset, in pixels, used to synthesize a bold (faux bold) weight for
-    /// this glyph, or <c>0</c> when no synthesis is required.
+    /// Gets the total x/y outline strength, in pixels, used to synthesize a bold (faux bold) weight
+    /// for this glyph, or <c>0</c> when no synthesis is required. The FreeType dilation algorithm
+    /// halves this value internally before moving points along their lateral bisectors.
     /// </summary>
     /// <param name="scaledPointSize">The scaled point size, mapped to pixels by the caller.</param>
     /// <returns>The emboldening strength in pixels.</returns>
@@ -341,7 +351,7 @@ public abstract class FontGlyphMetrics
     /// <remarks>
     /// Steps:
     /// 1) Select glyph bounds (or synthesize from advances if empty).
-    /// 2) Apply rotation if the layout mode is vertical-rotated.
+    /// 2) Account for synthetic weight, oblique shear, and layout rotation.
     /// 3) Convert from Y-up to Y-down coordinates.
     /// 4) Scale and translate to device space using the specified origin.
     /// </remarks>
@@ -354,7 +364,7 @@ public abstract class FontGlyphMetrics
     internal FontRectangle GetBoundingBox(GlyphLayoutMode mode, Vector2 origin, float scaledPointSize)
     {
         Vector2 scale = new(scaledPointSize / this.ScaleFactor.X, scaledPointSize / this.ScaleFactor.Y);
-        Bounds b = this.Bounds;
+        Bounds b = this.GetDesignBounds();
 
         // 1) Substitute fallback bounds if the glyph has no outline.
         if (b.Equals(Bounds.Empty))
@@ -371,33 +381,21 @@ public abstract class FontGlyphMetrics
             }
         }
 
-        // 2) Rotate for vertical rotated layout.
+        // 2) Apply synthetic weight and the shared outline transform.
         Vector2 offsetUp = this.Offset;
 
-        // Inflate the ink bounds by the synthetic bold offset (in font units) so that the reported
-        // bounds enclose the emboldened outline produced during rendering.
+        // FreeType halves the supplied strength before moving points. Inflating both sides by that
+        // half-strength preserves the nominal increase in width and height for measurement while
+        // the renderer applies the direction-sensitive point dilation.
         if (this.ShouldSynthesizeBold())
         {
-            float inflate = SyntheticBoldEmScale * this.UnitsPerEm;
+            float inflate = SyntheticBoldEmScale * this.UnitsPerEm * .5F;
             b = new Bounds(b.Min - new Vector2(inflate), b.Max + new Vector2(inflate));
         }
 
-        // Apply synthetic oblique (faux italic) shear before rotation so that the reported ink
-        // bounds match the sheared outline produced during rendering.
-        float skew = this.GetObliqueSkew();
-        if (skew != 0F)
-        {
-            Matrix3x2 oblique = CreateObliqueMatrix(skew);
-            b = Bounds.Transform(in b, oblique);
-            offsetUp = Vector2.Transform(offsetUp, oblique);
-        }
-
-        if (mode == GlyphLayoutMode.VerticalRotated)
-        {
-            Matrix3x2 rot = Matrix3x2.CreateRotation(-MathF.PI / 2F);
-            b = Bounds.Transform(in b, rot);
-            offsetUp = Vector2.Transform(offsetUp, rot);
-        }
+        Matrix3x2 outlineTransform = this.GetOutlineTransform(mode);
+        b = Bounds.Transform(in b, outlineTransform);
+        offsetUp = Vector2.Transform(offsetUp, outlineTransform);
 
         // 3) Flip Y to convert to device-space (Y-down).
         Vector2 minDown = b.Min * YInverter;
@@ -417,6 +415,12 @@ public abstract class FontGlyphMetrics
 
         return new FontRectangle(location.X, location.Y, size.X, size.Y);
     }
+
+    /// <summary>
+    /// Gets the design-space bounds used to measure this glyph's rendered geometry.
+    /// </summary>
+    /// <returns>The design-space bounds.</returns>
+    internal virtual Bounds GetDesignBounds() => this.Bounds;
 
     /// <summary>
     /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
@@ -896,7 +900,7 @@ public abstract class FontGlyphMetrics
     /// Gets the rotation matrix for the glyph based on the layout mode.
     /// </summary>
     /// <param name="mode">The glyph layout mode.</param>
-    /// <returns>The<see cref="bool"/>.</returns>
+    /// <returns>The rotation matrix.</returns>
     internal static Matrix3x2 GetRotationMatrix(GlyphLayoutMode mode)
     {
         if (mode == GlyphLayoutMode.VerticalRotated)
@@ -906,6 +910,22 @@ public abstract class FontGlyphMetrics
         }
 
         return Matrix3x2.Identity;
+    }
+
+    /// <summary>
+    /// Gets the transform applied to glyph outlines, combining browser-style synthetic oblique
+    /// shear with the rotation required by the layout mode.
+    /// </summary>
+    /// <param name="mode">The glyph layout mode.</param>
+    /// <returns>The outline transform.</returns>
+    internal Matrix3x2 GetOutlineTransform(GlyphLayoutMode mode)
+    {
+        // All metrics keep outlines in the glyph's Y-up coordinate system through this transform
+        // and convert to device-space Y-down coordinates afterwards. Decorations use
+        // GetRotationMatrix directly because browser underlines are not themselves italicized.
+        Matrix3x2 transform = CreateObliqueMatrix(this.GetObliqueSkew());
+        transform *= GetRotationMatrix(mode);
+        return transform;
     }
 
     /// <summary>
