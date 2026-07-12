@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Diagnostics;
+using SixLabors.Fonts.Tables.AdvancedTypographic;
 
 namespace SixLabors.Fonts;
 
@@ -29,6 +30,17 @@ public readonly struct FontVariation
             throw new ArgumentException("Variation axis tag must be exactly 4 characters.", nameof(tag));
         }
 
+        this.Tag = Tables.AdvancedTypographic.Tag.Parse(tag);
+        this.Value = value;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FontVariation"/> struct.
+    /// </summary>
+    /// <param name="tag">The four-byte OpenType axis tag.</param>
+    /// <param name="value">The axis value in design-space units.</param>
+    public FontVariation(Tag tag, float value)
+    {
         this.Tag = tag;
         this.Value = value;
     }
@@ -36,7 +48,7 @@ public readonly struct FontVariation
     /// <summary>
     /// Gets the four-character axis tag identifying the design variation.
     /// </summary>
-    public string Tag { get; }
+    public Tag Tag { get; }
 
     /// <summary>
     /// Gets the axis value in design-space units.

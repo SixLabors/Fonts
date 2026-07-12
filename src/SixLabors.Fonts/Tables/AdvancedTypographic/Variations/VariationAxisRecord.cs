@@ -22,7 +22,7 @@ internal class VariationAxisRecord
     /// <param name="maxValue">The maximum coordinate value for this axis.</param>
     /// <param name="flags">The axis qualifier flags.</param>
     /// <param name="axisNameId">The name ID for the display name of this axis.</param>
-    internal VariationAxisRecord(string tag, float minValue, float defaultValue, float maxValue, ushort flags, ushort axisNameId)
+    internal VariationAxisRecord(Tag tag, float minValue, float defaultValue, float maxValue, ushort flags, ushort axisNameId)
     {
         this.Tag = tag;
         this.MinValue = minValue;
@@ -35,7 +35,7 @@ internal class VariationAxisRecord
     /// <summary>
     /// Gets the tag identifying the design variation for this axis (e.g. "wght", "wdth").
     /// </summary>
-    public string Tag { get; }
+    public Tag Tag { get; }
 
     /// <summary>
     /// Gets the minimum coordinate value for this axis.
@@ -89,7 +89,7 @@ internal class VariationAxisRecord
         // +-----------------+----------------------------------------+----------------------------------------------------------------+
         reader.Seek(offset, SeekOrigin.Begin);
 
-        string tag = reader.ReadTag();
+        Tag tag = AdvancedTypographic.Tag.Parse(reader.ReadTag());
         float minValue = reader.ReadFixed();
         float defaultValue = reader.ReadFixed();
         float maxValue = reader.ReadFixed();

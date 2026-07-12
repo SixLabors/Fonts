@@ -199,6 +199,20 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
     }
 
     /// <inheritdoc/>
+    bool IReadOnlyFontMetricsCollection.TryGetMetrics(
+        string name,
+        CultureInfo culture,
+        FontStyle style,
+        FontWeight weight,
+        [NotNullWhen(true)] out FontMetrics? metrics)
+    {
+        // Custom collections retain their existing variable-font or synthetic-weight behavior;
+        // numeric weights do not select a different static face from the collection.
+        metrics = null;
+        return false;
+    }
+
+    /// <inheritdoc/>
     IEnumerable<FontMetrics> IReadOnlyFontMetricsCollection.GetAllMetrics(string name, CultureInfo culture)
     {
         Guard.NotNull(name, nameof(name));

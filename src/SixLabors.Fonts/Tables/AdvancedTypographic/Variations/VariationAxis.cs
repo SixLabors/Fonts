@@ -19,7 +19,7 @@ public readonly struct VariationAxis
     /// <summary>
     /// Gets tag identifying the design variation for the axis.
     /// </summary>
-    public string Tag { get; init; }
+    public Tag Tag { get; init; }
 
     /// <summary>
     /// Gets the minimum coordinate value for the axis.

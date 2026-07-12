@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using SixLabors.Fonts.Rendering;
+using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Unicode;
 
@@ -17,7 +18,7 @@ public class VariationFontTests
     public void FontVariation_ValidTag_CreatesInstance()
     {
         FontVariation variation = new("wght", 700);
-        Assert.Equal("wght", variation.Tag);
+        Assert.Equal(KnownVariationAxes.Weight, variation.Tag);
         Assert.Equal(700, variation.Value);
     }
 
@@ -41,7 +42,7 @@ public class VariationFontTests
         Font variedFont = new(baseFont, new FontVariation("wght", 700));
 
         Assert.Single(variedFont.Variations.ToArray());
-        Assert.Equal("wght", variedFont.Variations[0].Tag);
+        Assert.Equal(KnownVariationAxes.Weight, variedFont.Variations[0].Tag);
         Assert.Equal(700, variedFont.Variations[0].Value);
     }
 
@@ -84,7 +85,7 @@ public class VariationFontTests
         Assert.True(font.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> axes));
         Assert.Equal(13, axes.Length);
 
-        Assert.Equal("wght", axes.Span[0].Tag);
+        Assert.Equal(KnownVariationAxes.Weight, axes.Span[0].Tag);
         Assert.Equal(100, axes.Span[0].Min);
         Assert.Equal(1000, axes.Span[0].Max);
         Assert.Equal(400, axes.Span[0].Default);
@@ -99,11 +100,11 @@ public class VariationFontTests
         Assert.True(font.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> axes));
         Assert.Equal(2, axes.Length);
 
-        Assert.Equal("wght", axes.Span[0].Tag);
+        Assert.Equal(KnownVariationAxes.Weight, axes.Span[0].Tag);
         Assert.Equal(200, axes.Span[0].Min);
         Assert.Equal(900, axes.Span[0].Max);
 
-        Assert.Equal("CNTR", axes.Span[1].Tag);
+        Assert.Equal(Tag.Parse("CNTR"), axes.Span[1].Tag);
     }
 
     [Fact]
@@ -208,7 +209,7 @@ public class VariationFontTests
         Font defaultFont = family.CreateFont(12);
 
         Assert.True(defaultFont.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> axes));
-        VariationAxis wghtAxis = Assert.Single(axes.ToArray(), a => a.Tag == "wght");
+        VariationAxis wghtAxis = Assert.Single(axes.ToArray(), a => a.Tag == KnownVariationAxes.Weight);
 
         Font variedFont = family.CreateFont(12, new FontVariation("wght", wghtAxis.Default));
 
@@ -303,7 +304,7 @@ public class VariationFontTests
 
         Assert.True(font.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> axes));
         Assert.Equal(2, axes.Length);
-        Assert.Equal("wght", axes.Span[0].Tag);
+        Assert.Equal(KnownVariationAxes.Weight, axes.Span[0].Tag);
     }
 
     [Fact]
@@ -668,9 +669,9 @@ public class VariationFontTests
         Assert.NotNull(font.FontMetrics);
         Assert.True(font.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> axes));
         Assert.Equal(3, axes.Length);
-        Assert.Equal("wght", axes.Span[0].Tag);
-        Assert.Equal("wdth", axes.Span[1].Tag);
-        Assert.Equal("opsz", axes.Span[2].Tag);
+        Assert.Equal(KnownVariationAxes.Weight, axes.Span[0].Tag);
+        Assert.Equal(KnownVariationAxes.Width, axes.Span[1].Tag);
+        Assert.Equal(KnownVariationAxes.OpticalSize, axes.Span[2].Tag);
     }
 
     [Fact]

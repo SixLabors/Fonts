@@ -14,6 +14,7 @@ namespace SixLabors.Fonts;
 public sealed class Font
 {
     private readonly FontVariation[] variations;
+    private readonly FontWeight? requestedWeight;
     private readonly Lazy<FontMetrics?> metrics;
     private readonly Lazy<string> fontName;
 
@@ -93,6 +94,24 @@ public sealed class Font
         this.RequestedStyle = prototype.RequestedStyle;
         this.Size = prototype.Size;
         this.variations = variations;
+        this.requestedWeight = prototype.requestedWeight;
+        this.metrics = new Lazy<FontMetrics?>(this.LoadInstanceInternal, true);
+        this.fontName = new Lazy<string>(this.LoadFontName, true);
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Font"/> class with a numeric weight that the
+    /// operating-system family resolves through its normal metrics lookup.
+    /// </summary>
+    /// <param name="prototype">The font supplying family, size, style, and variation settings.</param>
+    /// <param name="weight">The requested numeric system-font weight.</param>
+    private Font(Font prototype, FontWeight weight)
+    {
+        this.Family = prototype.Family;
+        this.RequestedStyle = prototype.RequestedStyle;
+        this.Size = prototype.Size;
+        this.variations = prototype.variations;
+        this.requestedWeight = weight;
         this.metrics = new Lazy<FontMetrics?>(this.LoadInstanceInternal, true);
         this.fontName = new Lazy<string>(this.LoadFontName, true);
     }
@@ -148,60 +167,68 @@ public sealed class Font
     internal Font WithWeight(FontWeight weight, out bool applied)
     {
         applied = false;
-        if (!this.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<Tables.AdvancedTypographic.Variations.VariationAxis> axes))
+        if (this.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<Tables.AdvancedTypographic.Variations.VariationAxis> axes))
         {
-            return this;
-        }
-
-        // A weight request can only be applied as a variation when the face actually declares
-        // the registered wght axis. Static fonts continue through the synthetic-bold path.
-        bool hasWeightAxis = false;
-        foreach (Tables.AdvancedTypographic.Variations.VariationAxis axis in axes.Span)
-        {
-            if (string.Equals(axis.Tag, KnownVariationAxes.Weight, StringComparison.Ordinal))
+            // A variable face owns its complete weight range, so apply wght before asking the
+            // system collection for another static face. This also preserves every other axis.
+            bool hasWeightAxis = false;
+            foreach (Tables.AdvancedTypographic.Variations.VariationAxis axis in axes.Span)
             {
-                hasWeightAxis = true;
-                break;
+                if (axis.Tag == KnownVariationAxes.Weight)
+                {
+                    hasWeightAxis = true;
+                    break;
+                }
+            }
+
+            if (hasWeightAxis)
+            {
+                applied = true;
+                for (int i = 0; i < this.variations.Length; i++)
+                {
+                    if (this.variations[i].Tag != KnownVariationAxes.Weight)
+                    {
+                        continue;
+                    }
+
+                    if (this.variations[i].Value == (int)weight)
+                    {
+                        return this;
+                    }
+
+                    // Font instances are immutable and can be shared by concurrent layouts.
+                    // Recreate every variation in storage owned by the new Font so replacing wght
+                    // cannot alter the source Font, while preserving every other configured axis.
+                    FontVariation[] variations = new FontVariation[this.variations.Length];
+                    for (int variationIndex = 0; variationIndex < this.variations.Length; variationIndex++)
+                    {
+                        FontVariation variation = this.variations[variationIndex];
+                        variations[variationIndex] = new FontVariation(variation.Tag, variation.Value);
+                    }
+
+                    variations[i] = new FontVariation(KnownVariationAxes.Weight, (int)weight);
+                    return new Font(this, variations);
+                }
+
+                // Preserve axes such as wdth or opsz while appending wght. A new array is required
+                // because the Font constructor retains the complete variation set for its life.
+                FontVariation[] weightedVariations = new FontVariation[this.variations.Length + 1];
+                this.variations.CopyTo(weightedVariations, 0);
+                weightedVariations[^1] = new FontVariation(KnownVariationAxes.Weight, (int)weight);
+
+                return new Font(this, weightedVariations);
             }
         }
 
-        if (!hasWeightAxis)
+        // System collections preserve the platform's family grouping. Use an exact face exposed
+        // by that grouping before falling back to synthetic weight on the supplied static face.
+        if (this.Family.TryGetMetrics(this.RequestedStyle, weight, out FontMetrics? systemMetrics)
+            && !ReferenceEquals(systemMetrics, this.FontMetrics))
         {
-            return this;
+            return new Font(this, weight);
         }
 
-        applied = true;
-        for (int i = 0; i < this.variations.Length; i++)
-        {
-            if (string.Equals(this.variations[i].Tag, KnownVariationAxes.Weight, StringComparison.Ordinal))
-            {
-                if (this.variations[i].Value == (int)weight)
-                {
-                    return this;
-                }
-
-                // Font instances are immutable and can be shared by concurrent layouts. Recreate
-                // every variation in storage owned by the new Font so replacing wght cannot alter
-                // the source Font, while preserving every other configured variation axis.
-                FontVariation[] variations = new FontVariation[this.variations.Length];
-                for (int variationIndex = 0; variationIndex < this.variations.Length; variationIndex++)
-                {
-                    FontVariation variation = this.variations[variationIndex];
-                    variations[variationIndex] = new FontVariation(variation.Tag, variation.Value);
-                }
-
-                variations[i] = new FontVariation(KnownVariationAxes.Weight, (int)weight);
-                return new Font(this, variations);
-            }
-        }
-
-        // Preserve any existing axes such as wdth or opsz while appending wght. A new array is
-        // required because the Font constructor retains the complete variation set for its life.
-        FontVariation[] weightedVariations = new FontVariation[this.variations.Length + 1];
-        this.variations.CopyTo(weightedVariations, 0);
-        weightedVariations[^1] = new FontVariation(KnownVariationAxes.Weight, (int)weight);
-
-        return new Font(this, weightedVariations);
+        return this;
     }
 
     /// <summary>
@@ -415,6 +442,15 @@ public sealed class Font
 
     private FontMetrics? ResolveBaseMetrics()
     {
+        // Numeric lookup belongs to FontFamily because it owns the mapping from a family request
+        // to a concrete face. Only system-backed families implement this overload; custom
+        // collections continue through the existing FontStyle lookup below.
+        if (this.requestedWeight.HasValue
+            && this.Family.TryGetMetrics(this.RequestedStyle, this.requestedWeight.Value, out FontMetrics? weightedMetrics))
+        {
+            return weightedMetrics;
+        }
+
         if (this.Family.TryGetMetrics(this.RequestedStyle, out FontMetrics? metrics))
         {
             return metrics;

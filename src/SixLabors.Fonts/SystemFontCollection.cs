@@ -254,6 +254,19 @@ internal sealed class SystemFontCollection : IReadOnlySystemFontCollection, IRea
         }
     }
 
+    /// <inheritdoc/>
+    bool IReadOnlyFontMetricsCollection.TryGetMetrics(
+        string name,
+        CultureInfo culture,
+        FontStyle style,
+        FontWeight weight,
+        [NotNullWhen(true)] out FontMetrics? metrics)
+    {
+        bool italic = (style & FontStyle.Italic) == FontStyle.Italic;
+
+        return TryFindWeight(this.GetOrLoadFamilyMetrics(name, culture), italic, weight, out metrics);
+    }
+
     /// <summary>
     /// Attempts to resolve a native fallback family name using the requested culture before falling back to invariant lookup.
     /// </summary>
@@ -357,87 +370,92 @@ internal sealed class SystemFontCollection : IReadOnlySystemFontCollection, IRea
     /// <returns>The metrics belonging to the requested family.</returns>
     private static SystemFontFamilyMetrics[] LoadNativeFamilyMetrics(string name, CultureInfo culture, Native.NativeSystemFontFace[] nativeFaces)
     {
-        Native.NativeSystemFontFace regularFace = default;
-        Native.NativeSystemFontFace boldFace = default;
-        Native.NativeSystemFontFace italicFace = default;
-        Native.NativeSystemFontFace boldItalicFace = default;
-        bool hasRegularFace = false;
-        bool hasBoldFace = false;
-        bool hasItalicFace = false;
-        bool hasBoldItalicFace = false;
+        List<Native.NativeSystemFontFace> familyFaces = [];
         StringComparer comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(culture);
 
         foreach (Native.NativeSystemFontFace face in nativeFaces)
         {
-            if (!comparer.Equals(face.FamilyName, name))
+            if (comparer.Equals(face.FamilyName, name))
+            {
+                familyFaces.Add(face);
+            }
+        }
+
+        // Style-only lookup returns the first face in its FontStyle bucket. Keep every numeric
+        // weight in the family, but place the platform's closest 400/700 face first so adding
+        // numeric lookup does not change the established regular, bold, italic, or bold-italic face.
+        familyFaces.Sort(static (left, right) =>
+        {
+            int styleComparison = left.Style.CompareTo(right.Style);
+            if (styleComparison != 0)
+            {
+                return styleComparison;
+            }
+
+            return left.StyleScore.CompareTo(right.StyleScore);
+        });
+
+        List<SystemFontFamilyMetrics> metrics = [];
+        foreach (Native.NativeSystemFontFace face in familyFaces)
+        {
+            AddNativeFamilyMetrics(metrics, face);
+        }
+
+        return [.. metrics];
+    }
+
+    /// <summary>
+    /// Finds the browser-preferred face for an OpenType weight and slant.
+    /// </summary>
+    /// <param name="familyMetrics">The OS-enumerated faces in the family.</param>
+    /// <param name="italic">Whether an italic or oblique face is required.</param>
+    /// <param name="weight">The requested OpenType weight.</param>
+    /// <param name="metrics">The matching metrics.</param>
+    /// <returns><see langword="true"/> when a face with the requested slant is available.</returns>
+    private static bool TryFindWeight(
+        SystemFontFamilyMetrics[] familyMetrics,
+        bool italic,
+        FontWeight weight,
+        [NotNullWhen(true)] out FontMetrics? metrics)
+    {
+        int requestedWeight = (int)weight;
+        int bestDistance = int.MaxValue;
+        int bestWeight = int.MinValue;
+        FontMetrics? bestMatch = null;
+
+        foreach (SystemFontFamilyMetrics candidate in familyMetrics)
+        {
+            bool candidateItalic = (candidate.Style & FontStyle.Italic) == FontStyle.Italic;
+            if (candidateItalic != italic)
             {
                 continue;
             }
 
-            // Native font APIs expose weights that the Fonts FontStyle model cannot represent.
-            // Keep the platform family grouping, but load only the closest face for each style bucket.
-            switch (face.Style)
+            int candidateWeight = (int)candidate.Metrics.Description.Weight;
+            int distance = Math.Abs(candidateWeight - requestedWeight);
+
+            if (distance == 0)
             {
-                case FontStyle.Regular:
-                    if (!hasRegularFace || face.StyleScore < regularFace.StyleScore)
-                    {
-                        regularFace = face;
-                        hasRegularFace = true;
-                    }
+                metrics = candidate.Metrics;
+                return true;
+            }
 
-                    break;
-
-                case FontStyle.Bold:
-                    if (!hasBoldFace || face.StyleScore < boldFace.StyleScore)
-                    {
-                        boldFace = face;
-                        hasBoldFace = true;
-                    }
-
-                    break;
-
-                case FontStyle.Italic:
-                    if (!hasItalicFace || face.StyleScore < italicFace.StyleScore)
-                    {
-                        italicFace = face;
-                        hasItalicFace = true;
-                    }
-
-                    break;
-
-                case FontStyle.BoldItalic:
-                    if (!hasBoldItalicFace || face.StyleScore < boldItalicFace.StyleScore)
-                    {
-                        boldItalicFace = face;
-                        hasBoldItalicFace = true;
-                    }
-
-                    break;
+            // Windows system-family selection asks DirectWrite for the face that best matches the
+            // requested numeric weight:
+            // https://learn.microsoft.com/windows/win32/api/dwrite/nf-dwrite-idwritefontfamily-getfirstmatchingfont
+            // Select the nearest installed weight and prefer the heavier face when two weights are
+            // equally distant. The tie rule reproduces Windows browser selection for Segoe UI 500,
+            // which resolves to Semibold 600 rather than Regular 400.
+            if (distance < bestDistance || (distance == bestDistance && candidateWeight > bestWeight))
+            {
+                bestDistance = distance;
+                bestWeight = candidateWeight;
+                bestMatch = candidate.Metrics;
             }
         }
 
-        List<SystemFontFamilyMetrics> metrics = [];
-        if (hasRegularFace)
-        {
-            AddNativeFamilyMetrics(metrics, regularFace);
-        }
-
-        if (hasBoldFace)
-        {
-            AddNativeFamilyMetrics(metrics, boldFace);
-        }
-
-        if (hasItalicFace)
-        {
-            AddNativeFamilyMetrics(metrics, italicFace);
-        }
-
-        if (hasBoldItalicFace)
-        {
-            AddNativeFamilyMetrics(metrics, boldItalicFace);
-        }
-
-        return [.. metrics];
+        metrics = bestMatch;
+        return metrics is not null;
     }
 
     /// <summary>
@@ -504,7 +522,7 @@ internal sealed class SystemFontCollection : IReadOnlySystemFontCollection, IRea
 
             foreach (Native.NativeSystemFontFace face in nativeFaces)
             {
-                names.Add(face.FamilyName);
+                _ = names.Add(face.FamilyName);
             }
 
             return [.. names];

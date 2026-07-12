@@ -157,6 +157,74 @@ public class FontWeightTests
     }
 
     [Theory]
+    [InlineData(FontWeight.Medium)]
+    [InlineData(FontWeight.SemiBold)]
+    public void SystemWeight_UsesInstalledFaceWhenAvailable(FontWeight requestedWeight)
+    {
+        if (!TestEnvironment.IsWindows || !SystemFonts.TryGet("Segoe UI", out FontFamily family))
+        {
+            return;
+        }
+
+        Font font = family.CreateFont(18);
+        TextOptions options = new(font) { FontWeight = requestedWeight };
+        TextRun textRun = Assert.Single(TextLayout.BuildTextRuns("Weight", options));
+
+        // DirectWrite resolves both 500 and 600 to Segoe UI Semibold. This specifically protects
+        // the equal-distance 500 request from incorrectly selecting the lighter Regular 400 face.
+        Assert.Equal(FontWeight.SemiBold, textRun.ResolvedFont.FontMetrics.Description.Weight);
+        Assert.False(textRun.UsesVariableWeight);
+
+        Assert.True(textRun.ResolvedFont.FontMetrics.TryGetGlyphMetrics(
+            new CodePoint('W'),
+            TextAttributes.None,
+            TextDecorations.None,
+            LayoutMode.HorizontalTopBottom,
+            ColorFontSupport.None,
+            out FontGlyphMetrics metrics));
+
+        Assert.False(metrics.CloneForRendering(textRun).ShouldSynthesizeBold());
+    }
+
+    [Theory]
+    [InlineData(FontWeight.Thin, FontWeight.Normal)]
+    [InlineData(FontWeight.ExtraLight, FontWeight.Normal)]
+    [InlineData(FontWeight.Light, FontWeight.Normal)]
+    [InlineData(FontWeight.Normal, FontWeight.Normal)]
+    [InlineData(FontWeight.Medium, FontWeight.Normal)]
+    [InlineData(FontWeight.SemiBold, FontWeight.Bold)]
+    [InlineData(FontWeight.Bold, FontWeight.Bold)]
+    [InlineData(FontWeight.ExtraBold, FontWeight.Black)]
+    [InlineData(FontWeight.Black, FontWeight.Black)]
+    public void SystemWeight_UsesBrowserFaceMatching(FontWeight requestedWeight, FontWeight expectedWeight)
+    {
+        if (!TestEnvironment.IsWindows || !SystemFonts.TryGet("Arial", out FontFamily family))
+        {
+            return;
+        }
+
+        Font font = family.CreateFont(18);
+        TextOptions options = new(font) { FontWeight = requestedWeight };
+        TextRun textRun = Assert.Single(TextLayout.BuildTextRuns("Weight", options));
+
+        // CSS Fonts Level 4 section 5 maps missing weights to the nearest face in a specified
+        // search direction. For the installed Arial family, 100-500 select Regular, 600-700
+        // select Bold, and 800-900 select Arial Black.
+        Assert.Equal(expectedWeight, textRun.ResolvedFont.FontMetrics.Description.Weight);
+        Assert.False(textRun.UsesVariableWeight);
+
+        Assert.True(textRun.ResolvedFont.FontMetrics.TryGetGlyphMetrics(
+            new CodePoint('W'),
+            TextAttributes.None,
+            TextDecorations.None,
+            LayoutMode.HorizontalTopBottom,
+            ColorFontSupport.None,
+            out FontGlyphMetrics metrics));
+
+        Assert.False(metrics.CloneForRendering(textRun).ShouldSynthesizeBold());
+    }
+
+    [Theory]
     [InlineData(FontWeight.Thin, "Thin")]
     [InlineData(FontWeight.ExtraLight, "ExtraLight")]
     [InlineData(FontWeight.Light, "Light")]
@@ -195,6 +263,60 @@ public class FontWeightTests
         TextOptions options = BrowserComparisonOptions(font, weight);
 
         // Roboto Flex exposes a registered wght axis, matching the browser's variable @font-face.
+        TextLayoutTestUtilities.TestLayout(
+            BrowserComparisonText,
+            options,
+            properties: [label, (int)weight]);
+    }
+
+    [Theory]
+    [InlineData(FontWeight.Thin, "Thin")]
+    [InlineData(FontWeight.ExtraLight, "ExtraLight")]
+    [InlineData(FontWeight.Light, "Light")]
+    [InlineData(FontWeight.Normal, "Normal")]
+    [InlineData(FontWeight.Medium, "Medium")]
+    [InlineData(FontWeight.SemiBold, "SemiBold")]
+    [InlineData(FontWeight.Bold, "Bold")]
+    [InlineData(FontWeight.ExtraBold, "ExtraBold")]
+    [InlineData(FontWeight.Black, "Black")]
+    public void VisualTest_SystemSegoeUIWeight(FontWeight weight, string label)
+    {
+        if (!TestEnvironment.IsWindows || !SystemFonts.TryGet("Segoe UI", out FontFamily family))
+        {
+            return;
+        }
+
+        TextOptions options = BrowserComparisonOptions(family.CreateFont(BrowserComparisonPointSize), weight);
+
+        // The browser and Fonts both resolve this family through the Windows system collection,
+        // allowing authored numeric faces and synthesized missing weights to be compared directly.
+        TextLayoutTestUtilities.TestLayout(
+            BrowserComparisonText,
+            options,
+            properties: [label, (int)weight]);
+    }
+
+    [Theory]
+    [InlineData(FontWeight.Thin, "Thin")]
+    [InlineData(FontWeight.ExtraLight, "ExtraLight")]
+    [InlineData(FontWeight.Light, "Light")]
+    [InlineData(FontWeight.Normal, "Normal")]
+    [InlineData(FontWeight.Medium, "Medium")]
+    [InlineData(FontWeight.SemiBold, "SemiBold")]
+    [InlineData(FontWeight.Bold, "Bold")]
+    [InlineData(FontWeight.ExtraBold, "ExtraBold")]
+    [InlineData(FontWeight.Black, "Black")]
+    public void VisualTest_SystemArialWeight(FontWeight weight, string label)
+    {
+        if (!TestEnvironment.IsWindows || !SystemFonts.TryGet("Arial", out FontFamily family))
+        {
+            return;
+        }
+
+        TextOptions options = BrowserComparisonOptions(family.CreateFont(BrowserComparisonPointSize), weight);
+
+        // Arial provides the common regular and bold faces but not every numeric weight, exposing
+        // how the browser and Fonts each handle weights missing from an installed static family.
         TextLayoutTestUtilities.TestLayout(
             BrowserComparisonText,
             options,

@@ -31,6 +31,22 @@ internal interface IReadOnlyFontMetricsCollection
     public bool TryGetMetrics(string name, CultureInfo culture, FontStyle style, [NotNullWhen(true)] out FontMetrics? metrics);
 
     /// <summary>
+    /// Gets the specified font metrics matching the given culture, font family name, style, and numeric weight.
+    /// </summary>
+    /// <param name="name">The font family name.</param>
+    /// <param name="culture">The culture to use when searching for a match.</param>
+    /// <param name="style">The font style to use when searching for a match.</param>
+    /// <param name="weight">The numeric font weight to use when searching for a match.</param>
+    /// <param name="metrics">The matching font metrics, if found.</param>
+    /// <returns><see langword="true"/> if the collection contains a matching face; otherwise, <see langword="false"/>.</returns>
+    public bool TryGetMetrics(
+        string name,
+        CultureInfo culture,
+        FontStyle style,
+        FontWeight weight,
+        [NotNullWhen(true)] out FontMetrics? metrics);
+
+    /// <summary>
     /// Gets the collection of available font metrics for a given culture and font family name.
     /// </summary>
     /// <param name="name">The font family name.</param>

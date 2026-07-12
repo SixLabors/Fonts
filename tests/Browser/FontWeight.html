@@ -83,6 +83,14 @@
       font-family: "Weight Roboto Flex";
     }
 
+    .segoe-ui {
+      font-family: "Segoe UI";
+    }
+
+    .arial {
+      font-family: Arial;
+    }
+
     .emoji {
       font-family: "Weight Twemoji", "Weight Open Sans";
       font-size: 27pt;
@@ -118,6 +126,24 @@
   </section>
 
   <section>
+    <h2>Segoe UI system family, 18pt</h2>
+    <div class="comparison" id="segoe-ui-weights">
+      <div></div>
+      <div class="column-heading">Browser</div>
+      <div class="column-heading">SixLabors.Fonts actual output</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Arial system family, 18pt</h2>
+    <div class="comparison" id="arial-weights">
+      <div></div>
+      <div class="column-heading">Browser</div>
+      <div class="column-heading">SixLabors.Fonts actual output</div>
+    </div>
+  </section>
+
+  <section>
     <h2>Twemoji Mozilla COLRv0, requested weights, 27pt</h2>
     <div class="comparison" id="emoji-weights">
       <div></div>
@@ -140,6 +166,10 @@
       ["Black", 900]
     ];
 
+    // Visual tests overwrite stable ActualOutput filenames. Use one cache key for this page load
+    // so reloading the comparison always displays the latest generated images for every row.
+    const actualOutputCacheKey = Date.now();
+
     function addTextRows(containerId, className, testName) {
       const container = document.getElementById(containerId);
 
@@ -155,7 +185,7 @@
 
         const actual = document.createElement("img");
         actual.className = "actual-output";
-        actual.src = `../Images/ActualOutput/${testName}_-${label}--${weight}.png`;
+        actual.src = `../Images/ActualOutput/${testName}_-${label}--${weight}.png?v=${actualOutputCacheKey}`;
         actual.alt = `SixLabors.Fonts ${label} ${weight} output`;
 
         container.append(weightLabel, browser, actual);
@@ -175,7 +205,7 @@
 
       const actual = document.createElement("img");
       actual.className = "actual-output";
-      actual.src = `../Images/ActualOutput/VisualTest_PaintedEmojiWeight_-${label}--${weight}.png`;
+      actual.src = `../Images/ActualOutput/VisualTest_PaintedEmojiWeight_-${label}--${weight}.png?v=${actualOutputCacheKey}`;
       actual.alt = `SixLabors.Fonts painted emoji ${label} ${weight} output`;
 
       container.append(weightLabel, browser, actual);
@@ -183,6 +213,8 @@
 
     addTextRows("static-weights", "open-sans", "VisualTest_StaticWeight");
     addTextRows("variable-weights", "roboto-flex", "VisualTest_VariableWeight");
+    addTextRows("segoe-ui-weights", "segoe-ui", "VisualTest_SystemSegoeUIWeight");
+    addTextRows("arial-weights", "arial", "VisualTest_SystemArialWeight");
     addEmojiRow("Normal", 400);
     addEmojiRow("Black", 900);
   </script>

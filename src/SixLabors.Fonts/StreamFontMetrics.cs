@@ -552,7 +552,7 @@ internal partial class StreamFontMetrics : FontMetrics
             FontVariation variation = variations[v];
             for (int i = 0; i < fvar.AxisCount; i++)
             {
-                if (string.Equals(fvar.Axes[i].Tag, variation.Tag, StringComparison.Ordinal))
+                if (fvar.Axes[i].Tag == variation.Tag)
                 {
                     userCoordinates[i] = variation.Value;
                     break;
