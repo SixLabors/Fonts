@@ -283,7 +283,7 @@ public abstract class FontGlyphMetrics
     /// </returns>
     internal float GetObliqueSkew()
     {
-        Font? font = this.TextRun?.Font;
+        Font? font = this.TextRun?.ResolvedFont;
         if (font is null)
         {
             return 0F;
@@ -308,10 +308,8 @@ public abstract class FontGlyphMetrics
     }
 
     /// <summary>
-    /// Gets a value indicating whether a bold (faux bold) weight must be synthesized for this
-    /// glyph. This is <c>true</c> only when the associated text run requests a bold style that the
-    /// resolved font face does not itself provide, mirroring the CSS <c>font-synthesis: weight</c>
-    /// behavior used by web browsers.
+    /// Gets a value indicating whether a heavier weight must be synthesized for this glyph.
+    /// Variable fonts apply their registered weight axis instead.
     /// </summary>
     /// <returns><c>true</c> if bold synthesis is required; otherwise <c>false</c>.</returns>
     internal bool ShouldSynthesizeBold()
@@ -323,15 +321,30 @@ public abstract class FontGlyphMetrics
             return false;
         }
 
-        Font? font = this.TextRun?.Font;
-        if (font is null)
+        TextRun? textRun = this.TextRun;
+        Font? font = textRun?.ResolvedFont;
+        if (font is null || (textRun!.UsesVariableWeight && ReferenceEquals(font.FontMetrics, this.FontMetrics)))
         {
             return false;
         }
 
-        bool requestedBold = (font.RequestedStyle & FontStyle.Bold) == FontStyle.Bold;
-        bool resolvedBold = (this.FontMetrics.Description.Style & FontStyle.Bold) == FontStyle.Bold;
-        return requestedBold && !resolvedBold;
+        FontWeight? requestedWeight = textRun.ResolvedFontWeight;
+        if (!requestedWeight.HasValue && (font.RequestedStyle & FontStyle.Bold) == FontStyle.Bold)
+        {
+            requestedWeight = FontWeight.Bold;
+        }
+
+        if (!requestedWeight.HasValue)
+        {
+            return false;
+        }
+
+        // CSS weight values select a face; they do not represent proportional stroke strength.
+        // Chromium treats 600 as the boundary between regular and bold, then applies one fixed
+        // synthetic-bold operation when the request and resolved static face lie on opposite
+        // sides of that boundary. Thus 600, 700, 800, and 900 receive identical dilation.
+        return (int)requestedWeight.Value >= (int)FontWeight.SemiBold
+            && (int)this.FontMetrics.Description.Weight < (int)FontWeight.SemiBold;
     }
 
     /// <summary>

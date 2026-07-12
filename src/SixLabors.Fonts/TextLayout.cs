@@ -34,15 +34,15 @@ internal static partial class TextLayout
 
         if (options.TextRuns is null || options.TextRuns.Count == 0)
         {
-            return new TextRun[]
+            TextRun textRun = new()
             {
-                new()
-                {
-                    Start = 0,
-                    End = text.GetGraphemeCount(),
-                    Font = options.Font
-                }
+                Start = 0,
+                End = text.GetGraphemeCount(),
+                Font = options.Font
             };
+
+            textRun.ResolveFontWeight(options.FontWeight);
+            return [textRun];
         }
 
         List<TextRun> textRuns = [];
@@ -88,6 +88,11 @@ internal static partial class TextLayout
                 End = end,
                 Font = options.Font
             });
+        }
+
+        foreach (TextRun textRun in textRuns)
+        {
+            textRun.ResolveFontWeight(options.FontWeight);
         }
 
         return textRuns;
@@ -189,7 +194,7 @@ internal static partial class TextLayout
                     textRun,
                     codePointIndex);
 
-                complete &= positionings.TryAdd(textRun.Font!, substitutions);
+                complete &= positionings.TryAdd(textRun.ResolvedFont, substitutions);
                 textRunIndex++;
                 continue;
             }
@@ -202,7 +207,7 @@ internal static partial class TextLayout
                 ref codePointIndex,
                 ref bidiRunIndex,
                 false,
-                textRun.Font!,
+                textRun.ResolvedFont,
                 bidiRuns,
                 bidiMap,
                 substitutions,
@@ -248,13 +253,14 @@ internal static partial class TextLayout
         {
             TextRun textRun = textRuns[i];
 
-            if (textRun.Font == lastFont)
+            Font font = textRun.ResolvedFont;
+            if (font == lastFont)
             {
                 continue;
             }
 
-            textRun.Font!.FontMetrics.UpdatePositions(positionings);
-            lastFont = textRun.Font;
+            font.FontMetrics.UpdatePositions(positionings);
+            lastFont = font;
         }
 
         foreach (Font font in fallbackFonts)

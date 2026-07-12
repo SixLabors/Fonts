@@ -26,6 +26,9 @@ public class FontDescription
     {
         this.nameTable = nameTable;
         this.Style = ConvertStyle(os2, head);
+        this.Weight = os2 is not null
+            ? (FontWeight)os2.WeightClass
+            : (this.Style & FontStyle.Bold) == FontStyle.Bold ? FontWeight.Bold : FontWeight.Normal;
 
         this.FontNameInvariantCulture = this.FontName(CultureInfo.InvariantCulture);
         this.FontFamilyInvariantCulture = this.FontFamily(CultureInfo.InvariantCulture);
@@ -36,6 +39,11 @@ public class FontDescription
     /// Gets the style.
     /// </summary>
     public FontStyle Style { get; }
+
+    /// <summary>
+    /// Gets the visual weight declared by the font.
+    /// </summary>
+    public FontWeight Weight { get; }
 
     /// <summary>
     /// Gets the name of the font in the invariant culture.

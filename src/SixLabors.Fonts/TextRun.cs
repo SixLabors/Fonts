@@ -11,6 +11,8 @@ namespace SixLabors.Fonts;
 /// </summary>
 public class TextRun
 {
+    private Font? resolvedFont;
+
     /// <summary>
     /// Gets or sets the inclusive start index of the first grapheme in this <see cref="TextRun"/>.
     /// </summary>
@@ -25,6 +27,12 @@ public class TextRun
     /// Gets or sets the font for this run.
     /// </summary>
     public Font? Font { get; set; }
+
+    /// <summary>
+    /// Gets or sets the font weight for this run, or <see langword="null"/> to use the weight
+    /// supplied by the owning text options.
+    /// </summary>
+    public FontWeight? FontWeight { get; set; }
 
     /// <summary>
     /// Gets or sets the text attributes applied to this run.
@@ -43,6 +51,21 @@ public class TextRun
     /// Placeholder runs are inserted at <see cref="Start"/> and must have <see cref="End"/> equal to <see cref="Start"/>.
     /// </remarks>
     public TextPlaceholder? Placeholder { get; set; }
+
+    /// <summary>
+    /// Gets the font used to shape and render this run.
+    /// </summary>
+    internal Font ResolvedFont => this.resolvedFont ?? this.Font!;
+
+    /// <summary>
+    /// Gets the effective requested weight for this run.
+    /// </summary>
+    internal FontWeight? ResolvedFontWeight { get; private set; }
+
+    /// <summary>
+    /// Gets a value indicating whether the requested weight was applied through a variable axis.
+    /// </summary>
+    internal bool UsesVariableWeight { get; private set; }
 
     /// <summary>
     /// Gets the geometry overrides to apply to the specified decoration, or <see langword="null"/>
@@ -99,6 +122,27 @@ public class TextRun
     /// <inheritdoc/>
     public override string ToString()
         => $"[TextRun: Start={this.Start}, End={this.End}, TextAttributes={this.TextAttributes}]";
+
+    /// <summary>
+    /// Resolves the weight used by this run without changing its declared font or weight.
+    /// </summary>
+    /// <param name="defaultWeight">The weight supplied by the owning text options.</param>
+    internal void ResolveFontWeight(FontWeight? defaultWeight)
+    {
+        Font font = this.Font!;
+        this.ResolvedFontWeight = this.FontWeight ?? defaultWeight;
+        if (!this.ResolvedFontWeight.HasValue && (font.RequestedStyle & FontStyle.Bold) == FontStyle.Bold)
+        {
+            this.ResolvedFontWeight = SixLabors.Fonts.FontWeight.Bold;
+        }
+
+        bool applied = false;
+        this.resolvedFont = this.ResolvedFontWeight.HasValue
+            ? font.WithWeight(this.ResolvedFontWeight.Value, out applied)
+            : font;
+
+        this.UsesVariableWeight = this.ResolvedFontWeight.HasValue && applied;
+    }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ValidateRange(int start, int end)

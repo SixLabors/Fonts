@@ -30,6 +30,7 @@ public class TextOptions
     public TextOptions(TextOptions options)
     {
         this.Font = options.Font;
+        this.FontWeight = options.FontWeight;
         this.FallbackFontFamilies = new List<FontFamily>(options.FallbackFontFamilies);
         this.TabWidth = options.TabWidth;
         this.HintingMode = options.HintingMode;
@@ -72,6 +73,12 @@ public class TextOptions
             this.font = value;
         }
     }
+
+    /// <summary>
+    /// Gets or sets the font weight, or <see langword="null"/> to use the weight implied by
+    /// <see cref="Font"/>.
+    /// </summary>
+    public FontWeight? FontWeight { get; set; }
 
     /// <summary>
     /// Gets or sets the collection of fallback font families to use when

@@ -136,6 +136,7 @@ internal static class TextLayoutTestUtilities
     {
         RichTextOptions result = new(options.Font)
         {
+            FontWeight = options.FontWeight,
             FallbackFontFamilies = new List<FontFamily>(options.FallbackFontFamilies),
             TabWidth = options.TabWidth,
             HintingMode = options.HintingMode,
@@ -172,6 +173,7 @@ internal static class TextLayoutTestUtilities
                 RichTextRun richRun = new()
                 {
                     Font = run.Font,
+                    FontWeight = run.FontWeight,
                     Start = run.Start,
                     End = run.End,
                     TextAttributes = run.TextAttributes,
