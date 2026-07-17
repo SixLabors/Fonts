@@ -1097,6 +1097,7 @@ internal static partial class DirectWriteSystemFontMatcher
 
                                 results.Add(new NativeSystemFontFace(
                                     familyName,
+                                    familyName,
                                     path,
                                     faceStyle,
                                     GetStyleScore(weight, faceStyle),

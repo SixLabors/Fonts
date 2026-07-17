@@ -333,7 +333,7 @@ internal sealed class SystemFontCollection : IReadOnlySystemFontCollection, IRea
         {
             try
             {
-                if (path.EndsWith(".ttc", StringComparison.OrdinalIgnoreCase))
+                if (IsFontCollectionPath(path))
                 {
                     foreach (FileFontMetrics fontMetrics in FileFontMetrics.LoadFontCollection(path).Span)
                     {
@@ -552,7 +552,7 @@ internal sealed class SystemFontCollection : IReadOnlySystemFontCollection, IRea
         {
             try
             {
-                if (path.EndsWith(".ttc", StringComparison.OrdinalIgnoreCase))
+                if (IsFontCollectionPath(path))
                 {
                     foreach (FileFontMetrics fontMetrics in FileFontMetrics.LoadFontCollection(path).Span)
                     {
@@ -683,7 +683,20 @@ internal sealed class SystemFontCollection : IReadOnlySystemFontCollection, IRea
         string extension = Path.GetExtension(path);
         return extension.Equals(".ttf", StringComparison.OrdinalIgnoreCase)
             || extension.Equals(".ttc", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".otc", StringComparison.OrdinalIgnoreCase)
             || extension.Equals(".otf", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Gets whether a path identifies an OpenType font collection.
+    /// </summary>
+    /// <param name="path">The font file path.</param>
+    /// <returns><see langword="true"/> for TTC and OTC files; otherwise, <see langword="false"/>.</returns>
+    private static bool IsFontCollectionPath(string path)
+    {
+        string extension = Path.GetExtension(path);
+        return extension.Equals(".ttc", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".otc", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -695,7 +708,7 @@ internal sealed class SystemFontCollection : IReadOnlySystemFontCollection, IRea
     /// <returns><see langword="true"/> if the font face was loaded; otherwise, <see langword="false"/>.</returns>
     private static bool TryLoadFontFace(string path, int faceIndex, [NotNullWhen(true)] out FileFontMetrics? metrics)
     {
-        if (faceIndex == 0 && !Path.GetExtension(path).Equals(".ttc", StringComparison.OrdinalIgnoreCase))
+        if (faceIndex == 0 && !IsFontCollectionPath(path))
         {
             metrics = new FileFontMetrics(path);
             return true;

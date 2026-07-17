@@ -31,6 +31,7 @@ internal static partial class FontConfigSystemFontMatcher
     private const string WidthProperty = "width";
     private const int FcMatchPattern = 0;
     private const int FcSetSystem = 0;
+    private const int FcSetApplication = 1;
     private const int FcResultMatch = 0;
     private const int FcResultNoId = 3;
     private const int FcTypeString = 3;
@@ -206,28 +207,50 @@ internal static partial class FontConfigSystemFontMatcher
         try
         {
             EnterFontConfigLock(ref lockTaken);
-            IntPtr fontSetPointer = FcConfigGetFonts(config, FcSetSystem);
-            if (fontSetPointer == IntPtr.Zero)
-            {
-                return false;
-            }
-
-            FontConfigFontSet fontSet = Marshal.PtrToStructure<FontConfigFontSet>(fontSetPointer);
             HashSet<string> names = new(StringComparer.Ordinal);
 
-            for (int i = 0; i < fontSet.FontCount; i++)
+            // Fontconfig keeps fonts discovered from configuration files and fonts registered by
+            // applications in separate sets. Skia publishes the family names from both sets.
+            for (int setName = FcSetSystem; setName <= FcSetApplication; setName++)
             {
-                IntPtr pattern = Marshal.ReadIntPtr(fontSet.Fonts, i * IntPtr.Size);
-
-                if (pattern != IntPtr.Zero
-                    && FcPatternGetString(pattern, FamilyProperty, id: 0, out IntPtr family) == FcResultMatch
-                    && family != IntPtr.Zero)
+                IntPtr fontSetPointer = FcConfigGetFonts(config, setName);
+                if (fontSetPointer == IntPtr.Zero)
                 {
-                    string? familyName = Marshal.PtrToStringUTF8(family);
+                    continue;
+                }
 
-                    if (!string.IsNullOrEmpty(familyName))
+                FontConfigFontSet fontSet = Marshal.PtrToStructure<FontConfigFontSet>(fontSetPointer);
+
+                for (int i = 0; i < fontSet.FontCount; i++)
+                {
+                    IntPtr pattern = Marshal.ReadIntPtr(fontSet.Fonts, i * IntPtr.Size);
+
+                    if (pattern == IntPtr.Zero)
                     {
-                        names.Add(familyName);
+                        continue;
+                    }
+
+                    // A Fontconfig pattern can expose localized and alternate family names. Skia
+                    // publishes every value so each platform-recognized name resolves to the face.
+                    for (int familyId = 0; ; familyId++)
+                    {
+                        int result = FcPatternGetString(pattern, FamilyProperty, familyId, out IntPtr family);
+                        if (result == FcResultNoId)
+                        {
+                            break;
+                        }
+
+                        if (result != FcResultMatch || family == IntPtr.Zero)
+                        {
+                            continue;
+                        }
+
+                        string? familyName = Marshal.PtrToStringUTF8(family);
+
+                        if (!string.IsNullOrEmpty(familyName))
+                        {
+                            names.Add(familyName);
+                        }
                     }
                 }
             }
@@ -268,48 +291,68 @@ internal static partial class FontConfigSystemFontMatcher
         try
         {
             EnterFontConfigLock(ref lockTaken);
-            IntPtr fontSetPointer = FcConfigGetFonts(config, FcSetSystem);
-            if (fontSetPointer == IntPtr.Zero)
-            {
-                return false;
-            }
-
-            FontConfigFontSet fontSet = Marshal.PtrToStructure<FontConfigFontSet>(fontSetPointer);
             List<NativeSystemFontFace> results = [];
+            string? sysroot = Marshal.PtrToStringUTF8(FcConfigGetSysRoot(config));
 
-            for (int i = 0; i < fontSet.FontCount; i++)
+            // Keep face enumeration aligned with family enumeration so an application-set alias
+            // never appears without the file mapping required to load it.
+            for (int setName = FcSetSystem; setName <= FcSetApplication; setName++)
             {
-                IntPtr pattern = Marshal.ReadIntPtr(fontSet.Fonts, i * IntPtr.Size);
-
-                if (pattern == IntPtr.Zero
-                    || FcPatternGetString(pattern, FamilyProperty, id: 0, out IntPtr family) != FcResultMatch
-                    || family == IntPtr.Zero
-                    || FcPatternGetString(pattern, FileProperty, id: 0, out IntPtr file) != FcResultMatch
-                    || file == IntPtr.Zero)
+                IntPtr fontSetPointer = FcConfigGetFonts(config, setName);
+                if (fontSetPointer == IntPtr.Zero)
                 {
                     continue;
                 }
 
-                string? familyName = Marshal.PtrToStringUTF8(family);
-                string? path = Marshal.PtrToStringUTF8(file);
+                FontConfigFontSet fontSet = Marshal.PtrToStructure<FontConfigFontSet>(fontSetPointer);
 
-                if (string.IsNullOrEmpty(familyName) || string.IsNullOrEmpty(path))
+                for (int i = 0; i < fontSet.FontCount; i++)
                 {
-                    continue;
+                    IntPtr pattern = Marshal.ReadIntPtr(fontSet.Fonts, i * IntPtr.Size);
+
+                    if (pattern == IntPtr.Zero || !TryGetExistingFontPath(pattern, sysroot, out string? path))
+                    {
+                        continue;
+                    }
+
+                    int faceIndex = FcPatternGetInteger(pattern, IndexProperty, id: 0, out int index) == FcResultMatch
+                        ? index
+                        : 0;
+
+                    // Fontconfig uses the upper 16 bits for FreeType named instances and its variable-
+                    // face sentinel. The managed loader accepts only a collection index and cannot
+                    // reproduce those variation coordinates, so loading the lower index would select
+                    // a different face from the one described by the Fontconfig pattern.
+                    if ((faceIndex & ~0xFFFF) != 0)
+                    {
+                        continue;
+                    }
+
+                    FontStyle style = ToFontStyle(pattern);
+                    int styleScore = GetStyleScore(pattern, style);
+
+                    // Preserve every family value for the face. Fontconfig uses these values for
+                    // localized and alternate names, and fallback can return any recognized family.
+                    for (int familyId = 0; ; familyId++)
+                    {
+                        int result = FcPatternGetString(pattern, FamilyProperty, familyId, out IntPtr family);
+                        if (result == FcResultNoId)
+                        {
+                            break;
+                        }
+
+                        if (result != FcResultMatch || family == IntPtr.Zero)
+                        {
+                            continue;
+                        }
+
+                        string? familyName = Marshal.PtrToStringUTF8(family);
+                        if (!string.IsNullOrEmpty(familyName))
+                        {
+                            results.Add(new NativeSystemFontFace(familyName, familyName, path, style, styleScore, faceIndex));
+                        }
+                    }
                 }
-
-                int faceIndex = FcPatternGetInteger(pattern, IndexProperty, id: 0, out int index) == FcResultMatch
-                    ? index
-                    : 0;
-
-                FontStyle style = ToFontStyle(pattern);
-
-                results.Add(new NativeSystemFontFace(
-                    familyName,
-                    path,
-                    style,
-                    GetStyleScore(pattern, style),
-                    faceIndex));
             }
 
             if (results.Count == 0)
@@ -364,6 +407,12 @@ internal static partial class FontConfigSystemFontMatcher
             matchedPattern = FcFontMatch(config, pattern, out int matchResult);
 
             if (matchedPattern == IntPtr.Zero || matchResult != FcResultMatch)
+            {
+                return false;
+            }
+
+            string? sysroot = Marshal.PtrToStringUTF8(FcConfigGetSysRoot(config));
+            if (!TryGetExistingFontPath(matchedPattern, sysroot, out _))
             {
                 return false;
             }
@@ -484,6 +533,12 @@ internal static partial class FontConfigSystemFontMatcher
             // Fontconfig always returns some font; only accept it when it can actually
             // render the requested character. Mirrors Skia's FontContainsCharacter.
             if (!FontContainsCharacter(matchedPattern, (uint)codePoint.Value))
+            {
+                return false;
+            }
+
+            string? sysroot = Marshal.PtrToStringUTF8(FcConfigGetSysRoot(config));
+            if (!TryGetExistingFontPath(matchedPattern, sysroot, out _))
             {
                 return false;
             }
@@ -637,6 +692,50 @@ internal static partial class FontConfigSystemFontMatcher
     }
 
     /// <summary>
+    /// Resolves the existing file represented by a Fontconfig pattern.
+    /// </summary>
+    /// <param name="pattern">The Fontconfig pattern.</param>
+    /// <param name="sysroot">The configured filesystem root.</param>
+    /// <param name="path">The existing font path.</param>
+    /// <returns><see langword="true"/> when either the sysroot-relative or original path exists.</returns>
+    private static bool TryGetExistingFontPath(IntPtr pattern, string? sysroot, [NotNullWhen(true)] out string? path)
+    {
+        path = null;
+
+        if (FcPatternGetString(pattern, FileProperty, id: 0, out IntPtr file) != FcResultMatch || file == IntPtr.Zero)
+        {
+            return false;
+        }
+
+        string? configuredPath = Marshal.PtrToStringUTF8(file);
+        if (string.IsNullOrEmpty(configuredPath))
+        {
+            return false;
+        }
+
+        // Fontconfig can contain a mix of sysroot-relative and ordinary paths. Skia tries the
+        // sysroot-prefixed path first, then preserves compatibility with application-added files
+        // outside that root by trying the original path.
+        if (!string.IsNullOrEmpty(sysroot))
+        {
+            string resolvedPath = string.Concat(sysroot, configuredPath);
+            if (File.Exists(resolvedPath))
+            {
+                path = resolvedPath;
+                return true;
+            }
+        }
+
+        if (File.Exists(configuredPath))
+        {
+            path = configuredPath;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Gets the Fontconfig locale name to use for fallback matching.
     /// </summary>
     /// <param name="culture">The requested culture.</param>
@@ -727,6 +826,14 @@ internal static partial class FontConfigSystemFontMatcher
     /// <returns>The font set pointer.</returns>
     [LibraryImport(FontConfigLibrary)]
     private static partial IntPtr FcConfigGetFonts(IntPtr config, int setName);
+
+    /// <summary>
+    /// Gets the filesystem root applied to font paths in the configuration.
+    /// </summary>
+    /// <param name="config">The Fontconfig configuration.</param>
+    /// <returns>The borrowed sysroot string, or <c>NULL</c> when no sysroot is configured.</returns>
+    [LibraryImport(FontConfigLibrary)]
+    private static partial IntPtr FcConfigGetSysRoot(IntPtr config);
 
     /// <summary>
     /// Creates an empty font pattern.

@@ -47,22 +47,6 @@ internal static partial class CoreText
     public static partial IntPtr CTFontManagerCopyAvailableFontFamilyNames();
 
     /// <summary>
-    /// Creates descriptors for the fonts contained in a font URL.
-    /// </summary>
-    /// <param name="fileUrl">The font file URL.</param>
-    /// <returns>
-    /// A retained <c>CFArray</c> of <c>CTFontDescriptor</c> objects, or <c>NULL</c> on error.
-    /// The caller is responsible for releasing the returned array.
-    /// </returns>
-    /// <remarks>
-    /// CoreText follows the Create Rule for this API, so a non-<c>NULL</c> result must be
-    /// released with <see cref="CoreFoundation.CFRelease"/>.
-    /// </remarks>
-    [LibraryImport(CoreTextFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
-    public static partial IntPtr CTFontManagerCreateFontDescriptorsFromURL(IntPtr fileUrl);
-
-    /// <summary>
     /// Creates a collection containing the available fonts.
     /// </summary>
     /// <param name="options">Collection options, or <c>NULL</c>.</param>
@@ -228,6 +212,22 @@ internal static partial class CoreText
     [LibraryImport(CoreTextFramework)]
     [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
     public static partial IntPtr CTFontCopyFamilyName(IntPtr font);
+
+    /// <summary>
+    /// Copies a font's PostScript name.
+    /// </summary>
+    /// <param name="font">The font.</param>
+    /// <returns>
+    /// A retained <c>CFString</c>, or <c>NULL</c> on error. The caller is responsible for releasing
+    /// the returned string.
+    /// </returns>
+    /// <remarks>
+    /// CoreText follows the Copy Rule for this API, so a non-<c>NULL</c> result must be released
+    /// with <see cref="CoreFoundation.CFRelease"/>.
+    /// </remarks>
+    [LibraryImport(CoreTextFramework)]
+    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    public static partial IntPtr CTFontCopyPostScriptName(IntPtr font);
 
     /// <summary>
     /// Gets the symbolic traits for a font.

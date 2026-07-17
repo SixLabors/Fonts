@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.Versioning;
 using SixLabors.Fonts.Unicode;
+using SixLabors.Fonts.WellKnownIds;
 using static SixLabors.Fonts.Native.CoreFoundation;
 using static SixLabors.Fonts.Native.CoreText;
 
@@ -25,6 +26,9 @@ internal static class CoreTextSystemFontMatcher
     private const double CTFontRegularWeight = 0D;
     private const double CTFontBoldWeight = .4D;
     private const double CTFontStyleScoreScale = 1000D;
+    private static readonly object FamilyFacesLock = new();
+    private static NativeSystemFontFace[]? cachedFamilyFaces;
+    private static Dictionary<string, string>? cachedFamilyNames;
 
     /// <summary>
     /// Tries to get the macOS default font family name.
@@ -98,7 +102,8 @@ internal static class CoreTextSystemFontMatcher
 
         try
         {
-            return TryGetFamilyFacesMacOS(out faces);
+            faces = GetFamilyFacesMacOS();
+            return faces.Length > 0;
         }
         catch (DllNotFoundException)
         {
@@ -209,7 +214,7 @@ internal static class CoreTextSystemFontMatcher
     /// <param name="faces">The installed system font faces.</param>
     /// <returns><see langword="true"/> if CoreText returned font faces; otherwise, <see langword="false"/>.</returns>
     [SupportedOSPlatform("macos")]
-    private static bool TryGetFamilyFacesMacOS([NotNullWhen(true)] out NativeSystemFontFace[]? faces)
+    private static bool TryLoadFamilyFacesMacOS([NotNullWhen(true)] out NativeSystemFontFace[]? faces)
     {
         faces = null;
         IntPtr fontNameAttribute = GetStringConstant("kCTFontNameAttribute");
@@ -267,7 +272,7 @@ internal static class CoreTextSystemFontMatcher
                         || !TryGetUrlPath(url, out string? path)
                         || !TryGetDescriptorStringAttribute(descriptor, familyNameAttribute, out string? familyName)
                         || !TryGetDescriptorStringAttribute(descriptor, fontNameAttribute, out string? fontName)
-                        || !TryGetFaceIndex(url, path, fontName, fontNameAttribute, faceIndexesByPath, out int faceIndex))
+                        || !TryGetFaceIndex(path, fontName, faceIndexesByPath, out int faceIndex))
                     {
                         continue;
                     }
@@ -302,6 +307,7 @@ internal static class CoreTextSystemFontMatcher
 
                     results.Add(new NativeSystemFontFace(
                         familyName,
+                        fontName,
                         path,
                         style,
                         GetStyleScore(weight, style),
@@ -341,7 +347,22 @@ internal static class CoreTextSystemFontMatcher
 
         try
         {
-            return font != IntPtr.Zero && TryGetFamilyName(font, out familyName);
+            if (font != IntPtr.Zero && TryGetManagedFamilyName(font, out familyName))
+            {
+                return true;
+            }
+
+            // Modern macOS can return a virtual UI face such as .AppleSystemUIFont which has no
+            // file-backed family. Use the first family which the managed collection can load so
+            // the returned name always satisfies the SystemFonts family-name contract.
+            NativeSystemFontFace[] faces = GetFamilyFacesMacOS();
+            if (faces.Length > 0)
+            {
+                familyName = faces[0].FamilyName;
+                return true;
+            }
+
+            return false;
         }
         finally
         {
@@ -374,11 +395,18 @@ internal static class CoreTextSystemFontMatcher
         Span<char> text = stackalloc char[2];
         text = text[..GetUtf16(codePoint, text)];
         string localeName = GetLocaleName(culture);
+        string? baseFamilyName = familyName;
+
+        if (string.IsNullOrEmpty(baseFamilyName))
+        {
+            _ = TryGetDefaultFamilyNameMacOS(out baseFamilyName);
+        }
+
         IntPtr textString = CreateString(text);
         IntPtr localeString = CreateString(localeName);
-        IntPtr familyString = string.IsNullOrEmpty(familyName)
+        IntPtr familyString = string.IsNullOrEmpty(baseFamilyName)
             ? IntPtr.Zero
-            : CreateString(familyName);
+            : CreateString(baseFamilyName);
         IntPtr baseFont = IntPtr.Zero;
         IntPtr fallbackFont = IntPtr.Zero;
 
@@ -464,7 +492,7 @@ internal static class CoreTextSystemFontMatcher
                 }
             }
 
-            if (!TryGetFamilyName(fallbackFont, out matchedFamilyName))
+            if (!TryGetManagedFamilyName(fallbackFont, out matchedFamilyName))
             {
                 return false;
             }
@@ -528,61 +556,130 @@ internal static class CoreTextSystemFontMatcher
     }
 
     /// <summary>
-    /// Gets the font collection face index for a descriptor URL and PostScript name.
+    /// Gets the font collection face index for a file and PostScript name.
     /// </summary>
-    /// <param name="url">The Core Foundation URL.</param>
     /// <param name="path">The file-system path.</param>
     /// <param name="fontName">The CoreText font name.</param>
-    /// <param name="fontNameAttribute">The font-name descriptor attribute key.</param>
     /// <param name="faceIndexesByPath">The cached face indexes by path and font name.</param>
     /// <param name="faceIndex">The zero-based face index within the font file.</param>
     /// <returns><see langword="true"/> if the face index was found; otherwise, <see langword="false"/>.</returns>
     private static bool TryGetFaceIndex(
-        IntPtr url,
         string path,
         string fontName,
-        IntPtr fontNameAttribute,
         Dictionary<string, Dictionary<string, int>> faceIndexesByPath,
         out int faceIndex)
     {
         if (!faceIndexesByPath.TryGetValue(path, out Dictionary<string, int>? faceIndexes))
         {
-            IntPtr descriptors = CTFontManagerCreateFontDescriptorsFromURL(url);
+            faceIndexes = new Dictionary<string, int>(StringComparer.Ordinal);
 
             try
             {
-                if (descriptors == IntPtr.Zero)
+                // CoreText descriptor order is not the OpenType collection order for virtual and
+                // localized faces. Name ID 6 is the stable identity shared by both APIs, so derive
+                // the managed face index from the file's own PostScript names.
+                string extension = Path.GetExtension(path);
+                if (extension.Equals(".ttc", StringComparison.OrdinalIgnoreCase) || extension.Equals(".otc", StringComparison.OrdinalIgnoreCase))
                 {
-                    faceIndexes = [];
-                }
-                else
-                {
-                    int count = checked((int)CFArrayGetCount(descriptors));
-                    faceIndexes = new Dictionary<string, int>(count, StringComparer.Ordinal);
+                    ReadOnlySpan<FontDescription> descriptions = FontDescription.LoadFontCollectionDescriptions(path).Span;
 
-                    // CoreText returns descriptors from one font file in collection order, which
-                    // is the index expected by the managed TTC loader.
-                    for (int i = 0; i < count; i++)
+                    for (int i = 0; i < descriptions.Length; i++)
                     {
-                        IntPtr descriptor = CFArrayGetValueAtIndex(descriptors, i);
+                        string postScriptName = descriptions[i].GetNameById(CultureInfo.InvariantCulture, KnownNameIds.PostscriptName);
 
-                        if (descriptor != IntPtr.Zero
-                            && TryGetDescriptorStringAttribute(descriptor, fontNameAttribute, out string? currentFontName))
+                        if (postScriptName.Length > 0)
                         {
-                            _ = faceIndexes.TryAdd(currentFontName, i);
+                            _ = faceIndexes.TryAdd(postScriptName, i);
                         }
                     }
                 }
+                else
+                {
+                    FontDescription description = FontDescription.LoadDescription(path);
+                    string postScriptName = description.GetNameById(CultureInfo.InvariantCulture, KnownNameIds.PostscriptName);
+
+                    if (postScriptName.Length > 0)
+                    {
+                        faceIndexes.Add(postScriptName, 0);
+                    }
+                }
             }
-            finally
+            catch
             {
-                ReleaseIfNeeded(descriptors);
+                // CoreText can expose protected or virtual faces whose URL is not a readable SFNT.
+                // Such a face cannot enter the managed collection's file-backed metrics.
             }
 
             faceIndexesByPath.Add(path, faceIndexes);
         }
 
         return faceIndexes.TryGetValue(fontName, out faceIndex);
+    }
+
+    /// <summary>
+    /// Gets the cached CoreText faces that have a managed file representation.
+    /// </summary>
+    /// <returns>The managed CoreText faces.</returns>
+    [SupportedOSPlatform("macos")]
+    private static NativeSystemFontFace[] GetFamilyFacesMacOS()
+    {
+        NativeSystemFontFace[]? faces = Volatile.Read(ref cachedFamilyFaces);
+
+        if (faces is not null)
+        {
+            return faces;
+        }
+
+        lock (FamilyFacesLock)
+        {
+            faces = cachedFamilyFaces;
+
+            if (faces is null)
+            {
+                faces = TryLoadFamilyFacesMacOS(out NativeSystemFontFace[]? loadedFaces) ? loadedFaces : [];
+                Dictionary<string, string> familyNames = new(StringComparer.Ordinal);
+
+                foreach (NativeSystemFontFace face in faces)
+                {
+                    // CoreText fallback and UI-font APIs return a concrete PostScript face name,
+                    // while the managed collection is keyed by family. Cache both identities so
+                    // hidden aliases such as .AppleSystemUIFont resolve without reopening a font.
+                    _ = familyNames.TryAdd(face.FaceName, face.FamilyName);
+                    _ = familyNames.TryAdd(face.FamilyName, face.FamilyName);
+                }
+
+                cachedFamilyNames = familyNames;
+                Volatile.Write(ref cachedFamilyFaces, faces);
+            }
+        }
+
+        return faces;
+    }
+
+    /// <summary>
+    /// Gets the managed family name for a CoreText font.
+    /// </summary>
+    /// <param name="font">The CoreText font.</param>
+    /// <param name="familyName">The managed family name.</param>
+    /// <returns><see langword="true"/> when the font maps to an enumerated managed family.</returns>
+    [SupportedOSPlatform("macos")]
+    private static bool TryGetManagedFamilyName(IntPtr font, [NotNullWhen(true)] out string? familyName)
+    {
+        _ = GetFamilyFacesMacOS();
+        Dictionary<string, string> familyNames = cachedFamilyNames!;
+
+        if (TryGetFamilyName(font, out string? coreTextFamilyName) && familyNames.TryGetValue(coreTextFamilyName, out familyName))
+        {
+            return true;
+        }
+
+        if (TryGetPostScriptName(font, out string? coreTextFaceName) && familyNames.TryGetValue(coreTextFaceName, out familyName))
+        {
+            return true;
+        }
+
+        familyName = null;
+        return false;
     }
 
     /// <summary>
@@ -735,7 +832,7 @@ internal static class CoreTextSystemFontMatcher
     /// <param name="font">The CoreText font.</param>
     /// <param name="familyName">The family name.</param>
     /// <returns><see langword="true"/> if the family name was found; otherwise, <see langword="false"/>.</returns>
-    private static bool TryGetFamilyName(IntPtr font, out string? familyName)
+    private static bool TryGetFamilyName(IntPtr font, [NotNullWhen(true)] out string? familyName)
     {
         familyName = null;
         IntPtr familyNameString = CTFontCopyFamilyName(font);
@@ -748,6 +845,27 @@ internal static class CoreTextSystemFontMatcher
         finally
         {
             ReleaseIfNeeded(familyNameString);
+        }
+    }
+
+    /// <summary>
+    /// Gets a font's PostScript face name.
+    /// </summary>
+    /// <param name="font">The CoreText font.</param>
+    /// <param name="faceName">The PostScript face name.</param>
+    /// <returns><see langword="true"/> if the face name was found; otherwise, <see langword="false"/>.</returns>
+    private static bool TryGetPostScriptName(IntPtr font, [NotNullWhen(true)] out string? faceName)
+    {
+        faceName = null;
+        IntPtr faceNameString = CTFontCopyPostScriptName(font);
+
+        try
+        {
+            return faceNameString != IntPtr.Zero && TryGetString(faceNameString, out faceName);
+        }
+        finally
+        {
+            ReleaseIfNeeded(faceNameString);
         }
     }
 
