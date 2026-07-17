@@ -48,7 +48,7 @@ public class FontLoaderTests
         Assert.True(font.TryGetGlyphs(new CodePoint('A'), ColorFontSupport.None, out Glyph? glyph));
 
         GlyphRenderer r = new();
-        glyph.Value.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
+        glyph.Value.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, new Vector2(-1F), GlyphLayoutMode.Horizontal, new TextOptions(font));
 
         Assert.Equal(37, r.ControlPoints.Count);
         Assert.Single(r.GlyphKeys);
@@ -62,7 +62,7 @@ public class FontLoaderTests
 
         Assert.True(font.TryGetGlyphs(new CodePoint('A'), ColorFontSupport.None, out Glyph? glyph));
         GlyphRenderer r = new();
-        glyph.Value.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
+        glyph.Value.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, new Vector2(-1F), GlyphLayoutMode.Horizontal, new TextOptions(font));
 
         Assert.Equal(37, r.ControlPoints.Count);
         Assert.Single(r.GlyphKeys);
@@ -94,7 +94,7 @@ public class FontLoaderTests
 
         Assert.True(font.TryGetGlyphs(new CodePoint('A'), ColorFontSupport.None, out Glyph? glyph));
         GlyphRenderer r = new();
-        glyph.Value.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
+        glyph.Value.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, new Vector2(-1F), GlyphLayoutMode.Horizontal, new TextOptions(font));
 
         Assert.Equal(37, r.ControlPoints.Count);
         Assert.Single(r.GlyphKeys);
@@ -111,7 +111,7 @@ public class FontLoaderTests
 
         Assert.True(font.TryGetGlyphs(new CodePoint('a'), ColorFontSupport.None, out Glyph? glyph));
         GlyphRenderer r = new();
-        glyph.Value.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
+        glyph.Value.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, new Vector2(-1F), GlyphLayoutMode.Horizontal, new TextOptions(font));
 
         // the test font only has characters .notdef, 'a' & 'b' defined
         Assert.Equal(6, r.ControlPoints.Distinct().Count());
@@ -127,7 +127,7 @@ public class FontLoaderTests
 
         Assert.True(font.TryGetGlyphs(new CodePoint('a'), ColorFontSupport.None, out Glyph? glyph));
         GlyphRenderer r = new();
-        glyph.Value.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
+        glyph.Value.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, new Vector2(-1F), GlyphLayoutMode.Horizontal, new TextOptions(font));
 
         // the test font only has characters .notdef, 'a' & 'b' defined
         Assert.Equal(6, r.ControlPoints.Distinct().Count());

@@ -15,7 +15,7 @@ public class Issues_334
 
         Font font = family.CreateFont(metrics.UnitsPerEm);
         ColorGlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, "(", new TextOptions(font));
+        TextRenderer.RenderTo(renderer, "(", new TextOptions(font));
 
         Assert.Single(renderer.GlyphRects);
 

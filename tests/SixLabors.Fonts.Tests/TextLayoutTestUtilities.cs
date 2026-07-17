@@ -18,7 +18,6 @@ namespace SixLabors.Fonts.Tests;
 
 internal static class TextLayoutTestUtilities
 {
-#if SUPPORTS_DRAWING
     public static void TestImage(
         int imageWidth,
         int imageHeight,
@@ -27,12 +26,13 @@ internal static class TextLayoutTestUtilities
         [CallerMemberName] string test = "",
         params object[] properties)
     {
+#if SUPPORTS_DRAWING
         using Image<Rgba32> image = new(Configuration.Default, imageWidth, imageHeight, Color.White.ToPixel<Rgba32>());
         renderAction(image);
         image.DebugSave("png", test, properties: properties);
         image.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: properties);
-    }
 #endif
+    }
 
     public static void TestLayout(
         string text,
@@ -136,6 +136,7 @@ internal static class TextLayoutTestUtilities
     {
         RichTextOptions result = new(options.Font)
         {
+            FontWeight = options.FontWeight,
             FallbackFontFamilies = new List<FontFamily>(options.FallbackFontFamilies),
             TabWidth = options.TabWidth,
             HintingMode = options.HintingMode,
@@ -172,6 +173,7 @@ internal static class TextLayoutTestUtilities
                 RichTextRun richRun = new()
                 {
                     Font = run.Font,
+                    FontWeight = run.FontWeight,
                     Start = run.Start,
                     End = run.End,
                     TextAttributes = run.TextAttributes,

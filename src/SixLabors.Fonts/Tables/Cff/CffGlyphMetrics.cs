@@ -126,63 +126,46 @@ internal class CffGlyphMetrics : FontGlyphMetrics
             this.GlyphType);
 
     /// <inheritdoc/>
-    internal override void RenderTo(
+    internal override void RenderOutlineTo(
         IGlyphRenderer renderer,
-        int graphemeIndex,
         Vector2 glyphOrigin,
-        Vector2 decorationOrigin,
         GlyphLayoutMode mode,
-        TextOptions options)
+        float scaledPPEM,
+        HintingMode hintingMode)
     {
-        // https://www.unicode.org/faq/unsup_char.html
-        if (ShouldSkipGlyphRendering(this.CodePoint))
+        Matrix3x2 transform = this.GetOutlineTransform(mode);
+
+        Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
+
+        // Apply the CFF FontMatrix to convert charstring coordinates to design units.
+        // The normalized FontMatrix (fontMatrix * unitsPerEM) is identity for the default
+        // [0.001, 0, 0, 0.001, 0, 0] with upm=1000.
+        if (this.glyphData.FontMatrix is double[] fm)
         {
-            return;
+            float upm = this.UnitsPerEm;
+            scale *= new Vector2((float)(fm[0] * upm), (float)(fm[3] * upm));
         }
 
-        float pointSize = this.TextRun.Font?.Size ?? options.Font.Size;
-        float dpi = options.Dpi;
-
-        glyphOrigin *= dpi;
-        decorationOrigin *= dpi;
-        float scaledPPEM = this.GetScaledSize(pointSize, dpi);
-
-        Matrix3x2 rotation = GetRotationMatrix(mode);
-
-        // Synthesize an oblique (faux italic) slant when requested but unavailable by shearing
-        // the outline in the glyph's Y-up space before rotation is applied.
-        float skew = this.GetObliqueSkew();
-        Matrix3x2 transform = skew != 0F ? CreateObliqueMatrix(skew) * rotation : rotation;
-
-        FontRectangle box = this.GetBoundingBox(mode, glyphOrigin, scaledPPEM);
-        GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode, graphemeIndex);
-
-        // Synthesize a bold (faux bold) weight when requested but unavailable by dilating the
-        // outline through a decorator. Decorations continue to use the original renderer.
+        Vector2 scaledOffset = this.Offset * scale;
         float boldStrength = this.GetSyntheticBoldStrength(scaledPPEM);
-        IGlyphRenderer target = boldStrength > 0F ? new EmboldeningGlyphRenderer(renderer, boldStrength) : renderer;
-
-        if (target.BeginGlyph(in box, in parameters))
+        if (boldStrength > 0F)
         {
-            if (!UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint))
+            // Flush through the supplied renderer before glyph completion so skip-ink observes
+            // the same synthesized outline as the drawing renderer.
+            EmboldeningGlyphRenderer target = EmboldeningGlyphRenderer.Rent(renderer, boldStrength);
+            try
             {
-                Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
-
-                // Apply the CFF FontMatrix to convert charstring coordinates to design units.
-                // The normalized FontMatrix (fontMatrix * unitsPerEM) is identity for the default
-                // [0.001, 0, 0, 0.001, 0, 0] with upm=1000.
-                if (this.glyphData.FontMatrix is double[] fm)
-                {
-                    float upm = this.UnitsPerEm;
-                    scale *= new Vector2((float)(fm[0] * upm), (float)(fm[3] * upm));
-                }
-
-                Vector2 scaledOffset = this.Offset * scale;
                 this.glyphData.RenderTo(target, glyphOrigin, scale, scaledOffset, transform);
+                target.CompleteOutline();
             }
-
-            target.EndGlyph();
-            this.RenderDecorationsTo(renderer, decorationOrigin, mode, rotation, scaledPPEM, options);
+            finally
+            {
+                target.Release();
+            }
+        }
+        else
+        {
+            this.glyphData.RenderTo(renderer, glyphOrigin, scale, scaledOffset, transform);
         }
     }
 }

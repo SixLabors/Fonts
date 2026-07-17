@@ -35,7 +35,7 @@ public class Issues_462
         };
 
         GlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, text, options);
+        TextRenderer.RenderTo(renderer, text, options);
         Assert.Equal(10, renderer.GlyphKeys.Count);
 
         // There are too many metrics to validate here so we just ensure no exceptions are thrown
@@ -70,7 +70,7 @@ public class Issues_462
         };
 
         GlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, text, options);
+        TextRenderer.RenderTo(renderer, text, options);
         Assert.Equal(10, renderer.GlyphKeys.Count);
 
         TextLayoutTestUtilities.TestLayout(
@@ -118,7 +118,7 @@ public class Issues_462
         };
 
         LayerCaptureRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, "😸", options);
+        TextRenderer.RenderTo(renderer, "😸", options);
 
         Assert.Single(renderer.GlyphKeys);
         Assert.True(renderer.SolidLayers.Count(x => x.Color == GlyphColor.Black && Math.Abs(x.Opacity - 1F) < 0.001F) >= 9);
@@ -136,7 +136,7 @@ public class Issues_462
         };
 
         LayerCaptureRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, "🧐", options);
+        TextRenderer.RenderTo(renderer, "🧐", options);
 
         Assert.Single(renderer.GlyphKeys);
         Assert.True(GlyphColor.TryParseHex("#CCCCCC", out GlyphColor monocleColor));
@@ -158,7 +158,7 @@ public class Issues_462
         };
 
         GlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, text, options);
+        TextRenderer.RenderTo(renderer, text, options);
         Assert.Single(renderer.GlyphKeys);
 
         TextLayoutTestUtilities.TestLayout(text, options, test: test, properties: name);
@@ -199,7 +199,7 @@ public class Issues_462
         };
 
         GlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, text, options);
+        TextRenderer.RenderTo(renderer, text, options);
         Assert.NotEmpty(renderer.GlyphKeys);
 
         TextLayoutTestUtilities.TestLayout(text, options, test: test, properties: "full-string");

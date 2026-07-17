@@ -48,7 +48,7 @@ public class GlyphTests
         Glyph glyph = new(glyphMetrics.CloneForRendering(textRun), font.Size);
 
         Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyph ends up 10px over due to offset in fake glyph
-        glyph.RenderTo(this.renderer, 0, locationInFontSpace, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
+        glyph.RenderTo(this.renderer, 0, locationInFontSpace, Vector2.Zero, new Vector2(-1F), GlyphLayoutMode.Horizontal, new TextOptions(font));
 
         Assert.Equal(new FontRectangle(99, 89, 0, 0), this.renderer.GlyphRects.Single());
     }
@@ -59,7 +59,7 @@ public class GlyphTests
         Font fakeFont = CreateFont("AB");
         TextRenderer textRenderer = new(this.renderer);
 
-        textRenderer.RenderText("ABA", new TextOptions(fakeFont));
+        textRenderer.Render("ABA", new TextOptions(fakeFont));
 
         Assert.NotEqual(this.renderer.GlyphKeys[0], this.renderer.GlyphKeys[2]);
         Assert.NotEqual(this.renderer.GlyphKeys[1], this.renderer.GlyphKeys[2]);
@@ -73,7 +73,7 @@ public class GlyphTests
         Font fakeFont = CreateFont("A");
         TextRenderer textRenderer = new(renderer.Object);
 
-        textRenderer.RenderText("ABA", new TextOptions(fakeFont));
+        textRenderer.Render("ABA", new TextOptions(fakeFont));
         renderer.Verify(x => x.BeginFigure(), Times.Never);
     }
 
@@ -85,7 +85,7 @@ public class GlyphTests
         Font fakeFont = CreateFont("A");
         TextRenderer textRenderer = new(renderer.Object);
 
-        textRenderer.RenderText("ABA", new TextOptions(fakeFont));
+        textRenderer.Render("ABA", new TextOptions(fakeFont));
         renderer.Verify(x => x.BeginFigure(), Times.Exactly(3));
     }
 
@@ -114,7 +114,7 @@ public class GlyphTests
         Font font = TestFonts.GetFont(TestFonts.TwemojiMozillaFile, 12);
 
         ColorGlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, "😀", new TextOptions(font)
+        TextRenderer.RenderTo(renderer, "😀", new TextOptions(font)
         {
             ColorFontSupport = ColorFontSupport.ColrV0
         });
@@ -130,7 +130,7 @@ public class GlyphTests
         const string text = "\u263A\uFE0F"; // Fully-qualified sequence for emoji 'smiling face'
 
         ColorGlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, text, new TextOptions(font)
+        TextRenderer.RenderTo(renderer, text, new TextOptions(font)
         {
             ColorFontSupport = ColorFontSupport.ColrV0
         });
@@ -152,8 +152,8 @@ public class GlyphTests
         FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font));
         FontRectangle size2 = TextMeasurer.MeasureBounds(text2, new TextOptions(font));
 
-        Assert.Equal(55.652F, size.Width, Comparer);
-        Assert.Equal(55.617F, size2.Width, Comparer);
+        Assert.Equal(50.625F, size.Width, Comparer);
+        Assert.Equal(50.555F, size2.Width, Comparer);
     }
 
     [Theory]
@@ -168,14 +168,14 @@ public class GlyphTests
         string testStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
         ColorGlyphRenderer rendererTtf = new();
-        TextRenderer.RenderTextTo(rendererTtf, testStr, new TextOptions(fontTtf)
+        TextRenderer.RenderTo(rendererTtf, testStr, new TextOptions(fontTtf)
         {
             KerningMode = applyKerning ? KerningMode.Standard : KerningMode.None,
             HintingMode = applyHinting ? HintingMode.Standard : HintingMode.None,
             ColorFontSupport = ColorFontSupport.ColrV0
         });
         ColorGlyphRenderer rendererWoff = new();
-        TextRenderer.RenderTextTo(rendererWoff, testStr, new TextOptions(fontWoff)
+        TextRenderer.RenderTo(rendererWoff, testStr, new TextOptions(fontWoff)
         {
             KerningMode = applyKerning ? KerningMode.Standard : KerningMode.None,
             HintingMode = applyHinting ? HintingMode.Standard : HintingMode.None,
@@ -198,13 +198,13 @@ public class GlyphTests
         Font fontWoff = TestFonts.GetFont(TestFonts.OpenSansFileWoff1, 12);
 
         ColorGlyphRenderer rendererTtf = new();
-        TextRenderer.RenderTextTo(rendererTtf, testStr, new TextOptions(fontTtf)
+        TextRenderer.RenderTo(rendererTtf, testStr, new TextOptions(fontTtf)
         {
             HintingMode = HintingMode.Standard,
             ColorFontSupport = ColorFontSupport.ColrV0
         });
         ColorGlyphRenderer rendererWoff = new();
-        TextRenderer.RenderTextTo(rendererWoff, testStr, new TextOptions(fontWoff)
+        TextRenderer.RenderTo(rendererWoff, testStr, new TextOptions(fontWoff)
         {
             HintingMode = HintingMode.Standard,
             ColorFontSupport = ColorFontSupport.ColrV0
@@ -226,14 +226,14 @@ public class GlyphTests
         string testStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
         ColorGlyphRenderer rendererTtf = new();
-        TextRenderer.RenderTextTo(rendererTtf, testStr, new TextOptions(fontTtf)
+        TextRenderer.RenderTo(rendererTtf, testStr, new TextOptions(fontTtf)
         {
             KerningMode = applyKerning ? KerningMode.Standard : KerningMode.None,
             HintingMode = applyHinting ? HintingMode.Standard : HintingMode.None,
             ColorFontSupport = ColorFontSupport.ColrV0
         });
         ColorGlyphRenderer rendererWoff2 = new();
-        TextRenderer.RenderTextTo(rendererWoff2, testStr, new TextOptions(fontWoff2)
+        TextRenderer.RenderTo(rendererWoff2, testStr, new TextOptions(fontWoff2)
         {
             KerningMode = applyKerning ? KerningMode.Standard : KerningMode.None,
             HintingMode = applyHinting ? HintingMode.Standard : HintingMode.None,
@@ -256,13 +256,13 @@ public class GlyphTests
         Font fontWoff2 = TestFonts.GetFont(TestFonts.OpenSansFileWoff2, 12);
 
         ColorGlyphRenderer rendererTtf = new();
-        TextRenderer.RenderTextTo(rendererTtf, testStr, new TextOptions(fontTtf)
+        TextRenderer.RenderTo(rendererTtf, testStr, new TextOptions(fontTtf)
         {
             HintingMode = HintingMode.Standard,
             ColorFontSupport = ColorFontSupport.ColrV0
         });
         ColorGlyphRenderer rendererWoff2 = new();
-        TextRenderer.RenderTextTo(rendererWoff2, testStr, new TextOptions(fontWoff2)
+        TextRenderer.RenderTo(rendererWoff2, testStr, new TextOptions(fontWoff2)
         {
             HintingMode = HintingMode.Standard,
             ColorFontSupport = ColorFontSupport.ColrV0
@@ -282,10 +282,10 @@ public class GlyphTests
         Parallel.For(0, threadCount, _ =>
         {
             ColorGlyphRenderer renderer1 = new();
-            TextRenderer.RenderTextTo(renderer1, "A 🙂 ", new TextOptions(SystemFonts.CreateFont(fontName, 15)));
+            TextRenderer.RenderTo(renderer1, "A 🙂 ", new TextOptions(SystemFonts.CreateFont(fontName, 15)));
 
             ColorGlyphRenderer renderer2 = new();
-            TextRenderer.RenderTextTo(renderer2, "A 🙂 ", new TextOptions(SystemFonts.CreateFont(fontName, 15)));
+            TextRenderer.RenderTo(renderer2, "A 🙂 ", new TextOptions(SystemFonts.CreateFont(fontName, 15)));
 
             Assert.True(renderer1.ControlPoints.Count > 0);
             Assert.True(renderer2.ControlPoints.Count > 0);

@@ -28,7 +28,7 @@ public class Issues_475
         // None of the fonts here can actually render the real glyphs in the text, just squares
         // so just verify that we don't hit any exceptions and get the correct glyph count.
         GlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, text, options);
+        TextRenderer.RenderTo(renderer, text, options);
 
         Assert.Equal(43, renderer.GlyphRects.Count);
     }

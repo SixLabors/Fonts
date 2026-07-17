@@ -14,6 +14,7 @@ namespace SixLabors.Fonts;
 public sealed class Font
 {
     private readonly FontVariation[] variations;
+    private readonly FontWeight? requestedWeight;
     private readonly Lazy<FontMetrics?> metrics;
     private readonly Lazy<string> fontName;
 
@@ -93,6 +94,24 @@ public sealed class Font
         this.RequestedStyle = prototype.RequestedStyle;
         this.Size = prototype.Size;
         this.variations = variations;
+        this.requestedWeight = prototype.requestedWeight;
+        this.metrics = new Lazy<FontMetrics?>(this.LoadInstanceInternal, true);
+        this.fontName = new Lazy<string>(this.LoadFontName, true);
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Font"/> class with a numeric weight that the
+    /// operating-system family resolves through its normal metrics lookup.
+    /// </summary>
+    /// <param name="prototype">The font supplying family, size, style, and variation settings.</param>
+    /// <param name="weight">The requested numeric system-font weight.</param>
+    private Font(Font prototype, FontWeight weight)
+    {
+        this.Family = prototype.Family;
+        this.RequestedStyle = prototype.RequestedStyle;
+        this.Size = prototype.Size;
+        this.variations = prototype.variations;
+        this.requestedWeight = weight;
         this.metrics = new Lazy<FontMetrics?>(this.LoadInstanceInternal, true);
         this.fontName = new Lazy<string>(this.LoadFontName, true);
     }
@@ -137,6 +156,80 @@ public sealed class Font
     /// Gets the requested style.
     /// </summary>
     internal FontStyle RequestedStyle { get; }
+
+    /// <summary>
+    /// Creates a variable-font instance at the requested weight when the font exposes a
+    /// registered weight axis. Static fonts are returned unchanged.
+    /// </summary>
+    /// <param name="weight">The requested weight.</param>
+    /// <param name="applied"><see langword="true"/> when the weight axis was applied.</param>
+    /// <returns>The variable-font instance, or this font for a static face.</returns>
+    internal Font WithWeight(FontWeight weight, out bool applied)
+    {
+        applied = false;
+        if (this.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<Tables.AdvancedTypographic.Variations.VariationAxis> axes))
+        {
+            // A variable face owns its complete weight range, so apply wght before asking the
+            // system collection for another static face. This also preserves every other axis.
+            bool hasWeightAxis = false;
+            foreach (Tables.AdvancedTypographic.Variations.VariationAxis axis in axes.Span)
+            {
+                if (axis.Tag == KnownVariationAxes.Weight)
+                {
+                    hasWeightAxis = true;
+                    break;
+                }
+            }
+
+            if (hasWeightAxis)
+            {
+                applied = true;
+                for (int i = 0; i < this.variations.Length; i++)
+                {
+                    if (this.variations[i].Tag != KnownVariationAxes.Weight)
+                    {
+                        continue;
+                    }
+
+                    if (this.variations[i].Value == (int)weight)
+                    {
+                        return this;
+                    }
+
+                    // Font instances are immutable and can be shared by concurrent layouts.
+                    // Recreate every variation in storage owned by the new Font so replacing wght
+                    // cannot alter the source Font, while preserving every other configured axis.
+                    FontVariation[] variations = new FontVariation[this.variations.Length];
+                    for (int variationIndex = 0; variationIndex < this.variations.Length; variationIndex++)
+                    {
+                        FontVariation variation = this.variations[variationIndex];
+                        variations[variationIndex] = new FontVariation(variation.Tag, variation.Value);
+                    }
+
+                    variations[i] = new FontVariation(KnownVariationAxes.Weight, (int)weight);
+                    return new Font(this, variations);
+                }
+
+                // Preserve axes such as wdth or opsz while appending wght. A new array is required
+                // because the Font constructor retains the complete variation set for its life.
+                FontVariation[] weightedVariations = new FontVariation[this.variations.Length + 1];
+                this.variations.CopyTo(weightedVariations, 0);
+                weightedVariations[^1] = new FontVariation(KnownVariationAxes.Weight, (int)weight);
+
+                return new Font(this, weightedVariations);
+            }
+        }
+
+        // System collections preserve the platform's family grouping. Use an exact face exposed
+        // by that grouping before falling back to synthetic weight on the supplied static face.
+        if (this.Family.TryGetMetrics(this.RequestedStyle, weight, out FontMetrics? systemMetrics)
+            && !ReferenceEquals(systemMetrics, this.FontMetrics))
+        {
+            return new Font(this, weight);
+        }
+
+        return this;
+    }
 
     /// <summary>
     /// Gets the filesystem path to the font family source.
@@ -216,6 +309,20 @@ public sealed class Font
         => this.TryGetGlyph(codePoint, textAttributes, TextDecorations.None, LayoutMode.HorizontalTopBottom, support, out glyph);
 
     /// <summary>
+    /// Gets the glyph identifier for the given code point.
+    /// </summary>
+    /// <param name="codePoint">The code point of the character.</param>
+    /// <param name="glyphId">
+    /// When this method returns, contains the glyph identifier for the given code point if the glyph
+    /// is found; otherwise <value>0</value>. This parameter is passed uninitialized.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if the face contains a glyph for the specified code point; otherwise, <see langword="false"/>.
+    /// </returns>
+    public bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
+        => this.FontMetrics.TryGetGlyphId(codePoint, out glyphId);
+
+    /// <summary>
     /// Gets the glyph for the given codepoint.
     /// </summary>
     /// <param name="codePoint">The code point of the character.</param>
@@ -260,9 +367,12 @@ public sealed class Font
         ColorFontSupport support,
         [NotNullWhen(true)] out Glyph? glyph)
     {
-        TextRun textRun = new() { Start = 0, End = 1, Font = this, TextAttributes = textAttributes, TextDecorations = textDecorations };
-        if (this.FontMetrics.TryGetGlyphMetrics(codePoint, textAttributes, textDecorations, layoutMode, support, out FontGlyphMetrics? metrics))
+        FontMetrics fontMetrics = this.FontMetrics;
+        if (fontMetrics.TryGetGlyphId(codePoint, out ushort glyphId))
         {
+            TextRun textRun = new() { Start = 0, End = 1, Font = this, TextAttributes = textAttributes, TextDecorations = textDecorations };
+            FontGlyphMetrics metrics = fontMetrics.GetGlyphMetrics(codePoint, glyphId, textAttributes, textDecorations, layoutMode, support);
+
             glyph = new(metrics.CloneForRendering(textRun), this.Size);
             return true;
         }
@@ -317,6 +427,7 @@ public sealed class Font
             {
                 StreamFontMetrics s => s,
                 FileFontMetrics f => f.StreamFontMetrics,
+                MemoryFontMetrics m => m.StreamFontMetrics,
                 _ => null
             };
 
@@ -331,6 +442,15 @@ public sealed class Font
 
     private FontMetrics? ResolveBaseMetrics()
     {
+        // Numeric lookup belongs to FontFamily because it owns the mapping from a family request
+        // to a concrete face. Only system-backed families implement this overload; custom
+        // collections continue through the existing FontStyle lookup below.
+        if (this.requestedWeight.HasValue
+            && this.Family.TryGetMetrics(this.RequestedStyle, this.requestedWeight.Value, out FontMetrics? weightedMetrics))
+        {
+            return weightedMetrics;
+        }
+
         if (this.Family.TryGetMetrics(this.RequestedStyle, out FontMetrics? metrics))
         {
             return metrics;

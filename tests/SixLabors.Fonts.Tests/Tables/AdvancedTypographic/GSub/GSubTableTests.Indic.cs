@@ -129,7 +129,7 @@ public partial class GSubTableTests
         ColorGlyphRenderer renderer = new();
         TextOptions options = new(font == KannadaFont.Serif ? KannadaNotoSerifTTF : KannadaNotoSansTTF);
        // TextLayoutTestUtilities.TestLayout(input, options);
-        TextRenderer.RenderTextTo(renderer, input, options);
+        TextRenderer.RenderTo(renderer, input, options);
 
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
         for (int i = 0; i < expectedGlyphIndices.Length; i++)
@@ -154,7 +154,7 @@ public partial class GSubTableTests
     public void CanShapeTeluguText(string input, int[] expectedGlyphIndices)
     {
         ColorGlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(TeluguNotoSansTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(TeluguNotoSansTTF));
 
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
         for (int i = 0; i < expectedGlyphIndices.Length; i++)
@@ -203,7 +203,7 @@ public partial class GSubTableTests
     public void CanShapeTamilText(string input, int[] expectedGlyphIndices)
     {
         ColorGlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(TamilNotoSansTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(TamilNotoSansTTF));
 
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
         for (int i = 0; i < expectedGlyphIndices.Length; i++)
@@ -258,7 +258,7 @@ public partial class GSubTableTests
     public void CanShapeDevanagariTextWithJoiners(string input, int[] expectedGlyphIndices)
     {
         ColorGlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(DevanagariNotoSansTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(DevanagariNotoSansTTF));
 
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
         for (int i = 0; i < expectedGlyphIndices.Length; i++)
@@ -315,7 +315,7 @@ public partial class GSubTableTests
     public void CanShapeDevanagariText(string input, int[] expectedGlyphIndices)
     {
         ColorGlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(DevanagariNotoSansTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(DevanagariNotoSansTTF));
 
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
         for (int i = 0; i < expectedGlyphIndices.Length; i++)
@@ -336,7 +336,7 @@ public partial class GSubTableTests
     public void CanShapeDevanagariTextWithDottedCircle(string input, int[] expectedGlyphIndices)
     {
         ColorGlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(DevanagariNotoSansTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(DevanagariNotoSansTTF));
 
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
         for (int i = 0; i < expectedGlyphIndices.Length; i++)
@@ -356,7 +356,7 @@ public partial class GSubTableTests
     public void CanShapeDevanagariTextWithEyelash(string input, int[] expectedGlyphIndices)
     {
         ColorGlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(DevanagariNotoSansTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(DevanagariNotoSansTTF));
 
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
         for (int i = 0; i < expectedGlyphIndices.Length; i++)
@@ -426,7 +426,7 @@ public partial class GSubTableTests
     public void CanShapeBengaliText(string input, int[] expectedGlyphIndices)
     {
         ColorGlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(BengaliNotoSansTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(BengaliNotoSansTTF));
 
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
         for (int i = 0; i < expectedGlyphIndices.Length; i++)
@@ -441,7 +441,7 @@ public partial class GSubTableTests
     public void CanShapeGurmukhiText(string input, int[] expectedGlyphIndices)
     {
         ColorGlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(GurmukhiNotoSansTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(GurmukhiNotoSansTTF));
 
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
         for (int i = 0; i < expectedGlyphIndices.Length; i++)
@@ -479,7 +479,7 @@ public partial class GSubTableTests
         ];
 
         ColorGlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(GurmukhiNotoSansTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(GurmukhiNotoSansTTF));
 
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
         for (int i = 0; i < expectedGlyphIndices.Length; i++)
@@ -530,7 +530,7 @@ public partial class GSubTableTests
     public void CanShapeGujaratiText(string input, int[] expectedGlyphIndices)
     {
         ColorGlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(GujaratiNotoSansTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(GujaratiNotoSansTTF));
 
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
         for (int i = 0; i < expectedGlyphIndices.Length; i++)
@@ -614,7 +614,7 @@ public partial class GSubTableTests
     public void CanShapeMalayalamText(string input, int[] expectedGlyphIndices)
     {
         ColorGlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(MalayalamNotoSansTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(MalayalamNotoSansTTF));
 
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
         for (int i = 0; i < expectedGlyphIndices.Length; i++)
@@ -635,7 +635,7 @@ public partial class GSubTableTests
     public void CanShapeOriyaText(string input, int[] expectedGlyphIndices)
     {
         ColorGlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(OriyaNotoSansTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(OriyaNotoSansTTF));
 
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
         for (int i = 0; i < expectedGlyphIndices.Length; i++)
@@ -675,7 +675,7 @@ public partial class GSubTableTests
     public void CanShapeKhmerText(string input, int[] expectedGlyphIndices)
     {
         ColorGlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(KhmerNotoSansTTF));
+        TextRenderer.RenderTo(renderer, input, new TextOptions(KhmerNotoSansTTF));
 
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
         for (int i = 0; i < expectedGlyphIndices.Length; i++)

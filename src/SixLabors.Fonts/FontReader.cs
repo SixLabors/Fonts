@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;
 using SixLabors.Fonts.Tables;
+using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.Woff;
 
 namespace SixLabors.Fonts;
@@ -197,6 +198,22 @@ internal sealed class FontReader : IDisposable
 
         reader = header?.CreateReader(this.stream);
         return reader != null;
+    }
+
+    public bool TryGetTableData(Tag tag, out ReadOnlyMemory<byte> table)
+    {
+        if (!this.TryGetReaderAtTablePosition(tag.ToString(), out BigEndianBinaryReader? reader, out TableHeader? header))
+        {
+            table = default;
+            return false;
+        }
+
+        using (reader)
+        {
+            table = reader.ReadBytes(checked((int)header.Length));
+        }
+
+        return true;
     }
 
     public void Dispose()

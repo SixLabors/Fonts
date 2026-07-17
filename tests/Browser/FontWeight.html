@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Font weight browser comparison</title>
+  <style>
+    @font-face {
+      font-family: "Weight Open Sans";
+      src: url("../Fonts/OpenSans-Regular.ttf") format("truetype");
+      font-style: normal;
+      font-weight: 400;
+    }
+
+    @font-face {
+      font-family: "Weight Roboto Flex";
+      src: url("../Fonts/RobotoFlex.ttf") format("truetype");
+      font-style: normal;
+      font-weight: 100 900;
+    }
+
+    @font-face {
+      font-family: "Weight Twemoji";
+      src: url("../Fonts/Twemoji Mozilla.ttf") format("truetype");
+      font-style: normal;
+      font-weight: 400;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: #111;
+      background: #fff;
+      font-family: Arial, sans-serif;
+    }
+
+    header,
+    section {
+      padding: 16px 20px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    h1,
+    h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 110px max-content max-content;
+      gap: 12px 24px;
+      align-items: center;
+      overflow-x: auto;
+    }
+
+    .column-heading,
+    .weight-label {
+      color: #555;
+      font-size: 13px;
+    }
+
+    .sample {
+      margin: 0;
+      color: #000;
+      background: #fff;
+      font-size: 18pt;
+      font-kerning: normal;
+      font-synthesis: weight;
+      line-height: 1.4;
+      white-space: pre;
+    }
+
+    .open-sans {
+      font-family: "Weight Open Sans";
+    }
+
+    .roboto-flex {
+      font-family: "Weight Roboto Flex";
+    }
+
+    .segoe-ui {
+      font-family: "Segoe UI";
+    }
+
+    .arial {
+      font-family: Arial;
+    }
+
+    .emoji {
+      font-family: "Weight Twemoji", "Weight Open Sans";
+      font-size: 27pt;
+    }
+
+    .actual-output {
+      display: block;
+      max-width: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Browser font weight comparison</h1>
+  </header>
+
+  <section>
+    <h2>Open Sans static regular face, synthetic weights, 18pt</h2>
+    <div class="comparison" id="static-weights">
+      <div></div>
+      <div class="column-heading">Browser</div>
+      <div class="column-heading">SixLabors.Fonts actual output</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Roboto Flex variable weight axis, 18pt</h2>
+    <div class="comparison" id="variable-weights">
+      <div></div>
+      <div class="column-heading">Browser</div>
+      <div class="column-heading">SixLabors.Fonts actual output</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Segoe UI system family, 18pt</h2>
+    <div class="comparison" id="segoe-ui-weights">
+      <div></div>
+      <div class="column-heading">Browser</div>
+      <div class="column-heading">SixLabors.Fonts actual output</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Arial system family, 18pt</h2>
+    <div class="comparison" id="arial-weights">
+      <div></div>
+      <div class="column-heading">Browser</div>
+      <div class="column-heading">SixLabors.Fonts actual output</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Twemoji Mozilla COLRv0, requested weights, 27pt</h2>
+    <div class="comparison" id="emoji-weights">
+      <div></div>
+      <div class="column-heading">Browser</div>
+      <div class="column-heading">SixLabors.Fonts actual output</div>
+    </div>
+  </section>
+
+  <script>
+    const text = "The quick brown fox jumps over the lazy dog.";
+    const weights = [
+      ["Thin", 100],
+      ["ExtraLight", 200],
+      ["Light", 300],
+      ["Normal", 400],
+      ["Medium", 500],
+      ["SemiBold", 600],
+      ["Bold", 700],
+      ["ExtraBold", 800],
+      ["Black", 900]
+    ];
+
+    // Visual tests overwrite stable ActualOutput filenames. Use one cache key for this page load
+    // so reloading the comparison always displays the latest generated images for every row.
+    const actualOutputCacheKey = Date.now();
+
+    function addTextRows(containerId, className, testName) {
+      const container = document.getElementById(containerId);
+
+      for (const [label, weight] of weights) {
+        const weightLabel = document.createElement("div");
+        weightLabel.className = "weight-label";
+        weightLabel.textContent = `${label} ${weight}`;
+
+        const browser = document.createElement("p");
+        browser.className = `sample ${className}`;
+        browser.style.fontWeight = weight;
+        browser.textContent = text;
+
+        const actual = document.createElement("img");
+        actual.className = "actual-output";
+        actual.src = `../Images/ActualOutput/${testName}_-${label}--${weight}.png?v=${actualOutputCacheKey}`;
+        actual.alt = `SixLabors.Fonts ${label} ${weight} output`;
+
+        container.append(weightLabel, browser, actual);
+      }
+    }
+
+    function addEmojiRow(label, weight) {
+      const container = document.getElementById("emoji-weights");
+      const weightLabel = document.createElement("div");
+      weightLabel.className = "weight-label";
+      weightLabel.textContent = `${label} ${weight}`;
+
+      const browser = document.createElement("p");
+      browser.className = "sample emoji";
+      browser.style.fontWeight = weight;
+      browser.textContent = "😀 ☺️ ❤️ ✌️ ⭐";
+
+      const actual = document.createElement("img");
+      actual.className = "actual-output";
+      actual.src = `../Images/ActualOutput/VisualTest_PaintedEmojiWeight_-${label}--${weight}.png?v=${actualOutputCacheKey}`;
+      actual.alt = `SixLabors.Fonts painted emoji ${label} ${weight} output`;
+
+      container.append(weightLabel, browser, actual);
+    }
+
+    addTextRows("static-weights", "open-sans", "VisualTest_StaticWeight");
+    addTextRows("variable-weights", "roboto-flex", "VisualTest_VariableWeight");
+    addTextRows("segoe-ui-weights", "segoe-ui", "VisualTest_SystemSegoeUIWeight");
+    addTextRows("arial-weights", "arial", "VisualTest_SystemArialWeight");
+    addEmojiRow("Normal", 400);
+    addEmojiRow("Black", 900);
+  </script>
+</body>
+</html>

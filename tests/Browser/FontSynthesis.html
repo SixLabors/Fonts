@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Font synthesis browser comparison</title>
+  <style>
+    @font-face {
+      font-family: "Synthesis Open Sans";
+      src: url("../Fonts/OpenSans-Regular.ttf") format("truetype");
+      font-style: normal;
+      font-weight: 400;
+    }
+
+    @font-face {
+      font-family: "Synthesis Plantin";
+      src: url("../Fonts/PlantinStdRegular.otf") format("opentype");
+      font-style: normal;
+      font-weight: 400;
+    }
+
+    @font-face {
+      font-family: "Synthesis Twemoji";
+      src: url("../Fonts/Twemoji Mozilla.ttf") format("truetype");
+      font-style: normal;
+      font-weight: 400;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: #111;
+      background: #fff;
+      font-family: Arial, sans-serif;
+    }
+
+    header,
+    section {
+      padding: 16px 20px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    h1,
+    h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .sample {
+      margin: 0;
+      color: #000;
+      background: #fff;
+      font-size: 36pt;
+      font-kerning: normal;
+      line-height: 1.4;
+      white-space: pre;
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: max-content max-content;
+      gap: 24px;
+      align-items: start;
+      overflow-x: auto;
+    }
+
+    figure {
+      margin: 0;
+    }
+
+    figcaption {
+      margin-bottom: 8px;
+      color: #555;
+      font-size: 13px;
+    }
+
+    .actual-output {
+      display: block;
+      max-width: none;
+    }
+
+    .open-sans {
+      font-family: "Synthesis Open Sans";
+    }
+
+    .plantin {
+      font-family: "Synthesis Plantin";
+    }
+
+    .emoji {
+      font-family: "Synthesis Twemoji", "Synthesis Open Sans";
+      font-size: 54pt;
+      line-height: 1.4;
+    }
+
+    .italic {
+      font-style: italic;
+      font-synthesis: style;
+    }
+
+    .bold {
+      font-weight: 700;
+      font-synthesis: weight;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Browser font synthesis comparison</h1>
+  </header>
+
+  <section>
+    <h2>Open Sans TrueType, synthetic italic, 36pt</h2>
+    <div class="comparison">
+      <figure>
+        <figcaption>Browser</figcaption>
+        <p class="sample open-sans italic">Sphinx of black quartz, judge my vow.
+Pack my box with five dozen liquor jugs.</p>
+      </figure>
+      <figure>
+        <figcaption>SixLabors.Fonts actual output</figcaption>
+        <img class="actual-output" src="../Images/ActualOutput/VisualTest_SyntheticItalic_-TrueType-.png" alt="SixLabors.Fonts synthetic italic Open Sans output">
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Plantin CFF, synthetic italic, 36pt</h2>
+    <div class="comparison">
+      <figure>
+        <figcaption>Browser</figcaption>
+        <p class="sample plantin italic">Sphinx of black quartz, judge my vow.
+Pack my box with five dozen liquor jugs.</p>
+      </figure>
+      <figure>
+        <figcaption>SixLabors.Fonts actual output</figcaption>
+        <img class="actual-output" src="../Images/ActualOutput/VisualTest_SyntheticItalic_-CFF-.png" alt="SixLabors.Fonts synthetic italic Plantin output">
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Open Sans TrueType, synthetic bold, 36pt</h2>
+    <div class="comparison">
+      <figure>
+        <figcaption>Browser</figcaption>
+        <p class="sample open-sans bold">Sphinx of black quartz, judge my vow.
+Pack my box with five dozen liquor jugs.</p>
+      </figure>
+      <figure>
+        <figcaption>SixLabors.Fonts actual output</figcaption>
+        <img class="actual-output" src="../Images/ActualOutput/VisualTest_SyntheticBold_-TrueType-.png" alt="SixLabors.Fonts synthetic bold Open Sans output">
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Plantin CFF, synthetic bold, 36pt</h2>
+    <div class="comparison">
+      <figure>
+        <figcaption>Browser</figcaption>
+        <p class="sample plantin bold">Sphinx of black quartz, judge my vow.
+Pack my box with five dozen liquor jugs.</p>
+      </figure>
+      <figure>
+        <figcaption>SixLabors.Fonts actual output</figcaption>
+        <img class="actual-output" src="../Images/ActualOutput/VisualTest_SyntheticBold_-CFF-.png" alt="SixLabors.Fonts synthetic bold Plantin output">
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Twemoji Mozilla COLRv0, synthetic italic, 54pt</h2>
+    <div class="comparison">
+      <figure>
+        <figcaption>Browser</figcaption>
+        <p class="sample emoji italic">😀 ☺️ ❤️ ✌️ ⭐</p>
+      </figure>
+      <figure>
+        <figcaption>SixLabors.Fonts actual output</figcaption>
+        <img class="actual-output" src="../Images/ActualOutput/VisualTest_SyntheticItalicPaintedEmoji_-COLRv0-.png" alt="SixLabors.Fonts synthetic italic Twemoji output">
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Twemoji Mozilla COLRv0, requested bold, 54pt</h2>
+    <div class="comparison">
+      <figure>
+        <figcaption>Browser</figcaption>
+        <p class="sample emoji bold">😀 ☺️ ❤️ ✌️ ⭐</p>
+      </figure>
+      <figure>
+        <figcaption>SixLabors.Fonts actual output</figcaption>
+        <img class="actual-output" src="../Images/ActualOutput/VisualTest_SyntheticBoldPaintedEmoji_-COLRv0-.png" alt="SixLabors.Fonts requested-bold Twemoji output">
+      </figure>
+    </div>
+  </section>
+</body>
+</html>

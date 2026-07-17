@@ -18,6 +18,8 @@ public class GlyphRenderer : IGlyphRenderer
 
     public List<GlyphRendererParameters> GlyphKeys { get; } = [];
 
+    public List<(TextDecorations Decoration, Vector2 Start, Vector2 End, float Thickness)> Decorations { get; } = [];
+
     public int FiguresCount { get; set; }
 
     public bool BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters)
@@ -81,9 +83,8 @@ public class GlyphRenderer : IGlyphRenderer
     public TextDecorations EnabledDecorations()
         => this.parameters.TextRun.TextDecorations;
 
-    public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
-    {
-    }
+    public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness, ReadOnlyMemory<float> intersections)
+        => this.Decorations.Add((textDecorations, start, end, thickness));
 
     public virtual void BeginLayer(Paint paint, FillRule fillRule, ClipQuad? clipBounds)
     {

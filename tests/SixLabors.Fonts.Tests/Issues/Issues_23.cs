@@ -15,7 +15,7 @@ public class Issues_23
 
         GlyphRenderer r = new();
 
-        new TextRenderer(r).RenderText("o", new TextOptions(new Font(font, 30)));
+        new TextRenderer(r).Render("o", new TextOptions(new Font(font, 30)));
 
         Assert.DoesNotContain(System.Numerics.Vector2.Zero, r.ControlPoints);
     }

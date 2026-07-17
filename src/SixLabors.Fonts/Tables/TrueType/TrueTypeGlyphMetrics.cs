@@ -132,141 +132,122 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
     internal GlyphVector GetOutline() => this.vector;
 
     /// <inheritdoc/>
-    internal override void RenderTo(
+    internal override void RenderOutlineTo(
         IGlyphRenderer renderer,
-        int graphemeIndex,
         Vector2 glyphOrigin,
-        Vector2 decorationOrigin,
         GlyphLayoutMode mode,
-        TextOptions options)
+        float scaledPPEM,
+        HintingMode hintingMode)
     {
-        // https://www.unicode.org/faq/unsup_char.html
-        if (ShouldSkipGlyphRendering(this.CodePoint))
+        Matrix3x2 transform = this.GetOutlineTransform(mode);
+        GlyphVector scaledVector = this.scaledVectorCache.GetOrAdd(scaledPPEM, _ =>
         {
-            return;
+            // Create a scaled deep copy of the vector so that we do not alter
+            // the globally cached instance.
+            GlyphVector clone = GlyphVector.DeepClone(this.vector);
+            Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
+
+            Matrix3x2 matrix = Matrix3x2.CreateScale(scale);
+            matrix.Translation = this.Offset * scale;
+            GlyphVector.TransformInPlace(ref clone, matrix);
+
+            float pixelSize = scaledPPEM / 72F;
+            this.FontMetrics.ApplyTrueTypeHinting(this.GetHintingMode(hintingMode), this, ref clone, scale, pixelSize);
+
+            // The shared outline transform applies synthetic oblique before layout rotation.
+            // Both happen after hinting so the hinter always receives the upright outline.
+            GlyphVector.TransformInPlace(ref clone, transform);
+            return clone;
+        });
+
+        IList<ControlPoint> controlPoints = scaledVector.ControlPoints;
+        IReadOnlyList<ushort> endPoints = scaledVector.EndPoints;
+
+        float boldStrength = this.GetSyntheticBoldStrength(scaledPPEM);
+        EmboldeningGlyphRenderer? emboldening = null;
+        IGlyphRenderer target = renderer;
+        if (boldStrength > 0F)
+        {
+            emboldening = EmboldeningGlyphRenderer.Rent(renderer, boldStrength);
+            target = emboldening;
         }
 
-        float pointSize = this.TextRun.Font?.Size ?? options.Font.Size;
-        float dpi = options.Dpi;
-
-        glyphOrigin *= dpi;
-        decorationOrigin *= dpi;
-        float scaledPPEM = this.GetScaledSize(pointSize, dpi);
-
-        Matrix3x2 rotation = GetRotationMatrix(mode);
-        FontRectangle box = this.GetBoundingBox(mode, glyphOrigin, scaledPPEM);
-        GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode, graphemeIndex);
-
-        // Synthesize a bold (faux bold) weight when requested but unavailable by dilating the
-        // outline through a decorator. Decorations continue to use the original renderer.
-        float boldStrength = this.GetSyntheticBoldStrength(scaledPPEM);
-        IGlyphRenderer target = boldStrength > 0F ? new EmboldeningGlyphRenderer(renderer, boldStrength) : renderer;
-
-        if (target.BeginGlyph(in box, in parameters))
+        try
         {
-            if (!UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint))
+            int endOfContour = -1;
+            for (int i = 0; i < scaledVector.EndPoints.Count; i++)
             {
-                GlyphVector scaledVector = this.scaledVectorCache.GetOrAdd(scaledPPEM, _ =>
+                target.BeginFigure();
+                int startOfContour = endOfContour + 1;
+                endOfContour = endPoints[i];
+
+                Vector2 prev;
+                Vector2 curr = (YInverter * controlPoints[endOfContour].Point) + glyphOrigin;
+                Vector2 next = (YInverter * controlPoints[startOfContour].Point) + glyphOrigin;
+
+                if (controlPoints[endOfContour].OnCurve)
                 {
-                    // Create a scaled deep copy of the vector so that we do not alter
-                    // the globally cached instance.
-                    GlyphVector clone = GlyphVector.DeepClone(this.vector);
-                    Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
-
-                    Matrix3x2 matrix = Matrix3x2.CreateScale(scale);
-                    matrix.Translation = this.Offset * scale;
-                    GlyphVector.TransformInPlace(ref clone, matrix);
-
-                    float pixelSize = scaledPPEM / 72F;
-                    this.FontMetrics.ApplyTrueTypeHinting(this.GetHintingMode(options.HintingMode), this, ref clone, scale, pixelSize);
-
-                    // Synthesize an oblique (faux italic) slant when requested but unavailable.
-                    // Applied after hinting so the hinter operates on the upright outline.
-                    float skew = this.GetObliqueSkew();
-                    if (skew != 0F)
-                    {
-                        GlyphVector.TransformInPlace(ref clone, CreateObliqueMatrix(skew));
-                    }
-
-                    // Rotation must happen after hinting.
-                    GlyphVector.TransformInPlace(ref clone, rotation);
-                    return clone;
-                });
-
-                IList<ControlPoint> controlPoints = scaledVector.ControlPoints;
-                IReadOnlyList<ushort> endPoints = scaledVector.EndPoints;
-
-                int endOfContour = -1;
-                for (int i = 0; i < scaledVector.EndPoints.Count; i++)
+                    target.MoveTo(curr);
+                }
+                else
                 {
-                    target.BeginFigure();
-                    int startOfContour = endOfContour + 1;
-                    endOfContour = endPoints[i];
-
-                    Vector2 prev;
-                    Vector2 curr = (YInverter * controlPoints[endOfContour].Point) + glyphOrigin;
-                    Vector2 next = (YInverter * controlPoints[startOfContour].Point) + glyphOrigin;
-
-                    if (controlPoints[endOfContour].OnCurve)
+                    if (controlPoints[startOfContour].OnCurve)
                     {
-                        target.MoveTo(curr);
+                        target.MoveTo(next);
                     }
                     else
                     {
-                        if (controlPoints[startOfContour].OnCurve)
-                        {
-                            target.MoveTo(next);
-                        }
-                        else
-                        {
-                            // If both first and last points are off-curve, start at their middle.
-                            Vector2 startPoint = (curr + next) * .5F;
-                            target.MoveTo(startPoint);
-                        }
+                        // If both first and last points are off-curve, start at their middle.
+                        Vector2 startPoint = (curr + next) * .5F;
+                        target.MoveTo(startPoint);
                     }
-
-                    int length = endOfContour - startOfContour + 1;
-                    for (int p = 0; p < length; p++)
-                    {
-                        prev = curr;
-                        curr = next;
-                        int currentIndex = startOfContour + p;
-                        int nextIndex = startOfContour + ((p + 1) % length);
-                        int prevIndex = startOfContour + ((length + p - 1) % length);
-                        next = (YInverter * controlPoints[nextIndex].Point) + glyphOrigin;
-
-                        if (controlPoints[currentIndex].OnCurve)
-                        {
-                            // This is a straight line.
-                            target.LineTo(curr);
-                        }
-                        else
-                        {
-                            Vector2 prev2 = prev;
-                            Vector2 next2 = next;
-
-                            if (!controlPoints[prevIndex].OnCurve)
-                            {
-                                prev2 = (curr + prev) * .5F;
-                                target.LineTo(prev2);
-                            }
-
-                            if (!controlPoints[nextIndex].OnCurve)
-                            {
-                                next2 = (curr + next) * .5F;
-                            }
-
-                            target.LineTo(prev2);
-                            target.QuadraticBezierTo(curr, next2);
-                        }
-                    }
-
-                    target.EndFigure();
                 }
+
+                int length = endOfContour - startOfContour + 1;
+                for (int p = 0; p < length; p++)
+                {
+                    prev = curr;
+                    curr = next;
+                    int currentIndex = startOfContour + p;
+                    int nextIndex = startOfContour + ((p + 1) % length);
+                    int prevIndex = startOfContour + ((length + p - 1) % length);
+                    next = (YInverter * controlPoints[nextIndex].Point) + glyphOrigin;
+
+                    if (controlPoints[currentIndex].OnCurve)
+                    {
+                        // This is a straight line.
+                        target.LineTo(curr);
+                    }
+                    else
+                    {
+                        Vector2 prev2 = prev;
+                        Vector2 next2 = next;
+
+                        if (!controlPoints[prevIndex].OnCurve)
+                        {
+                            prev2 = (curr + prev) * .5F;
+                            target.LineTo(prev2);
+                        }
+
+                        if (!controlPoints[nextIndex].OnCurve)
+                        {
+                            next2 = (curr + next) * .5F;
+                        }
+
+                        target.LineTo(prev2);
+                        target.QuadraticBezierTo(curr, next2);
+                    }
+                }
+
+                target.EndFigure();
             }
 
-            target.EndGlyph();
-            this.RenderDecorationsTo(renderer, decorationOrigin, mode, rotation, scaledPPEM, options);
+            // Emit the completed fill group before FontGlyphMetrics ends the glyph.
+            emboldening?.CompleteOutline();
+        }
+        finally
+        {
+            emboldening?.Release();
         }
     }
 }

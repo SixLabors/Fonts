@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Numerics;
 using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Unicode;
 
@@ -802,7 +803,11 @@ public sealed partial class TextBlock
                 return;
             }
 
-            glyph.Glyph.RenderTo(this.renderer, glyph.GraphemeIndex, glyph.GlyphOrigin, glyph.DecorationOrigin, glyph.LayoutMode, this.options);
+            // The laid-out advance includes layout-time spacing such as tracking and
+            // justification, so decorations span the full layout cell rather than the
+            // glyph's own metric advance.
+            Vector2 layoutAdvance = new(glyph.AdvanceX, glyph.AdvanceY);
+            glyph.Glyph.RenderTo(this.renderer, glyph.GraphemeIndex, glyph.GlyphOrigin, glyph.DecorationOrigin, layoutAdvance, glyph.LayoutMode, this.options);
         }
 
         /// <inheritdoc/>

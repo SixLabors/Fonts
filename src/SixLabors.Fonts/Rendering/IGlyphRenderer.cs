@@ -131,5 +131,11 @@ public interface IGlyphRenderer
     /// <param name="start">The start position from where to draw the decorations from.</param>
     /// <param name="end">The end position from where to draw the decorations to.</param>
     /// <param name="thickness">The thickness to draw the decoration.</param>
-    public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness);
+    /// <param name="intersections">
+    /// The along-line intervals, in device pixels, where the glyph's ink crosses the decoration band,
+    /// given as sorted <c>[start, end]</c> pairs. Empty when skip-ink does not apply. The full,
+    /// untrimmed line is reported; a renderer that honours skip-ink carves the line around these
+    /// intervals, widened by the thickness, and may extend a gap into an adjacent glyph.
+    /// </param>
+    public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness, ReadOnlyMemory<float> intersections);
 }

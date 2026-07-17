@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using SixLabors.Fonts.Rendering;
+using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Unicode;
 
@@ -17,7 +18,7 @@ public class VariationFontTests
     public void FontVariation_ValidTag_CreatesInstance()
     {
         FontVariation variation = new("wght", 700);
-        Assert.Equal("wght", variation.Tag);
+        Assert.Equal(KnownVariationAxes.Weight, variation.Tag);
         Assert.Equal(700, variation.Value);
     }
 
@@ -41,7 +42,7 @@ public class VariationFontTests
         Font variedFont = new(baseFont, new FontVariation("wght", 700));
 
         Assert.Single(variedFont.Variations.ToArray());
-        Assert.Equal("wght", variedFont.Variations[0].Tag);
+        Assert.Equal(KnownVariationAxes.Weight, variedFont.Variations[0].Tag);
         Assert.Equal(700, variedFont.Variations[0].Value);
     }
 
@@ -84,7 +85,7 @@ public class VariationFontTests
         Assert.True(font.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> axes));
         Assert.Equal(13, axes.Length);
 
-        Assert.Equal("wght", axes.Span[0].Tag);
+        Assert.Equal(KnownVariationAxes.Weight, axes.Span[0].Tag);
         Assert.Equal(100, axes.Span[0].Min);
         Assert.Equal(1000, axes.Span[0].Max);
         Assert.Equal(400, axes.Span[0].Default);
@@ -99,11 +100,11 @@ public class VariationFontTests
         Assert.True(font.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> axes));
         Assert.Equal(2, axes.Length);
 
-        Assert.Equal("wght", axes.Span[0].Tag);
+        Assert.Equal(KnownVariationAxes.Weight, axes.Span[0].Tag);
         Assert.Equal(200, axes.Span[0].Min);
         Assert.Equal(900, axes.Span[0].Max);
 
-        Assert.Equal("CNTR", axes.Span[1].Tag);
+        Assert.Equal(Tag.Parse("CNTR"), axes.Span[1].Tag);
     }
 
     [Fact]
@@ -208,7 +209,7 @@ public class VariationFontTests
         Font defaultFont = family.CreateFont(12);
 
         Assert.True(defaultFont.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> axes));
-        VariationAxis wghtAxis = Assert.Single(axes.ToArray(), a => a.Tag == "wght");
+        VariationAxis wghtAxis = Assert.Single(axes.ToArray(), a => a.Tag == KnownVariationAxes.Weight);
 
         Font variedFont = family.CreateFont(12, new FontVariation("wght", wghtAxis.Default));
 
@@ -275,10 +276,10 @@ public class VariationFontTests
         Font heavyFont = family.CreateFont(12, new FontVariation("wght", 900));
 
         GlyphRenderer defaultRenderer = new();
-        TextRenderer.RenderTextTo(defaultRenderer, "$", new TextOptions(defaultFont));
+        TextRenderer.RenderTo(defaultRenderer, "$", new TextOptions(defaultFont));
 
         GlyphRenderer heavyRenderer = new();
-        TextRenderer.RenderTextTo(heavyRenderer, "$", new TextOptions(heavyFont));
+        TextRenderer.RenderTo(heavyRenderer, "$", new TextOptions(heavyFont));
 
         // The GSUB substitution should produce a different glyph ID at wght=900.
         Assert.NotEqual(defaultRenderer.GlyphKeys[0].GlyphId, heavyRenderer.GlyphKeys[0].GlyphId);
@@ -303,7 +304,7 @@ public class VariationFontTests
 
         Assert.True(font.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> axes));
         Assert.Equal(2, axes.Length);
-        Assert.Equal("wght", axes.Span[0].Tag);
+        Assert.Equal(KnownVariationAxes.Weight, axes.Span[0].Tag);
     }
 
     [Fact]
@@ -322,7 +323,7 @@ public class VariationFontTests
         Font font = family.CreateFont(48);
 
         GlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, "$", new TextOptions(font));
+        TextRenderer.RenderTo(renderer, "$", new TextOptions(font));
 
         Assert.NotEmpty(renderer.GlyphKeys);
         Assert.NotEmpty(renderer.ControlPoints);
@@ -335,7 +336,7 @@ public class VariationFontTests
         Font font = family.CreateFont(48, new FontVariation("wght", 900));
 
         GlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, "$", new TextOptions(font));
+        TextRenderer.RenderTo(renderer, "$", new TextOptions(font));
 
         Assert.NotEmpty(renderer.GlyphKeys);
         Assert.NotEmpty(renderer.ControlPoints);
@@ -350,10 +351,10 @@ public class VariationFontTests
         Font heavyFont = family.CreateFont(48, new FontVariation("wght", 900));
 
         GlyphRenderer lightRenderer = new();
-        TextRenderer.RenderTextTo(lightRenderer, "$", new TextOptions(lightFont));
+        TextRenderer.RenderTo(lightRenderer, "$", new TextOptions(lightFont));
 
         GlyphRenderer heavyRenderer = new();
-        TextRenderer.RenderTextTo(heavyRenderer, "$", new TextOptions(heavyFont));
+        TextRenderer.RenderTo(heavyRenderer, "$", new TextOptions(heavyFont));
 
         Assert.NotEmpty(lightRenderer.ControlPoints);
         Assert.NotEmpty(heavyRenderer.ControlPoints);
@@ -386,10 +387,10 @@ public class VariationFontTests
         Font heavyFont = family.CreateFont(72, new FontVariation("wght", 900));
 
         GlyphRenderer defaultRenderer = new();
-        TextRenderer.RenderTextTo(defaultRenderer, "\u0641", new TextOptions(defaultFont));
+        TextRenderer.RenderTo(defaultRenderer, "\u0641", new TextOptions(defaultFont));
 
         GlyphRenderer heavyRenderer = new();
-        TextRenderer.RenderTextTo(heavyRenderer, "\u0641", new TextOptions(heavyFont));
+        TextRenderer.RenderTo(heavyRenderer, "\u0641", new TextOptions(heavyFont));
 
         // Both should render, and the glyph bounds should differ due to
         // GPOS mark anchor adjustments varying with weight.
@@ -486,7 +487,7 @@ public class VariationFontTests
         Font variedFont = family.CreateFont(12, new FontVariation("wght", 300));
 
         GlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, "彌", new TextOptions(variedFont));
+        TextRenderer.RenderTo(renderer, "彌", new TextOptions(variedFont));
 
         Assert.NotEmpty(renderer.GlyphKeys);
         Assert.NotEmpty(renderer.GlyphRects);
@@ -500,10 +501,10 @@ public class VariationFontTests
         Font variedFont = family.CreateFont(72, new FontVariation("wght", 300));
 
         GlyphRenderer defaultRenderer = new();
-        TextRenderer.RenderTextTo(defaultRenderer, "彌", new TextOptions(defaultFont));
+        TextRenderer.RenderTo(defaultRenderer, "彌", new TextOptions(defaultFont));
 
         GlyphRenderer variedRenderer = new();
-        TextRenderer.RenderTextTo(variedRenderer, "彌", new TextOptions(variedFont));
+        TextRenderer.RenderTo(variedRenderer, "彌", new TextOptions(variedFont));
 
         // Both should produce control points, but they should differ.
         Assert.NotEmpty(defaultRenderer.ControlPoints);
@@ -531,7 +532,7 @@ public class VariationFontTests
         Font variedFont = family.CreateFont(12, new FontVariation("wght", 900));
 
         GlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, "A", new TextOptions(variedFont));
+        TextRenderer.RenderTo(renderer, "A", new TextOptions(variedFont));
 
         Assert.NotEmpty(renderer.GlyphKeys);
     }
@@ -567,10 +568,10 @@ public class VariationFontTests
 
         // Render both and verify outlines differ.
         GlyphRenderer lightRenderer = new();
-        TextRenderer.RenderTextTo(lightRenderer, "\u2B50", new TextOptions(lightFont));
+        TextRenderer.RenderTo(lightRenderer, "\u2B50", new TextOptions(lightFont));
 
         GlyphRenderer boldRenderer = new();
-        TextRenderer.RenderTextTo(boldRenderer, "\u2B50", new TextOptions(boldFont));
+        TextRenderer.RenderTo(boldRenderer, "\u2B50", new TextOptions(boldFont));
 
         Assert.NotEmpty(lightRenderer.ControlPoints);
         Assert.NotEmpty(boldRenderer.ControlPoints);
@@ -668,9 +669,9 @@ public class VariationFontTests
         Assert.NotNull(font.FontMetrics);
         Assert.True(font.FontMetrics.TryGetVariationAxes(out ReadOnlyMemory<VariationAxis> axes));
         Assert.Equal(3, axes.Length);
-        Assert.Equal("wght", axes.Span[0].Tag);
-        Assert.Equal("wdth", axes.Span[1].Tag);
-        Assert.Equal("opsz", axes.Span[2].Tag);
+        Assert.Equal(KnownVariationAxes.Weight, axes.Span[0].Tag);
+        Assert.Equal(KnownVariationAxes.Width, axes.Span[1].Tag);
+        Assert.Equal(KnownVariationAxes.OpticalSize, axes.Span[2].Tag);
     }
 
     [Fact]
@@ -698,10 +699,10 @@ public class VariationFontTests
         TextOptions variedOptions = new(variedFont) { HintingMode = HintingMode.Standard };
 
         GlyphRenderer defaultRenderer = new();
-        TextRenderer.RenderTextTo(defaultRenderer, "hono", defaultOptions);
+        TextRenderer.RenderTo(defaultRenderer, "hono", defaultOptions);
 
         GlyphRenderer variedRenderer = new();
-        TextRenderer.RenderTextTo(variedRenderer, "hono", variedOptions);
+        TextRenderer.RenderTo(variedRenderer, "hono", variedOptions);
 
         Assert.NotEmpty(defaultRenderer.ControlPoints);
         Assert.NotEmpty(variedRenderer.ControlPoints);
@@ -717,7 +718,7 @@ public class VariationFontTests
         TextOptions options = new(variedFont) { HintingMode = HintingMode.Standard };
 
         GlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, "hono", options);
+        TextRenderer.RenderTo(renderer, "hono", options);
 
         Assert.NotEmpty(renderer.ControlPoints);
     }
@@ -734,10 +735,10 @@ public class VariationFontTests
         TextOptions unhintedOptions = new(font) { HintingMode = HintingMode.None };
 
         GlyphRenderer hintedRenderer = new();
-        TextRenderer.RenderTextTo(hintedRenderer, "hono", hintedOptions);
+        TextRenderer.RenderTo(hintedRenderer, "hono", hintedOptions);
 
         GlyphRenderer unhintedRenderer = new();
-        TextRenderer.RenderTextTo(unhintedRenderer, "hono", unhintedOptions);
+        TextRenderer.RenderTo(unhintedRenderer, "hono", unhintedOptions);
 
         Assert.NotEmpty(hintedRenderer.ControlPoints);
         Assert.NotEmpty(unhintedRenderer.ControlPoints);

@@ -26,7 +26,7 @@ public class GPosTableTests
         ];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -61,7 +61,7 @@ public class GPosTableTests
         ];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -97,7 +97,7 @@ public class GPosTableTests
         ];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -136,7 +136,7 @@ public class GPosTableTests
         ];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -171,7 +171,7 @@ public class GPosTableTests
         ];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -206,7 +206,7 @@ public class GPosTableTests
         ];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -241,7 +241,7 @@ public class GPosTableTests
         ];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -277,7 +277,7 @@ public class GPosTableTests
         ];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -313,7 +313,7 @@ public class GPosTableTests
         ];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -350,7 +350,7 @@ public class GPosTableTests
         ];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -389,7 +389,7 @@ public class GPosTableTests
         ];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -428,7 +428,7 @@ public class GPosTableTests
         ];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -467,7 +467,7 @@ public class GPosTableTests
         ];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -501,7 +501,7 @@ public class GPosTableTests
         ];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -537,7 +537,7 @@ public class GPosTableTests
         ];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);

@@ -1,6 +1,10 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
+using SixLabors.Fonts.Rendering;
+
 namespace SixLabors.Fonts;
 
 /// <summary>
@@ -89,6 +93,145 @@ public static class TextMeasurer
         return block.MeasureRenderableBounds(options.WrappingLength);
     }
 
+    /// <summary>
+    /// Measures the logical advance of a single glyph, identified by its glyph id, in pixel units.
+    /// </summary>
+    /// <remarks>
+    /// The advance is computed directly from the font's cached per-glyph metrics without decoding
+    /// outlines or running the layout engine. <see cref="GlyphOptions.Origin"/> is the glyph's
+    /// baseline pen position. For horizontal layouts the advance rectangle spans the same line
+    /// box the layout engine builds for a single glyph (the em box, ascender-balanced against the
+    /// font's declared line height) over the glyph's advance width. For vertical layouts the
+    /// rectangle is centered on the origin and extends downward by the advance the layout
+    /// direction consumes; line-level policies such as column centering and line spacing only
+    /// apply when text is laid out.
+    /// </remarks>
+    /// <param name="glyphId">The glyph identifier within the font face referenced by <paramref name="options"/>.</param>
+    /// <param name="options">The glyph options, including the font, origin, and layout mode.</param>
+    /// <returns>
+    /// The logical advance rectangle of the glyph if it was to be rendered, or
+    /// <see cref="FontRectangle.Empty"/> when the font does not contain the glyph or the glyph
+    /// never renders.
+    /// </returns>
+    public static FontRectangle MeasureAdvance(ushort glyphId, GlyphOptions options)
+    {
+        Guard.NotNull(options, nameof(options));
+
+        return TryGetMeasurableGlyphMetrics(glyphId, options, out FontGlyphMetrics? metrics)
+            ? GetGlyphAdvance(metrics, options)
+            : FontRectangle.Empty;
+    }
+
+    /// <summary>
+    /// Measures the rendered bounds of a single glyph, identified by its glyph id, in pixel units.
+    /// </summary>
+    /// <remarks>
+    /// The bounds are computed directly from the font's cached per-glyph metrics without decoding
+    /// outlines or running the layout engine, and are identical to the bounding box the renderer
+    /// reports for the same glyph and options through
+    /// <see cref="TextRenderer.RenderTo(IGlyphRenderer, ushort, GlyphOptions)"/>.
+    /// </remarks>
+    /// <param name="glyphId">The glyph identifier within the font face referenced by <paramref name="options"/>.</param>
+    /// <param name="options">The glyph options, including the font, origin, and layout mode.</param>
+    /// <returns>
+    /// The rendered bounds of the glyph at <see cref="GlyphOptions.Origin"/> if it was to be
+    /// rendered, or <see cref="FontRectangle.Empty"/> when the font does not contain the glyph or
+    /// the glyph never renders.
+    /// </returns>
+    public static FontRectangle MeasureBounds(ushort glyphId, GlyphOptions options)
+    {
+        Guard.NotNull(options, nameof(options));
+
+        return TryGetMeasurableGlyphMetrics(glyphId, options, out FontGlyphMetrics? metrics)
+            ? GetGlyphBounds(metrics, options)
+            : FontRectangle.Empty;
+    }
+
+    /// <summary>
+    /// Measures the full renderable bounds of a single glyph, identified by its glyph id, in pixel units.
+    /// </summary>
+    /// <remarks>
+    /// The bounds are computed directly from the font's cached per-glyph metrics without decoding
+    /// outlines or running the layout engine.
+    /// </remarks>
+    /// <param name="glyphId">The glyph identifier within the font face referenced by <paramref name="options"/>.</param>
+    /// <param name="options">The glyph options, including the font, origin, and layout mode.</param>
+    /// <returns>
+    /// The union of the logical advance rectangle and the rendered bounds of the glyph if it was
+    /// to be rendered, or <see cref="FontRectangle.Empty"/> when the font does not contain the
+    /// glyph or the glyph never renders.
+    /// </returns>
+    public static FontRectangle MeasureRenderableBounds(ushort glyphId, GlyphOptions options)
+    {
+        Guard.NotNull(options, nameof(options));
+
+        return TryGetMeasurableGlyphMetrics(glyphId, options, out FontGlyphMetrics? metrics)
+            ? FontRectangle.Union(GetGlyphAdvance(metrics, options), GetGlyphBounds(metrics, options))
+            : FontRectangle.Empty;
+    }
+
+    /// <summary>
+    /// Measures the union of logical glyph advances for positioned glyphs in pixel units.
+    /// </summary>
+    /// <remarks>
+    /// Each glyph is measured at its own run origin exactly as
+    /// <see cref="TextRenderer.RenderTo(IGlyphRenderer, GlyphRun, GlyphOptions)"/>
+    /// renders it; <see cref="GlyphOptions.Origin"/> is replaced per glyph and restored. Glyph ids
+    /// the font does not contain and glyphs that never render are skipped, matching renderer
+    /// behavior.
+    /// </remarks>
+    /// <param name="glyphRun">The positioned glyphs.</param>
+    /// <param name="options">The glyph options, including the font and layout mode.</param>
+    /// <returns>
+    /// The union of the logical advance rectangles of the run if it was to be rendered, or
+    /// <see cref="FontRectangle.Empty"/> when no glyph in the run participates in rendering.
+    /// </returns>
+    public static FontRectangle MeasureAdvance(GlyphRun glyphRun, GlyphOptions options)
+        => MeasureGlyphRun(glyphRun, options, static (metrics, options) => GetGlyphAdvance(metrics, options));
+
+    /// <summary>
+    /// Measures the union of rendered glyph bounds for positioned glyphs in pixel units.
+    /// </summary>
+    /// <remarks>
+    /// Each glyph is measured at its own run origin exactly as
+    /// <see cref="TextRenderer.RenderTo(IGlyphRenderer, GlyphRun, GlyphOptions)"/>
+    /// renders it; <see cref="GlyphOptions.Origin"/> is replaced per glyph and restored. The
+    /// result matches the union of the bounding boxes the renderer reports for the same run and
+    /// options. Glyph ids the font does not contain and glyphs that never render are skipped,
+    /// matching renderer behavior.
+    /// </remarks>
+    /// <param name="glyphRun">The positioned glyphs.</param>
+    /// <param name="options">The glyph options, including the font and layout mode.</param>
+    /// <returns>
+    /// The union of the rendered glyph bounds of the run if it was to be rendered, or
+    /// <see cref="FontRectangle.Empty"/> when no glyph in the run participates in rendering.
+    /// </returns>
+    public static FontRectangle MeasureBounds(GlyphRun glyphRun, GlyphOptions options)
+        => MeasureGlyphRun(glyphRun, options, static (metrics, options) => GetGlyphBounds(metrics, options));
+
+    /// <summary>
+    /// Measures the full renderable bounds of positioned glyphs in pixel units.
+    /// </summary>
+    /// <remarks>
+    /// Each glyph is measured at its own run origin exactly as
+    /// <see cref="TextRenderer.RenderTo(IGlyphRenderer, GlyphRun, GlyphOptions)"/>
+    /// renders it; <see cref="GlyphOptions.Origin"/> is replaced per glyph and restored. Glyph ids
+    /// the font does not contain and glyphs that never render are skipped, matching renderer
+    /// behavior.
+    /// </remarks>
+    /// <param name="glyphRun">The positioned glyphs.</param>
+    /// <param name="options">The glyph options, including the font and layout mode.</param>
+    /// <returns>
+    /// The union of the logical advance rectangles and the rendered glyph bounds of the run if it
+    /// was to be rendered, or <see cref="FontRectangle.Empty"/> when no glyph in the run
+    /// participates in rendering.
+    /// </returns>
+    public static FontRectangle MeasureRenderableBounds(GlyphRun glyphRun, GlyphOptions options)
+        => MeasureGlyphRun(
+            glyphRun,
+            options,
+            static (metrics, options) => FontRectangle.Union(GetGlyphAdvance(metrics, options), GetGlyphBounds(metrics, options)));
+
     /// <inheritdoc cref="GetGlyphMetrics(ReadOnlySpan{char}, TextOptions)"/>
     public static ReadOnlyMemory<GlyphMetrics> GetGlyphMetrics(string text, TextOptions options)
         => GetGlyphMetrics(text.AsSpan(), options);
@@ -108,6 +251,165 @@ public static class TextMeasurer
 
         TextBlock block = new(text, options);
         return block.GetGlyphMetrics(options.WrappingLength);
+    }
+
+    /// <summary>
+    /// Gets the positioned metrics of a single glyph, identified by its glyph id, in pixel units.
+    /// </summary>
+    /// <remarks>
+    /// The metrics are computed directly from the font's cached per-glyph metrics without
+    /// decoding outlines or running the layout engine, positioned at
+    /// <see cref="GlyphOptions.Origin"/>. The entry's grapheme index is
+    /// <see cref="GlyphOptions.GraphemeIndex"/> and its string index is <c>0</c>: glyph ids carry
+    /// no source text, so the index identifies the glyph within the measured input instead. A
+    /// glyph the font does not contain, or one that never renders, produces an entry with empty
+    /// rectangles.
+    /// </remarks>
+    /// <param name="glyphId">The glyph identifier within the font face referenced by <paramref name="options"/>.</param>
+    /// <param name="options">The glyph options, including the font, origin, and layout mode.</param>
+    /// <returns>The positioned metrics entry of the glyph if it was to be rendered.</returns>
+    public static GlyphMetrics GetGlyphMetrics(ushort glyphId, GlyphOptions options)
+    {
+        Guard.NotNull(options, nameof(options));
+
+        return CreateGlyphMetrics(glyphId, options, options.GraphemeIndex, index: 0);
+    }
+
+    /// <summary>
+    /// Gets the positioned metrics of each glyph in a positioned run in pixel units.
+    /// </summary>
+    /// <remarks>
+    /// The metrics are computed directly from the font's cached per-glyph metrics without
+    /// decoding outlines or running the layout engine. Each glyph is measured at its own run
+    /// origin exactly as
+    /// <see cref="TextRenderer.RenderTo(IGlyphRenderer, GlyphRun, GlyphOptions)"/>
+    /// renders it; <see cref="GlyphOptions.Origin"/> is replaced per glyph and restored. One
+    /// entry is returned per input glyph so results correlate with run indices: each entry's
+    /// grapheme index is <see cref="GlyphOptions.GraphemeIndex"/> plus the run index and its
+    /// string index is the run index. Glyph ids the font does not contain, and glyphs that
+    /// never render, produce entries with empty rectangles.
+    /// </remarks>
+    /// <param name="glyphRun">The positioned glyphs.</param>
+    /// <param name="options">The glyph options, including the font and layout mode.</param>
+    /// <returns>A read-only memory region containing one positioned metrics entry per input glyph.</returns>
+    public static ReadOnlyMemory<GlyphMetrics> GetGlyphMetrics(GlyphRun glyphRun, GlyphOptions options)
+    {
+        Guard.NotNull(glyphRun, nameof(glyphRun));
+        Guard.NotNull(options, nameof(options));
+
+        if (glyphRun.Count == 0)
+        {
+            return ReadOnlyMemory<GlyphMetrics>.Empty;
+        }
+
+        ReadOnlySpan<ushort> glyphIds = glyphRun.GlyphIds.Span;
+        ReadOnlySpan<Vector2> origins = glyphRun.Origins.Span;
+        Vector2 originalOrigin = options.Origin;
+        int originalGraphemeIndex = options.GraphemeIndex;
+
+        GlyphMetrics[] metrics = new GlyphMetrics[glyphIds.Length];
+        try
+        {
+            for (int i = 0; i < glyphIds.Length; i++)
+            {
+                options.Origin = origins[i];
+                metrics[i] = CreateGlyphMetrics(glyphIds[i], options, originalGraphemeIndex + i, i);
+            }
+        }
+        finally
+        {
+            options.Origin = originalOrigin;
+        }
+
+        return metrics;
+    }
+
+    /// <inheritdoc cref="GetIntersections(ReadOnlySpan{char}, TextOptions, float, float)"/>
+    public static ReadOnlyMemory<float> GetIntersections(string text, TextOptions options, float lowerLimit, float upperLimit)
+        => GetIntersections(text.AsSpan(), options, lowerLimit, upperLimit);
+
+    /// <summary>
+    /// Gets the x-axis intervals where the laid-out text's glyph outlines cross a horizontal
+    /// band, in pixel units.
+    /// </summary>
+    /// <remarks>
+    /// The intervals are computed from the exact outline geometry the renderer would draw
+    /// (including hinting), so text decorations can be broken precisely around descenders.
+    /// Glyphs whose bounds do not touch the band skip outline decoding entirely. The band and
+    /// the returned x-values share the laid-out text's coordinate space.
+    /// </remarks>
+    /// <param name="text">The text.</param>
+    /// <param name="options">The text options. <see cref="TextOptions.WrappingLength"/> controls wrapping; use <c>-1</c> to disable wrapping.</param>
+    /// <param name="lowerLimit">One edge of the horizontal band.</param>
+    /// <param name="upperLimit">The other edge of the horizontal band.</param>
+    /// <returns>
+    /// A read-only memory region containing merged, x-sorted interval pairs
+    /// (start, end, start, end, ...); empty when no outline crosses the band.
+    /// </returns>
+    public static ReadOnlyMemory<float> GetIntersections(ReadOnlySpan<char> text, TextOptions options, float lowerLimit, float upperLimit)
+    {
+        if (text.IsEmpty)
+        {
+            return ReadOnlyMemory<float>.Empty;
+        }
+
+        TextBlock block = new(text, options);
+        return block.GetIntersections(options.WrappingLength, lowerLimit, upperLimit);
+    }
+
+    /// <summary>
+    /// Gets the x-axis intervals where a single glyph's outline, identified by its glyph id,
+    /// crosses a horizontal band, in pixel units.
+    /// </summary>
+    /// <remarks>
+    /// The intervals are computed from the exact outline geometry the renderer would draw
+    /// (including hinting) at <see cref="GlyphOptions.Origin"/>. The band and the returned
+    /// x-values share the glyph origin's coordinate space.
+    /// </remarks>
+    /// <param name="glyphId">The glyph identifier within the font face referenced by <paramref name="options"/>.</param>
+    /// <param name="options">The glyph options, including the font, origin, and layout mode.</param>
+    /// <param name="lowerLimit">One edge of the horizontal band.</param>
+    /// <param name="upperLimit">The other edge of the horizontal band.</param>
+    /// <returns>
+    /// A read-only memory region containing merged, x-sorted interval pairs
+    /// (start, end, start, end, ...); empty when the outline does not cross the band.
+    /// </returns>
+    public static ReadOnlyMemory<float> GetIntersections(ushort glyphId, GlyphOptions options, float lowerLimit, float upperLimit)
+    {
+        Guard.NotNull(options, nameof(options));
+
+        GlyphIntersectionCollector collector = new(lowerLimit, upperLimit);
+        TextRenderer.RenderTo(collector, glyphId, options);
+        return collector.BuildIntersections();
+    }
+
+    /// <summary>
+    /// Gets the x-axis intervals where positioned glyph outlines cross a horizontal band,
+    /// in pixel units.
+    /// </summary>
+    /// <remarks>
+    /// The intervals are computed from the exact outline geometry the renderer would draw
+    /// (including hinting), each glyph at its own run origin, so text decorations can be broken
+    /// precisely around descenders. Glyphs whose bounds do not touch the band skip outline
+    /// decoding entirely. The band and the returned x-values share the run origins' coordinate
+    /// space.
+    /// </remarks>
+    /// <param name="glyphRun">The positioned glyphs.</param>
+    /// <param name="options">The glyph options, including the font and layout mode.</param>
+    /// <param name="lowerLimit">One edge of the horizontal band.</param>
+    /// <param name="upperLimit">The other edge of the horizontal band.</param>
+    /// <returns>
+    /// A read-only memory region containing merged, x-sorted interval pairs
+    /// (start, end, start, end, ...); empty when no outline crosses the band.
+    /// </returns>
+    public static ReadOnlyMemory<float> GetIntersections(GlyphRun glyphRun, GlyphOptions options, float lowerLimit, float upperLimit)
+    {
+        Guard.NotNull(glyphRun, nameof(glyphRun));
+        Guard.NotNull(options, nameof(options));
+
+        GlyphIntersectionCollector collector = new(lowerLimit, upperLimit);
+        TextRenderer.RenderTo(collector, glyphRun, options);
+        return collector.BuildIntersections();
     }
 
     /// <inheritdoc cref="GetGraphemeMetrics(ReadOnlySpan{char}, TextOptions)"/>
@@ -194,5 +496,191 @@ public static class TextMeasurer
 
         TextBlock block = new(text, options);
         return block.GetLineMetrics(options.WrappingLength);
+    }
+
+    /// <summary>
+    /// Measures each positioned glyph of a run at its own origin and unions the results.
+    /// Mirrors <see cref="TextRenderer.Render(GlyphRun, GlyphOptions)"/>:
+    /// <see cref="GlyphOptions.Origin"/> is replaced per glyph and restored afterwards.
+    /// </summary>
+    /// <param name="glyphRun">The positioned glyphs.</param>
+    /// <param name="options">The glyph options, including the font and layout mode.</param>
+    /// <param name="measure">The per-glyph measurement to union.</param>
+    /// <returns>The union of the per-glyph measurements, or <see cref="FontRectangle.Empty"/>.</returns>
+    private static FontRectangle MeasureGlyphRun(
+        GlyphRun glyphRun,
+        GlyphOptions options,
+        Func<FontGlyphMetrics, GlyphOptions, FontRectangle> measure)
+    {
+        Guard.NotNull(glyphRun, nameof(glyphRun));
+        Guard.NotNull(options, nameof(options));
+
+        ReadOnlySpan<ushort> glyphIds = glyphRun.GlyphIds.Span;
+        ReadOnlySpan<Vector2> origins = glyphRun.Origins.Span;
+        Vector2 originalOrigin = options.Origin;
+
+        FontRectangle bounds = default;
+        bool hasBounds = false;
+        try
+        {
+            for (int i = 0; i < glyphIds.Length; i++)
+            {
+                if (!TryGetMeasurableGlyphMetrics(glyphIds[i], options, out FontGlyphMetrics? metrics))
+                {
+                    continue;
+                }
+
+                options.Origin = origins[i];
+                FontRectangle glyphBounds = measure(metrics, options);
+                bounds = hasBounds ? FontRectangle.Union(bounds, glyphBounds) : glyphBounds;
+                hasBounds = true;
+            }
+        }
+        finally
+        {
+            options.Origin = originalOrigin;
+        }
+
+        return hasBounds ? bounds : FontRectangle.Empty;
+    }
+
+    /// <summary>
+    /// Resolves the cached per-glyph metrics that participate in rendering, mirroring the
+    /// metric selection and skip rules the renderer applies so measurement and rendering
+    /// always agree.
+    /// </summary>
+    /// <param name="glyphId">The glyph identifier within the font face referenced by <paramref name="options"/>.</param>
+    /// <param name="options">The glyph options, including the font and layout mode.</param>
+    /// <param name="metrics">Receives the glyph metrics when the glyph participates in rendering.</param>
+    /// <returns><see langword="true"/> when the glyph participates in rendering; otherwise, <see langword="false"/>.</returns>
+    private static bool TryGetMeasurableGlyphMetrics(
+        ushort glyphId,
+        GlyphOptions options,
+        [NotNullWhen(true)] out FontGlyphMetrics? metrics)
+    {
+        if (!options.Font.FontMetrics.TryGetGlyphMetrics(
+                glyphId,
+                options.TextAttributes,
+                options.TextDecorations,
+                options.LayoutMode,
+                options.ColorFontSupport,
+                out metrics)
+            || FontGlyphMetrics.ShouldSkipGlyphRendering(metrics.CodePoint))
+        {
+            metrics = null;
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Builds one positioned metrics entry for a glyph id at <see cref="GlyphOptions.Origin"/>.
+    /// Non-participating glyphs (ids the font does not contain, or glyphs that never render)
+    /// produce an entry with empty rectangles so run results stay index-correlated.
+    /// </summary>
+    /// <param name="glyphId">The glyph identifier within the font face referenced by <paramref name="options"/>.</param>
+    /// <param name="options">The glyph options, including the font, origin, and layout mode.</param>
+    /// <param name="graphemeIndex">The grapheme index recorded on the entry.</param>
+    /// <param name="index">The index of the glyph within the measured input, recorded as the entry's string index.</param>
+    /// <returns>The positioned metrics entry.</returns>
+    private static GlyphMetrics CreateGlyphMetrics(ushort glyphId, GlyphOptions options, int graphemeIndex, int index)
+    {
+        if (!TryGetMeasurableGlyphMetrics(glyphId, options, out FontGlyphMetrics? metrics))
+        {
+            return new GlyphMetrics(
+                default,
+                FontRectangle.Empty,
+                FontRectangle.Empty,
+                FontRectangle.Empty,
+                options.Font,
+                graphemeIndex,
+                index);
+        }
+
+        FontRectangle advance = GetGlyphAdvance(metrics, options);
+        FontRectangle bounds = GetGlyphBounds(metrics, options);
+        return new GlyphMetrics(
+            metrics.CodePoint,
+            advance,
+            bounds,
+            FontRectangle.Union(advance, bounds),
+            options.Font,
+            graphemeIndex,
+            index);
+    }
+
+    /// <summary>
+    /// Computes one glyph's rendered bounds at <see cref="GlyphOptions.Origin"/>: the same
+    /// per-glyph layout mode and scaled size feed the same bounding-box computation the
+    /// renderer hands to <see cref="IGlyphRenderer.BeginGlyph"/>.
+    /// </summary>
+    /// <param name="metrics">The glyph metrics.</param>
+    /// <param name="options">The glyph options, including the font, origin, and layout mode.</param>
+    /// <returns>The rendered glyph bounds.</returns>
+    private static FontRectangle GetGlyphBounds(FontGlyphMetrics metrics, GlyphOptions options)
+        => metrics.GetBoundingBox(
+            options.GetGlyphLayoutMode(metrics.CodePoint),
+            options.Origin,
+            metrics.GetScaledSize(options.Font.Size, options.Dpi));
+
+    /// <summary>
+    /// Computes one glyph's logical advance rectangle at <see cref="GlyphOptions.Origin"/>,
+    /// mirroring the line-box construction the layout engine applies to a single glyph: the
+    /// line height is the em box, and the ascender is balanced by the delta that centers the
+    /// em box within the font's declared line height. Vertical layouts center the cell on the
+    /// origin and extend downward by the advance the layout direction consumes.
+    /// </summary>
+    /// <param name="metrics">The glyph metrics.</param>
+    /// <param name="options">The glyph options, including the font, origin, and layout mode.</param>
+    /// <returns>The logical advance rectangle.</returns>
+    private static FontRectangle GetGlyphAdvance(FontGlyphMetrics metrics, GlyphOptions options)
+    {
+        float scaledSize = metrics.GetScaledSize(options.Font.Size, options.Dpi);
+        Vector2 scale = new(scaledSize / metrics.ScaleFactor.X, scaledSize / metrics.ScaleFactor.Y);
+        Vector2 origin = options.Origin;
+
+        // Match the layout engine's CSS-style line box: the em box is the line height, and
+        // the delta centers it within the font's declared line height.
+        // Reference: TextLayout.LineBreaking line-height calculation.
+        float emHeight = metrics.UnitsPerEm * scale.Y;
+
+        switch (options.GetGlyphLayoutMode(metrics.CodePoint))
+        {
+            case GlyphLayoutMode.Vertical:
+            {
+                float advanceWidth = metrics.AdvanceWidth * scale.X;
+                return new FontRectangle(
+                    origin.X - (advanceWidth * .5F),
+                    origin.Y,
+                    advanceWidth,
+                    metrics.AdvanceHeight * scale.Y);
+            }
+
+            case GlyphLayoutMode.VerticalRotated:
+            {
+                // A rotated glyph advances along the column by its horizontal advance and its
+                // line box lies across the column.
+                return new FontRectangle(
+                    origin.X - (emHeight * .5F),
+                    origin.Y,
+                    emHeight,
+                    metrics.AdvanceWidth * scale.X);
+            }
+
+            default:
+            {
+                // The origin is the baseline pen position; the delta-adjusted ascender places
+                // the cell top exactly where layout places the line-box top above the baseline.
+                HorizontalMetrics horizontalMetrics = options.Font.FontMetrics.HorizontalMetrics;
+                float delta = ((horizontalMetrics.LineHeight * scale.Y) - emHeight) * .5F;
+                float ascender = (horizontalMetrics.Ascender * scale.Y) - delta;
+                return new FontRectangle(
+                    origin.X,
+                    origin.Y - ascender,
+                    metrics.AdvanceWidth * scale.X,
+                    emHeight);
+            }
+        }
     }
 }

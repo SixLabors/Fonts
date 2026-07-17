@@ -1,4 +1,4 @@
-// Copyright (c) Six Labors.
+﻿// Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
@@ -52,6 +52,12 @@ public sealed partial class TextBlock
     /// Gets the text options used by this block.
     /// </summary>
     internal TextOptions Options { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether underline and overline decorations skip over glyph ink
+    /// when this block is rendered.
+    /// </summary>
+    public TextDecorationSkipInk TextDecorationSkipInk => this.Options.TextDecorationSkipInk;
 
     /// <summary>
     /// Gets the prepared logical line and line break opportunities.
@@ -144,6 +150,24 @@ public sealed partial class TextBlock
     /// <returns>A read-only memory region containing per-glyph metrics entries.</returns>
     public ReadOnlyMemory<GlyphMetrics> GetGlyphMetrics(float wrappingLength)
         => this.GetGlyphMetricsArray(wrappingLength);
+
+    /// <summary>
+    /// Gets the x-axis intervals where the laid-out glyph outlines cross a horizontal band.
+    /// Glyphs whose bounds do not touch the band skip outline decoding entirely.
+    /// </summary>
+    /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
+    /// <param name="lowerLimit">One edge of the horizontal band.</param>
+    /// <param name="upperLimit">The other edge of the horizontal band.</param>
+    /// <returns>
+    /// A read-only memory region containing merged, x-sorted interval pairs
+    /// (start, end, start, end, ...); empty when no outline crosses the band.
+    /// </returns>
+    public ReadOnlyMemory<float> GetIntersections(float wrappingLength, float lowerLimit, float upperLimit)
+    {
+        GlyphIntersectionCollector collector = new(lowerLimit, upperLimit);
+        this.RenderTo(collector, wrappingLength);
+        return collector.BuildIntersections();
+    }
 
     /// <summary>
     /// Gets the positioned metrics of each laid-out grapheme.

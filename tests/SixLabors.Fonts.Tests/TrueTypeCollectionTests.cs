@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Globalization;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests;
 
@@ -53,5 +54,23 @@ public class TrueTypeCollectionTests
         Assert.Equal(2, descriptions.Length);
         FontDescription openSansDescription = Assert.Single(descriptionArray, x => x.FontNameInvariantCulture == "Open Sans");
         FontDescription abFontDescription = Assert.Single(descriptionArray, x => x.FontNameInvariantCulture == "SixLaborsSampleAB regular");
+    }
+
+    [Fact]
+    public void AddViaStreamCanUseFontsAfterSourceDisposed()
+    {
+        FontCollection sut = new();
+        FontFamily[] families;
+
+        using (Stream stream = TestFonts.SSimpleTrueTypeCollectionData())
+        {
+            families = sut.AddCollection(stream).ToArray();
+        }
+
+        FontFamily openSans = Assert.Single(families, x => x.Name == "Open Sans");
+        Font font = openSans.CreateFont(12);
+
+        Assert.True(font.TryGetGlyphId(new CodePoint('A'), out ushort glyphId));
+        Assert.NotEqual(0, glyphId);
     }
 }

@@ -207,6 +207,26 @@ public struct FontFamily : IEquatable<FontFamily>
         return this.collection.TryGetMetrics(this.Name, this.Culture, style, out metrics);
     }
 
+    /// <summary>
+    /// Attempts to get font metrics matching the specified style and numeric weight.
+    /// </summary>
+    /// <param name="style">The requested font style.</param>
+    /// <param name="weight">The requested font weight.</param>
+    /// <param name="metrics">The matching font metrics, if found.</param>
+    /// <returns><see langword="true"/> when the family contains a matching face; otherwise, <see langword="false"/>.</returns>
+    public readonly bool TryGetMetrics(
+        FontStyle style,
+        FontWeight weight,
+        [NotNullWhen(true)] out FontMetrics? metrics)
+    {
+        if (this == default)
+        {
+            FontsThrowHelper.ThrowDefaultInstance();
+        }
+
+        return this.collection.TryGetMetrics(this.Name, this.Culture, style, weight, out metrics);
+    }
+
     /// <inheritdoc/>
     public override bool Equals(object? obj)
         => obj is FontFamily family && this.Equals(family);

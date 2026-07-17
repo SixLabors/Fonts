@@ -369,6 +369,11 @@ internal sealed class OS2Table : Table
     public FontStyleSelection FontStyle { get; }
 
     /// <summary>
+    /// Gets the visual weight class of the font.
+    /// </summary>
+    public ushort WeightClass => this.weightClass;
+
+    /// <summary>
     /// Gets the typographic ascender value.
     /// </summary>
     public short TypoAscender { get; }

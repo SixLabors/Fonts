@@ -191,7 +191,7 @@ public class TextOptionsTests
 
         ReadOnlySpan<char> text = "Z".AsSpan();
         GlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, text, options);
+        TextRenderer.RenderTo(renderer, text, options);
 
         GlyphRendererParameters glyph = Assert.Single(renderer.GlyphKeys);
         Assert.Equal(GlyphType.Fallback, glyph.GlyphType);
@@ -219,7 +219,7 @@ public class TextOptionsTests
 
         ReadOnlySpan<char> text = [character];
         GlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, text, options);
+        TextRenderer.RenderTo(renderer, text, options);
         GlyphRendererParameters glyph = Assert.Single(renderer.GlyphKeys);
         Assert.Equal(GlyphType.Standard, glyph.GlyphType);
         Fakes.FakeFontInstance expectedInstance = instance switch

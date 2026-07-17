@@ -14,22 +14,35 @@ namespace SixLabors.Fonts;
 /// </summary>
 public abstract class FontGlyphMetrics
 {
+    /// <summary>
+    /// The number of typographic points per inch. Scaled pixels-per-em values are computed as
+    /// point size multiplied by dpi, so dividing by this constant converts them to the em size
+    /// in device pixels.
+    /// </summary>
+    private const float PointsPerInch = 72F;
+
+    /// <summary>
+    /// Negates the y-axis to convert between the y-up font coordinate space and the y-down
+    /// device coordinate space.
+    /// </summary>
     private static readonly Vector2 YInverter = new(1, -1);
 
     /// <summary>
     /// The horizontal shear applied to synthesize an oblique (faux italic) slant when an italic
-    /// style is requested but the resolved font face provides no italic face. This equals the
-    /// tangent of a 14 degree slant, matching the default oblique angle used by web browsers.
+    /// style is requested but the resolved font face provides no italic face. Chromium and
+    /// SkParagraph use an exact quarter shear, which produces an angle of approximately 14.036
+    /// degrees.
     /// </summary>
-    private const float SyntheticObliqueSkew = 0.24932839F;
+    private const float SyntheticObliqueSkew = 1F / 4F;
 
     /// <summary>
-    /// The outward outline offset, expressed as a fraction of the em size, applied to synthesize
-    /// a bold (faux bold) weight when a bold style is requested but the resolved font face provides
-    /// no bold face. The value is tuned to visually approximate a real bold weight, mirroring the
-    /// CSS <c>font-synthesis: weight</c> behavior used by web browsers.
+    /// The outline strength, expressed as a fraction of the em size, applied to synthesize a bold
+    /// (faux bold) weight when a bold style is requested but the resolved font face provides no
+    /// bold face. The divisor of 31 retains FreeType's dilation behavior while matching the
+    /// synthesized weight produced by Chromium's DirectWrite backend more closely than desktop
+    /// FreeType's divisor of 24 or Skia Android's divisor of 34.
     /// </summary>
-    private const float SyntheticBoldEmScale = 0.021F;
+    private const float SyntheticBoldEmScale = 1F / 31F;
 
     internal FontGlyphMetrics(
         StreamFontMetrics font,
@@ -63,7 +76,10 @@ public abstract class FontGlyphMetrics
         this.GlyphType = glyphType;
 
         Vector2 offset = Vector2.Zero;
-        Vector2 scaleFactor = new(unitsPerEM * 72F);
+
+        // Dividing a scaled pixels-per-em value (point size * dpi) by this factor yields the
+        // device pixels per font unit.
+        Vector2 scaleFactor = new(unitsPerEM * PointsPerInch);
 
         if ((textAttributes & TextAttributes.Subscript) == TextAttributes.Subscript)
         {
@@ -267,7 +283,7 @@ public abstract class FontGlyphMetrics
     /// </returns>
     internal float GetObliqueSkew()
     {
-        Font? font = this.TextRun?.Font;
+        Font? font = this.TextRun?.ResolvedFont;
         if (font is null)
         {
             return 0F;
@@ -292,28 +308,49 @@ public abstract class FontGlyphMetrics
     }
 
     /// <summary>
-    /// Gets a value indicating whether a bold (faux bold) weight must be synthesized for this
-    /// glyph. This is <c>true</c> only when the associated text run requests a bold style that the
-    /// resolved font face does not itself provide, mirroring the CSS <c>font-synthesis: weight</c>
-    /// behavior used by web browsers.
+    /// Gets a value indicating whether a heavier weight must be synthesized for this glyph.
+    /// Variable fonts apply their registered weight axis instead.
     /// </summary>
     /// <returns><c>true</c> if bold synthesis is required; otherwise <c>false</c>.</returns>
     internal bool ShouldSynthesizeBold()
     {
-        Font? font = this.TextRun?.Font;
-        if (font is null)
+        // Chromium deliberately leaves color emoji at their authored weight. Applying outline
+        // dilation to a painted glyph would also distort each independently colored layer.
+        if (this.GlyphType == GlyphType.Painted)
         {
             return false;
         }
 
-        bool requestedBold = (font.RequestedStyle & FontStyle.Bold) == FontStyle.Bold;
-        bool resolvedBold = (this.FontMetrics.Description.Style & FontStyle.Bold) == FontStyle.Bold;
-        return requestedBold && !resolvedBold;
+        TextRun? textRun = this.TextRun;
+        Font? font = textRun?.ResolvedFont;
+        if (font is null || (textRun!.UsesVariableWeight && ReferenceEquals(font.FontMetrics, this.FontMetrics)))
+        {
+            return false;
+        }
+
+        FontWeight? requestedWeight = textRun.ResolvedFontWeight;
+        if (!requestedWeight.HasValue && (font.RequestedStyle & FontStyle.Bold) == FontStyle.Bold)
+        {
+            requestedWeight = FontWeight.Bold;
+        }
+
+        if (!requestedWeight.HasValue)
+        {
+            return false;
+        }
+
+        // CSS weight values select a face; they do not represent proportional stroke strength.
+        // Chromium treats 600 as the boundary between regular and bold, then applies one fixed
+        // synthetic-bold operation when the request and resolved static face lie on opposite
+        // sides of that boundary. Thus 600, 700, 800, and 900 receive identical dilation.
+        return (int)requestedWeight.Value >= (int)FontWeight.SemiBold
+            && (int)this.FontMetrics.Description.Weight < (int)FontWeight.SemiBold;
     }
 
     /// <summary>
-    /// Gets the outward outline offset, in pixels, used to synthesize a bold (faux bold) weight for
-    /// this glyph, or <c>0</c> when no synthesis is required.
+    /// Gets the total x/y outline strength, in pixels, used to synthesize a bold (faux bold) weight
+    /// for this glyph, or <c>0</c> when no synthesis is required. The FreeType dilation algorithm
+    /// halves this value internally before moving points along their lateral bisectors.
     /// </summary>
     /// <param name="scaledPointSize">The scaled point size, mapped to pixels by the caller.</param>
     /// <returns>The emboldening strength in pixels.</returns>
@@ -327,7 +364,7 @@ public abstract class FontGlyphMetrics
     /// <remarks>
     /// Steps:
     /// 1) Select glyph bounds (or synthesize from advances if empty).
-    /// 2) Apply rotation if the layout mode is vertical-rotated.
+    /// 2) Account for synthetic weight, oblique shear, and layout rotation.
     /// 3) Convert from Y-up to Y-down coordinates.
     /// 4) Scale and translate to device space using the specified origin.
     /// </remarks>
@@ -340,7 +377,7 @@ public abstract class FontGlyphMetrics
     internal FontRectangle GetBoundingBox(GlyphLayoutMode mode, Vector2 origin, float scaledPointSize)
     {
         Vector2 scale = new(scaledPointSize / this.ScaleFactor.X, scaledPointSize / this.ScaleFactor.Y);
-        Bounds b = this.Bounds;
+        Bounds b = this.GetDesignBounds();
 
         // 1) Substitute fallback bounds if the glyph has no outline.
         if (b.Equals(Bounds.Empty))
@@ -357,33 +394,21 @@ public abstract class FontGlyphMetrics
             }
         }
 
-        // 2) Rotate for vertical rotated layout.
+        // 2) Apply synthetic weight and the shared outline transform.
         Vector2 offsetUp = this.Offset;
 
-        // Inflate the ink bounds by the synthetic bold offset (in font units) so that the reported
-        // bounds enclose the emboldened outline produced during rendering.
+        // FreeType halves the supplied strength before moving points. Inflating both sides by that
+        // half-strength preserves the nominal increase in width and height for measurement while
+        // the renderer applies the direction-sensitive point dilation.
         if (this.ShouldSynthesizeBold())
         {
-            float inflate = SyntheticBoldEmScale * this.UnitsPerEm;
+            float inflate = SyntheticBoldEmScale * this.UnitsPerEm * .5F;
             b = new Bounds(b.Min - new Vector2(inflate), b.Max + new Vector2(inflate));
         }
 
-        // Apply synthetic oblique (faux italic) shear before rotation so that the reported ink
-        // bounds match the sheared outline produced during rendering.
-        float skew = this.GetObliqueSkew();
-        if (skew != 0F)
-        {
-            Matrix3x2 oblique = CreateObliqueMatrix(skew);
-            b = Bounds.Transform(in b, oblique);
-            offsetUp = Vector2.Transform(offsetUp, oblique);
-        }
-
-        if (mode == GlyphLayoutMode.VerticalRotated)
-        {
-            Matrix3x2 rot = Matrix3x2.CreateRotation(-MathF.PI / 2F);
-            b = Bounds.Transform(in b, rot);
-            offsetUp = Vector2.Transform(offsetUp, rot);
-        }
+        Matrix3x2 outlineTransform = this.GetOutlineTransform(mode);
+        b = Bounds.Transform(in b, outlineTransform);
+        offsetUp = Vector2.Transform(offsetUp, outlineTransform);
 
         // 3) Flip Y to convert to device-space (Y-down).
         Vector2 minDown = b.Min * YInverter;
@@ -405,48 +430,209 @@ public abstract class FontGlyphMetrics
     }
 
     /// <summary>
+    /// Gets the design-space bounds used to measure this glyph's rendered geometry.
+    /// </summary>
+    /// <returns>The design-space bounds.</returns>
+    internal virtual Bounds GetDesignBounds() => this.Bounds;
+
+    /// <summary>
     /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
     /// </summary>
+    /// <remarks>
+    /// The rendering sequence for a glyph is: <see cref="IGlyphRenderer.BeginGlyph"/>, the
+    /// outline geometry via <see cref="RenderOutlineTo"/>, <see cref="IGlyphRenderer.EndGlyph"/>,
+    /// then any text decorations via <see cref="IGlyphRenderer.SetDecoration"/>. Decoration
+    /// geometry is computed before the outline is emitted so that, when skip-ink applies, the
+    /// outline stream can be observed as it is emitted rather than requiring a second decoding
+    /// pass to locate the ink.
+    /// </remarks>
     /// <param name="renderer">The surface renderer.</param>
     /// <param name="graphemeIndex">The index of the grapheme this glyph is part of.</param>
     /// <param name="glyphOrigin">The origin used to render the glyph outline.</param>
     /// <param name="decorationOrigin">The origin used to render text decorations.</param>
+    /// <param name="layoutAdvance">
+    /// The laid-out advance for the glyph in DPI-normalized layout units, including layout-time
+    /// spacing such as tracking and justification. Negative components indicate no layout
+    /// advance is available and the glyph's own metrics apply.
+    /// </param>
     /// <param name="mode">The glyph layout mode to render using.</param>
-    /// <param name="options">The options used to influence the rendering of this glyph.</param>
-    internal abstract void RenderTo(
+    /// <param name="textRun">The text run providing the styling information for this glyph.</param>
+    /// <param name="pointSize">The point size used to render this glyph.</param>
+    /// <param name="dpi">The pixel density used to render this glyph.</param>
+    /// <param name="hintingMode">The hinting mode used to render this glyph.</param>
+    /// <param name="textDecorationSkipInk">The skip-ink behavior for underline and overline decorations.</param>
+    /// <param name="decorationPositioningMode">The mode used to position text decorations.</param>
+    /// <param name="decorationFontMetrics">The font metrics used to position text decorations.</param>
+    internal virtual void RenderTo(
         IGlyphRenderer renderer,
         int graphemeIndex,
         Vector2 glyphOrigin,
         Vector2 decorationOrigin,
+        Vector2 layoutAdvance,
         GlyphLayoutMode mode,
-        TextOptions options);
+        TextRun textRun,
+        float pointSize,
+        float dpi,
+        HintingMode hintingMode,
+        TextDecorationSkipInk textDecorationSkipInk,
+        DecorationPositioningMode decorationPositioningMode,
+        FontMetrics decorationFontMetrics)
+    {
+        // https://www.unicode.org/faq/unsup_char.html
+        if (ShouldSkipGlyphRendering(this.CodePoint))
+        {
+            return;
+        }
+
+        // Convert the DPI-normalized layout values to device pixels.
+        glyphOrigin *= dpi;
+        decorationOrigin *= dpi;
+        layoutAdvance *= dpi;
+        float scaledPPEM = this.GetScaledSize(pointSize, dpi);
+
+        Matrix3x2 rotation = GetRotationMatrix(mode);
+        FontRectangle box = this.GetBoundingBox(mode, glyphOrigin, scaledPPEM);
+        GlyphRendererParameters parameters = new(this, textRun, pointSize, dpi, mode, graphemeIndex);
+
+        if (!renderer.BeginGlyph(in box, in parameters))
+        {
+            return;
+        }
+
+        bool whitespace = UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint);
+        bool isVerticalLayout = mode is GlyphLayoutMode.Vertical or GlyphLayoutMode.VerticalRotated;
+
+        // Decoration geometry depends only on font metrics and scale, so it is computed
+        // before the outline is emitted. This lets skip-ink observe the outline stream as it
+        // is emitted instead of decoding the outline a second time afterwards.
+        TextDecorationGeometry decorationGeometry = this.ComputeDecorationGeometry(
+            renderer.EnabledDecorations(),
+            textRun,
+            decorationOrigin,
+            mode,
+            rotation,
+            scaledPPEM,
+            layoutAdvance,
+            decorationPositioningMode,
+            decorationFontMetrics);
+
+        // When skip-ink applies and a decoration band can intersect the glyph's box, tee the
+        // outline emission into per-band interval collectors. The collectors see exactly the
+        // stream the renderer receives, so the measured ink matches the rendered geometry
+        // (including hinting) at the cost of one extra call per outline segment. The tee and
+        // collectors come from a per-thread scratch, so steady-state decorated rendering does
+        // not allocate per glyph.
+        // Whitespace never contributes ink; strikethrough always crosses ink by definition.
+        GlyphIntersectionCollector? underlineInk = null;
+        GlyphIntersectionCollector? overlineInk = null;
+        SkipInkScratch? scratch = null;
+        IGlyphRenderer outlineTarget = renderer;
+        if (textDecorationSkipInk == TextDecorationSkipInk.Auto && !whitespace)
+        {
+            bool trackUnderline = TryGetInkBand(decorationGeometry.Underline, isVerticalLayout, in box, out float underlineBandStart, out float underlineBandEnd);
+            bool trackOverline = TryGetInkBand(decorationGeometry.Overline, isVerticalLayout, in box, out float overlineBandStart, out float overlineBandEnd);
+            if (trackUnderline || trackOverline)
+            {
+                scratch = SkipInkScratch.Rent();
+                if (trackUnderline)
+                {
+                    underlineInk = scratch.UnderlineCollector;
+                    underlineInk.Reset(underlineBandStart, underlineBandEnd, isVerticalLayout);
+                }
+
+                if (trackOverline)
+                {
+                    overlineInk = scratch.OverlineCollector;
+                    overlineInk.Reset(overlineBandStart, overlineBandEnd, isVerticalLayout);
+                }
+
+                scratch.Tee.Reset(renderer, underlineInk, overlineInk);
+                outlineTarget = scratch.Tee;
+            }
+        }
+
+        try
+        {
+            if (!whitespace)
+            {
+                this.RenderOutlineTo(outlineTarget, glyphOrigin, mode, scaledPPEM, hintingMode);
+            }
+
+            renderer.EndGlyph();
+
+            // Emit in the fixed underline, strikethrough, overline order relied upon by renderers.
+            EmitDecoration(renderer, decorationGeometry.Underline, underlineInk);
+            EmitDecoration(renderer, decorationGeometry.Strikeout, null);
+            EmitDecoration(renderer, decorationGeometry.Overline, overlineInk);
+        }
+        finally
+        {
+            scratch?.Release();
+        }
+    }
 
     /// <summary>
-    /// Renders text decorations, such as underline, strikeout, and overline, for the current glyph to the specified
-    /// glyph renderer at the given location and layout mode.
+    /// Renders only the glyph outline geometry to the specified renderer, without glyph or
+    /// decoration bookkeeping, using the same transforms as
+    /// <see cref="RenderTo(IGlyphRenderer, int, Vector2, Vector2, Vector2, GlyphLayoutMode, TextRun, float, float, HintingMode, TextDecorationSkipInk, DecorationPositioningMode, FontMetrics)"/>.
+    /// </summary>
+    /// <param name="renderer">The surface renderer.</param>
+    /// <param name="glyphOrigin">The origin used to render the glyph outline, in device pixels.</param>
+    /// <param name="mode">The glyph layout mode to render using.</param>
+    /// <param name="scaledPPEM">The scaled pixels-per-em value used to scale the outline.</param>
+    /// <param name="hintingMode">The hinting mode used to render the glyph.</param>
+    internal virtual void RenderOutlineTo(
+        IGlyphRenderer renderer,
+        Vector2 glyphOrigin,
+        GlyphLayoutMode mode,
+        float scaledPPEM,
+        HintingMode hintingMode)
+    {
+    }
+
+    /// <summary>
+    /// Computes the positioned line geometry for the text decorations enabled on the current
+    /// glyph: underline, strikeout, and overline.
     /// </summary>
     /// <remarks>When rendering in vertical layout modes, decoration positions are synthesized to match common
     /// typographic conventions. The renderer may override which decorations are enabled. Overline thickness is derived
     /// from underline metrics if not explicitly specified.</remarks>
-    /// <param name="renderer">The glyph renderer that receives the decoration drawing commands.</param>
-    /// <param name="location">The position, in device-independent coordinates, where the decorations should be rendered relative to the glyph.</param>
+    /// <param name="enabledDecorations">The decorations the renderer reports as enabled.</param>
+    /// <param name="textRun">The text run styling this glyph, consulted for per-decoration geometry overrides.</param>
+    /// <param name="location">The position, in device pixels, where the decorations should be rendered relative to the glyph.</param>
     /// <param name="mode">The layout mode that determines the orientation and positioning of the decorations (e.g., horizontal, vertical,
     /// or vertical rotated).</param>
     /// <param name="transform">The transformation matrix applied to the decoration coordinates before rendering.</param>
     /// <param name="scaledPPEM">The scaled pixels-per-em value used to adjust decoration size and positioning for the current rendering context.</param>
-    /// <param name="options">Additional text rendering options that may influence decoration appearance or behavior.</param>
-    protected void RenderDecorationsTo(
-        IGlyphRenderer renderer,
+    /// <param name="layoutAdvance">
+    /// The laid-out advance for the glyph in device pixels, including layout-time spacing such
+    /// as tracking and justification. Negative components indicate no layout advance is
+    /// available and the glyph's own metrics apply.
+    /// </param>
+    /// <param name="decorationPositioningMode">The mode used to position text decorations.</param>
+    /// <param name="decorationFontMetrics">The font metrics used to position text decorations.</param>
+    /// <returns>The positioned decoration lines; absent entries are disabled or degenerate.</returns>
+    private TextDecorationGeometry ComputeDecorationGeometry(
+        TextDecorations enabledDecorations,
+        TextRun textRun,
         Vector2 location,
         GlyphLayoutMode mode,
         Matrix3x2 transform,
         float scaledPPEM,
-        TextOptions options)
+        Vector2 layoutAdvance,
+        DecorationPositioningMode decorationPositioningMode,
+        FontMetrics decorationFontMetrics)
     {
-        bool perGlyph = options.DecorationPositioningMode == DecorationPositioningMode.GlyphFont;
+        TextDecorationGeometry geometry = default;
+        if (enabledDecorations == TextDecorations.None)
+        {
+            return geometry;
+        }
+
+        bool perGlyph = decorationPositioningMode == DecorationPositioningMode.GlyphFont;
         FontMetrics fontMetrics = perGlyph
             ? this.FontMetrics
-            : options.Font.FontMetrics;
+            : decorationFontMetrics;
 
         // The scale factor for the decoration length is treated separately from other factors
         // as it is used to scale the length of the decoration line.
@@ -467,7 +653,7 @@ public abstract class FontGlyphMetrics
         {
             // To ensure that we share the scaling when sharing font metrics we need to
             // recalculate the offset and scale factor here using the common font metrics.
-            scaleFactor = new(fontMetrics.UnitsPerEm * 72F);
+            scaleFactor = new(fontMetrics.UnitsPerEm * PointsPerInch);
             offset = Vector2.Zero;
             if ((this.TextAttributes & TextAttributes.Subscript) == TextAttributes.Subscript)
             {
@@ -490,10 +676,6 @@ public abstract class FontGlyphMetrics
             if (isVerticalLayout)
             {
                 float length = mode == GlyphLayoutMode.VerticalRotated ? this.AdvanceWidth : this.AdvanceHeight;
-                if (length == 0)
-                {
-                    return (Vector2.Zero, Vector2.Zero, 0);
-                }
 
                 Vector2 lengthScale = new Vector2(scaledPPEM) / lengthScaleFactor;
                 Vector2 scale = new Vector2(scaledPPEM) / scaleFactor;
@@ -502,6 +684,19 @@ public abstract class FontGlyphMetrics
                 Vector2 scaledOffset = (offset + new Vector2(decoratorPosition, 0)) * scale;
 
                 length *= lengthScale.Y;
+
+                // Prefer the laid-out advance so decorations span layout-time spacing
+                // such as tracking and justification.
+                if (layoutAdvance.Y >= 0)
+                {
+                    length = layoutAdvance.Y;
+                }
+
+                if (length == 0)
+                {
+                    return (Vector2.Zero, Vector2.Zero, 0);
+                }
+
                 thickness *= scale.X;
 
                 Vector2 tl = new(scaledOffset.X, scaledOffset.Y);
@@ -529,16 +724,25 @@ public abstract class FontGlyphMetrics
             else
             {
                 float length = this.AdvanceWidth;
-                if (length == 0)
-                {
-                    return (Vector2.Zero, Vector2.Zero, 0);
-                }
 
                 Vector2 lengthScale = new Vector2(scaledPPEM) / lengthScaleFactor;
                 Vector2 scale = new Vector2(scaledPPEM) / scaleFactor;
                 Vector2 scaledOffset = (offset + new Vector2(0, decoratorPosition)) * scale;
 
                 length *= lengthScale.X;
+
+                // Prefer the laid-out advance so decorations span layout-time spacing
+                // such as tracking and justification.
+                if (layoutAdvance.X >= 0)
+                {
+                    length = layoutAdvance.X;
+                }
+
+                if (length == 0)
+                {
+                    return (Vector2.Zero, Vector2.Zero, 0);
+                }
+
                 thickness *= scale.Y;
 
                 Vector2 tl = new(scaledOffset.X, scaledOffset.Y);
@@ -553,38 +757,128 @@ public abstract class FontGlyphMetrics
             }
         }
 
-        void SetDecoration(TextDecorations decorations, float thickness, float position)
+        TextDecorationLine? Capture(TextDecorations decorations, float thickness, float position)
         {
             (Vector2 start, Vector2 end, float calcThickness) = GetEnds(decorations, thickness, position);
-            if (calcThickness != 0)
+            if (calcThickness == 0)
             {
-                renderer.SetDecoration(decorations, start, end, calcThickness);
+                return null;
             }
+
+            // A run may override the metric-derived thickness (for example when it is drawn with an
+            // explicit stroke width). The override is already in device pixels, so it replaces the
+            // scaled metric thickness directly and flows on to the skip-ink band and gap clearance,
+            // both of which key off the line thickness.
+            if (textRun.GetDecorationOptions(decorations)?.Thickness is float overrideThickness)
+            {
+                calcThickness = overrideThickness;
+            }
+
+            return new TextDecorationLine(decorations, start, end, calcThickness);
         }
 
-        // Allow the renderer to override the decorations to attach.
+        // The enabled decorations come from the renderer so it can override the set to attach.
         // When rendering glyphs vertically we use synthesized positions based upon comparisons with Pango/browsers.
         // We deviate from browsers in a few ways:
         // - When rendering rotated glyphs and use the default values because it fits the glyphs better.
         // - We include the adjusted scale for subscript and superscript glyphs.
         // - We make no attempt to adjust the underline position along a text line to render at the same position.
-        TextDecorations decorations = renderer.EnabledDecorations();
         bool synthesized = mode == GlyphLayoutMode.Vertical;
-        if ((decorations & TextDecorations.Underline) == TextDecorations.Underline)
+        if ((enabledDecorations & TextDecorations.Underline) == TextDecorations.Underline)
         {
-            SetDecoration(TextDecorations.Underline, fontMetrics.UnderlineThickness, synthesized ? Math.Abs(fontMetrics.UnderlinePosition) : fontMetrics.UnderlinePosition);
+            geometry.Underline = Capture(TextDecorations.Underline, fontMetrics.UnderlineThickness, synthesized ? Math.Abs(fontMetrics.UnderlinePosition) : fontMetrics.UnderlinePosition);
         }
 
-        if ((decorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
+        if ((enabledDecorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
         {
-            SetDecoration(TextDecorations.Strikeout, fontMetrics.StrikeoutSize, synthesized ? fontMetrics.UnitsPerEm * .5F : fontMetrics.StrikeoutPosition);
+            geometry.Strikeout = Capture(TextDecorations.Strikeout, fontMetrics.StrikeoutSize, synthesized ? fontMetrics.UnitsPerEm * .5F : fontMetrics.StrikeoutPosition);
         }
 
-        if ((decorations & TextDecorations.Overline) == TextDecorations.Overline)
+        if ((enabledDecorations & TextDecorations.Overline) == TextDecorations.Overline)
         {
             // There's no built in metrics for overline thickness so use underline.
-            SetDecoration(TextDecorations.Overline, fontMetrics.UnderlineThickness, fontMetrics.UnitsPerEm - fontMetrics.UnderlinePosition);
+            geometry.Overline = Capture(TextDecorations.Overline, fontMetrics.UnderlineThickness, fontMetrics.UnitsPerEm - fontMetrics.UnderlinePosition);
         }
+
+        return geometry;
+    }
+
+    /// <summary>
+    /// Computes the cross-axis interval covered by a decoration's drawn stroke. Renderers draw
+    /// horizontal underlines below the decoration position and overlines above it; vertical
+    /// positions are already offset to the drawn side when the geometry is computed, with
+    /// underlines extending left of the position and overlines right.
+    /// </summary>
+    /// <param name="line">The positioned decoration line.</param>
+    /// <param name="isVerticalLayout">Whether the decoration runs vertically, banding on x instead of y.</param>
+    /// <returns>The band's start and end on the cross axis, in device pixels.</returns>
+    private static (float Start, float End) GetDecorationBand(in TextDecorationLine line, bool isVerticalLayout)
+    {
+        float bandStart;
+        if (isVerticalLayout)
+        {
+            bandStart = line.Decoration == TextDecorations.Overline ? line.Start.X : line.Start.X - line.Thickness;
+        }
+        else
+        {
+            bandStart = line.Decoration == TextDecorations.Overline ? line.Start.Y - line.Thickness : line.Start.Y;
+        }
+
+        return (bandStart, bandStart + line.Thickness);
+    }
+
+    /// <summary>
+    /// Computes the ink observation band for a decoration line when the glyph's bounding box
+    /// can reach it; the outline is not worth observing otherwise.
+    /// </summary>
+    /// <param name="line">The positioned decoration line, if the decoration is enabled.</param>
+    /// <param name="isVerticalLayout">Whether the decoration runs vertically, banding on x instead of y.</param>
+    /// <param name="box">The glyph's bounding box, in device pixels.</param>
+    /// <param name="bandStart">The band's start on the cross axis, in device pixels.</param>
+    /// <param name="bandEnd">The band's end on the cross axis, in device pixels.</param>
+    /// <returns><see langword="true"/> when ink can cross the band and it should be observed.</returns>
+    private static bool TryGetInkBand(
+        in TextDecorationLine? line,
+        bool isVerticalLayout,
+        in FontRectangle box,
+        out float bandStart,
+        out float bandEnd)
+    {
+        if (line is null)
+        {
+            bandStart = 0F;
+            bandEnd = 0F;
+            return false;
+        }
+
+        (bandStart, bandEnd) = GetDecorationBand(line.Value, isVerticalLayout);
+        return isVerticalLayout
+            ? box.Right >= bandStart && box.Left <= bandEnd
+            : box.Bottom >= bandStart && box.Top <= bandEnd;
+    }
+
+    /// <summary>
+    /// Emits a decoration line to the renderer as the full, untrimmed line together with the
+    /// intervals where the glyph's ink crosses the decoration band. Skip-ink carving is deferred to
+    /// the renderer so that a gap can be widened by the drawn thickness and extended across the
+    /// boundary into an adjacent glyph, which a per-glyph carve here could not do.
+    /// </summary>
+    /// <param name="renderer">The glyph renderer that receives the decoration drawing commands.</param>
+    /// <param name="line">The positioned decoration line, if the decoration is enabled.</param>
+    /// <param name="ink">The ink collector teed into the outline emission, if skip-ink applies to this line.</param>
+    private static void EmitDecoration(
+        IGlyphRenderer renderer,
+        in TextDecorationLine? line,
+        GlyphIntersectionCollector? ink)
+    {
+        if (line is null)
+        {
+            return;
+        }
+
+        TextDecorationLine value = line.Value;
+        ReadOnlyMemory<float> intersections = ink is not null ? ink.BuildIntersectionSpan() : default;
+        renderer.SetDecoration(value.Decoration, value.Start, value.End, value.Thickness, intersections);
     }
 
     /// <summary>
@@ -619,7 +913,7 @@ public abstract class FontGlyphMetrics
     /// Gets the rotation matrix for the glyph based on the layout mode.
     /// </summary>
     /// <param name="mode">The glyph layout mode.</param>
-    /// <returns>The<see cref="bool"/>.</returns>
+    /// <returns>The rotation matrix.</returns>
     internal static Matrix3x2 GetRotationMatrix(GlyphLayoutMode mode)
     {
         if (mode == GlyphLayoutMode.VerticalRotated)
@@ -629,5 +923,142 @@ public abstract class FontGlyphMetrics
         }
 
         return Matrix3x2.Identity;
+    }
+
+    /// <summary>
+    /// Gets the transform applied to glyph outlines, combining browser-style synthetic oblique
+    /// shear with the rotation required by the layout mode.
+    /// </summary>
+    /// <param name="mode">The glyph layout mode.</param>
+    /// <returns>The outline transform.</returns>
+    internal Matrix3x2 GetOutlineTransform(GlyphLayoutMode mode)
+    {
+        // All metrics keep outlines in the glyph's Y-up coordinate system through this transform
+        // and convert to device-space Y-down coordinates afterwards. Decorations use
+        // GetRotationMatrix directly because browser underlines are not themselves italicized.
+        Matrix3x2 transform = CreateObliqueMatrix(this.GetObliqueSkew());
+        transform *= GetRotationMatrix(mode);
+        return transform;
+    }
+
+    /// <summary>
+    /// A positioned text decoration line for the current glyph, in device pixels.
+    /// </summary>
+    private readonly struct TextDecorationLine
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TextDecorationLine"/> struct.
+        /// </summary>
+        /// <param name="decoration">The decoration the line represents.</param>
+        /// <param name="start">The start position of the line.</param>
+        /// <param name="end">The end position of the line.</param>
+        /// <param name="thickness">The stroke thickness of the line.</param>
+        public TextDecorationLine(TextDecorations decoration, Vector2 start, Vector2 end, float thickness)
+        {
+            this.Decoration = decoration;
+            this.Start = start;
+            this.End = end;
+            this.Thickness = thickness;
+        }
+
+        /// <summary>
+        /// Gets the decoration the line represents.
+        /// </summary>
+        public TextDecorations Decoration { get; }
+
+        /// <summary>
+        /// Gets the start position of the line.
+        /// </summary>
+        public Vector2 Start { get; }
+
+        /// <summary>
+        /// Gets the end position of the line.
+        /// </summary>
+        public Vector2 End { get; }
+
+        /// <summary>
+        /// Gets the stroke thickness of the line.
+        /// </summary>
+        public float Thickness { get; }
+    }
+
+    /// <summary>
+    /// The positioned decoration lines enabled for the current glyph. Absent entries are
+    /// disabled or degenerate (zero length or thickness).
+    /// </summary>
+    private struct TextDecorationGeometry
+    {
+        /// <summary>
+        /// Gets or sets the underline decoration line.
+        /// </summary>
+        public TextDecorationLine? Underline { get; set; }
+
+        /// <summary>
+        /// Gets or sets the strikethrough decoration line.
+        /// </summary>
+        public TextDecorationLine? Strikeout { get; set; }
+
+        /// <summary>
+        /// Gets or sets the overline decoration line.
+        /// </summary>
+        public TextDecorationLine? Overline { get; set; }
+    }
+
+    /// <summary>
+    /// Pooled reusable skip-ink instruments: one outline tee and one collector per observable
+    /// band. Steady-state decorated rendering rents an instance per glyph from the shared
+    /// pool, so no per-glyph allocation occurs; the collectors and tee retain their internal
+    /// buffers across uses.
+    /// </summary>
+    private sealed class SkipInkScratch
+    {
+        /// <summary>
+        /// The shared instance pool. Sized by the default pool capacity; concurrent renders
+        /// beyond it fall back to transient instances that are dropped on return.
+        /// </summary>
+        private static readonly ObjectPool<SkipInkScratch> Pool = new(new PooledObjectPolicy());
+
+        /// <summary>
+        /// Gets the collector observing the underline band.
+        /// </summary>
+        public GlyphIntersectionCollector UnderlineCollector { get; } = new();
+
+        /// <summary>
+        /// Gets the collector observing the overline band.
+        /// </summary>
+        public GlyphIntersectionCollector OverlineCollector { get; } = new();
+
+        /// <summary>
+        /// Gets the tee that forwards outline emission while mirroring it into the collectors.
+        /// </summary>
+        public TeeGlyphRenderer Tee { get; } = new();
+
+        /// <summary>
+        /// Rents a scratch instance from the shared pool.
+        /// </summary>
+        /// <returns>The rented scratch.</returns>
+        public static SkipInkScratch Rent() => Pool.Get();
+
+        /// <summary>
+        /// Returns the scratch to the shared pool.
+        /// </summary>
+        public void Release() => Pool.Return(this);
+
+        /// <summary>
+        /// Creates scratch instances and clears the tee's forwarding targets on return so
+        /// pooled instances do not keep the completed glyph's renderer reachable.
+        /// </summary>
+        private sealed class PooledObjectPolicy : IPooledObjectPolicy<SkipInkScratch>
+        {
+            /// <inheritdoc/>
+            public SkipInkScratch Create() => new();
+
+            /// <inheritdoc/>
+            public bool Return(SkipInkScratch obj)
+            {
+                obj.Tee.Clear();
+                return true;
+            }
+        }
     }
 }

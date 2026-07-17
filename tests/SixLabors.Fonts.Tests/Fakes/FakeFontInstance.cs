@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Kern;
 using SixLabors.Fonts.Tables.General.Name;
@@ -12,13 +13,15 @@ namespace SixLabors.Fonts.Tests.Fakes;
 
 internal class FakeFontInstance : StreamFontMetrics
 {
+    private static readonly FontSource SyntheticSource = new SyntheticFontSource();
+
     internal FakeFontInstance(string text)
         : this(CreateTrueTypeFontTables(text))
     {
     }
 
     internal FakeFontInstance(TrueTypeFontTables tables)
-        : base(tables)
+        : base(tables, SyntheticSource)
     {
     }
 
@@ -137,4 +140,17 @@ internal class FakeFontInstance : StreamFontMetrics
             HeadTable.IndexLocationFormats.Offset16);
 
     private static PostTable GeneratePostTable() => new(2, 0, 0, 200, 35, 0, 0, 0, 0, 0, Array.Empty<PostNameRecord>());
+
+    private sealed class SyntheticFontSource : FontSource
+    {
+        /// <inheritdoc/>
+        public override bool TryGetTableData(Tag tag, out ReadOnlyMemory<byte> table)
+        {
+            table = default;
+            return false;
+        }
+
+        /// <inheritdoc/>
+        public override Stream OpenStream() => new MemoryStream(Array.Empty<byte>(), writable: false);
+    }
 }

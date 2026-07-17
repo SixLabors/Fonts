@@ -1,4 +1,4 @@
-// Copyright (c) Six Labors.
+﻿// Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
@@ -30,6 +30,7 @@ public class TextOptions
     public TextOptions(TextOptions options)
     {
         this.Font = options.Font;
+        this.FontWeight = options.FontWeight;
         this.FallbackFontFamilies = new List<FontFamily>(options.FallbackFontFamilies);
         this.TabWidth = options.TabWidth;
         this.HintingMode = options.HintingMode;
@@ -57,6 +58,7 @@ public class TextOptions
         this.FeatureTags = new List<Tag>(options.FeatureTags);
         this.TextRuns = new List<TextRun>(options.TextRuns);
         this.DecorationPositioningMode = options.DecorationPositioningMode;
+        this.TextDecorationSkipInk = options.TextDecorationSkipInk;
     }
 
     /// <summary>
@@ -71,6 +73,12 @@ public class TextOptions
             this.font = value;
         }
     }
+
+    /// <summary>
+    /// Gets or sets the font weight, or <see langword="null"/> to use the weight implied by
+    /// <see cref="Font"/>.
+    /// </summary>
+    public FontWeight? FontWeight { get; set; }
 
     /// <summary>
     /// Gets or sets the collection of fallback font families to use when
@@ -229,6 +237,13 @@ public class TextOptions
     /// Gets or sets the positioning mode used for rendering decorations.
     /// </summary>
     public DecorationPositioningMode DecorationPositioningMode { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether underline and overline decorations skip over
+    /// glyph ink, leaving gaps around descenders and ascenders that cross the decoration.
+    /// Defaults to <see cref="TextDecorationSkipInk.Auto"/>.
+    /// </summary>
+    public TextDecorationSkipInk TextDecorationSkipInk { get; set; } = TextDecorationSkipInk.Auto;
 
     /// <summary>
     /// Gets or sets the color font support options.

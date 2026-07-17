@@ -58,9 +58,20 @@ internal class ColrTable : Table
     private readonly DeltaSetIndexMap[]? deltaSetIndexMap;
 
     /// <summary>
-    /// Cache of resolved paint objects keyed by their COLR-relative offset.
+    /// The raw COLR table data used to resolve paint subtrees on demand, or
+    /// <see langword="null"/> when no v1 paint data is present. Paint graphs are decoded
+    /// lazily per base glyph on first use: fonts can carry thousands of color glyphs and
+    /// eagerly walking every paint graph dominates font load time, while a typical document
+    /// renders only a handful of them.
     /// </summary>
-    private readonly Dictionary<uint, Paint>? paintCache;
+    private readonly byte[]? paintData;
+
+    /// <summary>
+    /// Caches of paint objects, color lines, and affine matrices resolved from
+    /// <see cref="paintData"/> so far, keyed by their COLR-relative offsets. Lazy resolution
+    /// locks this instance, so concurrent renders decode each subtree exactly once.
+    /// </summary>
+    private readonly PaintCaches paintCaches = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ColrTable"/> class for COLR v0 data only.
@@ -84,7 +95,7 @@ internal class ColrTable : Table
     /// <param name="clipList">The COLR v1 clip list, or <see langword="null"/>.</param>
     /// <param name="itemVariationStore">The ItemVariationStore for variable font data, or <see langword="null"/>.</param>
     /// <param name="deltaSetIndexMap">The DeltaSetIndexMap array, or <see langword="null"/>.</param>
-    /// <param name="paintCache">The pre-loaded paint cache, or <see langword="null"/>.</param>
+    /// <param name="paintData">The raw COLR table data for lazy paint resolution, or <see langword="null"/>.</param>
     /// <param name="version">The COLR table version.</param>
     public ColrTable(
         BaseGlyphRecord[] glyphRecords,
@@ -94,7 +105,7 @@ internal class ColrTable : Table
         ClipList? clipList,
         ItemVariationStore? itemVariationStore,
         DeltaSetIndexMap[]? deltaSetIndexMap,
-        Dictionary<uint, Paint>? paintCache = null,
+        byte[]? paintData = null,
         int version = 1)
     {
         this.glyphRecords = glyphRecords;
@@ -104,7 +115,7 @@ internal class ColrTable : Table
         this.clipList = clipList;
         this.itemVariationStore = itemVariationStore;
         this.deltaSetIndexMap = deltaSetIndexMap;
-        this.paintCache = paintCache;
+        this.paintData = paintData;
         this.Version = version;
     }
 
@@ -152,14 +163,14 @@ internal class ColrTable : Table
     /// <returns>The loaded <see cref="ColrTable"/>, or <see langword="null"/> if the table is not present.</returns>
     public static ColrTable? Load(FontReader fontReader)
     {
-        if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
+        if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader, out TableHeader? header))
         {
             return null;
         }
 
         using (binaryReader)
         {
-            return Load(binaryReader);
+            return Load(binaryReader, header.Length);
         }
     }
 
@@ -211,7 +222,7 @@ internal class ColrTable : Table
     /// </returns>
     public bool ContainsColorV1Glyph(ushort glyphId)
     {
-        if (this.baseGlyphList is null || this.layerList is null || this.paintCache is null)
+        if (this.baseGlyphList is null || this.layerList is null || this.paintData is null)
         {
             return false; // No COLR v1 data
         }
@@ -265,7 +276,7 @@ internal class ColrTable : Table
     {
         layers = null;
 
-        if (this.baseGlyphList is null || this.layerList is null || this.paintCache is null)
+        if (this.baseGlyphList is null || this.layerList is null || this.paintData is null)
         {
             return false; // No COLR v1 data
         }
@@ -276,7 +287,7 @@ internal class ColrTable : Table
             return false;
         }
 
-        if (!this.paintCache.TryGetValue(rootOff, out Paint? root) || root is null)
+        if (!this.TryGetPaint(rootOff, out Paint? root))
         {
             return false;
         }
@@ -348,7 +359,7 @@ internal class ColrTable : Table
                         continue;
                     }
 
-                    if (this.paintCache!.TryGetValue(off, out Paint? child) && child is not null)
+                    if (this.TryGetPaint(off, out Paint? child))
                     {
                         this.FlattenPaintToLayers(child, currentGlyphId, glyphTransform, paintTransform, transformPaint, compositeMode, processor, outLayers);
                     }
@@ -361,7 +372,7 @@ internal class ColrTable : Table
             {
                 // Resolve the referenced glyph's root paint and recurse through its own bindings.
                 if (this.TryGetRootPaintOffset(pcg.GlyphId, out uint off) && off != 0
-                    && this.paintCache!.TryGetValue(off, out Paint? colrRoot) && colrRoot is not null)
+                    && this.TryGetPaint(off, out Paint? colrRoot))
                 {
                     this.FlattenPaintToLayers(colrRoot, null, glyphTransform, Matrix3x2.Identity, false, compositeMode, processor, outLayers);
                 }
@@ -702,6 +713,36 @@ internal class ColrTable : Table
         };
 
     /// <summary>
+    /// Attempts to resolve the paint at the specified COLR-relative offset, decoding it and
+    /// its subtree from the raw table data on first use. Resolution locks the paint caches,
+    /// so concurrent renders decode each subtree exactly once and later lookups are
+    /// dictionary hits.
+    /// </summary>
+    /// <param name="paintOffset">The COLR-relative offset of the paint table.</param>
+    /// <param name="paint">When this method returns, contains the resolved paint, if found; otherwise, <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> if the paint was resolved; otherwise, <see langword="false"/>.</returns>
+    private bool TryGetPaint(uint paintOffset, [NotNullWhen(true)] out Paint? paint)
+    {
+        lock (this.paintCaches)
+        {
+            if (this.paintCaches.PaintCache.TryGetValue(paintOffset, out paint))
+            {
+                return paint is not null;
+            }
+
+            if (this.paintData is null)
+            {
+                paint = null;
+                return false;
+            }
+
+            using BigEndianBinaryReader reader = new(new MemoryStream(this.paintData, false), leaveOpen: false);
+            paint = LoadPaintAt(reader, paintOffset, this.layerList, this.paintCaches);
+            return paint is not null;
+        }
+    }
+
+    /// <summary>
     /// Attempts to retrieve the paint table offset associated with the specified glyph ID.
     /// </summary>
     /// <param name="glyphId">The glyph ID for which to look up the paint table offset.</param>
@@ -790,11 +831,21 @@ internal class ColrTable : Table
     }
 
     /// <summary>
-    /// Loads the COLR table from the specified binary reader.
+    /// Loads the COLR table from the specified binary reader, taking the table length from
+    /// the remaining stream extent.
     /// </summary>
     /// <param name="reader">The big-endian binary reader positioned at the start of the COLR table.</param>
     /// <returns>The loaded <see cref="ColrTable"/>.</returns>
     public static ColrTable Load(BigEndianBinaryReader reader)
+        => Load(reader, checked((uint)(reader.BaseStream.Length - reader.StartOfStream)));
+
+    /// <summary>
+    /// Loads the COLR table from the specified binary reader.
+    /// </summary>
+    /// <param name="reader">The big-endian binary reader positioned at the start of the COLR table.</param>
+    /// <param name="tableLength">The length of the COLR table in bytes.</param>
+    /// <returns>The loaded <see cref="ColrTable"/>.</returns>
+    public static ColrTable Load(BigEndianBinaryReader reader, uint tableLength)
     {
         // HEADER
 
@@ -872,7 +923,7 @@ internal class ColrTable : Table
         BaseGlyphList? baseGlyphList = null;
         LayerList? layerList = null;
         ClipList? clipList = null;
-        Dictionary<uint, Paint>? paintCache = null;
+        byte[]? paintData = null;
 
         if (version == 1)
         {
@@ -880,7 +931,14 @@ internal class ColrTable : Table
             layerList = LayerList.Load(reader, layerListOffset);
             clipList = ClipList.Load(reader, clipListOffset);
 
-            paintCache = LoadPaintRoots(reader, baseGlyphList, layerList);
+            // Snapshot the table in one bulk read so paint graphs can be decoded lazily per
+            // base glyph on first use. Fonts can carry thousands of color glyphs; walking
+            // every paint graph here would dominate font load time while a typical document
+            // renders only a handful of them.
+            long restore = reader.BaseStream.Position;
+            reader.Seek(0, SeekOrigin.Begin);
+            paintData = reader.ReadBytes(checked((int)tableLength));
+            reader.BaseStream.Position = restore;
         }
 
         ItemVariationStore? itemVariationStore = itemVariationStoreOffset != 0
@@ -891,48 +949,7 @@ internal class ColrTable : Table
             ? DeltaSetIndexMap.Load(reader, varIndexMapOffset)
             : null;
 
-        return new ColrTable(glyphs, layerRecs, baseGlyphList, layerList, clipList, itemVariationStore, deltaSetIndexMap, paintCache, 1);
-    }
-
-    /// <summary>
-    /// Eagerly loads and caches all paint objects referenced by the BaseGlyphList and LayerList.
-    /// </summary>
-    /// <param name="reader">The binary reader.</param>
-    /// <param name="baseGlyphList">The base glyph list, or <see langword="null"/>.</param>
-    /// <param name="layerList">The layer list, or <see langword="null"/>.</param>
-    /// <returns>A dictionary mapping paint offsets to their resolved paint objects.</returns>
-    private static Dictionary<uint, Paint> LoadPaintRoots(
-        BigEndianBinaryReader reader,
-        BaseGlyphList? baseGlyphList,
-        LayerList? layerList)
-    {
-        PaintCaches caches = new();
-
-        // 1) Root paints from BaseGlyphList
-        if (baseGlyphList is not null)
-        {
-            foreach (BaseGlyphPaintRecord rec in baseGlyphList.Records)
-            {
-                if (rec.PaintOffset != 0)
-                {
-                    _ = LoadPaintAt(reader, rec.PaintOffset, layerList, caches);
-                }
-            }
-        }
-
-        // 2) All paints referenced by LayerList (PaintColrLayers points into these)
-        if (layerList is not null)
-        {
-            foreach (uint offset in layerList.PaintOffsets)
-            {
-                if (offset != 0)
-                {
-                    _ = LoadPaintAt(reader, offset, layerList, caches);
-                }
-            }
-        }
-
-        return caches.PaintCache;
+        return new ColrTable(glyphs, layerRecs, baseGlyphList, layerList, clipList, itemVariationStore, deltaSetIndexMap, paintData, 1);
     }
 
     /// <summary>

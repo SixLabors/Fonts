@@ -45,7 +45,7 @@ public partial class GSubTableTests
         ColorGlyphRenderer renderer = new();
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(arabicFont));
 
         // assert
         GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
@@ -64,7 +64,7 @@ public partial class GSubTableTests
         int expectedGlyphIndex = 38; // we expect A to be mapped to B.
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
@@ -81,7 +81,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [580, 404, 453];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font) { FeatureTags = new Tag[] { KnownFeatureTags.Numerators, KnownFeatureTags.Denominators } });
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font) { FeatureTags = new Tag[] { KnownFeatureTags.Numerators, KnownFeatureTags.Denominators } });
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -101,7 +101,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [580, 404, 453];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font) { FeatureTags = new Tag[] { KnownFeatureTags.Fractions } });
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font) { FeatureTags = new Tag[] { KnownFeatureTags.Fractions } });
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -123,7 +123,7 @@ public partial class GSubTableTests
         int expectedGlyphIndex = 40; // we expect C to be mapped to D.
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
@@ -142,7 +142,7 @@ public partial class GSubTableTests
         int expectedGlyphIndex = 42; // we expect E to be mapped to F.
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
@@ -161,7 +161,7 @@ public partial class GSubTableTests
         int expectedGlyphIndex = 229;
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
@@ -180,7 +180,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [3, 7];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -202,7 +202,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [3, 7];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -224,7 +224,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [67, 78, 80];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -246,7 +246,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [22, 63, 64, 25];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -268,7 +268,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [22, 23, 64, 25];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -290,7 +290,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [89, 31, 90];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -312,7 +312,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [69, 102];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -334,7 +334,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [57, 58, 59];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font));
 
         // assert
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -355,7 +355,7 @@ public partial class GSubTableTests
         int[] expectedGlyphIndices = [2242, 2243, 2244, 2245, 2246, 2247];
 
         // act
-        TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font)
+        TextRenderer.RenderTo(renderer, testStr, new TextOptions(font)
         {
             FeatureTags = new List<Tag> { KnownFeatureTags.OldstyleFigures }
         });

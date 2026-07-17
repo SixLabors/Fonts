@@ -23,7 +23,7 @@ public class Issues_429
             };
 
             GlyphRenderer renderer = new();
-            TextRenderer.RenderTextTo(renderer, text, options);
+            TextRenderer.RenderTo(renderer, text, options);
 
             // Only the Latin glyph + space should be rotated.
             // Any other glyphs that appear rotated have actually been substituted by the font.

@@ -17,7 +17,7 @@ public class Issues_337
             HintingMode = HintingMode.Standard
         };
 
-        TextRenderer.RenderTextTo(renderer, "標楷體輸出", options);
+        TextRenderer.RenderTo(renderer, "標楷體輸出", options);
 
         Assert.Equal(5, renderer.GlyphKeys.Count);
         Assert.Equal(5, renderer.GlyphRects.Count);

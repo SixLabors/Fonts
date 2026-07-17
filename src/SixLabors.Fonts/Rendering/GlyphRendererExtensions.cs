@@ -17,7 +17,7 @@ public static class GlyphRendererExtensions
     /// <returns>Returns the original <paramref name="renderer"/></returns>
     public static IGlyphRenderer Render(this IGlyphRenderer renderer, ReadOnlySpan<char> text, TextOptions options)
     {
-        new TextRenderer(renderer).RenderText(text, options);
+        new TextRenderer(renderer).Render(text, options);
         return renderer;
     }
 }

@@ -118,4 +118,14 @@ public enum KnownNameIds : ushort
     /// Sample text; This can be the font name, or any other text that the designer thinks is the best sample to display the font in.
     /// </summary>
     SampleText = 19,
+
+    /// <summary>
+    /// WWS Family name: Used to provide a family grouping for faces that differ only in weight, width, or slope.
+    /// </summary>
+    WwsFamilyName = 21,
+
+    /// <summary>
+    /// WWS Subfamily name: Used to describe weight, width, or slope within a WWS family grouping.
+    /// </summary>
+    WwsSubfamilyName = 22,
 }

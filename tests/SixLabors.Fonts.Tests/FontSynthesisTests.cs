@@ -9,8 +9,11 @@ namespace SixLabors.Fonts.Tests;
 
 public class FontSynthesisTests
 {
-    // tan(14 degrees) - the default oblique slant browsers apply for synthesized italics.
-    private static readonly float ExpectedSkew = MathF.Tan(14F * MathF.PI / 180F);
+    // Chromium and SkParagraph pass an exact quarter shear to SkFont for synthesized italics.
+    private const float ExpectedSkew = 1F / 4F;
+
+    // A divisor of 31 matches Chromium's DirectWrite weight while retaining FreeType dilation.
+    private const float ExpectedBoldEmScale = 1F / 31F;
 
     private static readonly ApproximateFloatComparer SkewComparer = new(0.001F);
 
@@ -18,6 +21,23 @@ public class FontSynthesisTests
 
     private static FontFamily RegularOnlyFamily(string file)
         => new FontCollection().Add(file);
+
+    private static TextOptions PaintedEmojiOptions(FontStyle style)
+    {
+        FontCollection collection = new();
+        FontFamily emoji = collection.Add(TestFonts.TwemojiMozillaFile);
+        FontFamily fallback = collection.Add(TestFonts.OpenSansFile);
+
+        // Twemoji does not contain U+0020, so use the same explicit text fallback as the browser
+        // comparison instead of measuring the full-em missing-glyph advance between emoji.
+        return new TextOptions(new Font(emoji, 54, style))
+        {
+            Dpi = 96F,
+            LineSpacing = 1.4F,
+            ColorFontSupport = ColorFontSupport.ColrV0,
+            FallbackFontFamilies = [fallback]
+        };
+    }
 
     [Fact]
     public void FamilyWithoutItalic_FallsBackToRegularMetrics()
@@ -40,11 +60,76 @@ public class FontSynthesisTests
 
     [Fact]
     public void SyntheticItalic_ShearsGlyphOutline_TrueType()
-        => AssertSyntheticItalicShear(TestFonts.OpenSansFile, "Hg");
+        => AssertSyntheticItalicShear(TestFonts.OpenSansFile, "Hg", ColorFontSupport.None);
 
     [Fact]
     public void SyntheticItalic_ShearsGlyphOutline_Cff()
-        => AssertSyntheticItalicShear(TestFonts.PlantinStdRegularFile, "Hg");
+        => AssertSyntheticItalicShear(TestFonts.PlantinStdRegularFile, "Hg", ColorFontSupport.None);
+
+    [Fact]
+    public void SyntheticItalic_ShearsPaintedEmoji()
+        => AssertSyntheticItalicShear(TestFonts.TwemojiMozillaFile, "😀", ColorFontSupport.ColrV0);
+
+    [Fact]
+    public void SyntheticItalic_PaintedEmojiBoundsContainRenderedGeometry()
+    {
+        const string text = "😀 ☺️ ❤️ ✌️ ⭐";
+        const float tolerance = .1F;
+        TextOptions options = PaintedEmojiOptions(FontStyle.Italic);
+        options.HintingMode = HintingMode.None;
+
+        FontRectangle bounds = TextMeasurer.MeasureBounds(text, options);
+        GlyphRenderer renderer = new();
+        TextRenderer.RenderTo(renderer, text, options);
+
+        Assert.NotEmpty(renderer.ControlPoints);
+        foreach (Vector2 point in renderer.ControlPoints)
+        {
+            Assert.InRange(point.X, bounds.Left - tolerance, bounds.Right + tolerance);
+            Assert.InRange(point.Y, bounds.Top - tolerance, bounds.Bottom + tolerance);
+        }
+    }
+
+    [Fact]
+    public void BoundsTransform_UsesAllFourCorners()
+    {
+        Bounds bounds = new(0F, 0F, 10F, 20F);
+        Bounds transformed = Bounds.Transform(bounds, Matrix3x2.CreateRotation(MathF.PI / 4F));
+
+        Assert.Equal(-14.142136F, transformed.Min.X, GeometryComparer);
+        Assert.Equal(0F, transformed.Min.Y, GeometryComparer);
+        Assert.Equal(7.071068F, transformed.Max.X, GeometryComparer);
+        Assert.Equal(21.213203F, transformed.Max.Y, GeometryComparer);
+    }
+
+    [Fact]
+    public void VisualTest_SyntheticItalicPaintedEmoji()
+    {
+        TextOptions options = PaintedEmojiOptions(FontStyle.Italic);
+
+        // Painted emoji retain their authored layers while the complete layered outline receives
+        // the same synthetic italic transform as monochrome glyphs.
+        TextLayoutTestUtilities.TestLayout("😀 ☺️ ❤️ ✌️ ⭐", options, properties: "COLRv0");
+    }
+
+    [Theory]
+    [InlineData("OpenSans-Regular.ttf", "TrueType")]
+    [InlineData("PlantinStdRegular.otf", "CFF")]
+    public void VisualTest_SyntheticItalic(string fontFile, string fontFormat)
+    {
+        const string text = "Sphinx of black quartz, judge my vow.\nPack my box with five dozen liquor jugs.";
+        string path = Path.Combine(TestEnvironment.FontTestDataFullPath, fontFile);
+        Font font = new(RegularOnlyFamily(path), 36, FontStyle.Italic);
+        TextOptions options = new(font)
+        {
+            Dpi = 96F,
+            LineSpacing = 1.4F
+        };
+
+        // The collection contains only the regular face, so requesting italic exercises the
+        // synthesized outline while using the standard rendering-test output and comparison path.
+        TextLayoutTestUtilities.TestLayout(text, options, properties: fontFormat);
+    }
 
     [Fact]
     public void SyntheticItalic_DoesNotChangeAdvance_ButWidensBounds()
@@ -100,17 +185,25 @@ public class FontSynthesisTests
         Assert.Equal(ExpectedSkew, italicGlyph.Value.GlyphMetrics.GetObliqueSkew(), SkewComparer);
     }
 
-    private static void AssertSyntheticItalicShear(string file, string text)
+    private static void AssertSyntheticItalicShear(string file, string text, ColorFontSupport colorFontSupport)
     {
         FontFamily family = RegularOnlyFamily(file);
         Font regular = new(family, 48, FontStyle.Regular);
         Font italic = new(family, 48, FontStyle.Italic);
 
         GlyphRenderer regularRenderer = new();
-        TextRenderer.RenderTextTo(regularRenderer, text, new TextOptions(regular) { HintingMode = HintingMode.None });
+        TextRenderer.RenderTo(regularRenderer, text, new TextOptions(regular)
+        {
+            HintingMode = HintingMode.None,
+            ColorFontSupport = colorFontSupport
+        });
 
         GlyphRenderer italicRenderer = new();
-        TextRenderer.RenderTextTo(italicRenderer, text, new TextOptions(italic) { HintingMode = HintingMode.None });
+        TextRenderer.RenderTo(italicRenderer, text, new TextOptions(italic)
+        {
+            HintingMode = HintingMode.None,
+            ColorFontSupport = colorFontSupport
+        });
 
         List<Vector2> r = regularRenderer.ControlPoints;
         List<Vector2> i = italicRenderer.ControlPoints;
@@ -153,6 +246,39 @@ public class FontSynthesisTests
     [Fact]
     public void ShouldSynthesizeBold_Cff_TrueOnlyWhenBoldSynthesized()
         => AssertShouldSynthesizeBold(TestFonts.PlantinStdRegularFile);
+
+    [Fact]
+    public void SyntheticBoldStrength_MatchesBrowserWeight()
+    {
+        const float pointSize = 48F;
+        Font bold = new(RegularOnlyFamily(TestFonts.OpenSansFile), pointSize, FontStyle.Bold);
+
+        Assert.True(bold.TryGetGlyphs(new CodePoint('H'), out Glyph? glyph));
+
+        // GetSyntheticBoldStrength receives point size multiplied by DPI. At the default 72 DPI,
+        // the scale factors cancel to leave the browser-matched emboldening fraction times point size.
+        float strength = glyph.Value.GlyphMetrics.GetSyntheticBoldStrength(pointSize * 72F);
+        Assert.Equal(pointSize * ExpectedBoldEmScale, strength, SkewComparer);
+    }
+
+    [Theory]
+    [InlineData("OpenSans-Regular.ttf", "TrueType")]
+    [InlineData("PlantinStdRegular.otf", "CFF")]
+    public void VisualTest_SyntheticBold(string fontFile, string fontFormat)
+    {
+        const string text = "Sphinx of black quartz, judge my vow.\nPack my box with five dozen liquor jugs.";
+        string path = Path.Combine(TestEnvironment.FontTestDataFullPath, fontFile);
+        Font font = new(RegularOnlyFamily(path), 36, FontStyle.Bold);
+        TextOptions options = new(font)
+        {
+            Dpi = 96F,
+            LineSpacing = 1.4F
+        };
+
+        // The collection contains only the regular face, so requesting bold exercises the
+        // synthesized outline while using the standard rendering-test output and comparison path.
+        TextLayoutTestUtilities.TestLayout(text, options, properties: fontFormat);
+    }
 
     [Fact]
     public void SyntheticBold_DilatesGlyphOutline_TrueType()
@@ -206,6 +332,50 @@ public class FontSynthesisTests
         // family must enable both the shear and the outline dilation.
         Assert.Equal(ExpectedSkew, glyph.Value.GlyphMetrics.GetObliqueSkew(), SkewComparer);
         Assert.True(glyph.Value.GlyphMetrics.ShouldSynthesizeBold());
+    }
+
+    [Fact]
+    public void SyntheticBold_DoesNotEmboldenPaintedEmoji()
+    {
+        FontFamily family = RegularOnlyFamily(TestFonts.TwemojiMozillaFile);
+        Font regular = new(family, 48, FontStyle.Regular);
+        Font bold = new(family, 48, FontStyle.Bold);
+        CodePoint codePoint = new(0x1F600);
+
+        Assert.True(bold.TryGetGlyphs(codePoint, ColorFontSupport.ColrV0, out Glyph? glyph));
+        Assert.Equal(GlyphType.Painted, glyph.Value.GlyphMetrics.GlyphType);
+        Assert.False(glyph.Value.GlyphMetrics.ShouldSynthesizeBold());
+
+        TextOptions regularOptions = new(regular)
+        {
+            HintingMode = HintingMode.None,
+            ColorFontSupport = ColorFontSupport.ColrV0
+        };
+        TextOptions boldOptions = new(bold)
+        {
+            HintingMode = HintingMode.None,
+            ColorFontSupport = ColorFontSupport.ColrV0
+        };
+
+        GlyphRenderer regularRenderer = new();
+        TextRenderer.RenderTo(regularRenderer, "😀", regularOptions);
+
+        GlyphRenderer boldRenderer = new();
+        TextRenderer.RenderTo(boldRenderer, "😀", boldOptions);
+
+        // Browsers leave authored color layers unchanged for bold text.
+        Assert.Equal(regularRenderer.ControlPoints, boldRenderer.ControlPoints);
+        Assert.Equal(regularRenderer.GlyphRects, boldRenderer.GlyphRects);
+    }
+
+    [Fact]
+    public void VisualTest_SyntheticBoldPaintedEmoji()
+    {
+        TextOptions options = PaintedEmojiOptions(FontStyle.Bold);
+
+        // A bold request must preserve the authored color geometry because browsers do not apply
+        // synthetic emboldening to painted emoji.
+        TextLayoutTestUtilities.TestLayout("😀 ☺️ ❤️ ✌️ ⭐", options, properties: "COLRv0");
     }
 
     [Fact]
@@ -267,10 +437,10 @@ public class FontSynthesisTests
         Font bold = new(family, 48, FontStyle.Bold);
 
         GlyphRenderer regularRenderer = new();
-        TextRenderer.RenderTextTo(regularRenderer, text, new TextOptions(regular) { HintingMode = HintingMode.None });
+        TextRenderer.RenderTo(regularRenderer, text, new TextOptions(regular) { HintingMode = HintingMode.None });
 
         GlyphRenderer boldRenderer = new();
-        TextRenderer.RenderTextTo(boldRenderer, text, new TextOptions(bold) { HintingMode = HintingMode.None });
+        TextRenderer.RenderTo(boldRenderer, text, new TextOptions(bold) { HintingMode = HintingMode.None });
 
         List<Vector2> r = regularRenderer.ControlPoints;
         List<Vector2> b = boldRenderer.ControlPoints;
@@ -316,7 +486,7 @@ public class FontSynthesisTests
         sut.EndFigure();
 
         _ = sut.EnabledDecorations();
-        sut.SetDecoration(TextDecorations.Underline, default, default, 1F);
+        sut.SetDecoration(TextDecorations.Underline, default, default, 1F, ReadOnlyMemory<float>.Empty);
         sut.EndLayer();
         sut.EndGlyph();
         sut.EndText();
@@ -334,6 +504,40 @@ public class FontSynthesisTests
         // (Move=1, Line=1, Quadratic=2, Cubic=3, Arc-as-Line=1).
         Assert.Single(inner.Figures);
         Assert.Equal(8, inner.Figures[0].Count);
+    }
+
+    [Fact]
+    public void EmboldeningRenderer_MatchesFreeTypeForOuterContourAndCounter()
+    {
+        RecordingGlyphRenderer inner = new();
+        EmboldeningGlyphRenderer sut = new(inner, 2F);
+
+        // The outer contour is clockwise in device coordinates. FreeType leaves its left and top
+        // edges fixed while increasing the right and bottom extents by the requested strength.
+        sut.BeginFigure();
+        sut.MoveTo(new Vector2(0, 0));
+        sut.LineTo(new Vector2(20, 0));
+        sut.LineTo(new Vector2(20, 20));
+        sut.LineTo(new Vector2(0, 20));
+        sut.EndFigure();
+
+        // The counter uses the opposite winding, so the same outline orientation shrinks it and
+        // increases the surrounding stem thickness instead of expanding the hole.
+        sut.BeginFigure();
+        sut.MoveTo(new Vector2(5, 5));
+        sut.LineTo(new Vector2(5, 15));
+        sut.LineTo(new Vector2(15, 15));
+        sut.LineTo(new Vector2(15, 5));
+        sut.EndFigure();
+
+        sut.CompleteOutline();
+
+        Vector2[] expectedOuter = [new(0, 0), new(22, 0), new(22, 22), new(0, 22)];
+        Vector2[] expectedCounter = [new(7, 7), new(7, 15), new(15, 15), new(15, 7)];
+
+        Assert.Equal(2, inner.Figures.Count);
+        Assert.Equal(expectedOuter, inner.Figures[0]);
+        Assert.Equal(expectedCounter, inner.Figures[1]);
     }
 
     private sealed class RecordingGlyphRenderer : IGlyphRenderer
@@ -354,9 +558,9 @@ public class FontSynthesisTests
 
         public bool SetDecorationCalled { get; private set; }
 
-        public List<List<Vector2>> Figures { get; } = new();
+        public List<List<Vector2>> Figures { get; } = [];
 
-        private List<Vector2>? current;
+        private List<Vector2> current;
 
         public void BeginText(in FontRectangle bounds) => this.BeganText = true;
 
@@ -370,33 +574,33 @@ public class FontSynthesisTests
 
         public void EndGlyph() => this.EndedGlyph = true;
 
-        public void BeginLayer(Paint? paint, FillRule fillRule, ClipQuad? clipBounds) => this.BeganLayer = true;
+        public void BeginLayer(Paint paint, FillRule fillRule, ClipQuad? clipBounds) => this.BeganLayer = true;
 
         public void EndLayer() => this.EndedLayer = true;
 
-        public void BeginFigure() => this.current = new List<Vector2>();
+        public void BeginFigure() => this.current = [];
 
-        public void MoveTo(Vector2 point) => this.current!.Add(point);
+        public void MoveTo(Vector2 point) => this.current.Add(point);
 
-        public void LineTo(Vector2 point) => this.current!.Add(point);
+        public void LineTo(Vector2 point) => this.current.Add(point);
 
         public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point)
         {
-            this.current!.Add(secondControlPoint);
-            this.current!.Add(point);
+            this.current.Add(secondControlPoint);
+            this.current.Add(point);
         }
 
         public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)
         {
-            this.current!.Add(secondControlPoint);
-            this.current!.Add(thirdControlPoint);
-            this.current!.Add(point);
+            this.current.Add(secondControlPoint);
+            this.current.Add(thirdControlPoint);
+            this.current.Add(point);
         }
 
         public void ArcTo(float radiusX, float radiusY, float rotation, bool largeArc, bool sweep, Vector2 point)
-            => this.current!.Add(point);
+            => this.current.Add(point);
 
-        public void EndFigure() => this.Figures.Add(this.current!);
+        public void EndFigure() => this.Figures.Add(this.current);
 
         public TextDecorations EnabledDecorations()
         {
@@ -404,7 +608,7 @@ public class FontSynthesisTests
             return TextDecorations.None;
         }
 
-        public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
+        public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness, ReadOnlyMemory<float> intersections)
             => this.SetDecorationCalled = true;
     }
 }

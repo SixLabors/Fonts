@@ -41,6 +41,11 @@ public readonly struct Glyph
     /// <param name="graphemeIndex">The index of the grapheme this glyph is part of.</param>
     /// <param name="glyphOrigin">The origin used to render the glyph outline.</param>
     /// <param name="decorationOrigin">The origin used to render text decorations.</param>
+    /// <param name="layoutAdvance">
+    /// The laid-out advance for the glyph in DPI-normalized layout units, including layout-time
+    /// spacing such as tracking and justification. Negative components indicate no layout
+    /// advance is available and the glyph's own metrics apply.
+    /// </param>
     /// <param name="mode">The glyph layout mode to render using.</param>
     /// <param name="options">The options to render using.</param>
     internal void RenderTo(
@@ -48,7 +53,26 @@ public readonly struct Glyph
         int graphemeIndex,
         Vector2 glyphOrigin,
         Vector2 decorationOrigin,
+        Vector2 layoutAdvance,
         GlyphLayoutMode mode,
         TextOptions options)
-        => this.GlyphMetrics.RenderTo(surface, graphemeIndex, glyphOrigin, decorationOrigin, mode, options);
+    {
+        TextRun textRun = this.GlyphMetrics.TextRun;
+        float pointSize = textRun.Font?.Size ?? options.Font.Size;
+
+        this.GlyphMetrics.RenderTo(
+            surface,
+            graphemeIndex,
+            glyphOrigin,
+            decorationOrigin,
+            layoutAdvance,
+            mode,
+            textRun,
+            pointSize,
+            options.Dpi,
+            options.HintingMode,
+            options.TextDecorationSkipInk,
+            options.DecorationPositioningMode,
+            options.Font.FontMetrics);
+    }
 }

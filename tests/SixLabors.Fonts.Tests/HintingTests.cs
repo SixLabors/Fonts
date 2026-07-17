@@ -114,7 +114,7 @@ public class HintingTests
                 HintingMode = HintingMode.Standard,
             };
 
-            TextRenderer.RenderTextTo(renderer, text, options);
+            TextRenderer.RenderTo(renderer, text, options);
         }
 
         // Render the target size on a font whose interpreter has processed nothing else.

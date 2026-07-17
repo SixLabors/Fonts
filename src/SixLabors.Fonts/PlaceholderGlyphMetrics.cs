@@ -65,8 +65,15 @@ internal sealed class PlaceholderGlyphMetrics : FontGlyphMetrics
         int graphemeIndex,
         Vector2 glyphOrigin,
         Vector2 decorationOrigin,
+        Vector2 layoutAdvance,
         GlyphLayoutMode mode,
-        TextOptions options)
+        TextRun textRun,
+        float pointSize,
+        float dpi,
+        HintingMode hintingMode,
+        TextDecorationSkipInk textDecorationSkipInk,
+        DecorationPositioningMode decorationPositioningMode,
+        FontMetrics decorationFontMetrics)
     {
         // Placeholders reserve layout space only; the caller owns the object rendering.
     }

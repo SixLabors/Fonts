@@ -19,22 +19,39 @@ namespace SixLabors.Fonts;
 internal sealed class FileFontMetrics : FontMetrics
 {
     private readonly Lazy<StreamFontMetrics> fontMetrics;
+    private readonly FontSource source;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FileFontMetrics"/> class.
+    /// </summary>
+    /// <param name="path">The filesystem path to the font.</param>
     public FileFontMetrics(string path)
         : this(path, 0)
     {
     }
 
-    public FileFontMetrics(string path, long offset)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FileFontMetrics"/> class.
+    /// </summary>
+    /// <param name="path">The filesystem path to the font.</param>
+    /// <param name="offset">The offset of the font within the file.</param>
+    private FileFontMetrics(string path, long offset)
         : this(FontDescription.LoadDescription(path), path, offset)
     {
     }
 
-    internal FileFontMetrics(FontDescription description, string path, long offset)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FileFontMetrics"/> class.
+    /// </summary>
+    /// <param name="description">The font description.</param>
+    /// <param name="path">The filesystem path to the font.</param>
+    /// <param name="offset">The offset of the font within the file.</param>
+    private FileFontMetrics(FontDescription description, string path, long offset)
     {
         this.Description = description;
         this.Path = path;
-        this.fontMetrics = new Lazy<StreamFontMetrics>(() => StreamFontMetrics.LoadFont(path, offset), true);
+        this.source = FontSource.Create(path, offset);
+        this.fontMetrics = new Lazy<StreamFontMetrics>(this.LoadFont, true);
     }
 
     /// <inheritdoc cref="FontMetrics.Description"/>
@@ -48,7 +65,7 @@ internal sealed class FileFontMetrics : FontMetrics
     /// <summary>
     /// Gets the underlying <see cref="StreamFontMetrics"/> that this file-backed instance delegates to.
     /// </summary>
-    internal StreamFontMetrics StreamFontMetrics => this.fontMetrics.Value;
+    public StreamFontMetrics StreamFontMetrics => this.fontMetrics.Value;
 
     /// <inheritdoc />
     public override ushort UnitsPerEm => this.fontMetrics.Value.UnitsPerEm;
@@ -102,6 +119,14 @@ internal sealed class FileFontMetrics : FontMetrics
     public override float ItalicAngle => this.fontMetrics.Value.ItalicAngle;
 
     /// <inheritdoc/>
+    public override bool TryGetTableData(Tag tag, out ReadOnlyMemory<byte> table)
+        => this.source.TryGetTableData(tag, out table);
+
+    /// <inheritdoc/>
+    public override Stream OpenStream()
+        => this.source.OpenStream();
+
+    /// <inheritdoc/>
     internal override bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
         => this.fontMetrics.Value.TryGetGlyphId(codePoint, out glyphId);
 
@@ -144,6 +169,16 @@ internal sealed class FileFontMetrics : FontMetrics
           => this.fontMetrics.Value.TryGetGlyphMetrics(codePoint, textAttributes, textDecorations, layoutMode, support, out metrics);
 
     /// <inheritdoc />
+    public override bool TryGetGlyphMetrics(
+        ushort glyphId,
+        TextAttributes textAttributes,
+        TextDecorations textDecorations,
+        LayoutMode layoutMode,
+        ColorFontSupport support,
+        [NotNullWhen(true)] out FontGlyphMetrics? metrics)
+        => this.fontMetrics.Value.TryGetGlyphMetrics(glyphId, textAttributes, textDecorations, layoutMode, support, out metrics);
+
+    /// <inheritdoc />
     internal override FontGlyphMetrics GetGlyphMetrics(
         CodePoint codePoint,
         ushort glyphId,
@@ -182,9 +217,9 @@ internal sealed class FileFontMetrics : FontMetrics
         => this.fontMetrics.Value.GetNormalizedCoordinates();
 
     /// <summary>
-    /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
+    /// Reads a font collection from the specified filesystem path.
     /// </summary>
-    /// <param name="path">The file path.</param>
+    /// <param name="path">The filesystem path to the font collection.</param>
     /// <returns>A read-only memory region containing the font metrics.</returns>
     public static ReadOnlyMemory<FileFontMetrics> LoadFontCollection(string path)
     {
@@ -202,5 +237,11 @@ internal sealed class FileFontMetrics : FontMetrics
         }
 
         return fonts;
+    }
+
+    private StreamFontMetrics LoadFont()
+    {
+        using Stream stream = this.OpenStream();
+        return StreamFontMetrics.LoadFont(stream, this.source);
     }
 }

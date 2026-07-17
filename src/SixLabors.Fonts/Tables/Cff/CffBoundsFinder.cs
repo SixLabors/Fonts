@@ -163,7 +163,7 @@ internal class CffBoundsFinder : IGlyphRenderer
         => TextDecorations.None;
 
     /// <inheritdoc/>
-    public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
+    public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness, ReadOnlyMemory<float> intersections)
     {
         // Do nothing.
     }

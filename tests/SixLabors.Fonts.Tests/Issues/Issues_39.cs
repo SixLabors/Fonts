@@ -15,7 +15,7 @@ public class Issues_39
         Font font = CreateFont("\t x");
 
         GlyphRenderer r = new();
-        new TextRenderer(r).RenderText(string.Empty, new TextOptions(new Font(font, 30)));
+        new TextRenderer(r).Render(string.Empty, new TextOptions(new Font(font, 30)));
     }
 
     public static Font CreateFont(string text)
