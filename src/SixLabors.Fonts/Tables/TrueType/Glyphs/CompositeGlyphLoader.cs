@@ -12,6 +12,10 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs;
 /// </summary>
 internal sealed class CompositeGlyphLoader : GlyphLoader
 {
+    // The TrueType reference specification defines 16 as the maximum legal maxComponentDepth. Enforcing the
+    // format limit bounds malformed cyclic graphs without allocating path-tracking state on composite loads.
+    private const int MaxCompositeDepth = 16;
+
     private readonly Bounds bounds;
     private readonly Composite[] composites;
     private readonly ReadOnlyMemory<byte> instructions;
@@ -31,14 +35,29 @@ internal sealed class CompositeGlyphLoader : GlyphLoader
 
     /// <inheritdoc/>
     public override GlyphVector CreateGlyph(GlyphTable table)
+        => this.CreateGlyph(table, 0);
+
+    /// <summary>
+    /// Creates a glyph vector while enforcing the TrueType composite nesting limit.
+    /// </summary>
+    /// <param name="table">The glyph table used to resolve component glyphs.</param>
+    /// <param name="compositeDepth">The number of composite glyphs above this glyph.</param>
+    /// <returns>The resolved glyph vector, or an empty vector when the component graph exceeds the format limit.</returns>
+    public GlyphVector CreateGlyph(GlyphTable table, int compositeDepth)
     {
+        if (compositeDepth >= MaxCompositeDepth)
+        {
+            return GlyphVector.Empty(this.bounds);
+        }
+
         List<ControlPoint> controlPoints = [];
         List<ushort> endPoints = [];
         CompositeComponent[] components = new CompositeComponent[this.composites.Length];
+
         for (int i = 0; i < this.composites.Length; i++)
         {
             Composite composite = this.composites[i];
-            GlyphVector clone = GlyphVector.DeepClone(table.GetGlyph(composite.GlyphIndex));
+            GlyphVector clone = GlyphVector.DeepClone(table.GetGlyph(composite.GlyphIndex, compositeDepth + 1));
             GlyphVector.TransformInPlace(ref clone, composite.Transformation);
             ushort endPointOffset = (ushort)controlPoints.Count;
 

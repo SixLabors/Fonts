@@ -19,6 +19,10 @@ namespace SixLabors.Fonts.Tables.Cff;
 /// </remarks>
 internal ref struct CffEvaluationEngine
 {
+    // Appendix B of both Type 2 and CFF2 CharString specifications limits nested local and global
+    // subroutine calls to 10, which also provides a fixed stack bound for malformed cyclic programs.
+    private const int MaxSubroutineNesting = 10;
+
     private static readonly Random Random = new();
     private float? width;
     private int nStems;
@@ -108,7 +112,7 @@ internal ref struct CffEvaluationEngine
         this.transforming = new(finder, Vector2.Zero, new Vector2(1, -1), Vector2.Zero, Matrix3x2.Identity);
 
         // Boolean IGlyphRenderer.BeginGlyph(..) is handled by the caller.
-        this.Parse(this.charStrings);
+        this.Parse(this.charStrings, 0);
 
         // Some CFF end without closing the latest contour.
         if (this.transforming.IsOpen)
@@ -134,7 +138,7 @@ internal ref struct CffEvaluationEngine
         this.transforming = new(renderer, origin, scale, offset, transform);
 
         // Boolean IGlyphRenderer.BeginGlyph(..) is handled by the caller.
-        this.Parse(this.charStrings);
+        this.Parse(this.charStrings, 0);
 
         // Some CFF end without closing the latest contour.
         if (this.transforming.IsOpen)
@@ -147,7 +151,8 @@ internal ref struct CffEvaluationEngine
     /// Parses and interprets a Type 2 charstring byte buffer, executing operators and accumulating operands.
     /// </summary>
     /// <param name="buffer">The charstring byte data to parse.</param>
-    private void Parse(ReadOnlySpan<byte> buffer)
+    /// <param name="subroutineDepth">The number of active local and global subroutine calls.</param>
+    private void Parse(ReadOnlySpan<byte> buffer, int subroutineDepth)
     {
         SimpleBinaryReader reader = new(buffer);
         bool endCharEncountered = false;
@@ -239,9 +244,11 @@ internal ref struct CffEvaluationEngine
                         index = (int)this.stack.Pop() + this.localBias;
                         subr = this.localSubrBuffers[index];
 
-                        if (subr.Length > 0)
+                        // The over-limit call contributes no outline, matching how cyclic TrueType components
+                        // degrade to empty while allowing the enclosing charstring to continue normally.
+                        if (subr.Length > 0 && subroutineDepth < MaxSubroutineNesting)
                         {
-                            this.Parse(subr);
+                            this.Parse(subr, subroutineDepth + 1);
                         }
 
                         break;
@@ -452,9 +459,11 @@ internal ref struct CffEvaluationEngine
                         index = (int)this.stack.Pop() + this.globalBias;
                         subr = this.globalSubrBuffers[index];
 
-                        if (subr.Length > 0)
+                        // Local and global subroutines share the same nesting stack and therefore the same
+                        // format limit and empty-outline fallback behavior.
+                        if (subr.Length > 0 && subroutineDepth < MaxSubroutineNesting)
                         {
-                            this.Parse(subr);
+                            this.Parse(subr, subroutineDepth + 1);
                         }
 
                         break;
