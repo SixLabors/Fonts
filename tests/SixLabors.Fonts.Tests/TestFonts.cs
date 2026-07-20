@@ -418,6 +418,8 @@ public static class TestFonts
         public static string Issue534 => GetFullPath("Issues/Issue534.ttf");
 
         public static string Issue537 => GetFullPath("Issues/Issue537.ttf");
+
+        public static string Issue537Cff => GetFullPath("Issues/Issue537Cff.otf");
     }
 
     /// <summary>
