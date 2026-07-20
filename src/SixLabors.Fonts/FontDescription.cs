@@ -33,6 +33,10 @@ public class FontDescription
         this.FontNameInvariantCulture = this.FontName(CultureInfo.InvariantCulture);
         this.FontFamilyInvariantCulture = this.FontFamily(CultureInfo.InvariantCulture);
         this.FontSubFamilyNameInvariantCulture = this.FontSubFamilyName(CultureInfo.InvariantCulture);
+
+        // Upper-cased once here: glyph renderer parameters embed this name for every rendered
+        // glyph, and per-glyph ToUpper calls would allocate a string per glyph per frame.
+        this.FontNameUpperInvariantCulture = this.FontNameInvariantCulture.ToUpper(CultureInfo.InvariantCulture);
     }
 
     /// <summary>
@@ -49,6 +53,12 @@ public class FontDescription
     /// Gets the name of the font in the invariant culture.
     /// </summary>
     public string FontNameInvariantCulture { get; }
+
+    /// <summary>
+    /// Gets the invariant-culture font name upper-cased once at construction, shared by every
+    /// per-glyph renderer parameter instance.
+    /// </summary>
+    public string FontNameUpperInvariantCulture { get; }
 
     /// <summary>
     /// Gets the name of the font family in the invariant culture.

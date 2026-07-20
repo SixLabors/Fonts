@@ -18,7 +18,7 @@ internal sealed class TextLineBreakEnumerator
     private readonly bool normalizeDecomposedAdvances;
     private readonly int maxLines;
     private readonly CodePoint? ellipsisMarkerCodePoint;
-    private readonly IReadOnlyList<LineBreak> lineBreaks;
+    private readonly List<LineBreak> lineBreaks;
     private TextLine textLine;
     private int processed;
     private int lineCount;
@@ -71,8 +71,13 @@ internal sealed class TextLineBreakEnumerator
         while (this.textLine.Count > 0)
         {
             LineBreak? bestBreak = null;
-            foreach (LineBreak lineBreak in this.lineBreaks)
+
+            // Index rather than enumerate: the interface-typed break list would allocate a heap
+            // enumerator for every produced line.
+            for (int i = 0; i < this.lineBreaks.Count; i++)
             {
+                LineBreak lineBreak = this.lineBreaks[i];
+
                 // Skip breaks that are already behind the processed portion.
                 if (lineBreak.PositionWrap <= this.processed)
                 {

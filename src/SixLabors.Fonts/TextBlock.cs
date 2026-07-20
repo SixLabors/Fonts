@@ -9,8 +9,20 @@ namespace SixLabors.Fonts;
 /// <summary>
 /// Represents text prepared for repeated line layout, measurement, and rendering.
 /// </summary>
+/// <remarks>
+/// Instances are safe to measure and render concurrently. The block retains the most recent
+/// line-broken layout; concurrent calls can only duplicate deterministic layout work, never
+/// observe partial state.
+/// </remarks>
 public sealed partial class TextBlock
 {
+    /// <summary>
+    /// The most recent line-broken layout, retained so repeated measurement and rendering at an
+    /// unchanged wrapping length (the common redraw case) skip the full line-breaking rebuild.
+    /// Published with volatile handoff; a concurrent race only duplicates deterministic work.
+    /// </summary>
+    private CachedTextLayout? cachedLayout;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="TextBlock"/> class.
     /// </summary>
@@ -67,10 +79,69 @@ public sealed partial class TextBlock
     /// <summary>
     /// Breaks this block into lines for the supplied wrapping length.
     /// </summary>
+    /// <remarks>
+    /// The result is retained for the most recent wrapping length, so repeated measurement and
+    /// rendering at one length share a single line-breaking pass.
+    /// </remarks>
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
     /// <returns>The line-broken text box.</returns>
     internal TextBox BreakLines(float wrappingLength)
-        => TextLayout.BreakLines(this.LogicalLine, this.Options, wrappingLength);
+        => this.GetOrCreateLayout(wrappingLength).TextBox;
+
+    /// <summary>
+    /// Gets the retained layout for the supplied wrapping length, or line-breaks and retains a new one.
+    /// </summary>
+    /// <remarks>
+    /// The retained <see cref="TextBox"/> has its lazy aggregates computed before publication so
+    /// concurrent readers never mutate shared state after the handoff. Concurrent calls with
+    /// different wrapping lengths recompute deterministically; the last writer's layout stays
+    /// retained.
+    /// </remarks>
+    /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
+    /// <returns>The layout for the supplied wrapping length.</returns>
+    private CachedTextLayout GetOrCreateLayout(float wrappingLength)
+    {
+        CachedTextLayout? cached = Volatile.Read(ref this.cachedLayout);
+        if (cached is not null && cached.WrappingLength == wrappingLength)
+        {
+            return cached;
+        }
+
+        TextBox textBox = TextLayout.BreakLines(this.LogicalLine, this.Options, wrappingLength);
+
+        // Compute the box's memoized aggregates now: after publication the box is shared across
+        // calls (and potentially threads), and lazy initialization on a shared instance would
+        // race. The aggregate methods throw on an empty line list, so guard that case.
+        if (textBox.TextLines.Count > 0)
+        {
+            _ = textBox.ScaledMaxAdvance();
+            _ = textBox.ScaledMinY();
+        }
+
+        _ = textBox.CountGlyphLayouts();
+
+        CachedTextLayout created = new(wrappingLength, textBox);
+        Volatile.Write(ref this.cachedLayout, created);
+        return created;
+    }
+
+    /// <summary>
+    /// Gets the rendered bounds for a retained layout, computing and publishing them on first use.
+    /// </summary>
+    /// <param name="layout">The retained layout.</param>
+    /// <param name="wrappingLength">The wrapping length the layout was produced for.</param>
+    /// <returns>The rendered glyph bounds.</returns>
+    private FontRectangle GetOrComputeBounds(CachedTextLayout layout, float wrappingLength)
+    {
+        if (layout.TryGetBounds(out FontRectangle bounds))
+        {
+            return bounds;
+        }
+
+        bounds = GetBounds(layout.TextBox, this.Options, wrappingLength);
+        layout.SetBounds(in bounds);
+        return bounds;
+    }
 
     /// <summary>
     /// Measures the full set of layout metrics for this block at the supplied wrapping length.
@@ -127,7 +198,10 @@ public sealed partial class TextBlock
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
     /// <returns>The rendered glyph bounds.</returns>
     public FontRectangle MeasureBounds(float wrappingLength)
-        => GetBounds(this.BreakLines(wrappingLength), this.Options, wrappingLength);
+    {
+        CachedTextLayout layout = this.GetOrCreateLayout(wrappingLength);
+        return this.GetOrComputeBounds(layout, wrappingLength);
+    }
 
     /// <summary>
     /// Measures the union of logical advance and rendered glyph bounds at the supplied wrapping length.
@@ -136,10 +210,11 @@ public sealed partial class TextBlock
     /// <returns>The full renderable bounds.</returns>
     public FontRectangle MeasureRenderableBounds(float wrappingLength)
     {
-        TextBox textBox = this.BreakLines(wrappingLength);
+        CachedTextLayout layout = this.GetOrCreateLayout(wrappingLength);
+        TextBox textBox = layout.TextBox;
         FontRectangle advance = GetAdvance(textBox, this.Options.Dpi, this.Options.LayoutMode.IsHorizontal());
         FontRectangle absoluteAdvance = new(this.Options.Origin.X, this.Options.Origin.Y, advance.Width, advance.Height);
-        FontRectangle bounds = GetBounds(textBox, this.Options, wrappingLength);
+        FontRectangle bounds = this.GetOrComputeBounds(layout, wrappingLength);
         return FontRectangle.Union(absoluteAdvance, bounds);
     }
 
@@ -279,10 +354,12 @@ public sealed partial class TextBlock
     /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
     public void RenderTo(IGlyphRenderer renderer, float wrappingLength)
     {
-        TextBox textBox = this.BreakLines(wrappingLength);
-        FontRectangle rect = GetBounds(textBox, this.Options, wrappingLength);
+        // Repeated rendering at one wrapping length reuses both the retained line-broken box and
+        // its rendered bounds, so a warm call performs exactly one layout pass.
+        CachedTextLayout layout = this.GetOrCreateLayout(wrappingLength);
+        FontRectangle rect = this.GetOrComputeBounds(layout, wrappingLength);
 
-        RenderTo(renderer, textBox, this.Options, wrappingLength, rect);
+        RenderTo(renderer, layout.TextBox, this.Options, wrappingLength, rect);
     }
 
     /// <summary>
@@ -602,5 +679,73 @@ public sealed partial class TextBlock
         }
 
         return new FontRectangle(0, 0, verticalWidth * dpi, verticalHeight * dpi);
+    }
+
+    /// <summary>
+    /// Retains one line-broken layout and its lazily computed rendered bounds.
+    /// </summary>
+    private sealed class CachedTextLayout
+    {
+        /// <summary>
+        /// The rendered glyph bounds; valid only after <see cref="hasBounds"/> is set.
+        /// </summary>
+        private FontRectangle bounds;
+
+        /// <summary>
+        /// Release/acquire gate for <see cref="bounds"/>: the volatile write in
+        /// <see cref="SetBounds"/> publishes the fully written rectangle to readers.
+        /// </summary>
+        private volatile bool hasBounds;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CachedTextLayout"/> class.
+        /// </summary>
+        /// <param name="wrappingLength">The wrapping length the layout was produced for.</param>
+        /// <param name="textBox">The line-broken text box.</param>
+        public CachedTextLayout(float wrappingLength, TextBox textBox)
+        {
+            this.WrappingLength = wrappingLength;
+            this.TextBox = textBox;
+        }
+
+        /// <summary>
+        /// Gets the wrapping length the layout was produced for.
+        /// </summary>
+        public float WrappingLength { get; }
+
+        /// <summary>
+        /// Gets the line-broken text box.
+        /// </summary>
+        public TextBox TextBox { get; }
+
+        /// <summary>
+        /// Tries to read the previously published rendered bounds.
+        /// </summary>
+        /// <param name="value">Receives the rendered bounds when available.</param>
+        /// <returns><see langword="true"/> when bounds have been published.</returns>
+        public bool TryGetBounds(out FontRectangle value)
+        {
+            if (this.hasBounds)
+            {
+                value = this.bounds;
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
+        /// <summary>
+        /// Publishes the rendered bounds for this layout.
+        /// </summary>
+        /// <param name="value">The rendered bounds.</param>
+        public void SetBounds(in FontRectangle value)
+        {
+            // The field write precedes the volatile flag write, so a reader observing the flag
+            // also observes the completed rectangle. Concurrent writers store the same
+            // deterministic value.
+            this.bounds = value;
+            this.hasBounds = true;
+        }
     }
 }

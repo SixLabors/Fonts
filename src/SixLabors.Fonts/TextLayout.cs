@@ -589,9 +589,12 @@ internal static partial class TextLayout
                 return;
             }
 
-            int j = 0;
-            foreach (FontGlyphMetrics metric in data.Metrics)
+            // Index rather than enumerate: the interface-typed metrics list would allocate a
+            // heap enumerator per glyph on this per-glyph hot path.
+            IReadOnlyList<FontGlyphMetrics> metrics = data.Metrics;
+            for (int j = 0; j < metrics.Count; j++)
             {
+                FontGlyphMetrics metric = metrics[j];
                 Vector2 glyphOrigin = penLocation + new Vector2(0, textLine.ScaledMaxAscender);
 
                 visitor.Visit(
@@ -610,7 +613,6 @@ internal static partial class TextLayout
                     data.StringIndex));
 
                 emitted = true;
-                j++;
             }
 
             boxLocation.X += layoutAdvance;
@@ -854,12 +856,15 @@ internal static partial class TextLayout
                             break;
                         }
 
-                        foreach (FontGlyphMetrics m in g.Metrics)
+                        // Index rather than enumerate to avoid a heap enumerator per grapheme.
+                        IReadOnlyList<FontGlyphMetrics> inkMetrics = g.Metrics;
+                        for (int m = 0; m < inkMetrics.Count; m++)
                         {
-                            Vector2 s = new Vector2(g.PointSize) / m.ScaleFactor;
+                            FontGlyphMetrics inkMetric = inkMetrics[m];
+                            Vector2 s = new Vector2(g.PointSize) / inkMetric.ScaleFactor;
 
-                            float glyphMinX = m.Bounds.Min.X * s.X;
-                            float glyphMaxX = m.Bounds.Max.X * s.X;
+                            float glyphMinX = inkMetric.Bounds.Min.X * s.X;
+                            float glyphMaxX = inkMetric.Bounds.Max.X * s.X;
 
                             if (glyphMinX < minX)
                             {
@@ -894,15 +899,23 @@ internal static partial class TextLayout
                 // Transformed glyphs are still positioned using horizontal metrics (`AdvanceWidth`) even though
                 // they participate in a vertical flow. `AdvanceWidth` gives us the horizontal pen advance we must
                 // apply between entries inside the transformed grapheme.
-                foreach (FontGlyphMetrics m in data.Metrics)
+                // Index rather than enumerate to avoid a heap enumerator per glyph.
+                IReadOnlyList<FontGlyphMetrics> transformedMetrics = data.Metrics;
+                for (int m = 0; m < transformedMetrics.Count; m++)
                 {
-                    Vector2 s = new Vector2(data.PointSize) / m.ScaleFactor;
-                    entryScaledAdvanceWidth += m.AdvanceWidth * s.X;
+                    FontGlyphMetrics transformedMetric = transformedMetrics[m];
+                    Vector2 s = new Vector2(data.PointSize) / transformedMetric.ScaleFactor;
+                    entryScaledAdvanceWidth += transformedMetric.AdvanceWidth * s.X;
                 }
             }
 
-            foreach (FontGlyphMetrics metric in data.Metrics)
+            // Index rather than enumerate: the interface-typed metrics list would allocate a
+            // heap enumerator per glyph on this per-glyph hot path.
+            IReadOnlyList<FontGlyphMetrics> metrics = data.Metrics;
+            for (int metricIndex = 0; metricIndex < metrics.Count; metricIndex++)
             {
+                FontGlyphMetrics metric = metrics[metricIndex];
+
                 // Align the glyph horizontally and vertically centering vertically around the baseline.
                 Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
                 float glyphAlignX = alignX;
@@ -1136,9 +1149,13 @@ internal static partial class TextLayout
 
             if (data.IsTransformed)
             {
-                int j = 0;
-                foreach (FontGlyphMetrics metric in data.Metrics)
+                // Index rather than enumerate: the interface-typed metrics list would allocate a
+                // heap enumerator per glyph on this per-glyph hot path.
+                IReadOnlyList<FontGlyphMetrics> metrics = data.Metrics;
+                for (int j = 0; j < metrics.Count; j++)
                 {
+                    FontGlyphMetrics metric = metrics[j];
+
                     // The glyph will be rotated 90 degrees for vertical mixed layout.
                     // We still advance along Y, but the glyphs are laid out sideways in X.
 
@@ -1172,14 +1189,16 @@ internal static partial class TextLayout
                         data.StringIndex));
 
                     emitted = true;
-                    j++;
                 }
             }
             else
             {
-                int j = 0;
-                foreach (FontGlyphMetrics metric in data.Metrics)
+                // Index rather than enumerate to avoid a heap enumerator per glyph.
+                IReadOnlyList<FontGlyphMetrics> metrics = data.Metrics;
+                for (int j = 0; j < metrics.Count; j++)
                 {
+                    FontGlyphMetrics metric = metrics[j];
+
                     // Align the glyph horizontally and vertically centering vertically around the baseline.
                     Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
 
@@ -1207,7 +1226,6 @@ internal static partial class TextLayout
                         data.StringIndex));
 
                     emitted = true;
-                    j++;
                 }
             }
 

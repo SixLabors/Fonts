@@ -22,7 +22,9 @@ public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParamet
         GlyphLayoutMode layoutMode,
         int graphemeIndex)
     {
-        this.Font = metrics.FontMetrics.Description.FontNameInvariantCulture?.ToUpper(CultureInfo.InvariantCulture) ?? string.Empty;
+        // The upper-cased invariant name is computed once on the immutable description; doing it
+        // here would allocate a string for every rendered glyph.
+        this.Font = metrics.FontMetrics.Description.FontNameUpperInvariantCulture;
         this.FontStyle = metrics.FontMetrics.Description.Style;
         this.GlyphId = metrics.GlyphId;
         this.GraphemeIndex = graphemeIndex;
