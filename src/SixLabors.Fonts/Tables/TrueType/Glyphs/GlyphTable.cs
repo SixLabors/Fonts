@@ -42,13 +42,27 @@ internal class GlyphTable : Table
     /// <returns>The <see cref="GlyphVector"/>, or an empty vector if the index is out of range.</returns>
     // TODO: Make this non-virtual
     internal virtual GlyphVector GetGlyph(int index)
+        => this.GetGlyph(index, 0);
+
+    /// <summary>
+    /// Gets the <see cref="GlyphVector"/> for the glyph at the specified index while tracking composite nesting.
+    /// </summary>
+    /// <param name="index">The zero-based glyph index.</param>
+    /// <param name="compositeDepth">The number of composite glyphs above the requested glyph.</param>
+    /// <returns>The <see cref="GlyphVector"/>, or an empty vector if the index is out of range.</returns>
+    internal GlyphVector GetGlyph(int index, int compositeDepth)
     {
         if (index < 0 || index >= this.loaders.Length)
         {
             return GlyphVector.Empty();
         }
 
-        return this.glyphCache.GetOrAdd(index, i => this.loaders[i].CreateGlyph(this));
+        return this.glyphCache.GetOrAdd(
+            index,
+            static (i, state) => state.Table.loaders[i] is CompositeGlyphLoader composite
+                ? composite.CreateGlyph(state.Table, state.CompositeDepth)
+                : state.Table.loaders[i].CreateGlyph(state.Table),
+            (Table: this, CompositeDepth: compositeDepth));
     }
 
     /// <summary>
