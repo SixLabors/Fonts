@@ -98,13 +98,11 @@ public static class TextMeasurer
     /// </summary>
     /// <remarks>
     /// The advance is computed directly from the font's cached per-glyph metrics without decoding
-    /// outlines or running the layout engine. <see cref="GlyphOptions.Origin"/> is the glyph's
-    /// baseline pen position. For horizontal layouts the advance rectangle spans the same line
-    /// box the layout engine builds for a single glyph (the em box, ascender-balanced against the
-    /// font's declared line height) over the glyph's advance width. For vertical layouts the
-    /// rectangle is centered on the origin and extends downward by the advance the layout
-    /// direction consumes; line-level policies such as column centering and line spacing only
-    /// apply when text is laid out.
+    /// outlines or running the layout engine. Matching the text-level advance contract, the
+    /// rectangle is zero-based: the advance width by the em height for horizontal layouts, and
+    /// the advance the layout direction consumes for vertical layouts, independent of
+    /// <see cref="GlyphOptions.Origin"/> and <see cref="GlyphOptions.TextBaseline"/>. Positioned
+    /// geometry is reported by the bounds overloads.
     /// </remarks>
     /// <param name="glyphId">The glyph identifier within the font face referenced by <paramref name="options"/>.</param>
     /// <param name="options">The glyph options, including the font, origin, and layout mode.</param>
@@ -157,37 +155,41 @@ public static class TextMeasurer
     /// <param name="glyphId">The glyph identifier within the font face referenced by <paramref name="options"/>.</param>
     /// <param name="options">The glyph options, including the font, origin, and layout mode.</param>
     /// <returns>
-    /// The union of the logical advance rectangle and the rendered bounds of the glyph if it was
-    /// to be rendered, or <see cref="FontRectangle.Empty"/> when the font does not contain the
-    /// glyph or the glyph never renders.
+    /// The union of the advance placed at <see cref="GlyphOptions.Origin"/> and the rendered
+    /// bounds of the glyph if it was to be rendered, or <see cref="FontRectangle.Empty"/> when
+    /// the font does not contain the glyph or the glyph never renders.
     /// </returns>
     public static FontRectangle MeasureRenderableBounds(ushort glyphId, GlyphOptions options)
     {
         Guard.NotNull(options, nameof(options));
 
         return TryGetMeasurableGlyphMetrics(glyphId, options, out FontGlyphMetrics? metrics)
-            ? FontRectangle.Union(GetGlyphAdvance(metrics, options), GetGlyphBounds(metrics, options))
+            ? FontRectangle.Union(GetAbsoluteAdvance(metrics, options), GetGlyphBounds(metrics, options))
             : FontRectangle.Empty;
     }
 
     /// <summary>
-    /// Measures the union of logical glyph advances for positioned glyphs in pixel units.
+    /// Measures the logical advance of positioned glyphs in pixel units.
     /// </summary>
     /// <remarks>
-    /// Each glyph is measured at its own run origin exactly as
-    /// <see cref="TextRenderer.RenderTo(IGlyphRenderer, GlyphRun, GlyphOptions)"/>
-    /// renders it; <see cref="GlyphOptions.Origin"/> is replaced per glyph and restored. Glyph ids
-    /// the font does not contain and glyphs that never render are skipped, matching renderer
-    /// behavior.
+    /// Matching the text-level advance contract, the rectangle is zero-based: the extent the
+    /// run's advance cells cover at their run origins, reported independent of position and of
+    /// <see cref="GlyphOptions.TextBaseline"/>. Glyph ids the font does not contain and glyphs
+    /// that never render are skipped, matching renderer behavior.
     /// </remarks>
     /// <param name="glyphRun">The positioned glyphs.</param>
     /// <param name="options">The glyph options, including the font and layout mode.</param>
     /// <returns>
-    /// The union of the logical advance rectangles of the run if it was to be rendered, or
+    /// The zero-based logical advance extent of the run if it was to be rendered, or
     /// <see cref="FontRectangle.Empty"/> when no glyph in the run participates in rendering.
     /// </returns>
     public static FontRectangle MeasureAdvance(GlyphRun glyphRun, GlyphOptions options)
-        => MeasureGlyphRun(glyphRun, options, static (metrics, options) => GetGlyphAdvance(metrics, options));
+    {
+        // Match the text-level advance contract: measure the extent the positioned cells
+        // cover, then report it zero-based.
+        FontRectangle extent = MeasureGlyphRun(glyphRun, options, static (metrics, options) => GetAbsoluteAdvance(metrics, options));
+        return new FontRectangle(0, 0, extent.Width, extent.Height);
+    }
 
     /// <summary>
     /// Measures the union of rendered glyph bounds for positioned glyphs in pixel units.
@@ -222,15 +224,15 @@ public static class TextMeasurer
     /// <param name="glyphRun">The positioned glyphs.</param>
     /// <param name="options">The glyph options, including the font and layout mode.</param>
     /// <returns>
-    /// The union of the logical advance rectangles and the rendered glyph bounds of the run if it
-    /// was to be rendered, or <see cref="FontRectangle.Empty"/> when no glyph in the run
-    /// participates in rendering.
+    /// The union of the advances placed at their run origins and the rendered glyph bounds of
+    /// the run if it was to be rendered, or <see cref="FontRectangle.Empty"/> when no glyph in
+    /// the run participates in rendering.
     /// </returns>
     public static FontRectangle MeasureRenderableBounds(GlyphRun glyphRun, GlyphOptions options)
         => MeasureGlyphRun(
             glyphRun,
             options,
-            static (metrics, options) => FontRectangle.Union(GetGlyphAdvance(metrics, options), GetGlyphBounds(metrics, options)));
+            static (metrics, options) => FontRectangle.Union(GetAbsoluteAdvance(metrics, options), GetGlyphBounds(metrics, options)));
 
     /// <inheritdoc cref="GetGlyphMetrics(ReadOnlySpan{char}, TextOptions)"/>
     public static ReadOnlyMemory<GlyphMetrics> GetGlyphMetrics(string text, TextOptions options)
@@ -604,10 +606,34 @@ public static class TextMeasurer
             metrics.CodePoint,
             advance,
             bounds,
-            FontRectangle.Union(advance, bounds),
+            FontRectangle.Union(GetAbsoluteAdvance(metrics, options), bounds),
             options.Font,
             graphemeIndex,
             index);
+    }
+
+    /// <summary>
+    /// Applies the configured baseline anchor to a glyph origin in pixel units, matching the
+    /// shift the renderer applies before positioning the glyph.
+    /// </summary>
+    /// <param name="options">The glyph options.</param>
+    /// <param name="layoutMode">The resolved per-glyph layout mode.</param>
+    /// <returns>The anchored origin.</returns>
+    private static Vector2 GetAnchoredOrigin(GlyphOptions options, GlyphLayoutMode layoutMode)
+    {
+        // Mirror the renderer's exact operation order (normalize to layout units, anchor,
+        // convert back to pixels) so measured bounds stay bit-identical to rendered bounds.
+        Vector2 origin = options.Origin / options.Dpi;
+        if (layoutMode == GlyphLayoutMode.Horizontal)
+        {
+            origin.Y -= TextLayout.GetBaselineOffset(options.TextBaseline, options.Font, false);
+        }
+        else
+        {
+            origin.X -= TextLayout.GetBaselineOffset(options.TextBaseline, options.Font, true);
+        }
+
+        return origin * options.Dpi;
     }
 
     /// <summary>
@@ -619,68 +645,51 @@ public static class TextMeasurer
     /// <param name="options">The glyph options, including the font, origin, and layout mode.</param>
     /// <returns>The rendered glyph bounds.</returns>
     private static FontRectangle GetGlyphBounds(FontGlyphMetrics metrics, GlyphOptions options)
-        => metrics.GetBoundingBox(
-            options.GetGlyphLayoutMode(metrics.CodePoint),
-            options.Origin,
+    {
+        GlyphLayoutMode layoutMode = options.GetGlyphLayoutMode(metrics.CodePoint);
+        return metrics.GetBoundingBox(
+            layoutMode,
+            GetAnchoredOrigin(options, layoutMode),
             metrics.GetScaledSize(options.Font.Size, options.Dpi));
+    }
 
     /// <summary>
-    /// Computes one glyph's logical advance rectangle at <see cref="GlyphOptions.Origin"/>,
-    /// mirroring the line-box construction the layout engine applies to a single glyph: the
-    /// line height is the em box, and the ascender is balanced by the delta that centers the
-    /// em box within the font's declared line height. Vertical layouts center the cell on the
-    /// origin and extend downward by the advance the layout direction consumes.
+    /// Computes one glyph's logical advance: a zero-based measure of the space the glyph
+    /// consumes, matching the text-level advance contract. The origin and baseline anchoring
+    /// never move it; positioned geometry is reported by the bounds overloads.
     /// </summary>
     /// <param name="metrics">The glyph metrics.</param>
-    /// <param name="options">The glyph options, including the font, origin, and layout mode.</param>
-    /// <returns>The logical advance rectangle.</returns>
+    /// <param name="options">The glyph options, including the font and layout mode.</param>
+    /// <returns>The zero-based logical advance rectangle.</returns>
     private static FontRectangle GetGlyphAdvance(FontGlyphMetrics metrics, GlyphOptions options)
     {
         float scaledSize = metrics.GetScaledSize(options.Font.Size, options.Dpi);
         Vector2 scale = new(scaledSize / metrics.ScaleFactor.X, scaledSize / metrics.ScaleFactor.Y);
-        Vector2 origin = options.Origin;
-
-        // Match the layout engine's CSS-style line box: the em box is the line height, and
-        // the delta centers it within the font's declared line height.
-        // Reference: TextLayout.LineBreaking line-height calculation.
         float emHeight = metrics.UnitsPerEm * scale.Y;
 
         switch (options.GetGlyphLayoutMode(metrics.CodePoint))
         {
             case GlyphLayoutMode.Vertical:
-            {
-                float advanceWidth = metrics.AdvanceWidth * scale.X;
-                return new FontRectangle(
-                    origin.X - (advanceWidth * .5F),
-                    origin.Y,
-                    advanceWidth,
-                    metrics.AdvanceHeight * scale.Y);
-            }
-
+                return new FontRectangle(0, 0, metrics.AdvanceWidth * scale.X, metrics.AdvanceHeight * scale.Y);
             case GlyphLayoutMode.VerticalRotated:
-            {
                 // A rotated glyph advances along the column by its horizontal advance and its
                 // line box lies across the column.
-                return new FontRectangle(
-                    origin.X - (emHeight * .5F),
-                    origin.Y,
-                    emHeight,
-                    metrics.AdvanceWidth * scale.X);
-            }
-
+                return new FontRectangle(0, 0, emHeight, metrics.AdvanceWidth * scale.X);
             default:
-            {
-                // The origin is the baseline pen position; the delta-adjusted ascender places
-                // the cell top exactly where layout places the line-box top above the baseline.
-                HorizontalMetrics horizontalMetrics = options.Font.FontMetrics.HorizontalMetrics;
-                float delta = ((horizontalMetrics.LineHeight * scale.Y) - emHeight) * .5F;
-                float ascender = (horizontalMetrics.Ascender * scale.Y) - delta;
-                return new FontRectangle(
-                    origin.X,
-                    origin.Y - ascender,
-                    metrics.AdvanceWidth * scale.X,
-                    emHeight);
-            }
+                return new FontRectangle(0, 0, metrics.AdvanceWidth * scale.X, emHeight);
         }
+    }
+
+    /// <summary>
+    /// Places a glyph's zero-based advance at <see cref="GlyphOptions.Origin"/>, mirroring the
+    /// absolute-advance composition the text-level renderable bounds use.
+    /// </summary>
+    /// <param name="metrics">The glyph metrics.</param>
+    /// <param name="options">The glyph options, including the font, origin, and layout mode.</param>
+    /// <returns>The advance rectangle placed at the origin.</returns>
+    private static FontRectangle GetAbsoluteAdvance(FontGlyphMetrics metrics, GlyphOptions options)
+    {
+        FontRectangle advance = GetGlyphAdvance(metrics, options);
+        return new FontRectangle(options.Origin.X, options.Origin.Y, advance.Width, advance.Height);
     }
 }

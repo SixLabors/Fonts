@@ -29,8 +29,9 @@ public sealed partial class TextBlock
     /// <param name="text">The text to prepare.</param>
     /// <param name="options">The text options used to prepare, measure, and render the block.</param>
     /// <remarks>
-    /// <see cref="TextOptions.WrappingLength"/> is ignored while preparing the block; pass the wrapping length
-    /// to the measurement or rendering method. Use <c>-1</c> there to disable wrapping.
+    /// <see cref="TextOptions.WrappingLength"/> and <see cref="TextOptions.VisibleBounds"/> are ignored while
+    /// preparing the block; pass the wrapping length (use <c>-1</c> to disable wrapping) and any visible
+    /// bounds to the measurement or rendering methods.
     /// </remarks>
     public TextBlock(string text, TextOptions options)
         : this(text.AsSpan(), options)
@@ -43,8 +44,9 @@ public sealed partial class TextBlock
     /// <param name="text">The text to prepare.</param>
     /// <param name="options">The text options used to prepare, measure, and render the block.</param>
     /// <remarks>
-    /// <see cref="TextOptions.WrappingLength"/> is ignored while preparing the block; pass the wrapping length
-    /// to the measurement or rendering method. Use <c>-1</c> there to disable wrapping.
+    /// <see cref="TextOptions.WrappingLength"/> and <see cref="TextOptions.VisibleBounds"/> are ignored while
+    /// preparing the block; pass the wrapping length (use <c>-1</c> to disable wrapping) and any visible
+    /// bounds to the measurement or rendering methods.
     /// </remarks>
     public TextBlock(ReadOnlySpan<char> text, TextOptions options)
     {
@@ -363,6 +365,40 @@ public sealed partial class TextBlock
     }
 
     /// <summary>
+    /// Renders the visible portion of this block to the supplied glyph renderer at the supplied
+    /// wrapping length, culling whole lines that lie outside the supplied visible bounds.
+    /// </summary>
+    /// <remarks>
+    /// Culling is line-granular: every glyph on a line intersecting <paramref name="visibleBounds"/>
+    /// is rendered, and the comparison inflates each line box by one line height on each side so
+    /// ink or decorations overhanging a line box never disappear at the band edges. A culled line
+    /// still advances layout, so visible lines render at positions identical to a full render, and
+    /// <see cref="IGlyphRenderer.BeginText"/> always receives the full text bounds.
+    /// </remarks>
+    /// <param name="renderer">The target renderer.</param>
+    /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
+    /// <param name="visibleBounds">The visible region in pixels, in the same space as the rendered output.</param>
+    public void RenderTo(IGlyphRenderer renderer, float wrappingLength, in FontRectangle visibleBounds)
+    {
+        CachedTextLayout layout = this.GetOrCreateLayout(wrappingLength);
+        FontRectangle rect = this.GetOrComputeBounds(layout, wrappingLength);
+
+        // The layout walk runs in layout units (pixels divided by DPI) and culls along the block
+        // flow axis: Y for horizontal layouts, X for vertical layouts.
+        float dpi = this.Options.Dpi;
+        bool isHorizontal = this.Options.LayoutMode.IsHorizontal();
+        float visibleFlowMin = (isHorizontal ? visibleBounds.Top : visibleBounds.Left) / dpi;
+        float visibleFlowMax = (isHorizontal ? visibleBounds.Bottom : visibleBounds.Right) / dpi;
+
+        renderer.BeginText(in rect);
+
+        GlyphRendererVisitor visitor = new(renderer, this.Options, -1);
+        TextLayout.LayoutText(layout.TextBox, this.Options, wrappingLength, visibleFlowMin, visibleFlowMax, ref visitor);
+
+        renderer.EndText();
+    }
+
+    /// <summary>
     /// Renders an already line-broken text box to the supplied glyph renderer.
     /// </summary>
     /// <param name="renderer">The target renderer.</param>
@@ -439,6 +475,28 @@ public sealed partial class TextBlock
             LayoutMode.HorizontalBottomTop
             or LayoutMode.VerticalRightLeft
             or LayoutMode.VerticalMixedRightLeft;
+
+        if (options.TextBaseline != TextBaseline.LineBox)
+        {
+            // Baseline anchoring places the first laid-out line's selected reference line on
+            // the origin; shift the reported line starts by the matching amount so metrics
+            // agree with rendering.
+            TextLine anchorLine = textBox.TextLines[reverseLineOrder ? textBox.TextLines.Count - 1 : 0];
+            if (isHorizontalLayout)
+            {
+                float anchorDelta = anchorLine.ScaledMaxDelta;
+                float anchorCore = anchorLine.ScaledMaxAscender + anchorLine.ScaledMaxDescender + (2 * anchorDelta);
+                float anchorExtra = anchorLine.ScaledMaxLineHeight - anchorCore;
+                float anchorBaseline = (anchorExtra * .5F) + anchorLine.ScaledMaxAscender + anchorDelta;
+                lineOffset -= (anchorBaseline + TextLayout.GetBaselineOffset(options.TextBaseline, options.Font, false)) * options.Dpi;
+            }
+            else
+            {
+                // Columns anchor their central axis, half the unscaled column width from the pen.
+                float anchorCentral = anchorLine.ScaledMaxLineHeight / options.LineSpacing * .5F;
+                lineOffset -= (anchorCentral + TextLayout.GetBaselineOffset(options.TextBaseline, options.Font, true)) * options.Dpi;
+            }
+        }
 
         int i = reverseLineOrder ? textBox.TextLines.Count - 1 : 0;
         int step = reverseLineOrder ? -1 : 1;
@@ -648,7 +706,7 @@ public sealed partial class TextBlock
     /// <param name="dpi">The target DPI.</param>
     /// <param name="isHorizontalLayout">Whether the layout direction is horizontal.</param>
     /// <returns>The logical advance rectangle.</returns>
-    private static FontRectangle GetAdvance(TextBox textBox, float dpi, bool isHorizontalLayout)
+    internal static FontRectangle GetAdvance(TextBox textBox, float dpi, bool isHorizontalLayout)
     {
         if (textBox.TextLines.Count == 0)
         {

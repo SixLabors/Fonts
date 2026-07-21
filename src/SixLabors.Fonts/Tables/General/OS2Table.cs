@@ -47,12 +47,12 @@ internal sealed class OS2Table : Table
     /// <summary>
     /// The code page range bits 0-31.
     /// </summary>
-    private readonly ushort codePageRange1;
+    private readonly uint codePageRange1;
 
     /// <summary>
     /// The code page range bits 32-63.
     /// </summary>
-    private readonly ushort codePageRange2;
+    private readonly uint codePageRange2;
 
     /// <summary>
     /// The Unicode range bits 0-31.
@@ -231,8 +231,8 @@ internal sealed class OS2Table : Table
     /// <param name="maxContext">The maximum target glyph context length.</param>
     public OS2Table(
         OS2Table version0Table,
-        ushort codePageRange1,
-        ushort codePageRange2,
+        uint codePageRange1,
+        uint codePageRange2,
         short heightX,
         short capHeight,
         ushort defaultChar,
@@ -407,6 +407,16 @@ internal sealed class OS2Table : Table
     /// Gets the width of the strikeout stroke in font design units.
     /// </summary>
     public short StrikeoutSize { get; }
+
+    /// <summary>
+    /// Gets the x-height in font design units, or 0 when the font does not provide it.
+    /// </summary>
+    public short XHeight => this.heightX;
+
+    /// <summary>
+    /// Gets the cap height in font design units, or 0 when the font does not provide it.
+    /// </summary>
+    public short CapHeight => this.capHeight;
 
     /// <summary>
     /// Gets the horizontal offset for subscript characters.
@@ -591,8 +601,8 @@ internal sealed class OS2Table : Table
         ushort breakChar = 0;
         ushort maxContext = 0;
 
-        ushort codePageRange1 = reader.ReadUInt16(); // Bits 0–31
-        ushort codePageRange2 = reader.ReadUInt16(); // Bits 32–63
+        uint codePageRange1 = reader.ReadUInt32(); // Bits 0–31
+        uint codePageRange2 = reader.ReadUInt32(); // Bits 32–63
 
         // fields exist only in > v1 https://docs.microsoft.com/en-us/typography/opentype/spec/os2
         if (version > 1)

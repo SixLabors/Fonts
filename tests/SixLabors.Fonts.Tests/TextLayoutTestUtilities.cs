@@ -144,6 +144,8 @@ internal static class TextLayoutTestUtilities
             LineSpacing = options.LineSpacing,
             Origin = options.Origin,
             WrappingLength = options.WrappingLength,
+            VisibleBounds = options.VisibleBounds,
+            TextBaseline = options.TextBaseline,
             MaxLines = options.MaxLines,
             WordBreaking = options.WordBreaking,
             TextHyphenation = options.TextHyphenation,

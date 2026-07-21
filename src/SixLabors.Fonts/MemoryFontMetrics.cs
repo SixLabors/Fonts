@@ -101,6 +101,12 @@ internal sealed class MemoryFontMetrics : FontMetrics
     public override short StrikeoutSize => this.fontMetrics.Value.StrikeoutSize;
 
     /// <inheritdoc/>
+    public override short XHeight => this.fontMetrics.Value.XHeight;
+
+    /// <inheritdoc/>
+    public override short CapHeight => this.fontMetrics.Value.CapHeight;
+
+    /// <inheritdoc/>
     public override short StrikeoutPosition => this.fontMetrics.Value.StrikeoutPosition;
 
     /// <inheritdoc/>
@@ -189,6 +195,10 @@ internal sealed class MemoryFontMetrics : FontMetrics
     /// <inheritdoc/>
     internal override bool TryGetGSubTable([NotNullWhen(true)] out GSubTable? gSubTable)
         => this.fontMetrics.Value.TryGetGSubTable(out gSubTable);
+
+    /// <inheritdoc/>
+    internal override bool TryGetBaselineCoordinate(Tag baselineTag, bool isVerticalLayout, out short coordinate)
+        => this.fontMetrics.Value.TryGetBaselineCoordinate(baselineTag, isVerticalLayout, out coordinate);
 
     /// <inheritdoc/>
     internal override void ApplySubstitution(GlyphSubstitutionCollection collection)

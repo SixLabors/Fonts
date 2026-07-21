@@ -13,6 +13,16 @@ namespace SixLabors.Fonts;
 internal static partial class TextLayout
 {
     /// <summary>
+    /// The tag for the hanging baseline ('hang') in the font's baseline table.
+    /// </summary>
+    private static readonly Tag HangingBaselineTag = Tag.Parse("hang");
+
+    /// <summary>
+    /// The tag for the ideographic-under baseline ('ideo') in the font's baseline table.
+    /// </summary>
+    private static readonly Tag IdeographicBaselineTag = Tag.Parse("ideo");
+
+    /// <summary>
     /// Resolves the ordered sequence of <see cref="TextRun"/> instances that cover <paramref name="text"/>.
     /// </summary>
     /// <remarks>
@@ -290,6 +300,192 @@ internal static partial class TextLayout
         float wrappingLength,
         ref TVisitor visitor)
         where TVisitor : struct, IGlyphLayoutVisitor
+        => LayoutText(textBox, options, wrappingLength, float.NegativeInfinity, float.PositiveInfinity, ref visitor);
+
+    /// <summary>
+    /// Gets a value indicating whether the layout walk must observe every broken line before it
+    /// can place the first one. This is the authoritative statement of the walk's full-line-set
+    /// dependencies; update it alongside any change to the line layout methods in this file.
+    /// </summary>
+    /// <remarks>
+    /// The reversed layout orders place the last line first. Non-start text alignment and
+    /// right-to-left blocks offset each line using the widest line advance, as do centered and
+    /// right block alignment; centered and bottom block alignment on the cross axis sum every
+    /// line's extent on the first line. <see cref="TextOptions.MaxLines"/> zero short-circuits
+    /// breaking with its own empty-box direction rule in
+    /// <see cref="BreakLines(in LogicalTextLine, TextOptions, float)"/>.
+    /// </remarks>
+    /// <param name="options">The text options used to lay out text.</param>
+    /// <param name="textDirection">The resolved block-level text direction.</param>
+    /// <returns><see langword="true"/> when layout needs the full line set.</returns>
+    public static bool LayoutRequiresFullLineSet(TextOptions options, TextDirection textDirection)
+        => options.MaxLines == 0 ||
+           options.TextAlignment != TextAlignment.Start ||
+           options.HorizontalAlignment != HorizontalAlignment.Left ||
+           options.VerticalAlignment != VerticalAlignment.Top ||
+           options.LayoutMode is not (LayoutMode.HorizontalTopBottom or LayoutMode.VerticalLeftRight or LayoutMode.VerticalMixedLeftRight) ||
+           textDirection != TextDirection.LeftToRight;
+
+    /// <summary>
+    /// Computes the offset from the dominant baseline to the reference line selected by
+    /// <paramref name="baseline"/> for the supplied font, in layout units. Horizontal layouts
+    /// measure from the alphabetic baseline along Y, increasing toward the under side.
+    /// Vertical layouts measure from the central column axis along X, increasing toward the
+    /// over side: each baseline keeps the distance from the central baseline the horizontal
+    /// metrics give it, exactly as CSS synthesizes vertical baseline tables, with dedicated
+    /// vertical baseline table data taking precedence when the font provides it.
+    /// <see cref="TextBaseline.LineBox"/> resolves to the line-box leading edge from the
+    /// flow axis metrics so single-glyph callers share the text anchor model.
+    /// </summary>
+    /// <param name="baseline">The reference line to resolve.</param>
+    /// <param name="font">The font whose metrics position the reference lines.</param>
+    /// <param name="isVerticalLayout">Whether the layout flows vertically.</param>
+    /// <returns>The offset from the dominant baseline in layout units.</returns>
+    public static float GetBaselineOffset(TextBaseline baseline, Font font, bool isVerticalLayout)
+    {
+        FontMetrics metrics = font.FontMetrics;
+        float scale = font.Size / metrics.ScaleFactor;
+
+        if (baseline == TextBaseline.LineBox)
+        {
+            // The line box is column geometry rather than a baseline, so it anchors from the
+            // metrics of the flow axis itself. The leading edge sits above the baseline, or
+            // left of the column axis, by the delta-adjusted ascender: the delta centers the
+            // em box within the font's declared line height, mirroring the layout engine's
+            // cell model, so a LineBox-anchored glyph cell starts exactly at the origin.
+            float flowAscender;
+            float flowLineHeight;
+            if (isVerticalLayout)
+            {
+                VerticalMetrics verticalMetrics = metrics.VerticalMetrics;
+                flowAscender = verticalMetrics.Ascender;
+                flowLineHeight = verticalMetrics.LineHeight;
+            }
+            else
+            {
+                HorizontalMetrics horizontalMetrics = metrics.HorizontalMetrics;
+                flowAscender = horizontalMetrics.Ascender;
+                flowLineHeight = horizontalMetrics.LineHeight;
+            }
+
+            float delta = ((flowLineHeight - metrics.UnitsPerEm) * scale) * .5F;
+            return -((flowAscender * scale) - delta);
+        }
+
+        if (isVerticalLayout &&
+            baseline is TextBaseline.Hanging or TextBaseline.Ideographic &&
+            metrics.TryGetBaselineCoordinate(
+                baseline == TextBaseline.Hanging ? HangingBaselineTag : IdeographicBaselineTag,
+                true,
+                out short vertical))
+        {
+            // Dedicated vertical axis data positions the baseline as an X coordinate from
+            // the em box leading edge; re-centering on the column axis subtracts half the em.
+            return (vertical - (metrics.UnitsPerEm * .5F)) * scale;
+        }
+
+        // Every baseline anchor derives from the horizontal metrics: its height above the
+        // alphabetic baseline in horizontal layout is also its distance from the central
+        // baseline in vertical layout, which is how CSS synthesizes vertical baselines for
+        // fonts without dedicated vertical baseline data.
+        HorizontalMetrics horizontal = metrics.HorizontalMetrics;
+        float ascender = horizontal.Ascender * scale;
+        float descender = horizontal.Descender * scale;
+        float height;
+        switch (baseline)
+        {
+            case TextBaseline.TextTop:
+                height = ascender;
+                break;
+            case TextBaseline.Hanging:
+            {
+                // 80% of the ascender approximates the hanging baseline when the font
+                // carries no baseline table data for it.
+                height = metrics.TryGetBaselineCoordinate(HangingBaselineTag, false, out short coordinate)
+                    ? coordinate * scale
+                    : 0.8F * ascender;
+                break;
+            }
+
+            case TextBaseline.Middle:
+            {
+                float xHeight = metrics.XHeight * scale;
+                if (xHeight <= 0)
+                {
+                    // Half the ascender approximates the x-height when the font omits it.
+                    xHeight = ascender * .5F;
+                }
+
+                height = xHeight * .5F;
+                break;
+            }
+
+            case TextBaseline.Central:
+                // The descender is negative, so this lands halfway between em top and bottom.
+                height = (ascender + descender) * .5F;
+                break;
+            case TextBaseline.Ideographic:
+            {
+                // The em bottom approximates the ideographic-under baseline when the font
+                // carries no baseline table data for it.
+                height = metrics.TryGetBaselineCoordinate(IdeographicBaselineTag, false, out short coordinate)
+                    ? coordinate * scale
+                    : descender;
+                break;
+            }
+
+            case TextBaseline.TextBottom:
+                height = descender;
+                break;
+            default:
+                height = 0;
+                break;
+        }
+
+        if (!isVerticalLayout)
+        {
+            // Y increases toward the under side, so a reference above the baseline is a
+            // negative offset.
+            return -height;
+        }
+
+        // X increases toward the over side, so the offset is the reference height re-centered
+        // on the central baseline.
+        return height - ((ascender + descender) * .5F);
+    }
+
+    /// <summary>
+    /// Lays out the supplied <see cref="TextBox"/>, streaming each laid-out glyph through the
+    /// supplied <paramref name="visitor"/> in layout order, culling whole lines whose extent along
+    /// the block flow axis lies outside the supplied visible band.
+    /// </summary>
+    /// <remarks>
+    /// A culled line advances the pen exactly as a rendered line would but visits no glyphs. The
+    /// band is compared against each line's box inflated by one line height on each side, so ink
+    /// or decorations overhanging a line box by up to one line height never disappear.
+    /// </remarks>
+    /// <typeparam name="TVisitor">The concrete visitor struct type.</typeparam>
+    /// <param name="textBox">The shaped and line-broken text.</param>
+    /// <param name="options">The text options used to lay out <paramref name="textBox"/>.</param>
+    /// <param name="wrappingLength">The wrapping length in pixels. Use <c>-1</c> to disable wrapping.</param>
+    /// <param name="visibleFlowMin">
+    /// The lower edge of the visible band along the block flow axis (Y for horizontal layouts,
+    /// X for vertical layouts) in layout units (pixels divided by DPI).
+    /// Use <see cref="float.NegativeInfinity"/> to disable culling at this edge.
+    /// </param>
+    /// <param name="visibleFlowMax">
+    /// The upper edge of the visible band along the block flow axis in layout units.
+    /// Use <see cref="float.PositiveInfinity"/> to disable culling at this edge.
+    /// </param>
+    /// <param name="visitor">The visitor that receives each positioned glyph.</param>
+    internal static void LayoutText<TVisitor>(
+        TextBox textBox,
+        TextOptions options,
+        float wrappingLength,
+        float visibleFlowMin,
+        float visibleFlowMax,
+        ref TVisitor visitor)
+        where TVisitor : struct, IGlyphLayoutVisitor
     {
         if (textBox.TextLines.Count == 0)
         {
@@ -323,6 +519,8 @@ internal static partial class TextLayout
                     maxScaledAdvance,
                     options,
                     i,
+                    visibleFlowMin,
+                    visibleFlowMax,
                     ref boxLocation,
                     ref penLocation,
                     ref visitor);
@@ -343,6 +541,8 @@ internal static partial class TextLayout
                     maxScaledAdvance,
                     options,
                     index++,
+                    visibleFlowMin,
+                    visibleFlowMax,
                     ref boxLocation,
                     ref penLocation,
                     ref visitor);
@@ -362,6 +562,8 @@ internal static partial class TextLayout
                     maxScaledAdvance,
                     options,
                     i,
+                    visibleFlowMin,
+                    visibleFlowMax,
                     ref boxLocation,
                     ref penLocation,
                     ref visitor);
@@ -382,6 +584,8 @@ internal static partial class TextLayout
                     maxScaledAdvance,
                     options,
                     index++,
+                    visibleFlowMin,
+                    visibleFlowMax,
                     ref boxLocation,
                     ref penLocation,
                     ref visitor);
@@ -401,6 +605,8 @@ internal static partial class TextLayout
                     maxScaledAdvance,
                     options,
                     i,
+                    visibleFlowMin,
+                    visibleFlowMax,
                     ref boxLocation,
                     ref penLocation,
                     ref visitor);
@@ -421,6 +627,8 @@ internal static partial class TextLayout
                     maxScaledAdvance,
                     options,
                     index++,
+                    visibleFlowMin,
+                    visibleFlowMax,
                     ref boxLocation,
                     ref penLocation,
                     ref visitor);
@@ -442,6 +650,8 @@ internal static partial class TextLayout
     /// <param name="maxScaledAdvance">The widest scaled line advance in the block (or wrapping length).</param>
     /// <param name="options">The text options used to position the line.</param>
     /// <param name="index">The zero-based visual index of this line within the block.</param>
+    /// <param name="visibleFlowMin">The lower visible-band edge along Y in layout units.</param>
+    /// <param name="visibleFlowMax">The upper visible-band edge along Y in layout units.</param>
     /// <param name="boxLocation">The running top-left position of the glyph boxes; advanced by this method.</param>
     /// <param name="penLocation">The running pen position used for glyph placement; advanced by this method.</param>
     /// <param name="visitor">The visitor that receives each positioned glyph.</param>
@@ -452,6 +662,8 @@ internal static partial class TextLayout
         float maxScaledAdvance,
         TextOptions options,
         int index,
+        float visibleFlowMin,
+        float visibleFlowMax,
         ref Vector2 boxLocation,
         ref Vector2 penLocation,
         ref TVisitor visitor)
@@ -475,41 +687,65 @@ internal static partial class TextLayout
         // Set the Y origin for the first horizontal line and account for tall stacks.
         if (isFirstLine)
         {
-            // ScaledMinY is the minimum ink Y for this line in Y down (baseline at 0).
-            // -ScaledMinY is the actual ascent required to contain the ink.
-            // ScaledMaxAscender is the typographic ascent we already used to build the line box.
-            float requiredAscent = -textLine.ScaledMinY;
-            float extraAscent = requiredAscent - textLine.ScaledMaxAscender;
-
-            if (extraAscent > 0)
+            if (options.TextBaseline != TextBaseline.LineBox)
             {
-                // Shift the baseline down only by the extra ascent needed so that
-                // stacked glyphs (Tibetan, etc) fit inside the bitmap. For Latin,
-                // requiredAscent ~= ScaledMaxAscender and extraAscent is zero.
-                offsetY += extraAscent;
-                advanceY += extraAscent;
+                // The walk renders this line's baseline at pen + ScaledMaxAscender, so moving
+                // the pen to origin - ascender - reference places the selected reference line,
+                // expressed as an offset from that baseline, exactly on the origin. Block
+                // alignment and tall-stack compensation position the line box and therefore
+                // do not apply to baseline-anchored text.
+                offsetY = -textLine.ScaledMaxAscender - GetBaselineOffset(options.TextBaseline, options.Font, false);
             }
-
-            switch (options.VerticalAlignment)
+            else
             {
-                case VerticalAlignment.Center:
-                    for (int i = 0; i < textBox.TextLines.Count; i++)
-                    {
-                        offsetY -= textBox.TextLines[i].ScaledMaxLineHeight * .5F;
-                    }
+                // ScaledMinY is the minimum ink Y for this line in Y down (baseline at 0).
+                // -ScaledMinY is the actual ascent required to contain the ink.
+                // ScaledMaxAscender is the typographic ascent we already used to build the line box.
+                float requiredAscent = -textLine.ScaledMinY;
+                float extraAscent = requiredAscent - textLine.ScaledMaxAscender;
 
-                    break;
-                case VerticalAlignment.Bottom:
-                    for (int i = 0; i < textBox.TextLines.Count; i++)
-                    {
-                        offsetY -= textBox.TextLines[i].ScaledMaxLineHeight;
-                    }
+                if (extraAscent > 0)
+                {
+                    // Shift the baseline down only by the extra ascent needed so that
+                    // stacked glyphs (Tibetan, etc) fit inside the bitmap. For Latin,
+                    // requiredAscent ~= ScaledMaxAscender and extraAscent is zero.
+                    offsetY += extraAscent;
+                    advanceY += extraAscent;
+                }
 
-                    break;
+                switch (options.VerticalAlignment)
+                {
+                    case VerticalAlignment.Center:
+                        for (int i = 0; i < textBox.TextLines.Count; i++)
+                        {
+                            offsetY -= textBox.TextLines[i].ScaledMaxLineHeight * .5F;
+                        }
+
+                        break;
+                    case VerticalAlignment.Bottom:
+                        for (int i = 0; i < textBox.TextLines.Count; i++)
+                        {
+                            offsetY -= textBox.TextLines[i].ScaledMaxLineHeight;
+                        }
+
+                        break;
+                }
             }
         }
 
         penLocation.Y += offsetY;
+
+        // Line-band culling: a line whose box, inflated by one line height on each side to cover
+        // ink overshoot and decoration reach, lies fully outside the visible band advances the
+        // pen and box exactly as a rendered line would without visiting a single glyph. The pen
+        // X has not moved yet and a completed line always restores it, so only Y advances here.
+        if (penLocation.Y + advanceY + scaledLineHeight < visibleFlowMin ||
+            penLocation.Y - scaledLineHeight > visibleFlowMax)
+        {
+            penLocation.Y += yLineAdvance;
+            boxLocation.Y += advanceY;
+            return;
+        }
 
         // Set the X-Origin for horizontal alignment.
         switch (options.HorizontalAlignment)
@@ -551,7 +787,6 @@ internal static partial class TextLayout
         penLocation.X += offsetX;
         Vector2 boundsLocation = boxLocation;
 
-        bool emitted = false;
         for (int i = 0; i < textLine.Count; i++)
         {
             GlyphLayoutData data = textLine[i];
@@ -611,8 +846,6 @@ internal static partial class TextLayout
                     i == 0 && j == 0,
                     data.GraphemeIndex,
                     data.StringIndex));
-
-                emitted = true;
             }
 
             boxLocation.X += layoutAdvance;
@@ -622,11 +855,8 @@ internal static partial class TextLayout
 
         boxLocation.X = originX;
         penLocation.X = originX;
-        if (emitted)
-        {
-            penLocation.Y += yLineAdvance;
-            boxLocation.Y += advanceY;
-        }
+        penLocation.Y += yLineAdvance;
+        boxLocation.Y += advanceY;
     }
 
     /// <summary>
@@ -642,6 +872,8 @@ internal static partial class TextLayout
     /// <param name="maxScaledAdvance">The longest scaled line advance in the block (or wrapping length).</param>
     /// <param name="options">The text options used to position the line.</param>
     /// <param name="index">The zero-based visual index of this line within the block.</param>
+    /// <param name="visibleFlowMin">The lower visible-band edge along X in layout units.</param>
+    /// <param name="visibleFlowMax">The upper visible-band edge along X in layout units.</param>
     /// <param name="boxLocation">The running top-left position of the glyph boxes; advanced by this method.</param>
     /// <param name="penLocation">The running pen position used for glyph placement; advanced by this method.</param>
     /// <param name="visitor">The visitor that receives each positioned glyph.</param>
@@ -652,6 +884,8 @@ internal static partial class TextLayout
         float maxScaledAdvance,
         TextOptions options,
         int index,
+        float visibleFlowMin,
+        float visibleFlowMax,
         ref Vector2 boxLocation,
         ref Vector2 penLocation,
         ref TVisitor visitor)
@@ -714,38 +948,61 @@ internal static partial class TextLayout
         bool isFirstLine = index == 0;
         if (isFirstLine)
         {
-            // In vertical layout, first-line Y ascent compensation introduces unwanted
-            // leading space before the first glyph. Keep first-line handling limited
-            // to X-origin block alignment only.
-
-            // Set the X-Origin for horizontal alignment.
-            switch (options.HorizontalAlignment)
+            if (options.TextBaseline != TextBaseline.LineBox)
             {
-                case HorizontalAlignment.Right:
-                    for (int i = 0; i < textBox.TextLines.Count; i++)
-                    {
-                        offsetX -= textBox.TextLines[i].ScaledMaxLineHeight;
-                    }
+                // The walk centers glyphs on the column's central axis at pen plus half the
+                // unscaled line height; moving the pen so that axis sits at the origin minus
+                // the reference offset anchors the selected line. Block alignment positions
+                // the column box and therefore does not apply to baseline-anchored text.
+                offsetX = -(unscaledLineHeight * .5F) - GetBaselineOffset(options.TextBaseline, options.Font, true);
+            }
+            else
+            {
+                // In vertical layout, first-line Y ascent compensation introduces unwanted
+                // leading space before the first glyph. Keep first-line handling limited
+                // to X-origin block alignment only.
 
-                    break;
-                case HorizontalAlignment.Center:
-                    for (int i = 0; i < textBox.TextLines.Count; i++)
-                    {
-                        offsetX -= textBox.TextLines[i].ScaledMaxLineHeight * .5F;
-                    }
+                // Set the X-Origin for horizontal alignment.
+                switch (options.HorizontalAlignment)
+                {
+                    case HorizontalAlignment.Right:
+                        for (int i = 0; i < textBox.TextLines.Count; i++)
+                        {
+                            offsetX -= textBox.TextLines[i].ScaledMaxLineHeight;
+                        }
 
-                    break;
+                        break;
+                    case HorizontalAlignment.Center:
+                        for (int i = 0; i < textBox.TextLines.Count; i++)
+                        {
+                            offsetX -= textBox.TextLines[i].ScaledMaxLineHeight * .5F;
+                        }
+
+                        break;
+                }
             }
         }
 
         penLocation.Y += offsetY;
         penLocation.X += offsetX;
 
+        // Line-band culling: a column whose box, inflated by one column width on each side to
+        // cover ink overshoot and decoration reach, lies fully outside the visible band advances
+        // the pen and box exactly as a rendered column would without visiting a single glyph.
+        // A completed column keeps its X offset and restores Y to the origin.
+        if (penLocation.X + advanceX + scaledMaxLineHeight < visibleFlowMin ||
+            penLocation.X - scaledMaxLineHeight > visibleFlowMax)
+        {
+            boxLocation.Y = originY;
+            penLocation.Y = originY;
+            boxLocation.X += advanceX;
+            penLocation.X += xLineAdvance;
+            return;
+        }
+
         float lineOriginX = penLocation.X;
         Vector2 boundsLocation = boxLocation;
         float boundsLineOriginX = boundsLocation.X;
-
-        bool emitted = false;
 
         // Grapheme-scoped state for transformed glyph alignment.
         //
@@ -958,7 +1215,6 @@ internal static partial class TextLayout
                     data.GraphemeIndex,
                     data.StringIndex));
 
-                emitted = true;
                 j++;
             }
 
@@ -986,11 +1242,8 @@ internal static partial class TextLayout
 
         boxLocation.Y = originY;
         penLocation.Y = originY;
-        if (emitted)
-        {
-            boxLocation.X += advanceX;
-            penLocation.X += xLineAdvance;
-        }
+        boxLocation.X += advanceX;
+        penLocation.X += xLineAdvance;
     }
 
     /// <summary>
@@ -1006,6 +1259,8 @@ internal static partial class TextLayout
     /// <param name="maxScaledAdvance">The longest scaled line advance in the block (or wrapping length).</param>
     /// <param name="options">The text options used to position the line.</param>
     /// <param name="index">The zero-based visual index of this line within the block.</param>
+    /// <param name="visibleFlowMin">The lower visible-band edge along X in layout units.</param>
+    /// <param name="visibleFlowMax">The upper visible-band edge along X in layout units.</param>
     /// <param name="boxLocation">The running top-left position of the glyph boxes; advanced by this method.</param>
     /// <param name="penLocation">The running pen position used for glyph placement; advanced by this method.</param>
     /// <param name="visitor">The visitor that receives each positioned glyph.</param>
@@ -1016,6 +1271,8 @@ internal static partial class TextLayout
         float maxScaledAdvance,
         TextOptions options,
         int index,
+        float visibleFlowMin,
+        float visibleFlowMax,
         ref Vector2 boxLocation,
         ref Vector2 penLocation,
         ref TVisitor visitor)
@@ -1078,35 +1335,60 @@ internal static partial class TextLayout
         bool isFirstLine = index == 0;
         if (isFirstLine)
         {
-            // In vertical-mixed layout, first-line Y ascent compensation introduces
-            // unwanted leading space before the first glyph. Keep first-line handling
-            // limited to X-origin block alignment only.
-
-            // Set the X-Origin for horizontal alignment.
-            switch (options.HorizontalAlignment)
+            if (options.TextBaseline != TextBaseline.LineBox)
             {
-                case HorizontalAlignment.Right:
-                    for (int i = 0; i < textBox.TextLines.Count; i++)
-                    {
-                        offsetX -= textBox.TextLines[i].ScaledMaxLineHeight;
-                    }
+                // The walk centers glyphs on the column's central axis at pen plus half the
+                // unscaled line height; moving the pen so that axis sits at the origin minus
+                // the reference offset anchors the selected line. Block alignment positions
+                // the column box and therefore does not apply to baseline-anchored text.
+                offsetX = -(unscaledLineHeight * .5F) - GetBaselineOffset(options.TextBaseline, options.Font, true);
+            }
+            else
+            {
+                // In vertical-mixed layout, first-line Y ascent compensation introduces
+                // unwanted leading space before the first glyph. Keep first-line handling
+                // limited to X-origin block alignment only.
 
-                    break;
-                case HorizontalAlignment.Center:
-                    for (int i = 0; i < textBox.TextLines.Count; i++)
-                    {
-                        offsetX -= textBox.TextLines[i].ScaledMaxLineHeight * .5F;
-                    }
+                // Set the X-Origin for horizontal alignment.
+                switch (options.HorizontalAlignment)
+                {
+                    case HorizontalAlignment.Right:
+                        for (int i = 0; i < textBox.TextLines.Count; i++)
+                        {
+                            offsetX -= textBox.TextLines[i].ScaledMaxLineHeight;
+                        }
 
-                    break;
+                        break;
+                    case HorizontalAlignment.Center:
+                        for (int i = 0; i < textBox.TextLines.Count; i++)
+                        {
+                            offsetX -= textBox.TextLines[i].ScaledMaxLineHeight * .5F;
+                        }
+
+                        break;
+                }
             }
         }
 
         penLocation.Y += offsetY;
         penLocation.X += offsetX;
+
+        // Line-band culling: a column whose box, inflated by one column width on each side to
+        // cover ink overshoot and decoration reach, lies fully outside the visible band advances
+        // the pen and box exactly as a rendered column would without visiting a single glyph.
+        // A completed column keeps its X offset and restores Y to the origin.
+        if (penLocation.X + advanceX + scaledMaxLineHeight < visibleFlowMin ||
+            penLocation.X - scaledMaxLineHeight > visibleFlowMax)
+        {
+            boxLocation.Y = originY;
+            penLocation.Y = originY;
+            boxLocation.X += advanceX;
+            penLocation.X += xLineAdvance;
+            return;
+        }
+
         Vector2 boundsLocation = boxLocation;
 
-        bool emitted = false;
         for (int i = 0; i < textLine.Count; i++)
         {
             GlyphLayoutData data = textLine[i];
@@ -1159,19 +1441,18 @@ internal static partial class TextLayout
                     // The glyph will be rotated 90 degrees for vertical mixed layout.
                     // We still advance along Y, but the glyphs are laid out sideways in X.
 
-                    // Calculate the initial horizontal offset to center the glyph baseline:
-                    // - Take half the difference between the max line height (scaledMaxLineHeight)
-                    //   and the current glyph's line height (data.ScaledLineHeight).
-                    // - The line height includes both ascender and descender metrics.
-                    float baselineDelta = (unscaledLineHeight - scaledLineHeight) * .5F;
+                    // Rotated glyphs sit on the line's alphabetic baseline, which lies half
+                    // the ascender-plus-descender span toward the under side of the central
+                    // column axis at the middle of the line. Upright glyphs in the same line
+                    // center on that axis, so both orientations share the column lines the
+                    // horizontal metrics synthesize, which is also how browsers position
+                    // mixed-orientation runs.
+                    Vector2 rotatedScale = new Vector2(data.PointSize) / metric.ScaleFactor;
+                    HorizontalMetrics rotatedMetrics = metric.FontMetrics.HorizontalMetrics;
+                    float centralOffset = (rotatedMetrics.Ascender + rotatedMetrics.Descender) * .5F * rotatedScale.Y;
 
-                    // Adjust the horizontal offset further by considering the descender differences:
-                    // - Subtract the current glyph's descender (data.ScaledDescender) to align it properly.
-                    float descenderAbs = Math.Abs(data.ScaledDescender);
-                    float descenderDelta = (Math.Abs(textLine.ScaledMaxDescender) - descenderAbs) * .5F;
-
-                    float centerOffsetX = baselineDelta + descenderAbs + descenderDelta;
-                    Vector2 glyphOrigin = penLocation + new Vector2(centerOffsetX, 0);
+                    float baselineX = (unscaledLineHeight * .5F) - centralOffset;
+                    Vector2 glyphOrigin = penLocation + new Vector2(baselineX, 0);
 
                     visitor.Visit(
                         new GlyphLayout(
@@ -1187,8 +1468,6 @@ internal static partial class TextLayout
                         i == 0 && j == 0,
                         data.GraphemeIndex,
                         data.StringIndex));
-
-                    emitted = true;
                 }
             }
             else
@@ -1224,8 +1503,6 @@ internal static partial class TextLayout
                         i == 0 && j == 0,
                         data.GraphemeIndex,
                         data.StringIndex));
-
-                    emitted = true;
                 }
             }
 
@@ -1235,11 +1512,8 @@ internal static partial class TextLayout
 
         boxLocation.Y = originY;
         penLocation.Y = originY;
-        if (emitted)
-        {
-            boxLocation.X += advanceX;
-            penLocation.X += xLineAdvance;
-        }
+        boxLocation.X += advanceX;
+        penLocation.X += xLineAdvance;
     }
 
     /// <summary>

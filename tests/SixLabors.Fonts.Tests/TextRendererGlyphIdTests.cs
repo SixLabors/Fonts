@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Numerics;
 using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Unicode;
 
@@ -99,6 +100,40 @@ public class TextRendererGlyphIdTests
         Assert.Equal(43, run.End);
         Assert.Equal(TextAttributes.Superscript, run.TextAttributes);
         Assert.Equal(TextDecorations.Underline, run.TextDecorations);
+    }
+
+    [Fact]
+    public void RenderGlyphRun_VisibleBounds_SkipsGlyphsOutsideRegion()
+    {
+        Font font = TextLayoutTests.CreateRenderingFont();
+        CodePoint codePoint = new('A');
+
+        Assert.True(font.TryGetGlyphs(codePoint, out Glyph? glyph));
+        ushort glyphId = glyph.Value.GlyphMetrics.GlyphId;
+
+        ushort[] glyphIds = [glyphId, glyphId, glyphId];
+        Vector2[] origins = [new(0, 20), new(100, 20), new(200, 20)];
+        GlyphRun run = new(glyphIds, origins);
+        GlyphOptions options = new()
+        {
+            Font = font
+        };
+
+        GlyphRenderer full = new();
+        TextRenderer.RenderTo(full, run, options);
+
+        Assert.Equal(3, full.GlyphRects.Count);
+
+        // A region around the middle origin only. The outer glyphs sit further from the region
+        // than the one-line-height tolerance, so just the middle glyph renders, at a position
+        // identical to the unculled run.
+        options.VisibleBounds = new FontRectangle(90, 0, 20, 40);
+
+        GlyphRenderer culled = new();
+        TextRenderer.RenderTo(culled, run, options);
+
+        Assert.Single(culled.GlyphRects);
+        Assert.Equal(full.GlyphRects[1], culled.GlyphRects[0]);
     }
 
     [Fact]

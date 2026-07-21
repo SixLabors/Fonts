@@ -90,6 +90,16 @@ public abstract class FontMetrics
     public abstract short StrikeoutSize { get; }
 
     /// <summary>
+    /// Gets the x-height in font design units, or 0 when the font does not provide it.
+    /// </summary>
+    public abstract short XHeight { get; }
+
+    /// <summary>
+    /// Gets the cap height in font design units, or 0 when the font does not provide it.
+    /// </summary>
+    public abstract short CapHeight { get; }
+
+    /// <summary>
     /// Gets the position of the top of the strikeout stroke relative to the baseline in font design units.
     /// </summary>
     public abstract short StrikeoutPosition { get; }
@@ -288,6 +298,22 @@ public abstract class FontMetrics
     /// <param name="gSubTable">The GSUB table.</param>
     /// <returns>true, if the glyph class could be retrieved.</returns>
     internal abstract bool TryGetGSubTable([NotNullWhen(true)] out GSubTable? gSubTable);
+
+    /// <summary>
+    /// Tries to get the coordinate of the named baseline from the font's baseline table for
+    /// the given layout direction, read from the default script record of the matching axis.
+    /// </summary>
+    /// <param name="baselineTag">The baseline identification tag, for example 'hang' or 'ideo'.</param>
+    /// <param name="isVerticalLayout">
+    /// Whether to read the vertical axis, whose coordinates are X values, rather than the
+    /// horizontal axis, whose coordinates are Y values.
+    /// </param>
+    /// <param name="coordinate">
+    /// The baseline coordinate in design units, measured from the zero position on the
+    /// relevant axis.
+    /// </param>
+    /// <returns><see langword="true"/> when the font defines the named baseline; otherwise <see langword="false"/>.</returns>
+    internal abstract bool TryGetBaselineCoordinate(Tag baselineTag, bool isVerticalLayout, out short coordinate);
 
     /// <summary>
     /// Applies any available substitutions to the collection of glyphs.

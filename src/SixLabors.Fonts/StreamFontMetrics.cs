@@ -52,6 +52,8 @@ internal partial class StreamFontMetrics : FontMetrics
     private short superscriptYOffset;
     private short strikeoutSize;
     private short strikeoutPosition;
+    private short xHeight;
+    private short capHeight;
     private short underlinePosition;
     private short underlineThickness;
     private float italicAngle;
@@ -205,6 +207,12 @@ internal partial class StreamFontMetrics : FontMetrics
 
     /// <inheritdoc/>
     public override short StrikeoutSize => this.strikeoutSize;
+
+    /// <inheritdoc/>
+    public override short XHeight => this.xHeight;
+
+    /// <inheritdoc/>
+    public override short CapHeight => this.capHeight;
 
     /// <inheritdoc/>
     public override short StrikeoutPosition => this.strikeoutPosition;
@@ -427,6 +435,22 @@ internal partial class StreamFontMetrics : FontMetrics
     }
 
     /// <inheritdoc/>
+    internal override bool TryGetBaselineCoordinate(Tag baselineTag, bool isVerticalLayout, out short coordinate)
+    {
+        BaseTable? baseTable = this.outlineType == OutlineType.TrueType
+            ? this.trueTypeFontTables!.Base
+            : this.compactFontTables!.Base;
+
+        if (baseTable is null)
+        {
+            coordinate = 0;
+            return false;
+        }
+
+        return baseTable.TryGetBaselineCoordinate(baselineTag, isVerticalLayout, out coordinate);
+    }
+
+    /// <inheritdoc/>
     internal override void ApplySubstitution(GlyphSubstitutionCollection collection)
     {
         if (this.TryGetGSubTable(out GSubTable? gSubTable))
@@ -640,6 +664,8 @@ internal partial class StreamFontMetrics : FontMetrics
         this.superscriptYOffset = os2.SuperscriptYOffset;
         this.strikeoutSize = os2.StrikeoutSize;
         this.strikeoutPosition = os2.StrikeoutPosition;
+        this.xHeight = os2.XHeight;
+        this.capHeight = os2.CapHeight;
         this.underlinePosition = post.UnderlinePosition;
         this.underlineThickness = post.UnderlineThickness;
         this.italicAngle = post.ItalicAngle;

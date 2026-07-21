@@ -15,6 +15,10 @@ public static class TestFonts
 
     public static string CarterOneFile => GetFullPath("Carter_One/CarterOne.ttf");
 
+    // Subset of Noto Sans SC pinned to the TextBaselineTests browser comparison strings,
+    // retaining the BASE table on both axes plus the vertical metrics and layout features.
+    public static string NotoSansSCBaselineSubsetFile => GetFullPath("Noto_Sans_SC/NotoSansSC-BaselineSubset.ttf");
+
     public static string WendyOneFile => GetFullPath("Wendy_One/WendyOne-Regular.ttf");
 
     // Font from: https://google-webfonts-helper.herokuapp.com/fonts/open-sans?subsets=cyrillic,cyrillic-ext,greek,greek-ext,hebrew,latin,latin-ext,vietnamese
