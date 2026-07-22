@@ -621,16 +621,17 @@ public static class TextMeasurer
     /// <returns>The anchored origin.</returns>
     private static Vector2 GetAnchoredOrigin(GlyphOptions options, GlyphLayoutMode layoutMode)
     {
-        // Mirror the renderer's exact operation order (normalize to layout units, anchor,
-        // convert back to pixels) so measured bounds stay bit-identical to rendered bounds.
+        // Mirror the renderer's exact operation order (normalize to layout units, apply the
+        // combined anchor and baseline-shift offset, convert back to pixels) so measured
+        // bounds stay bit-identical to rendered bounds.
         Vector2 origin = options.Origin / options.Dpi;
         if (layoutMode == GlyphLayoutMode.Horizontal)
         {
-            origin.Y -= TextLayout.GetBaselineOffset(options.TextBaseline, options.Font, false);
+            origin.Y -= TextLayout.GetBaselineOffset(options, false);
         }
         else
         {
-            origin.X -= TextLayout.GetBaselineOffset(options.TextBaseline, options.Font, true);
+            origin.X -= TextLayout.GetBaselineOffset(options, true);
         }
 
         return origin * options.Dpi;

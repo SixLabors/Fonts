@@ -455,6 +455,43 @@ internal static partial class TextLayout
     }
 
     /// <summary>
+    /// Converts <see cref="TextOptions.BaselineOffset"/> into a layout-unit offset signed for
+    /// the layout axis. This method owns the shift's sign convention: consumers subtract the
+    /// returned value from their flow-axis offset, which moves positive shifts toward the
+    /// over side on both axes: up for horizontal layouts and +X for vertical layouts.
+    /// </summary>
+    /// <param name="options">The text options supplying the shift and dpi.</param>
+    /// <param name="isVerticalLayout">Whether the layout flows vertically.</param>
+    /// <returns>The baseline shift in layout units, to be subtracted by the consumer.</returns>
+    public static float GetBaselineShift(TextOptions options, bool isVerticalLayout)
+        => GetBaselineShift(options.BaselineOffset, options.Dpi, isVerticalLayout);
+
+    /// <summary>
+    /// Computes the total anchor offset for a single glyph: the reference line selected by
+    /// <see cref="GlyphOptions.TextBaseline"/> composed with the
+    /// <see cref="GlyphOptions.BaselineOffset"/> shift, in layout units. Consumers subtract
+    /// the returned value from the origin on the axis the layout mode selects.
+    /// </summary>
+    /// <param name="options">The glyph options supplying the baseline, font, shift, and dpi.</param>
+    /// <param name="isVerticalLayout">Whether the layout flows vertically.</param>
+    /// <returns>The combined offset from the dominant baseline in layout units.</returns>
+    public static float GetBaselineOffset(GlyphOptions options, bool isVerticalLayout)
+        => GetBaselineOffset(options.TextBaseline, options.Font, isVerticalLayout)
+            + GetBaselineShift(options.BaselineOffset, options.Dpi, isVerticalLayout);
+
+    /// <summary>
+    /// Converts a baseline shift in pixel units into a layout-unit offset signed for the
+    /// layout axis, under the subtract-from-offset convention documented on
+    /// <see cref="GetBaselineShift(TextOptions, bool)"/>.
+    /// </summary>
+    /// <param name="baselineOffset">The baseline shift in pixel units, positive toward the over side.</param>
+    /// <param name="dpi">The dpi converting pixel units into layout units.</param>
+    /// <param name="isVerticalLayout">Whether the layout flows vertically.</param>
+    /// <returns>The baseline shift in layout units, to be subtracted by the consumer.</returns>
+    private static float GetBaselineShift(float baselineOffset, float dpi, bool isVerticalLayout)
+        => (isVerticalLayout ? -baselineOffset : baselineOffset) / dpi;
+
+    /// <summary>
     /// Lays out the supplied <see cref="TextBox"/>, streaming each laid-out glyph through the
     /// supplied <paramref name="visitor"/> in layout order, culling whole lines whose extent along
     /// the block flow axis lies outside the supplied visible band.
@@ -731,6 +768,10 @@ internal static partial class TextLayout
                         break;
                 }
             }
+
+            // The baseline shift composes with whichever anchor placed the first line.
+            // Later lines stack from the pen, so the whole block carries the shift.
+            offsetY -= GetBaselineShift(options, false);
         }
 
         penLocation.Y += offsetY;
@@ -981,6 +1022,10 @@ internal static partial class TextLayout
                         break;
                 }
             }
+
+            // The baseline shift composes with whichever anchor placed the first column.
+            // Later columns stack from the pen, so the whole block carries the shift.
+            offsetX -= GetBaselineShift(options, true);
         }
 
         penLocation.Y += offsetY;
@@ -1368,6 +1413,10 @@ internal static partial class TextLayout
                         break;
                 }
             }
+
+            // The baseline shift composes with whichever anchor placed the first column.
+            // Later columns stack from the pen, so the whole block carries the shift.
+            offsetX -= GetBaselineShift(options, true);
         }
 
         penLocation.Y += offsetY;

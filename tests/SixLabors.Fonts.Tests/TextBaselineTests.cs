@@ -210,6 +210,166 @@ public class TextBaselineTests
 
     [Theory]
     [InlineData(TextBaseline.LineBox)]
+    [InlineData(TextBaseline.Alphabetic)]
+    [InlineData(TextBaseline.Central)]
+    public void BaselineOffset_ShiftsInkTowardOverSide_AdvanceUnchanged(TextBaseline baseline)
+    {
+        const string text = "Hxp";
+        const float offset = 12.5F;
+        Font font = Font;
+
+        TextOptions reference = Options(font, baseline, 100);
+        TextOptions shifted = Options(font, baseline, 100);
+        shifted.BaselineOffset = offset;
+
+        // A positive shift moves the whole block toward the over side, up for horizontal
+        // layouts, without touching the inline axis. LineBox exercises the block-aligned
+        // branch and the anchored baselines the reference-line branch.
+        GlyphRenderer referenceRenderer = new();
+        TextRenderer.RenderTo(referenceRenderer, text, reference);
+
+        GlyphRenderer shiftedRenderer = new();
+        TextRenderer.RenderTo(shiftedRenderer, text, shifted);
+
+        Assert.Equal(referenceRenderer.GlyphRects.Count, shiftedRenderer.GlyphRects.Count);
+        for (int i = 0; i < referenceRenderer.GlyphRects.Count; i++)
+        {
+            Assert.Equal(referenceRenderer.GlyphRects[i].Y - offset, shiftedRenderer.GlyphRects[i].Y, Comparer);
+            Assert.Equal(referenceRenderer.GlyphRects[i].X, shiftedRenderer.GlyphRects[i].X, Comparer);
+        }
+
+        // The logical advance is unaffected, matching the CSS baseline-shift model.
+        Assert.Equal(TextMeasurer.MeasureAdvance(text, reference), TextMeasurer.MeasureAdvance(text, shifted));
+
+        // Measured ink carries the identical shift so measurement agrees with rendering.
+        FontRectangle referenceBounds = TextMeasurer.MeasureBounds(text, reference);
+        FontRectangle shiftedBounds = TextMeasurer.MeasureBounds(text, shifted);
+
+        Assert.Equal(referenceBounds.Y - offset, shiftedBounds.Y, Comparer);
+        Assert.Equal(referenceBounds.X, shiftedBounds.X, Comparer);
+
+        // Line metrics report the same shifted baseline position.
+        TextBlock referenceBlock = new(text, reference);
+        TextBlock shiftedBlock = new(text, shifted);
+        LineMetrics referenceLine = referenceBlock.GetLineMetrics(-1).Span[0];
+        LineMetrics shiftedLine = shiftedBlock.GetLineMetrics(-1).Span[0];
+
+        Assert.Equal(
+            referenceLine.Start.Y + referenceLine.Baseline - offset,
+            shiftedLine.Start.Y + shiftedLine.Baseline,
+            Comparer);
+    }
+
+    [Theory]
+    [InlineData(LayoutMode.VerticalLeftRight, TextBaseline.LineBox)]
+    [InlineData(LayoutMode.VerticalLeftRight, TextBaseline.Central)]
+    [InlineData(LayoutMode.VerticalMixedLeftRight, TextBaseline.LineBox)]
+    [InlineData(LayoutMode.VerticalMixedLeftRight, TextBaseline.Central)]
+    public void BaselineOffset_ShiftsInkTowardOverSide_Vertical(LayoutMode layoutMode, TextBaseline baseline)
+    {
+        const string text = "Hxp";
+        const float offset = 12.5F;
+        Font font = Font;
+
+        TextOptions reference = Options(font, baseline, 100);
+        reference.LayoutMode = layoutMode;
+
+        TextOptions shifted = Options(font, baseline, 100);
+        shifted.LayoutMode = layoutMode;
+        shifted.BaselineOffset = offset;
+
+        // In vertical layouts the over side is +X, so a positive shift moves columns right
+        // without touching the block flow axis.
+        GlyphRenderer referenceRenderer = new();
+        TextRenderer.RenderTo(referenceRenderer, text, reference);
+
+        GlyphRenderer shiftedRenderer = new();
+        TextRenderer.RenderTo(shiftedRenderer, text, shifted);
+
+        Assert.Equal(referenceRenderer.GlyphRects.Count, shiftedRenderer.GlyphRects.Count);
+        for (int i = 0; i < referenceRenderer.GlyphRects.Count; i++)
+        {
+            Assert.Equal(referenceRenderer.GlyphRects[i].X + offset, shiftedRenderer.GlyphRects[i].X, Comparer);
+            Assert.Equal(referenceRenderer.GlyphRects[i].Y, shiftedRenderer.GlyphRects[i].Y, Comparer);
+        }
+
+        // The logical advance is unaffected, matching the CSS baseline-shift model.
+        Assert.Equal(TextMeasurer.MeasureAdvance(text, reference), TextMeasurer.MeasureAdvance(text, shifted));
+
+        // Line metrics report the columns' shifted flow-axis position.
+        TextBlock referenceBlock = new(text, reference);
+        TextBlock shiftedBlock = new(text, shifted);
+        LineMetrics referenceLine = referenceBlock.GetLineMetrics(-1).Span[0];
+        LineMetrics shiftedLine = shiftedBlock.GetLineMetrics(-1).Span[0];
+
+        Assert.Equal(referenceLine.Start.X + offset, shiftedLine.Start.X, Comparer);
+    }
+
+    [Fact]
+    public void BaselineOffset_IsPixelUnits_IndependentOfDpi()
+    {
+        const string text = "Hxp";
+        const float offset = 10F;
+        Font font = Font;
+
+        TextOptions reference = BrowserComparisonOptions(font, TextBaseline.Alphabetic, 100);
+        TextOptions shifted = BrowserComparisonOptions(font, TextBaseline.Alphabetic, 100);
+        shifted.BaselineOffset = offset;
+
+        // The shift is specified in pixel units like the origin, so at 96 dpi the rendered
+        // displacement is still exactly the requested pixel amount.
+        FontRectangle referenceBounds = TextMeasurer.MeasureBounds(text, reference);
+        FontRectangle shiftedBounds = TextMeasurer.MeasureBounds(text, shifted);
+
+        Assert.Equal(referenceBounds.Y - offset, shiftedBounds.Y, Comparer);
+        Assert.Equal(referenceBounds.X, shiftedBounds.X, Comparer);
+    }
+
+    [Theory]
+    [InlineData(LayoutMode.HorizontalTopBottom)]
+    [InlineData(LayoutMode.VerticalLeftRight)]
+    public void GlyphId_BaselineOffset_ShiftsRenderAndMeasureTogether(LayoutMode layoutMode)
+    {
+        const float offset = 12.5F;
+        Font font = Font;
+        Assert.True(font.TryGetGlyphs(new CodePoint('A'), out Glyph? glyph));
+        ushort glyphId = glyph.Value.GlyphMetrics.GlyphId;
+
+        GlyphOptions reference = GlyphIdOptions(font, TextBaseline.Alphabetic);
+        reference.LayoutMode = layoutMode;
+
+        GlyphOptions shifted = GlyphIdOptions(font, TextBaseline.Alphabetic);
+        shifted.LayoutMode = layoutMode;
+        shifted.BaselineOffset = offset;
+
+        GlyphRenderer referenceRenderer = new();
+        TextRenderer.RenderTo(referenceRenderer, glyphId, reference);
+
+        GlyphRenderer shiftedRenderer = new();
+        TextRenderer.RenderTo(shiftedRenderer, glyphId, shifted);
+
+        // The single-glyph pipeline shares the text shift model: toward the over side on
+        // the axis the layout mode selects.
+        if (layoutMode == LayoutMode.HorizontalTopBottom)
+        {
+            Assert.Equal(referenceRenderer.GlyphRects[0].Y - offset, shiftedRenderer.GlyphRects[0].Y, Comparer);
+            Assert.Equal(referenceRenderer.GlyphRects[0].X, shiftedRenderer.GlyphRects[0].X, Comparer);
+        }
+        else
+        {
+            Assert.Equal(referenceRenderer.GlyphRects[0].X + offset, shiftedRenderer.GlyphRects[0].X, Comparer);
+            Assert.Equal(referenceRenderer.GlyphRects[0].Y, shiftedRenderer.GlyphRects[0].Y, Comparer);
+        }
+
+        // Measurement mirrors the renderer exactly for the same options.
+        Assert.Equal(shiftedRenderer.GlyphRects[0], TextMeasurer.MeasureBounds(glyphId, shifted), Comparer);
+
+        // The glyph advance is a logical measure the shift may not move.
+        Assert.Equal(TextMeasurer.MeasureAdvance(glyphId, reference), TextMeasurer.MeasureAdvance(glyphId, shifted));
+    }
+
+    [Theory]
+    [InlineData(TextBaseline.LineBox)]
     [InlineData(TextBaseline.TextTop)]
     [InlineData(TextBaseline.Hanging)]
     [InlineData(TextBaseline.Middle)]
@@ -304,6 +464,93 @@ public class TextBaselineTests
     [InlineData(TextBaseline.TextBottom)]
     public void RendersAnchoredToReference_CjkVerticalMixedLeftRight(TextBaseline baseline)
         => TestVerticalLayout(LayoutMode.VerticalMixedLeftRight, baseline, TestFonts.NotoSansSCBaselineSubsetFile, BrowserComparisonCjkText);
+
+    [Theory]
+    [InlineData(-40F)]
+    [InlineData(-20F)]
+    [InlineData(0F)]
+    [InlineData(20F)]
+    [InlineData(40F)]
+    public void RendersBaselineShiftToReference(float baselineOffset)
+    {
+        const float originY = 120;
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFile, BrowserComparisonPointSize);
+        TextOptions options = BrowserComparisonOptions(font, TextBaseline.Alphabetic, originY);
+        options.BaselineOffset = baselineOffset;
+
+        // The red rule marks the origin: the alphabetic baseline sits on it at zero shift
+        // and moves toward the over side, up, as the shift increases.
+        TextLayoutTestUtilities.TestLayout(
+            BrowserComparisonText,
+            options,
+            beforeAction: static image => DrawOriginRule(image, (int)originY),
+            properties: baselineOffset);
+    }
+
+    [Theory]
+    [InlineData(-40F)]
+    [InlineData(-20F)]
+    [InlineData(0F)]
+    [InlineData(20F)]
+    [InlineData(40F)]
+    public void RendersBaselineShiftToReference_Hanging(float baselineOffset)
+    {
+        const float originY = 120;
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFile, BrowserComparisonPointSize);
+        TextOptions options = BrowserComparisonOptions(font, TextBaseline.Hanging, originY);
+        options.BaselineOffset = baselineOffset;
+
+        // The shift composes with the anchor: the hanging baseline sits on the rule at zero
+        // shift and the whole block moves from that anchored position as the shift changes.
+        TextLayoutTestUtilities.TestLayout(
+            BrowserComparisonText,
+            options,
+            beforeAction: static image => DrawOriginRule(image, (int)originY),
+            properties: baselineOffset);
+    }
+
+    [Theory]
+    [InlineData(-40F)]
+    [InlineData(-20F)]
+    [InlineData(0F)]
+    [InlineData(20F)]
+    [InlineData(40F)]
+    public void RendersBaselineShiftToReference_VerticalLeftRight(float baselineOffset)
+        => TestVerticalShiftLayout(LayoutMode.VerticalLeftRight, baselineOffset);
+
+    [Theory]
+    [InlineData(-40F)]
+    [InlineData(-20F)]
+    [InlineData(0F)]
+    [InlineData(20F)]
+    [InlineData(40F)]
+    public void RendersBaselineShiftToReference_VerticalMixedLeftRight(float baselineOffset)
+        => TestVerticalShiftLayout(LayoutMode.VerticalMixedLeftRight, baselineOffset);
+
+    private static void TestVerticalShiftLayout(
+        LayoutMode layoutMode,
+        float baselineOffset,
+        [System.Runtime.CompilerServices.CallerMemberName] string test = "")
+    {
+        const float originX = 120;
+        TextOptions options = new(TestFonts.GetFont(TestFonts.OpenSansFile, BrowserComparisonPointSize))
+        {
+            Origin = new Vector2(originX, 10),
+            TextBaseline = TextBaseline.Central,
+            BaselineOffset = baselineOffset,
+            LayoutMode = layoutMode,
+            Dpi = 96F
+        };
+
+        // Columns anchor the central axis on the origin rule at zero shift and move toward
+        // the over side, right, as the shift increases.
+        TextLayoutTestUtilities.TestLayout(
+            BrowserComparisonText,
+            options,
+            test: test,
+            beforeAction: static image => DrawOriginColumnRule(image, (int)originX),
+            properties: baselineOffset);
+    }
 
     private static void TestVerticalLayout(
         LayoutMode layoutMode,

@@ -113,15 +113,15 @@ public class TextRenderer
         if (glyphLayoutMode == GlyphLayoutMode.Horizontal)
         {
             // The renderer positions glyphs by their alphabetic baseline; shifting the origin
-            // by the selected reference line's offset from that baseline puts the reference on
-            // the caller's origin.
-            origin.Y -= TextLayout.GetBaselineOffset(options.TextBaseline, options.Font, false);
+            // by the combined anchor and baseline-shift offset puts the selected reference
+            // line, shifted as requested, on the caller's origin.
+            origin.Y -= TextLayout.GetBaselineOffset(options, false);
         }
         else
         {
             // Vertical rendering positions glyphs about the column's central axis; the same
-            // shift applies along X from that axis.
-            origin.X -= TextLayout.GetBaselineOffset(options.TextBaseline, options.Font, true);
+            // combined offset applies along X from that axis.
+            origin.X -= TextLayout.GetBaselineOffset(options, true);
         }
 
         if (options.VisibleBounds is FontRectangle visibleBounds)

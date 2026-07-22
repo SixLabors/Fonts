@@ -69,6 +69,9 @@ public class GlyphOptions
     /// </remarks>
     public TextBaseline TextBaseline { get; set; }
 
+    /// <inheritdoc cref="TextOptions.BaselineOffset"/>
+    public float BaselineOffset { get; set; }
+
     /// <summary>
     /// Gets or sets the zero-based grapheme cluster index represented by the glyph.
     /// </summary>

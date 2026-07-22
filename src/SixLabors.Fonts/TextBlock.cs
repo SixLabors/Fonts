@@ -498,6 +498,11 @@ public sealed partial class TextBlock
             }
         }
 
+        // The baseline shift composes with whichever anchor placed the lines, matching the
+        // shift the layout walks fold into the first line so metrics agree with rendering.
+        // Line offsets are in pixel units here, hence the dpi conversion back.
+        lineOffset -= TextLayout.GetBaselineShift(options, !isHorizontalLayout) * options.Dpi;
+
         int i = reverseLineOrder ? textBox.TextLines.Count - 1 : 0;
         int step = reverseLineOrder ? -1 : 1;
         int graphemeOffset = 0;

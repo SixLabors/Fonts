@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Text baseline shift browser comparison</title>
+  <style>
+    @font-face {
+      font-family: "Baseline Open Sans";
+      src: url("../Fonts/OpenSans-Regular.ttf") format("truetype");
+      font-style: normal;
+      font-weight: 400;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: #111;
+      background: #fff;
+      font-family: Arial, sans-serif;
+    }
+
+    header,
+    section {
+      padding: 16px 20px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    h1,
+    h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .intro,
+    .section-note {
+      margin: 0 0 12px;
+      color: #555;
+      font-size: 13px;
+      max-width: 72ch;
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 110px max-content max-content;
+      gap: 12px 24px;
+      align-items: start;
+      overflow-x: auto;
+    }
+
+    .column-heading,
+    .shift-label {
+      color: #555;
+      font-size: 13px;
+    }
+
+    /* The tests render at 72pt with 96 dpi, so 72pt CSS is the identical pixel geometry. */
+    svg text {
+      font: 72pt "Baseline Open Sans";
+      font-kerning: normal;
+    }
+
+    svg {
+      display: block;
+      background: #fff;
+    }
+
+    svg text {
+      fill: #000;
+    }
+
+    svg text.vertical-upright {
+      writing-mode: vertical-lr;
+      text-orientation: upright;
+    }
+
+    svg text.vertical-mixed {
+      writing-mode: vertical-lr;
+      text-orientation: mixed;
+    }
+
+    .actual-output {
+      display: block;
+      max-width: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Browser text baseline shift comparison</h1>
+    <p class="intro">
+      The browser column applies SVG baseline-shift on a tspan, the browser surface for the
+      CSS baseline-shift model; vertical-align with a length is the equivalent in flow
+      layout. The library column renders the same text with TextOptions.BaselineOffset in
+      pixel units. Positive shifts move toward the over side and the logical advance is
+      unchanged in both columns.
+    </p>
+  </header>
+
+  <section>
+    <h2>Open Sans horizontal, alphabetic baseline at the red rule, 72pt</h2>
+    <div class="comparison" id="horizontal-shifts">
+      <div></div>
+      <div class="column-heading">Browser</div>
+      <div class="column-heading">SixLabors.Fonts actual output</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Open Sans horizontal, hanging baseline at the red rule, 72pt</h2>
+    <p class="section-note">
+      The shift composes with the selected anchor: at zero shift the hanging baseline sits
+      on the rule and every shifted row moves from that anchored position.
+    </p>
+    <div class="comparison" id="hanging-shifts">
+      <div></div>
+      <div class="column-heading">Browser</div>
+      <div class="column-heading">SixLabors.Fonts actual output</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Open Sans vertical upright, central baseline at the red rule, 72pt</h2>
+    <p class="section-note">
+      In vertical flows the over side is physically right for both vertical-rl and
+      vertical-lr, so positive shifts move the columns right, matching the library's +X.
+    </p>
+    <div class="comparison" id="vertical-upright-shifts">
+      <div></div>
+      <div class="column-heading">Browser</div>
+      <div class="column-heading">SixLabors.Fonts actual output</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Open Sans vertical mixed, central baseline at the red rule, 72pt</h2>
+    <div class="comparison" id="vertical-mixed-shifts">
+      <div></div>
+      <div class="column-heading">Browser</div>
+      <div class="column-heading">SixLabors.Fonts actual output</div>
+    </div>
+  </section>
+
+  <script>
+    // Must match BrowserComparisonText in TextBaselineTests exactly.
+    const text = "Hxplq";
+    const svgNs = "http://www.w3.org/2000/svg";
+
+    // Must match the InlineData rows of the RendersBaselineShiftToReference theories.
+    const shifts = [-40, -20, 0, 20, 40];
+
+    // Visual tests overwrite stable ActualOutput filenames. Use one cache key for this page load
+    // so reloading the comparison always displays the latest generated images for every row.
+    const actualOutputCacheKey = Date.now();
+
+    function createSvgPanel(vertical, orientationClass, dominantBaseline, shift) {
+      const width = vertical ? 320 : 620;
+      const height = vertical ? 700 : 320;
+
+      const svg = document.createElementNS(svgNs, "svg");
+      svg.setAttribute("width", width);
+      svg.setAttribute("height", height);
+
+      // The rule is drawn first so glyph ink covers it, matching the test render order.
+      const rule = document.createElementNS(svgNs, "line");
+      rule.setAttribute("x1", vertical ? 120 : 0);
+      rule.setAttribute("y1", vertical ? 0 : 120);
+      rule.setAttribute("x2", vertical ? 120 : width);
+      rule.setAttribute("y2", vertical ? height : 120);
+      rule.setAttribute("stroke", "#f00");
+      rule.setAttribute("stroke-width", "1");
+
+      const sample = document.createElementNS(svgNs, "text");
+      sample.setAttribute("x", vertical ? 120 : 0);
+      sample.setAttribute("y", vertical ? 10 : 120);
+      sample.setAttribute("dominant-baseline", dominantBaseline);
+      if (orientationClass) {
+        sample.setAttribute("class", orientationClass);
+      }
+
+      // baseline-shift applies to tspan rather than the text element in SVG 1.1, so the
+      // shifted sample lives in a child span that inherits the dominant baseline.
+      const span = document.createElementNS(svgNs, "tspan");
+      span.setAttribute("baseline-shift", `${shift}px`);
+      span.textContent = text;
+      sample.appendChild(span);
+
+      svg.append(rule, sample);
+      return svg;
+    }
+
+    function addShiftRows(containerId, vertical, orientationClass, dominantBaseline, testName) {
+      const container = document.getElementById(containerId);
+
+      for (const shift of shifts) {
+        const label = document.createElement("div");
+        label.className = "shift-label";
+        label.textContent = `BaselineOffset ${shift}`;
+
+        const browser = createSvgPanel(vertical, orientationClass, dominantBaseline, shift);
+
+        const actual = document.createElement("img");
+        actual.className = "actual-output";
+        actual.src = `../Images/ActualOutput/${testName}_${shift}.png?v=${actualOutputCacheKey}`;
+        actual.alt = `SixLabors.Fonts BaselineOffset ${shift} output`;
+
+        container.append(label, browser, actual);
+      }
+    }
+
+    addShiftRows("horizontal-shifts", false, null, "alphabetic", "RendersBaselineShiftToReference");
+    addShiftRows("hanging-shifts", false, null, "hanging", "RendersBaselineShiftToReference_Hanging");
+    addShiftRows("vertical-upright-shifts", true, "vertical-upright", "central", "RendersBaselineShiftToReference_VerticalLeftRight");
+    addShiftRows("vertical-mixed-shifts", true, "vertical-mixed", "central", "RendersBaselineShiftToReference_VerticalMixedLeftRight");
+  </script>
+</body>
+</html>

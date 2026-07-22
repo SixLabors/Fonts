@@ -40,6 +40,7 @@ public class TextOptions
         this.WrappingLength = options.WrappingLength;
         this.VisibleBounds = options.VisibleBounds;
         this.TextBaseline = options.TextBaseline;
+        this.BaselineOffset = options.BaselineOffset;
         this.MaxLines = options.MaxLines;
         this.WordBreaking = options.WordBreaking;
         this.TextEllipsis = options.TextEllipsis;
@@ -171,6 +172,19 @@ public class TextOptions
     /// to the anchored first line.
     /// </remarks>
     public TextBaseline TextBaseline { get; set; }
+
+    /// <summary>
+    /// Gets or sets an additional shift of the text away from its anchored position, in pixel
+    /// units along the block flow axis. Positive values shift toward the text's over side:
+    /// upward for horizontal layouts, toward the over column side for vertical layouts, and
+    /// away from the line along its normal when the text follows a path.
+    /// </summary>
+    /// <remarks>
+    /// The shift composes with <see cref="TextBaseline"/> and moves rendered glyphs, ink
+    /// bounds, and decorations as a unit. The logical advance is unaffected, matching the
+    /// CSS and SVG <c>baseline-shift</c> model.
+    /// </remarks>
+    public float BaselineOffset { get; set; }
 
     /// <summary>
     /// Gets or sets the maximum number of lines to lay out.
