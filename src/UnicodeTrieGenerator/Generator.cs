@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-#pragma warning disable SYSLIB1045 // Convert to 'GeneratedRegexAttribute'.
 using System.Globalization;
 using System.Text.RegularExpressions;
 using SixLabors.Fonts.Tests.Unicode;
@@ -619,7 +618,7 @@ public static partial class Generator
     /// </summary>
     public static void GenerateGraphemeBreakTrie()
     {
-        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        Regex regex = UnicodePropertyRowRegex();
         UnicodeTrieBuilder builder = new((uint)GraphemeClusterClass.Other);
 
         using (StreamReader sr = GetStreamReader("GraphemeBreakProperty.txt"))
@@ -681,7 +680,7 @@ public static partial class Generator
     /// </summary>
     public static void GenerateIndicConjunctBreakTrie()
     {
-        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*InCB;\s*(Consonant|Extend|Linker)\s*#");
+        Regex regex = IndicConjunctBreakRowRegex();
         UnicodeTrieBuilder builder = new((uint)IndicConjunctBreakClass.None);
 
         using (StreamReader sr = GetStreamReader("DerivedCoreProperties.txt"))
@@ -724,7 +723,7 @@ public static partial class Generator
     /// </summary>
     private static void GenerateBidiBracketsTrie()
     {
-        Regex regex = new(@"^([0-9A-F]+);\s([0-9A-F]+);\s([ocn])");
+        Regex regex = BidiBracketRowRegex();
         UnicodeTrieBuilder builder = new(0u);
 
         using (StreamReader sr = GetStreamReader("BidiBrackets.txt"))
@@ -762,7 +761,7 @@ public static partial class Generator
     /// </summary>
     private static void GenerateBidiMirrorTrie()
     {
-        Regex regex = new(@"^([0-9A-F]+);\s([0-9A-F]+)\s#");
+        Regex regex = BidiMirrorRowRegex();
         UnicodeTrieBuilder builder = new(0u);
 
         using (StreamReader sr = GetStreamReader("BidiMirroring.txt"))
@@ -789,7 +788,7 @@ public static partial class Generator
     /// </summary>
     private static void GenerateLineBreakTrie()
     {
-        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        Regex regex = UnicodePropertyRowRegex();
         UnicodeTrieBuilder builder = new((uint)LineBreakClass.Unknown);
 
         using (StreamReader sr = GetStreamReader("LineBreak.txt"))
@@ -824,7 +823,7 @@ public static partial class Generator
     /// </summary>
     private static void GenerateWordBreakTrie()
     {
-        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        Regex regex = UnicodePropertyRowRegex();
         UnicodeTrieBuilder builder = new((uint)WordBreakClass.Other);
 
         using (StreamReader sr = GetStreamReader("WordBreakProperty.txt"))
@@ -859,7 +858,7 @@ public static partial class Generator
     /// </summary>
     private static void GenerateEastAsianWidthTrie()
     {
-        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        Regex regex = UnicodePropertyRowRegex();
         UnicodeTrieBuilder builder = new((uint)EastAsianWidthClass.Neutral);
 
         using (StreamReader sr = GetStreamReader("EastAsianWidth.txt"))
@@ -894,9 +893,9 @@ public static partial class Generator
     /// </summary>
     private static void GenerateEmojiTrie()
     {
-        Regex emojiDataRegex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
-        Regex variationSequenceRegex = new(@"^([0-9A-F]+)\s+(FE0E|FE0F)\s*;\s*(text style|emoji style)\s*;");
-        Regex emojiSequenceRegex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+)|(?:\s+[0-9A-F]+)+)?\s*;\s*(.*?)\s*;");
+        Regex emojiDataRegex = UnicodePropertyRowRegex();
+        Regex variationSequenceRegex = VariationSequenceRowRegex();
+        Regex emojiSequenceRegex = EmojiSequenceRowRegex();
         UnicodeTrieBuilder builder = new();
 
         using (StreamReader sr = GetStreamReader("emoji-data.txt"))
@@ -995,7 +994,7 @@ public static partial class Generator
     /// </summary>
     private static UnicodeTrie GenerateUnicodeCategoryTrie()
     {
-        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        Regex regex = UnicodePropertyRowRegex();
         UnicodeTrieBuilder builder = new((uint)UnicodeCategory.OtherNotAssigned);
 
         using (StreamReader sr = GetStreamReader("DerivedGeneralCategory.txt"))
@@ -1031,7 +1030,7 @@ public static partial class Generator
     /// </summary>
     private static void GenerateScriptTrie()
     {
-        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        Regex regex = UnicodePropertyRowRegex();
         UnicodeTrieBuilder builder = new((uint)ScriptClass.Unknown);
 
         // TODO: Figure out how to map to shared categories via ScripExtensions.txt
@@ -1067,7 +1066,7 @@ public static partial class Generator
     /// </summary>
     private static UnicodeTrie GenerateArabicShapingTrie()
     {
-        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;[\w\s]+;\s*([A-Z]+);\s*([\w\s]+)");
+        Regex regex = ArabicShapingRowRegex();
         const uint initial = ((int)ArabicJoiningType.NonJoining) | (((int)ArabicJoiningGroup.NoJoiningGroup) << 16);
         UnicodeTrieBuilder builder = new(initial);
 
@@ -1105,7 +1104,7 @@ public static partial class Generator
 
     private static void GenerateVerticalOrientationTrie()
     {
-        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        Regex regex = UnicodePropertyRowRegex();
         UnicodeTrieBuilder builder = new((uint)VerticalOrientationType.Upright);
 
         using (StreamReader sr = GetStreamReader("VerticalOrientation.txt"))
@@ -1140,7 +1139,7 @@ public static partial class Generator
     /// </summary>
     private static UnicodeTrie GenerateIndicSyllabicCategoryTrie()
     {
-        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        Regex regex = UnicodePropertyRowRegex();
         UnicodeTrieBuilder builder = new((uint)IndicSyllabicCategory.Other);
 
         using (StreamReader sr = GetStreamReader("IndicSyllabicCategory.txt"))
@@ -1176,7 +1175,7 @@ public static partial class Generator
     /// </summary>
     private static UnicodeTrie GenerateIndicPositionalCategoryTrie()
     {
-        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        Regex regex = UnicodePropertyRowRegex();
         UnicodeTrieBuilder builder = new((uint)IndicPositionalCategory.NA);
 
         using (StreamReader sr = GetStreamReader("IndicPositionalCategory.txt"))
@@ -1222,7 +1221,7 @@ public static partial class Generator
         using StreamWriter writer = new(fileStream);
 
         writer.WriteLine("// Copyright (c) Six Labors.");
-        writer.WriteLine("// Licensed under the Apache License, Version 2.0.");
+        writer.WriteLine("// Licensed under the Six Labors Split License.");
         writer.WriteLine();
         writer.WriteLine("// <auto-generated />");
         writer.WriteLine("using System;");
@@ -1318,4 +1317,56 @@ public static partial class Generator
 
     private static string GetFullPath(string relativePath)
         => Path.Combine(SolutionDirectoryFullPath, relativePath).Replace('\\', Path.DirectorySeparatorChar);
+
+    /// <summary>
+    /// Matches a Unicode character database row: a code point or range, a semicolon, and a
+    /// property value terminated by the comment marker.
+    /// </summary>
+    /// <returns>The regular expression.</returns>
+    [GeneratedRegex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#")]
+    private static partial Regex UnicodePropertyRowRegex();
+
+    /// <summary>
+    /// Matches a DerivedCoreProperties row carrying an Indic conjunct break value.
+    /// </summary>
+    /// <returns>The regular expression.</returns>
+    [GeneratedRegex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*InCB;\s*(Consonant|Extend|Linker)\s*#")]
+    private static partial Regex IndicConjunctBreakRowRegex();
+
+    /// <summary>
+    /// Matches a BidiBrackets row: a code point, its paired bracket, and the bracket type.
+    /// </summary>
+    /// <returns>The regular expression.</returns>
+    [GeneratedRegex(@"^([0-9A-F]+);\s([0-9A-F]+);\s([ocn])")]
+    private static partial Regex BidiBracketRowRegex();
+
+    /// <summary>
+    /// Matches a BidiMirroring row: a code point and its mirrored counterpart.
+    /// </summary>
+    /// <returns>The regular expression.</returns>
+    [GeneratedRegex(@"^([0-9A-F]+);\s([0-9A-F]+)\s#")]
+    private static partial Regex BidiMirrorRowRegex();
+
+    /// <summary>
+    /// Matches an emoji variation sequence row: a code point followed by a variation
+    /// selector and its style.
+    /// </summary>
+    /// <returns>The regular expression.</returns>
+    [GeneratedRegex(@"^([0-9A-F]+)\s+(FE0E|FE0F)\s*;\s*(text style|emoji style)\s*;")]
+    private static partial Regex VariationSequenceRowRegex();
+
+    /// <summary>
+    /// Matches an emoji sequence row: a code point, range, or sequence and its type field.
+    /// </summary>
+    /// <returns>The regular expression.</returns>
+    [GeneratedRegex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+)|(?:\s+[0-9A-F]+)+)?\s*;\s*(.*?)\s*;")]
+    private static partial Regex EmojiSequenceRowRegex();
+
+    /// <summary>
+    /// Matches an ArabicShaping row: a code point or range, the character name, the joining
+    /// type, and the joining group.
+    /// </summary>
+    /// <returns>The regular expression.</returns>
+    [GeneratedRegex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;[\w\s]+;\s*([A-Z]+);\s*([\w\s]+)")]
+    private static partial Regex ArabicShapingRowRegex();
 }

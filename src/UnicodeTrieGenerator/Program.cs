@@ -5,5 +5,7 @@ using UnicodeTrieGenerator;
 
 Console.WriteLine("Generating Trie Data");
 Generator.GenerateUnicodeTries();
+Console.WriteLine("Generating OpenType Language Tag Map");
+Generator.GenerateOpenTypeLanguageTagMap();
 Console.WriteLine("Done");
 Console.ReadLine();

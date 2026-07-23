@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-#pragma warning disable SYSLIB1045 // Convert to 'GeneratedRegexAttribute'.
 using System.Text.RegularExpressions;
 using SixLabors.Fonts.Unicode;
 using UnicodeTrieGenerator.StateAutomation;
@@ -457,7 +456,7 @@ public static partial class Generator
 
     private static void SetBlocks(Codepoint[] codePoints)
     {
-        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*([\w\s-]+)");
+        Regex regex = IndicPropertyRowRegex();
 
         using StreamReader sr = GetStreamReader("Blocks.txt");
         string? line;
@@ -493,4 +492,11 @@ public static partial class Generator
             }
         }
     }
+
+    /// <summary>
+    /// Matches an Indic property row: a code point or range and its property value.
+    /// </summary>
+    /// <returns>The regular expression.</returns>
+    [GeneratedRegex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*([\w\s-]+)")]
+    private static partial Regex IndicPropertyRowRegex();
 }
