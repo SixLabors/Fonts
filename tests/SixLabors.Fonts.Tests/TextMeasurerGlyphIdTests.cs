@@ -85,9 +85,11 @@ public class TextMeasurerGlyphIdTests
             Origin = new Vector2(20F, 60F)
         };
 
-        FontRectangle expected = FontRectangle.Union(
-            TextMeasurer.MeasureAdvance(glyphId, options),
-            TextMeasurer.MeasureBounds(glyphId, options));
+        // The advance is zero-based; renderable bounds union it placed at the origin, exactly
+        // as the text-level composition does.
+        FontRectangle advance = TextMeasurer.MeasureAdvance(glyphId, options);
+        FontRectangle absoluteAdvance = new(options.Origin.X, options.Origin.Y, advance.Width, advance.Height);
+        FontRectangle expected = FontRectangle.Union(absoluteAdvance, TextMeasurer.MeasureBounds(glyphId, options));
 
         Assert.Equal(expected, TextMeasurer.MeasureRenderableBounds(glyphId, options));
     }
@@ -128,14 +130,151 @@ public class TextMeasurerGlyphIdTests
             };
 
             ushort glyphId = glyphRun.GlyphIds.Span[i];
+
+            // Per-glyph advances are zero-based; the run extent unions them at their origins,
+            // exactly as the text-level composition does.
             FontRectangle advance = TextMeasurer.MeasureAdvance(glyphId, positioned);
+            FontRectangle absoluteAdvance = new(positioned.Origin.X, positioned.Origin.Y, advance.Width, advance.Height);
             FontRectangle renderable = TextMeasurer.MeasureRenderableBounds(glyphId, positioned);
-            expectedAdvance = i == 0 ? advance : FontRectangle.Union(expectedAdvance, advance);
+            expectedAdvance = i == 0 ? absoluteAdvance : FontRectangle.Union(expectedAdvance, absoluteAdvance);
             expectedRenderable = i == 0 ? renderable : FontRectangle.Union(expectedRenderable, renderable);
         }
 
-        Assert.Equal(expectedAdvance, TextMeasurer.MeasureAdvance(glyphRun, options));
+        Assert.Equal(new FontRectangle(0, 0, expectedAdvance.Width, expectedAdvance.Height), TextMeasurer.MeasureAdvance(glyphRun, options));
         Assert.Equal(expectedRenderable, TextMeasurer.MeasureRenderableBounds(glyphRun, options));
+    }
+
+    [Fact]
+    public void MeasureAdvance_IsZeroBased_AndUnmovedByOriginOrBaseline()
+    {
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFile, 32);
+        ushort glyphId = GetGlyphId(font, 'A');
+
+        FontRectangle reference = TextMeasurer.MeasureAdvance(glyphId, new GlyphOptions { Font = font });
+
+        Assert.Equal(0, reference.X);
+        Assert.Equal(0, reference.Y);
+        Assert.True(reference.Width > 0);
+        Assert.True(reference.Height > 0);
+
+        // The advance is a logical measure: no origin and no baseline anchor may move it.
+        foreach (TextBaseline baseline in Enum.GetValues<TextBaseline>())
+        {
+            GlyphOptions options = new()
+            {
+                Font = font,
+                Origin = new Vector2(13.5F, 27.25F),
+                TextBaseline = baseline
+            };
+
+            Assert.Equal(reference, TextMeasurer.MeasureAdvance(glyphId, options));
+        }
+
+        // Bounds are positioned geometry and do move with the anchor.
+        GlyphOptions lineBox = new() { Font = font, Origin = new Vector2(13.5F, 27.25F) };
+        GlyphOptions alphabetic = new() { Font = font, Origin = new Vector2(13.5F, 27.25F), TextBaseline = TextBaseline.Alphabetic };
+        Assert.NotEqual(TextMeasurer.MeasureBounds(glyphId, lineBox), TextMeasurer.MeasureBounds(glyphId, alphabetic));
+    }
+
+    [Fact]
+    public void MeasureAdvance_IsZeroBased_ForVerticalLayouts()
+    {
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFile, 32);
+        ushort glyphId = GetGlyphId(font, 'A');
+
+        foreach (LayoutMode layoutMode in new[] { LayoutMode.VerticalLeftRight, LayoutMode.VerticalMixedLeftRight })
+        {
+            FontRectangle reference = TextMeasurer.MeasureAdvance(glyphId, new GlyphOptions { Font = font, LayoutMode = layoutMode });
+
+            Assert.Equal(0, reference.X);
+            Assert.Equal(0, reference.Y);
+            Assert.True(reference.Width > 0);
+            Assert.True(reference.Height > 0);
+
+            foreach (TextBaseline baseline in Enum.GetValues<TextBaseline>())
+            {
+                GlyphOptions options = new()
+                {
+                    Font = font,
+                    LayoutMode = layoutMode,
+                    Origin = new Vector2(40F, 80F),
+                    TextBaseline = baseline
+                };
+
+                Assert.Equal(reference, TextMeasurer.MeasureAdvance(glyphId, options));
+            }
+        }
+    }
+
+    [Fact]
+    public void MeasureBounds_MatchesRenderedGlyphBounds_ForEveryBaseline()
+    {
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFile, 32);
+        ushort glyphId = GetGlyphId(font, 'g');
+
+        foreach (TextBaseline baseline in Enum.GetValues<TextBaseline>())
+        {
+            GlyphOptions options = new()
+            {
+                Font = font,
+                Dpi = 96F,
+                Origin = new Vector2(13.5F, 27.25F),
+                TextBaseline = baseline
+            };
+
+            GlyphRenderer renderer = new();
+            TextRenderer.RenderTo(renderer, glyphId, options);
+
+            Assert.Single(renderer.GlyphRects);
+            Assert.Equal(renderer.GlyphRects[0], TextMeasurer.MeasureBounds(glyphId, options));
+        }
+    }
+
+    [Fact]
+    public void MeasureRenderableBounds_ComposesAdvanceAtOrigin_ForEveryBaseline()
+    {
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFile, 32);
+        ushort glyphId = GetGlyphId(font, 'g');
+
+        foreach (TextBaseline baseline in Enum.GetValues<TextBaseline>())
+        {
+            GlyphOptions options = new()
+            {
+                Font = font,
+                Origin = new Vector2(20F, 60F),
+                TextBaseline = baseline
+            };
+
+            FontRectangle advance = TextMeasurer.MeasureAdvance(glyphId, options);
+            FontRectangle absoluteAdvance = new(options.Origin.X, options.Origin.Y, advance.Width, advance.Height);
+            FontRectangle expected = FontRectangle.Union(absoluteAdvance, TextMeasurer.MeasureBounds(glyphId, options));
+
+            Assert.Equal(expected, TextMeasurer.MeasureRenderableBounds(glyphId, options));
+        }
+    }
+
+    [Fact]
+    public void Run_MeasureBounds_MatchesRenderedUnion_ForEveryBaseline()
+    {
+        Font font = TestFonts.GetFont(TestFonts.OpenSansFile, 32);
+        (GlyphRun glyphRun, GlyphOptions options) = CreateRun(font);
+
+        foreach (TextBaseline baseline in Enum.GetValues<TextBaseline>())
+        {
+            options.TextBaseline = baseline;
+
+            GlyphRenderer renderer = new();
+            TextRenderer.RenderTo(renderer, glyphRun, options);
+
+            Assert.Equal(glyphRun.Count, renderer.GlyphRects.Count);
+            FontRectangle expected = renderer.GlyphRects[0];
+            for (int i = 1; i < renderer.GlyphRects.Count; i++)
+            {
+                expected = FontRectangle.Union(expected, renderer.GlyphRects[i]);
+            }
+
+            Assert.Equal(expected, TextMeasurer.MeasureBounds(glyphRun, options));
+        }
     }
 
     [Fact]
@@ -244,10 +383,13 @@ public class TextMeasurerGlyphIdTests
         Font font = TestFonts.GetFont(TestFonts.OpenSansFile, 64);
         ushort glyphId = GetGlyphId(font, 'p');
 
+        // The band arithmetic below is baseline-relative, so anchor the origin on the
+        // alphabetic baseline rather than the default em-box top.
         GlyphOptions options = new()
         {
             Font = font,
-            Origin = new Vector2(10F, 100F)
+            Origin = new Vector2(10F, 100F),
+            TextBaseline = TextBaseline.Alphabetic
         };
 
         FontRectangle bounds = TextMeasurer.MeasureBounds(glyphId, options);

@@ -27,7 +27,7 @@ public class Issues_33
     [Theory]
     [InlineData(LayoutMode.HorizontalTopBottom, 310, 40)]
     [InlineData(LayoutMode.VerticalLeftRight, 40, 310)]
-    [InlineData(LayoutMode.VerticalMixedLeftRight, 50, 310)]
+    [InlineData(LayoutMode.VerticalMixedLeftRight, 40, 310)]
     public void LeadingLineBreakContributesToWhitespaceBounds(LayoutMode layoutMode, float width, float height)
     {
         const string text = "\n\tHelloworld";

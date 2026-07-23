@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Text baseline browser comparison</title>
+  <style>
+    @font-face {
+      font-family: "Baseline Open Sans";
+      src: url("../Fonts/OpenSans-Regular.ttf") format("truetype");
+      font-style: normal;
+      font-weight: 400;
+    }
+
+    @font-face {
+      font-family: "Baseline Noto Sans SC";
+      src: url("../Fonts/Noto_Sans_SC/NotoSansSC-BaselineSubset.ttf") format("truetype");
+      font-style: normal;
+      font-weight: 400;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: #111;
+      background: #fff;
+      font-family: Arial, sans-serif;
+    }
+
+    header,
+    section {
+      padding: 16px 20px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    h1,
+    h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 110px max-content max-content;
+      gap: 12px 24px;
+      align-items: start;
+      overflow-x: auto;
+    }
+
+    .column-heading,
+    .baseline-label {
+      color: #555;
+      font-size: 13px;
+    }
+
+    .baseline-note {
+      margin-top: 4px;
+      color: #999;
+      font-size: 11px;
+    }
+
+    /* The tests render at 72pt with 96 dpi, so 72pt CSS is the identical pixel geometry. */
+    .panel,
+    svg text {
+      font: 72pt "Baseline Open Sans";
+      font-kerning: normal;
+    }
+
+    .panel.noto,
+    svg text.noto {
+      font-family: "Baseline Noto Sans SC";
+    }
+
+    svg {
+      display: block;
+      background: #fff;
+    }
+
+    svg text {
+      fill: #000;
+    }
+
+    svg text.vertical-upright {
+      writing-mode: vertical-lr;
+      text-orientation: upright;
+    }
+
+    svg text.vertical-mixed {
+      writing-mode: vertical-lr;
+      text-orientation: mixed;
+    }
+
+    /* LineBox has no dedicated browser baseline: it is the line box itself, so its browser
+       panel is flow text whose block starts on the origin rule.
+
+       line-height must be 1 to mirror the test options: the tests render with LineSpacing 1
+       and the library line box centers the em box within the font's line height, placing its
+       top at ascender - (lineHeight - em) / 2 above the baseline. CSS half-leading with
+       line-height: 1em places the top at ascender - (ascender + descender - em) / 2, the
+       identical position for a zero line-gap font such as Open Sans. line-height: normal
+       would instead build the box from the raw ascent and descent and land the baseline a
+       half-leading lower. */
+    .panel {
+      position: relative;
+      background: #fff;
+      overflow: hidden;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .panel .rule {
+      position: absolute;
+      background: #f00;
+      z-index: 1;
+    }
+
+    .panel.horizontal {
+      width: 420px;
+      height: 320px;
+    }
+
+    .panel.horizontal .rule {
+      left: 0;
+      top: 120px;
+      width: 100%;
+      height: 1px;
+    }
+
+    .panel.horizontal .flow {
+      position: absolute;
+      left: 0;
+      top: 120px;
+    }
+
+    .panel.vertical {
+      width: 320px;
+      height: 700px;
+    }
+
+    .panel.vertical .rule {
+      left: 120px;
+      top: 0;
+      width: 1px;
+      height: 100%;
+    }
+
+    .panel.vertical .flow {
+      position: absolute;
+      left: 120px;
+      top: 10px;
+      writing-mode: vertical-lr;
+    }
+
+    .panel.vertical .flow.upright {
+      text-orientation: upright;
+    }
+
+    .panel.vertical .flow.mixed {
+      text-orientation: mixed;
+    }
+
+    .actual-output {
+      display: block;
+      max-width: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Browser text baseline comparison</h1>
+  </header>
+
+  <section>
+    <h2>Open Sans horizontal, baseline anchored at the red rule, 72pt</h2>
+    <div class="comparison" id="horizontal-baselines">
+      <div></div>
+      <div class="column-heading">Browser</div>
+      <div class="column-heading">SixLabors.Fonts actual output</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Open Sans vertical upright, baseline anchored at the red rule, 72pt</h2>
+    <div class="comparison" id="vertical-upright-baselines">
+      <div></div>
+      <div class="column-heading">Browser</div>
+      <div class="column-heading">SixLabors.Fonts actual output</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Open Sans vertical mixed, baseline anchored at the red rule, 72pt</h2>
+    <div class="comparison" id="vertical-mixed-baselines">
+      <div></div>
+      <div class="column-heading">Browser</div>
+      <div class="column-heading">SixLabors.Fonts actual output</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Noto Sans SC subset horizontal, baseline anchored at the red rule, 72pt</h2>
+    <div class="comparison" id="cjk-horizontal-baselines">
+      <div></div>
+      <div class="column-heading">Browser</div>
+      <div class="column-heading">SixLabors.Fonts actual output</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Noto Sans SC subset vertical upright, baseline anchored at the red rule, 72pt</h2>
+    <div class="comparison" id="cjk-vertical-upright-baselines">
+      <div></div>
+      <div class="column-heading">Browser</div>
+      <div class="column-heading">SixLabors.Fonts actual output</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Noto Sans SC subset vertical mixed, baseline anchored at the red rule, 72pt</h2>
+    <div class="comparison" id="cjk-vertical-mixed-baselines">
+      <div></div>
+      <div class="column-heading">Browser</div>
+      <div class="column-heading">SixLabors.Fonts actual output</div>
+    </div>
+  </section>
+
+  <script>
+    // Must match BrowserComparisonText and BrowserComparisonCjkText in TextBaselineTests
+    // exactly; the Noto subset's glyph set is pinned to these characters.
+    const text = "Hxplq";
+    const cjkText = "永国Hxq、";
+    const svgNs = "http://www.w3.org/2000/svg";
+
+    // Library TextBaseline value paired with the equivalent dominant-baseline value;
+    // LineBox is the line box itself and renders as flow text instead. The em edge rows use
+    // the SVG 1.1 names text-before-edge and text-after-edge because the presentation
+    // attribute rejects the newer CSS aliases text-top and text-bottom.
+    const baselines = [
+      ["LineBox", null],
+      ["TextTop", "text-before-edge"],
+      ["Hanging", "hanging"],
+      ["Middle", "middle"],
+      ["Central", "central"],
+      ["Alphabetic", "alphabetic"],
+      ["Ideographic", "ideographic"],
+      ["TextBottom", "text-after-edge"]
+    ];
+
+    // Visual tests overwrite stable ActualOutput filenames. Use one cache key for this page load
+    // so reloading the comparison always displays the latest generated images for every row.
+    const actualOutputCacheKey = Date.now();
+
+    function createLineBoxPanel(vertical, orientationClass, sampleText, fontClass) {
+      const panel = document.createElement("div");
+      panel.className = `panel ${vertical ? "vertical" : "horizontal"} ${fontClass ?? ""}`.trim();
+
+      const rule = document.createElement("div");
+      rule.className = "rule";
+
+      const flow = document.createElement("span");
+      flow.className = `flow ${orientationClass ?? ""}`.trim();
+      flow.textContent = sampleText;
+
+      panel.append(rule, flow);
+      return panel;
+    }
+
+    function createSvgPanel(vertical, orientationClass, dominantBaseline, sampleText, fontClass) {
+      const width = vertical ? 320 : 620;
+      const height = vertical ? 700 : 320;
+
+      const svg = document.createElementNS(svgNs, "svg");
+      svg.setAttribute("width", width);
+      svg.setAttribute("height", height);
+
+      // The rule is drawn first so glyph ink covers it, matching the test render order.
+      const rule = document.createElementNS(svgNs, "line");
+      rule.setAttribute("x1", vertical ? 120 : 0);
+      rule.setAttribute("y1", vertical ? 0 : 120);
+      rule.setAttribute("x2", vertical ? 120 : width);
+      rule.setAttribute("y2", vertical ? height : 120);
+      rule.setAttribute("stroke", "#f00");
+      rule.setAttribute("stroke-width", "1");
+
+      const sample = document.createElementNS(svgNs, "text");
+      sample.setAttribute("x", vertical ? 120 : 0);
+      sample.setAttribute("y", vertical ? 10 : 120);
+      sample.setAttribute("dominant-baseline", dominantBaseline);
+
+      const sampleClass = `${orientationClass ?? ""} ${fontClass ?? ""}`.trim();
+      if (sampleClass) {
+        sample.setAttribute("class", sampleClass);
+      }
+
+      sample.textContent = sampleText;
+
+      svg.append(rule, sample);
+      return svg;
+    }
+
+    // Canvas is the only browser surface that applies the font's BASE table; SVG
+    // dominant-baseline always synthesizes from metrics, so the Ideographic rows use a
+    // canvas panel wherever canvas can render the layout, which is horizontal only.
+    function createCanvasPanel(sampleText, fontClass) {
+      const canvas = document.createElement("canvas");
+      canvas.width = 620;
+      canvas.height = 320;
+
+      const family = fontClass === "noto" ? '"Baseline Noto Sans SC"' : '"Baseline Open Sans"';
+      document.fonts.load(`72pt ${family}`).then(() => {
+        const ctx = canvas.getContext("2d");
+
+        // The rule is drawn first so glyph ink covers it, matching the test render order.
+        ctx.strokeStyle = "#f00";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, 120.5);
+        ctx.lineTo(canvas.width, 120.5);
+        ctx.stroke();
+
+        ctx.font = `72pt ${family}`;
+        ctx.fontKerning = "normal";
+        ctx.textBaseline = "ideographic";
+        ctx.fillStyle = "#000";
+        ctx.fillText(sampleText, 0, 120);
+      });
+
+      return canvas;
+    }
+
+    function addBaselineRows(containerId, vertical, orientationClass, testName, sampleText, fontClass) {
+      const container = document.getElementById(containerId);
+
+      for (const [name, dominantBaseline] of baselines) {
+        const label = document.createElement("div");
+        label.className = "baseline-label";
+        label.textContent = name;
+
+        let browser;
+        if (dominantBaseline === null) {
+          browser = createLineBoxPanel(vertical, orientationClass ? orientationClass.replace("vertical-", "") : null, sampleText, fontClass);
+        } else if (!vertical && name === "Ideographic") {
+          browser = createCanvasPanel(sampleText, fontClass);
+          const note = document.createElement("div");
+          note.className = "baseline-note";
+          note.textContent = "Canvas textBaseline: the only browser surface that applies the font's baseline table.";
+          label.appendChild(note);
+        } else {
+          browser = createSvgPanel(vertical, orientationClass, dominantBaseline, sampleText, fontClass);
+          if (vertical && name === "Ideographic") {
+            const note = document.createElement("div");
+            note.className = "baseline-note";
+            note.textContent = "No browser surface applies the vertical baseline table: canvas honors the table but is horizontal only, and SVG and CSS vertical layout never apply it. The browser column therefore shows the em under edge fallback while the library follows the font's table, so the columns differ by design for fonts that carry one. The library position is pinned by unit tests against the font's table values instead.";
+            label.appendChild(note);
+          }
+        }
+
+        const actual = document.createElement("img");
+        actual.className = "actual-output";
+        actual.src = `../Images/ActualOutput/${testName}_${name}.png?v=${actualOutputCacheKey}`;
+        actual.alt = `SixLabors.Fonts ${name} output`;
+
+        container.append(label, browser, actual);
+      }
+    }
+
+    addBaselineRows("horizontal-baselines", false, null, "RendersAnchoredToReference", text, null);
+    addBaselineRows("vertical-upright-baselines", true, "vertical-upright", "RendersAnchoredToReference_VerticalLeftRight", text, null);
+    addBaselineRows("vertical-mixed-baselines", true, "vertical-mixed", "RendersAnchoredToReference_VerticalMixedLeftRight", text, null);
+    addBaselineRows("cjk-horizontal-baselines", false, null, "RendersAnchoredToReference_Cjk", cjkText, "noto");
+    addBaselineRows("cjk-vertical-upright-baselines", true, "vertical-upright", "RendersAnchoredToReference_CjkVerticalLeftRight", cjkText, "noto");
+    addBaselineRows("cjk-vertical-mixed-baselines", true, "vertical-mixed", "RendersAnchoredToReference_CjkVerticalMixedLeftRight", cjkText, "noto");
+  </script>
+</body>
+</html>

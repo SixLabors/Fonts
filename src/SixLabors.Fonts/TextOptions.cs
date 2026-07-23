@@ -38,6 +38,9 @@ public class TextOptions
         this.LineSpacing = options.LineSpacing;
         this.Origin = options.Origin;
         this.WrappingLength = options.WrappingLength;
+        this.VisibleBounds = options.VisibleBounds;
+        this.TextBaseline = options.TextBaseline;
+        this.BaselineOffset = options.BaselineOffset;
         this.MaxLines = options.MaxLines;
         this.WordBreaking = options.WordBreaking;
         this.TextEllipsis = options.TextEllipsis;
@@ -146,6 +149,42 @@ public class TextOptions
     /// If value is -1 then wrapping is disabled.
     /// </remarks>
     public float WrappingLength { get; set; } = -1F;
+
+    /// <summary>
+    /// Gets or sets the visible region in pixel units (px) used when rendering text.
+    /// Whole lines that fall outside the region are skipped and the remaining lines are
+    /// positioned as if all lines had been rendered.
+    /// </summary>
+    /// <remarks>
+    /// If value is <see langword="null"/> then culling is disabled.
+    /// </remarks>
+    public FontRectangle? VisibleBounds { get; set; }
+
+    /// <summary>
+    /// Gets or sets which reference line of the first laid-out line is placed at
+    /// <see cref="Origin"/> along the block flow axis.
+    /// </summary>
+    /// <remarks>
+    /// Baseline positions derive from the metrics of <see cref="Font"/>: horizontal layouts
+    /// anchor along Y from the alphabetic baseline, vertical layouts along X from the central
+    /// column axis. When the value is not <see cref="TextBaseline.LineBox"/> the block
+    /// alignment along the flow axis does not apply; additional wrapped lines stack relative
+    /// to the anchored first line.
+    /// </remarks>
+    public TextBaseline TextBaseline { get; set; }
+
+    /// <summary>
+    /// Gets or sets an additional shift of the text away from its anchored position, in pixel
+    /// units along the block flow axis. Positive values shift toward the text's over side:
+    /// upward for horizontal layouts, toward the over column side for vertical layouts, and
+    /// away from the line along its normal when the text follows a path.
+    /// </summary>
+    /// <remarks>
+    /// The shift composes with <see cref="TextBaseline"/> and moves rendered glyphs, ink
+    /// bounds, and decorations as a unit. The logical advance is unaffected, matching the
+    /// CSS and SVG <c>baseline-shift</c> model.
+    /// </remarks>
+    public float BaselineOffset { get; set; }
 
     /// <summary>
     /// Gets or sets the maximum number of lines to lay out.

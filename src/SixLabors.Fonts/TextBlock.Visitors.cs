@@ -377,7 +377,7 @@ public sealed partial class TextBlock
     /// <summary>
     /// Accumulates the rendered rectangle as glyphs stream from layout.
     /// </summary>
-    private struct RenderedRectangleAccumulator : TextLayout.IGlyphLayoutVisitor
+    internal struct RenderedRectangleAccumulator : TextLayout.IGlyphLayoutVisitor
     {
         private readonly float dpi;
         private float left;
@@ -771,7 +771,7 @@ public sealed partial class TextBlock
     /// <summary>
     /// Renders glyphs as they stream from layout.
     /// </summary>
-    private struct GlyphRendererVisitor : TextLayout.IGlyphLayoutVisitor
+    internal struct GlyphRendererVisitor : TextLayout.IGlyphLayoutVisitor
     {
         private readonly IGlyphRenderer renderer;
         private readonly TextOptions options;

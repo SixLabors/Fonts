@@ -69,6 +69,8 @@ internal interface IFontTables
     // +------+-------------------------+
     // | MATH | Math layout data        |
     // +------+-------------------------+
+    public BaseTable? Base { get; set; }
+
     public GlyphDefinitionTable? Gdef { get; set; }
 
     public GSubTable? GSub { get; set; }

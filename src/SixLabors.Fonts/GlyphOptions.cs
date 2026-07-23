@@ -51,6 +51,28 @@ public class GlyphOptions
     public Vector2 Origin { get; set; } = Vector2.Zero;
 
     /// <summary>
+    /// Gets or sets the visible region in pixel units (px) used when rendering the glyph.
+    /// A glyph that falls outside the region is skipped.
+    /// </summary>
+    /// <remarks>
+    /// If value is <see langword="null"/> then culling is disabled.
+    /// </remarks>
+    public FontRectangle? VisibleBounds { get; set; }
+
+    /// <summary>
+    /// Gets or sets which reference line of the glyph's em box is placed at
+    /// <see cref="Origin"/> along the block flow axis.
+    /// </summary>
+    /// <remarks>
+    /// Baseline positions derive from the metrics of <see cref="Font"/>. For a single glyph
+    /// <see cref="TextBaseline.LineBox"/> anchors the top of the em box, matching text layout.
+    /// </remarks>
+    public TextBaseline TextBaseline { get; set; }
+
+    /// <inheritdoc cref="TextOptions.BaselineOffset"/>
+    public float BaselineOffset { get; set; }
+
+    /// <summary>
     /// Gets or sets the zero-based grapheme cluster index represented by the glyph.
     /// </summary>
     /// <remarks>

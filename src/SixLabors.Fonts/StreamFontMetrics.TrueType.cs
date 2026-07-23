@@ -123,6 +123,7 @@ internal partial class StreamFontMetrics
             vmtx = reader.TryGetTable<VerticalMetricsTable>();
         }
 
+        BaseTable? baseTable = reader.TryGetTable<BaseTable>();
         GlyphDefinitionTable? gdef = reader.TryGetTable<GlyphDefinitionTable>();
         GSubTable? gSub = reader.TryGetTable<GSubTable>();
         GPosTable? gPos = reader.TryGetTable<GPosTable>();
@@ -154,6 +155,7 @@ internal partial class StreamFontMetrics
             Kern = kern,
             Vhea = vhea,
             Vmtx = vmtx,
+            Base = baseTable,
             Gdef = gdef,
             GSub = gSub,
             GPos = gPos,

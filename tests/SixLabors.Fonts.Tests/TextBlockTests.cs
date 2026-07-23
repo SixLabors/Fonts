@@ -332,6 +332,101 @@ public class TextBlockTests
         Assert.True(blockRenderer.GlyphRects.Count > lineRenderer.GlyphRects.Count);
     }
 
+    [Theory]
+    [InlineData(LayoutMode.HorizontalTopBottom)]
+    [InlineData(LayoutMode.HorizontalBottomTop)]
+    [InlineData(LayoutMode.VerticalLeftRight)]
+    [InlineData(LayoutMode.VerticalRightLeft)]
+    [InlineData(LayoutMode.VerticalMixedLeftRight)]
+    [InlineData(LayoutMode.VerticalMixedRightLeft)]
+    public void RenderTo_VisibleBounds_CoveringBandMatchesFullRender(LayoutMode layoutMode)
+    {
+        const string text = "Alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu.";
+        const float wrappingLength = 90;
+        TextOptions options = Options(-1);
+        options.LayoutMode = layoutMode;
+        TextBlock block = new(text, options);
+
+        GlyphRenderer full = new();
+        block.RenderTo(full, wrappingLength);
+
+        GlyphRenderer culled = new();
+        block.RenderTo(culled, wrappingLength, block.MeasureRenderableBounds(wrappingLength));
+
+        // A band covering the whole block must produce the identical glyph stream: a culled
+        // line advances the pen through the same arithmetic as a rendered one.
+        Assert.Equal(full.GlyphRects.Count, culled.GlyphRects.Count);
+        Assert.Equal(full.ControlPoints.Count, culled.ControlPoints.Count);
+        for (int i = 0; i < full.GlyphRects.Count; i++)
+        {
+            Assert.Equal(full.GlyphRects[i], culled.GlyphRects[i], Comparer);
+        }
+    }
+
+    [Theory]
+    [InlineData(LayoutMode.HorizontalTopBottom)]
+    [InlineData(LayoutMode.VerticalLeftRight)]
+    public void RenderTo_VisibleBounds_CullsLinesOutsideBand(LayoutMode layoutMode)
+    {
+        const string text = "Alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi.";
+        const float wrappingLength = 90;
+        TextOptions options = Options(-1);
+        options.LayoutMode = layoutMode;
+        TextBlock block = new(text, options);
+
+        GlyphRenderer full = new();
+        block.RenderTo(full, wrappingLength);
+
+        ReadOnlySpan<LineMetrics> lines = block.GetLineMetrics(wrappingLength).Span;
+        Assert.True(lines.Length >= 7);
+
+        // A band covering exactly the middle line. Culling compares along the block flow
+        // axis: Y for horizontal layouts, X for vertical layouts.
+        int middle = lines.Length / 2;
+        LineMetrics middleLine = lines[middle];
+        FontRectangle band = layoutMode == LayoutMode.HorizontalTopBottom
+            ? new(0, middleLine.Start.Y, 10000, middleLine.Extent.Y)
+            : new(middleLine.Start.X, 0, middleLine.Extent.X, 10000);
+
+        GlyphRenderer culled = new();
+        block.RenderTo(culled, wrappingLength, band);
+
+        // With at least three lines on each side of the band and a one-line-height tolerance,
+        // the outermost lines can never render, so the culled stream must be a strict interior
+        // slice of the full stream rendered at identical positions.
+        int offset = AssertRendersContiguousSliceOfFull(full, culled);
+        Assert.True(offset > 0);
+        Assert.True(offset + culled.GlyphRects.Count < full.GlyphRects.Count);
+
+        // The slice must contain every glyph of the middle line.
+        ReadOnlySpan<LineLayout> lineLayouts = block.GetLineLayouts(wrappingLength).Span;
+        int middleStart = 0;
+        for (int i = 0; i < middle; i++)
+        {
+            middleStart += lineLayouts[i].GetGlyphMetrics().Length;
+        }
+
+        int middleCount = lineLayouts[middle].GetGlyphMetrics().Length;
+        Assert.True(offset <= middleStart);
+        Assert.True(offset + culled.GlyphRects.Count >= middleStart + middleCount);
+    }
+
+    private static int AssertRendersContiguousSliceOfFull(GlyphRenderer full, GlyphRenderer culled)
+    {
+        Assert.True(culled.GlyphRects.Count > 0);
+        Assert.True(culled.GlyphRects.Count < full.GlyphRects.Count);
+
+        int offset = full.GlyphRects.FindIndex(rect => rect.Equals(culled.GlyphRects[0]));
+        Assert.True(offset >= 0);
+        Assert.True(offset + culled.GlyphRects.Count <= full.GlyphRects.Count);
+        for (int i = 0; i < culled.GlyphRects.Count; i++)
+        {
+            Assert.Equal(full.GlyphRects[i + offset], culled.GlyphRects[i], Comparer);
+        }
+
+        return offset;
+    }
+
     [Fact]
     public void CharacterMeasurements_MatchTextMeasurer()
     {

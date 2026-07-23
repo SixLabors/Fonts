@@ -83,6 +83,9 @@ internal sealed class TrueTypeFontTables : IFontTables
     public PostTable Post { get; set; }
 
     /// <inheritdoc/>
+    public BaseTable? Base { get; set; }
+
+    /// <inheritdoc/>
     public GlyphDefinitionTable? Gdef { get; set; }
 
     /// <inheritdoc/>
