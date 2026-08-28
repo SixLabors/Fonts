@@ -78,9 +78,9 @@ internal ref struct SimpleBinaryReader
         byte b0 = this.buffer[this.Position];
         this.Position += 4;
 
-        // This number is interpreted as a Fixed; that is, a signed number with 16 bits of fraction
+        // The integer word is signed, while the fractional word is an unsigned 16-bit value.
         float number = (short)((b0 << 8) | b1);
-        float fraction = (short)((b2 << 8) | b3) / 65536F;
+        float fraction = (ushort)((b2 << 8) | b3) / 65536F;
         return number + fraction;
     }
 }
