@@ -348,7 +348,7 @@ public class TextRenderer
             // The logical advance box comes straight from the line aggregates in one scan
             // over the broken lines.
             FontRectangle advance = TextBlock.GetAdvance(textBox, dpi, isHorizontal);
-            bounds = new(options.Origin.X, options.Origin.Y, advance.Width, advance.Height);
+            bounds = new FontRectangle(options.Origin.X, options.Origin.Y, advance.Width, advance.Height);
         }
 
         this.renderer.BeginText(in bounds);

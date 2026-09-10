@@ -90,7 +90,7 @@ internal ref struct CffEvaluationEngine
         this.initialStemCount = 0;
         this.initialHintsActivated = false;
         this.lockFixMapOk = true;
-        this.stack = new(50);
+        this.stack = new RefStack<float>(50);
         this.isDisposed = false;
         this.version = version;
         this.glyphVariationProcessor = null;
@@ -132,7 +132,7 @@ internal ref struct CffEvaluationEngine
         CffBoundsFinder finder = new();
 
         // Note: scale is passed with negative Y to flip the Y axis.
-        this.transforming = new(finder, Vector2.Zero, new Vector2(1, -1), Vector2.Zero, Matrix3x2.Identity);
+        this.transforming = new TransformingGlyphRenderer(finder, Vector2.Zero, new Vector2(1, -1), Vector2.Zero, Matrix3x2.Identity);
 
         // Boolean IGlyphRenderer.BeginGlyph(..) is handled by the caller.
         this.Parse(this.charStrings, 0);
@@ -158,7 +158,7 @@ internal ref struct CffEvaluationEngine
     {
         this.Reset();
 
-        this.transforming = new(renderer, origin, scale, offset, transform);
+        this.transforming = new TransformingGlyphRenderer(renderer, origin, scale, offset, transform);
 
         // Boolean IGlyphRenderer.BeginGlyph(..) is handled by the caller.
         this.Parse(this.charStrings, 0);
@@ -192,7 +192,7 @@ internal ref struct CffEvaluationEngine
                 float c2x;
                 float c2y;
 
-                var oneByteOperator = (Type2Operator1)b0;
+                Type2Operator1 oneByteOperator = (Type2Operator1)b0;
                 switch (oneByteOperator)
                 {
                     case Type2Operator1.Hstem:

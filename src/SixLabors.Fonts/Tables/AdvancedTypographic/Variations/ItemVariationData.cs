@@ -98,10 +98,10 @@ internal sealed class ItemVariationData
         // The delta array has a sequence of deltas using the long type followed by a sequence of deltas using the short type.
         bool longWords = (wordDeltaCount & LongWordsMask) != 0;
         int wordDeltas = wordDeltaCount & WordDeltaCountMask;
-        var deltaSets = new DeltaSet[itemCount];
+        DeltaSet[] deltaSets = new DeltaSet[itemCount];
         for (int i = 0; i < itemCount; i++)
         {
-            var deltaSet = new DeltaSet(reader, wordDeltas, longWords, regionIndexCount);
+            DeltaSet deltaSet = new(reader, wordDeltas, longWords, regionIndexCount);
             deltaSets[i] = deltaSet;
         }
 

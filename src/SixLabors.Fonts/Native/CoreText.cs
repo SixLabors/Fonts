@@ -43,7 +43,7 @@ internal static partial class CoreText
     /// must be released with <see cref="CoreFoundation.CFRelease"/>.
     /// </remarks>
     [LibraryImport(CoreTextFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial IntPtr CTFontManagerCopyAvailableFontFamilyNames();
 
     /// <summary>
@@ -59,7 +59,7 @@ internal static partial class CoreText
     /// released with <see cref="CoreFoundation.CFRelease"/>.
     /// </remarks>
     [LibraryImport(CoreTextFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial IntPtr CTFontCollectionCreateFromAvailableFonts(IntPtr options);
 
     /// <summary>
@@ -75,7 +75,7 @@ internal static partial class CoreText
     /// released with <see cref="CoreFoundation.CFRelease"/>.
     /// </remarks>
     [LibraryImport(CoreTextFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial IntPtr CTFontCollectionCreateMatchingFontDescriptors(IntPtr collection);
 
     /// <summary>
@@ -92,7 +92,7 @@ internal static partial class CoreText
     /// released with <see cref="CoreFoundation.CFRelease"/>.
     /// </remarks>
     [LibraryImport(CoreTextFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial IntPtr CTFontDescriptorCopyAttribute(IntPtr descriptor, IntPtr attribute);
 
     /// <summary>
@@ -110,7 +110,7 @@ internal static partial class CoreText
     /// released with <see cref="CoreFoundation.CFRelease"/>.
     /// </remarks>
     [LibraryImport(CoreTextFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial IntPtr CTFontCreateWithFontDescriptor(IntPtr descriptor, double size, IntPtr matrix);
 
     /// <summary>
@@ -128,7 +128,7 @@ internal static partial class CoreText
     /// released with <see cref="CoreFoundation.CFRelease"/>.
     /// </remarks>
     [LibraryImport(CoreTextFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial IntPtr CTFontCreateWithName(IntPtr name, double size, IntPtr matrix);
 
     /// <summary>
@@ -148,7 +148,7 @@ internal static partial class CoreText
     /// released with <see cref="CoreFoundation.CFRelease"/>.
     /// </remarks>
     [LibraryImport(CoreTextFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial IntPtr CTFontCreateCopyWithSymbolicTraits(
         IntPtr font,
         double size,
@@ -171,7 +171,7 @@ internal static partial class CoreText
     /// released with <see cref="CoreFoundation.CFRelease"/>.
     /// </remarks>
     [LibraryImport(CoreTextFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial IntPtr CTFontCreateUIFontForLanguage(CTFontUIFontType uiType, double size, IntPtr language);
 
     /// <summary>
@@ -190,7 +190,7 @@ internal static partial class CoreText
     /// released with <see cref="CoreFoundation.CFRelease"/>.
     /// </remarks>
     [LibraryImport(CoreTextFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial IntPtr CTFontCreateForStringWithLanguage(
         IntPtr currentFont,
         IntPtr stringRef,
@@ -210,7 +210,7 @@ internal static partial class CoreText
     /// with <see cref="CoreFoundation.CFRelease"/>.
     /// </remarks>
     [LibraryImport(CoreTextFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial IntPtr CTFontCopyFamilyName(IntPtr font);
 
     /// <summary>
@@ -226,7 +226,7 @@ internal static partial class CoreText
     /// with <see cref="CoreFoundation.CFRelease"/>.
     /// </remarks>
     [LibraryImport(CoreTextFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial IntPtr CTFontCopyPostScriptName(IntPtr font);
 
     /// <summary>
@@ -235,7 +235,7 @@ internal static partial class CoreText
     /// <param name="font">The font.</param>
     /// <returns>The symbolic traits.</returns>
     [LibraryImport(CoreTextFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial uint CTFontGetSymbolicTraits(IntPtr font);
 
     /// <summary>
@@ -247,7 +247,7 @@ internal static partial class CoreText
     /// <param name="count">The number of UTF-16 characters.</param>
     /// <returns><see langword="true"/> if every character has a glyph; otherwise, <see langword="false"/>.</returns>
     [LibraryImport(CoreTextFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     [return: MarshalAs(UnmanagedType.I1)]
     public static unsafe partial bool CTFontGetGlyphsForCharacters(
         IntPtr font,

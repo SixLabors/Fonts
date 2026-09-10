@@ -22,11 +22,10 @@ public class CompositeGlyphLoaderTests
         Bounds bounds = new(0, 0, 100, 100);
         CompositeGlyphLoader glyph = CompositeGlyphLoader.LoadCompositeGlyph(writer.GetReader(), in bounds);
 
-        GlyphTable tbl = new(new[]
-        {
+        GlyphTable tbl = new([
             new SimpleGlyphLoader(bounds), // padding
-            new SimpleGlyphLoader([new(new Vector2(20, 21), true)], [1], bounds, Array.Empty<byte>())
-        });
+            new SimpleGlyphLoader([new ControlPoint(new Vector2(20, 21), true)], [1], bounds, [])
+        ]);
 
         GlyphVector finalGlyph = glyph.CreateGlyph(tbl);
 
@@ -48,11 +47,10 @@ public class CompositeGlyphLoaderTests
         Bounds bounds = new(0, 0, 100, 100);
         CompositeGlyphLoader glyph = CompositeGlyphLoader.LoadCompositeGlyph(writer.GetReader(), in bounds);
 
-        GlyphTable tbl = new(new[]
-        {
+        GlyphTable tbl = new([
             new SimpleGlyphLoader(bounds), // padding
-            new SimpleGlyphLoader([new(new Vector2(20, 21), true)], [1], bounds, Array.Empty<byte>())
-        });
+            new SimpleGlyphLoader([new ControlPoint(new Vector2(20, 21), true)], [1], bounds, [])
+        ]);
 
         GlyphVector finalGlyph = glyph.CreateGlyph(tbl);
 
@@ -74,11 +72,10 @@ public class CompositeGlyphLoaderTests
         Bounds bounds = new(0, 0, 100, 100);
         CompositeGlyphLoader glyph = CompositeGlyphLoader.LoadCompositeGlyph(writer.GetReader(), in bounds);
 
-        GlyphTable tbl = new(new[]
-        {
+        GlyphTable tbl = new([
             new SimpleGlyphLoader(bounds), // padding
-            new SimpleGlyphLoader([new(new Vector2(20, 21), true)], [1], bounds, Array.Empty<byte>())
-        });
+            new SimpleGlyphLoader([new ControlPoint(new Vector2(20, 21), true)], [1], bounds, [])
+        ]);
 
         GlyphVector finalGlyph = glyph.CreateGlyph(tbl);
 
@@ -100,11 +97,10 @@ public class CompositeGlyphLoaderTests
         Bounds bounds = new(0, 0, 100, 100);
         CompositeGlyphLoader glyph = CompositeGlyphLoader.LoadCompositeGlyph(writer.GetReader(), in bounds);
 
-        GlyphTable tbl = new(new[]
-        {
+        GlyphTable tbl = new([
             new SimpleGlyphLoader(bounds), // padding
-            new SimpleGlyphLoader([new(new Vector2(20, 21), true)], [1], bounds, Array.Empty<byte>())
-        });
+            new SimpleGlyphLoader([new ControlPoint(new Vector2(20, 21), true)], [1], bounds, [])
+        ]);
 
         GlyphVector finalGlyph = glyph.CreateGlyph(tbl);
 

@@ -63,7 +63,7 @@ public static partial class TextShaper
             // Fill gaps within runs.
             if (textRun.Start > start)
             {
-                textRuns.Add(new()
+                textRuns.Add(new TextRun
                 {
                     Start = start,
                     End = textRun.Start,
@@ -94,7 +94,7 @@ public static partial class TextShaper
         // Add a final run if required.
         if (start < end)
         {
-            textRuns.Add(new()
+            textRuns.Add(new TextRun
             {
                 Start = start,
                 End = end,
@@ -149,7 +149,7 @@ public static partial class TextShaper
         {
             ShapingBuffer shaped = ShapeCore(text, options, scratch, prebuiltRuns, false);
             FinalizeDirectionalRuns(shaped, options.LayoutMode, scratch);
-            return new(ProjectShapedText(shaped, options.LayoutMode, scratch), scratch);
+            return new ShapedTextScope(ProjectShapedText(shaped, options.LayoutMode, scratch), scratch);
         }
         catch
         {
@@ -331,7 +331,7 @@ public static partial class TextShaper
                 // default even/LTR embedding level.
                 BidiRun placeholderBidiRun = bidiRunIndex < bidiRuns.Length
                     ? bidiRuns[bidiRunIndex]
-                    : new(BidiCharacterType.LeftToRight, 2, codePointIndex, 0);
+                    : new BidiRun(BidiCharacterType.LeftToRight, 2, codePointIndex, 0);
 
                 // Placeholder runs are inserted into the layout stream and do not consume
                 // source graphemes, source codepoints, or bidi runs. The loop position
@@ -609,7 +609,7 @@ public static partial class TextShaper
                 runFont = entry.Font;
                 runTextRunIndex = shaping.TextRunIndex;
                 runBidiRun = shapingBidiRun;
-                scratch.AddRun(new(entry.Font, entry.PointSize, shaped.TextRuns[shaping.TextRunIndex], shapingBidiRun));
+                scratch.AddRun(new ShapedTextRun(entry.Font, entry.PointSize, shaped.TextRuns[shaping.TextRunIndex], shapingBidiRun));
             }
 
             ShapedGlyphFlags flags = ShapedGlyphFlags.None;
@@ -641,7 +641,7 @@ public static partial class TextShaper
                 flags |= ShapedGlyphFlags.CursiveScript;
             }
 
-            infos[i] = new(
+            infos[i] = new ShapedGlyphInfo(
                 shaping.CodePointIndex,
                 shaping.CodePoint,
                 shaping.CodePointCount,
@@ -649,7 +649,7 @@ public static partial class TextShaper
                 (ushort)(scratch.RunCount - 1),
                 flags);
 
-            positions[i] = new(
+            positions[i] = new ShapedGlyphPosition(
                 entry.GetAdvanceWidth(in shapingPosition),
                 entry.GetAdvanceHeight(in shapingPosition),
                 new Vector2(shapingPosition.Bounds.X, shapingPosition.Bounds.Y),

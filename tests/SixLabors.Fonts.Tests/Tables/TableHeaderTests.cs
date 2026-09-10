@@ -8,7 +8,7 @@ namespace SixLabors.Fonts.Tests.Tables;
 public class TableHeaderTests
 {
     public static TheoryData<string, uint, uint?, uint> ReadAllValuesData { get; } =
-        new TheoryData<string, uint, uint?, uint>
+        new()
         {
             { "TAG1", 98, 18, 1218 },
             { "TAG2", 198, 0, 121 },
@@ -16,7 +16,7 @@ public class TableHeaderTests
 
     [Theory]
     [MemberData(nameof(ReadAllValuesData))]
-    public void ReadAllValues(string tag, uint checksum, uint offset, uint length)
+    public void ReadAllValues(string tag, uint checksum, uint? offset, uint length)
     {
         BigEndianBinaryWriter writer = new();
         writer.WriteTableHeader(tag, checksum, offset, length);

@@ -289,7 +289,7 @@ internal sealed class MyanmarShaper : DefaultShaper
 
         if (this.hasBrokenClusters)
         {
-            if (fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort circleId))
+            if (fontMetrics.TryGetGlyphId(new CodePoint(DottedCircle), out ushort circleId))
             {
                 Span<ushort> glyphs = stackalloc ushort[2];
                 while (start < max)

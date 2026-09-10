@@ -37,7 +37,7 @@ internal class SegmentMapRecord
         // | AxisValueMap    | axisValueMaps[positionMapCount]        | The array of axis value map records for this axis.                      |
         // +-----------------+----------------------------------------+-------------------------------------------------------------------------+
         ushort positionMapCount = reader.ReadUInt16();
-        var axisValueMap = new AxisValueMapRecord[positionMapCount];
+        AxisValueMapRecord[] axisValueMap = new AxisValueMapRecord[positionMapCount];
         for (int i = 0; i < positionMapCount; i++)
         {
             axisValueMap[i] = AxisValueMapRecord.Load(reader);

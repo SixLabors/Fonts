@@ -66,9 +66,9 @@ public class Format4SubTableTests
 
         Format4SubTable.Segment[] segments =
         [
-            new Format4SubTable.Segment(0, 20, 10, -9, 0),
-            new Format4SubTable.Segment(1, 90, 30, -18, 0),
-            new Format4SubTable.Segment(2, 480, 153, -27, 0),
+            new(0, 20, 10, -9, 0),
+            new(1, 90, 30, -18, 0),
+            new(2, 480, 153, -27, 0),
         ];
 
         Format4SubTable table = new(

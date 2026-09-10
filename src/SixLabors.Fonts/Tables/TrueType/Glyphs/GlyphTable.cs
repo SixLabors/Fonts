@@ -27,7 +27,7 @@ internal class GlyphTable : Table
     public GlyphTable(GlyphLoader[] glyphLoaders)
     {
         this.loaders = glyphLoaders;
-        this.glyphCache = new(Environment.ProcessorCount, glyphLoaders.Length);
+        this.glyphCache = new ConcurrentDictionary<int, GlyphVector>(Environment.ProcessorCount, glyphLoaders.Length);
     }
 
     /// <summary>

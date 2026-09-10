@@ -664,14 +664,14 @@ internal class ColrTable : Table
                 // A destructive mode can then only consume its partner stack, never content
                 // painted below the pair. Command layer indices keep the layer stream compact
                 // while preserving arbitrarily nested groups.
-                state.CompositeCommands.Add(new(state.Layers.Count, PaintedCompositeCommandKind.Begin, CompositeMode.SrcOver));
-                state.CompositeCommands.Add(new(state.Layers.Count, PaintedCompositeCommandKind.Begin, CompositeMode.SrcOver));
+                state.CompositeCommands.Add(new PaintedCompositeCommand(state.Layers.Count, PaintedCompositeCommandKind.Begin, CompositeMode.SrcOver));
+                state.CompositeCommands.Add(new PaintedCompositeCommand(state.Layers.Count, PaintedCompositeCommandKind.Begin, CompositeMode.SrcOver));
                 this.FlattenPaintToLayers(comp.Backdrop, currentGlyphId, glyphTransform, paintTransform, transformPaint, ref state);
-                state.CompositeCommands.Add(new(state.Layers.Count, PaintedCompositeCommandKind.End));
-                state.CompositeCommands.Add(new(state.Layers.Count, PaintedCompositeCommandKind.Begin, compositeMode));
+                state.CompositeCommands.Add(new PaintedCompositeCommand(state.Layers.Count, PaintedCompositeCommandKind.End));
+                state.CompositeCommands.Add(new PaintedCompositeCommand(state.Layers.Count, PaintedCompositeCommandKind.Begin, compositeMode));
                 this.FlattenPaintToLayers(comp.Source, currentGlyphId, glyphTransform, paintTransform, transformPaint, ref state);
-                state.CompositeCommands.Add(new(state.Layers.Count, PaintedCompositeCommandKind.End));
-                state.CompositeCommands.Add(new(state.Layers.Count, PaintedCompositeCommandKind.End));
+                state.CompositeCommands.Add(new PaintedCompositeCommand(state.Layers.Count, PaintedCompositeCommandKind.End));
+                state.CompositeCommands.Add(new PaintedCompositeCommand(state.Layers.Count, PaintedCompositeCommandKind.End));
                 return;
             }
 

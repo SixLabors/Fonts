@@ -70,9 +70,9 @@ internal partial class StreamFontMetrics : FontMetrics
         this.outlineType = OutlineType.TrueType;
         this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
         this.GlyphVariationProcessor = glyphVariationProcessor;
-        this.glyphIdCache = new();
-        this.codePointCache = new();
-        this.glyphCache = new();
+        this.glyphIdCache = new ConcurrentDictionary<(int CodePoint, int NextCodePoint), (bool Success, ushort GlyphId, bool SkipNextCodePoint)>();
+        this.codePointCache = new ConcurrentDictionary<ushort, (bool Success, CodePoint CodePoint)>();
+        this.glyphCache = new ConcurrentDictionary<(int CodePoint, ushort Id, TextAttributes Attributes, ColorFontSupport ColorSupport, bool IsVerticalLayout, FontPalette? Palette), FontGlyphMetrics>();
         this.source = source;
 
         (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) metrics = this.Initialize(tables);
@@ -94,9 +94,9 @@ internal partial class StreamFontMetrics : FontMetrics
         this.outlineType = OutlineType.CFF;
         this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
         this.GlyphVariationProcessor = glyphVariationProcessor;
-        this.glyphIdCache = new();
-        this.codePointCache = new();
-        this.glyphCache = new();
+        this.glyphIdCache = new ConcurrentDictionary<(int CodePoint, int NextCodePoint), (bool Success, ushort GlyphId, bool SkipNextCodePoint)>();
+        this.codePointCache = new ConcurrentDictionary<ushort, (bool Success, CodePoint CodePoint)>();
+        this.glyphCache = new ConcurrentDictionary<(int CodePoint, ushort Id, TextAttributes Attributes, ColorFontSupport ColorSupport, bool IsVerticalLayout, FontPalette? Palette), FontGlyphMetrics>();
         this.source = source;
 
         (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) metrics = this.Initialize(tables);
@@ -123,7 +123,7 @@ internal partial class StreamFontMetrics : FontMetrics
         this.GlyphVariationProcessor = processor;
         this.glyphIdCache = sharedGlyphIdCache;
         this.codePointCache = sharedCodePointCache;
-        this.glyphCache = new();
+        this.glyphCache = new ConcurrentDictionary<(int CodePoint, ushort Id, TextAttributes Attributes, ColorFontSupport ColorSupport, bool IsVerticalLayout, FontPalette? Palette), FontGlyphMetrics>();
         this.svgGlyphSource = svgGlyphSource;
         this.source = source;
 
@@ -153,7 +153,7 @@ internal partial class StreamFontMetrics : FontMetrics
         this.GlyphVariationProcessor = processor;
         this.glyphIdCache = sharedGlyphIdCache;
         this.codePointCache = sharedCodePointCache;
-        this.glyphCache = new();
+        this.glyphCache = new ConcurrentDictionary<(int CodePoint, ushort Id, TextAttributes Attributes, ColorFontSupport ColorSupport, bool IsVerticalLayout, FontPalette? Palette), FontGlyphMetrics>();
         this.svgGlyphSource = svgGlyphSource;
         this.source = source;
 
@@ -803,7 +803,7 @@ internal partial class StreamFontMetrics : FontMetrics
         advanceWidthMax = (short)hhea.AdvanceWidthMax;
         advanceHeightMax = vhea == null ? lineHeight : vhea.AdvanceHeightMax;
 
-        return new()
+        return new HorizontalMetrics
         {
             Ascender = ascender,
             Descender = descender,

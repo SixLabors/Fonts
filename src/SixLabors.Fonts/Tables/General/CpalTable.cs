@@ -89,7 +89,7 @@ internal class CpalTable : Table
             return this.defaultPaletteColors ??= this.BuildPaletteColors(null);
         }
 
-        ConcurrentDictionary<FontPalette, GlyphColor[]> cache = this.selectedPaletteColors ??= new();
+        ConcurrentDictionary<FontPalette, GlyphColor[]> cache = this.selectedPaletteColors ??= new ConcurrentDictionary<FontPalette, GlyphColor[]>();
         return cache.GetOrAdd(palette, static (key, table) => table.BuildPaletteColors(key), this);
     }
 
