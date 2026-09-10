@@ -23,6 +23,27 @@ internal class ColrTable : Table
     internal const string TableName = "COLR";
 
     /// <summary>
+    /// The maximum nesting depth of a paint graph. Paint nodes reference one another through
+    /// offsets, layer indices, and base glyph ids, so a malformed font can describe unbounded
+    /// nesting or a cycle. Decoding and flattening both stop at this depth instead.
+    /// </summary>
+    public const int MaxPaintNestingLevel = 64;
+
+    /// <summary>
+    /// The maximum number of paint-graph edges followed while flattening one base glyph.
+    /// Nodes may be shared, so even an acyclic graph can fan out exponentially; the walk
+    /// stops once the budget is spent.
+    /// </summary>
+    public const int MaxPaintGraphEdges = 2048;
+
+    /// <summary>
+    /// A paint that draws nothing: a layer set with no layers. It stands in for a child
+    /// whose decode was cut by the nesting limit or which led back into a node still being
+    /// decoded, so every wrapper keeps a non-null child.
+    /// </summary>
+    private static readonly Paint EmptyPaint = new PaintColrLayers { Format = 1, NumLayers = 0, FirstLayerIndex = 0 };
+
+    /// <summary>
     /// The COLR v0 base glyph records mapping glyph IDs to layer ranges.
     /// </summary>
     private readonly BaseGlyphRecord[] glyphRecords;
@@ -306,29 +327,53 @@ internal class ColrTable : Table
         // glyph. Paint-graph nodes never carry clip bounds of their own.
         _ = this.TryGetClipBox(glyphId, processor, out clipBounds);
 
-        // 2) Flatten paint graph to layers. Start with no current glyph id.
-        List<ResolvedGlyphLayer> acc = [];
-        List<PaintedCompositeCommand> commands = [];
-        this.FlattenPaintToLayers(
-            root,
-            null,
-            Matrix3x2.Identity,
-            Matrix3x2.Identity,
-            false,
-            processor,
-            acc,
-            commands);
+        // 2) Flatten paint graph to layers. Start with no current glyph id. The active paths
+        //    live on this frame. Each node on the path pushes at most one id before it
+        //    recurses, and the base glyph seeds the glyph path so a PaintColrGlyph that points
+        //    back at it is a cycle on first sight; the nesting limit plus one bounds both.
+        Span<ushort> activeGlyphs = stackalloc ushort[MaxPaintNestingLevel + 1];
+        Span<uint> activeLayers = stackalloc uint[MaxPaintNestingLevel + 1];
+        PaintFlattenState state = new(processor, activeGlyphs, activeLayers);
+        state.PushGlyph(glyphId);
+        this.FlattenPaintToLayers(root, null, Matrix3x2.Identity, Matrix3x2.Identity, false, ref state);
 
         // 3) If nothing emitted, the graph contained no supported paint leaves.
-        if (acc.Count == 0)
+        if (state.Layers.Count == 0)
         {
             layers = null;
             return false;
         }
 
-        layers = acc;
-        compositeCommands = commands;
+        layers = state.Layers;
+        compositeCommands = state.CompositeCommands;
         return true;
+    }
+
+    /// <summary>
+    /// Follows one edge of the paint graph into <paramref name="node"/>, charging the walk's
+    /// nesting and edge budgets before the subtree is flattened. A malformed graph that nests
+    /// too deeply or fans out too widely is cut here instead of exhausting the stack or
+    /// running without bound.
+    /// </summary>
+    /// <param name="node">The paint node to flatten.</param>
+    /// <param name="currentGlyphId">The glyph id whose outline will receive the paint, or <see langword="null"/> when no glyph is bound.</param>
+    /// <param name="glyphTransform">The accumulated transform to apply to the glyph's geometry.</param>
+    /// <param name="paintTransform">The accumulated transform to apply to the paint.</param>
+    /// <param name="transformPaint">Whether wrapper transforms should be applied to the paint (true) or to the glyph geometry (false).</param>
+    /// <param name="state">The state of the current flattening walk, shared by reference along the path.</param>
+    private void FlattenPaintToLayers(Paint node, ushort? currentGlyphId, Matrix3x2 glyphTransform, Matrix3x2 paintTransform, bool transformPaint, ref PaintFlattenState state)
+    {
+        if (state.DepthLeft <= 0 || state.EdgesLeft <= 0)
+        {
+            return;
+        }
+
+        // The edge stays spent for the rest of the walk; the nesting level is handed back
+        // once the subtree has been flattened.
+        state.DepthLeft--;
+        state.EdgesLeft--;
+        this.FlattenPaintNode(node, currentGlyphId, glyphTransform, paintTransform, transformPaint, ref state);
+        state.DepthLeft++;
     }
 
     /// <summary>
@@ -349,18 +394,8 @@ internal class ColrTable : Table
     /// <param name="glyphTransform">The accumulated transform to apply to the glyph's geometry.</param>
     /// <param name="paintTransform">The accumulated transform to apply to the paint.</param>
     /// <param name="transformPaint">Whether wrapper transforms should be applied to the paint (true) or to the glyph geometry (false).</param>
-    /// <param name="processor">The glyph variation processor, or null for non-variable fonts.</param>
-    /// <param name="outLayers">Accumulator for resolved layers.</param>
-    /// <param name="compositeCommands">Accumulator for composite-group commands.</param>
-    private void FlattenPaintToLayers(
-        Paint node,
-        ushort? currentGlyphId,
-        Matrix3x2 glyphTransform,
-        Matrix3x2 paintTransform,
-        bool transformPaint,
-        GlyphVariationProcessor? processor,
-        List<ResolvedGlyphLayer> outLayers,
-        List<PaintedCompositeCommand> compositeCommands)
+    /// <param name="state">The state of the current flattening walk, shared by reference along the path.</param>
+    private void FlattenPaintNode(Paint node, ushort? currentGlyphId, Matrix3x2 glyphTransform, Matrix3x2 paintTransform, bool transformPaint, ref PaintFlattenState state)
     {
         switch (node)
         {
@@ -383,9 +418,20 @@ internal class ColrTable : Table
                         continue;
                     }
 
+                    // A layer index that is already on the active path leads back into a
+                    // node that is still being flattened. Following it again would repeat
+                    // the loop without end, so the reference paints nothing.
+                    uint layerIndex = pcl.FirstLayerIndex + (uint)i;
+                    if (state.IsLayerActive(layerIndex))
+                    {
+                        continue;
+                    }
+
                     if (this.TryGetPaint(off, out Paint? child))
                     {
-                        this.FlattenPaintToLayers(child, currentGlyphId, glyphTransform, paintTransform, transformPaint, processor, outLayers, compositeCommands);
+                        state.PushLayer(layerIndex);
+                        this.FlattenPaintToLayers(child, currentGlyphId, glyphTransform, paintTransform, transformPaint, ref state);
+                        state.PopLayer();
                     }
                 }
 
@@ -394,11 +440,20 @@ internal class ColrTable : Table
 
             case PaintColrGlyph pcg:
             {
+                // A base glyph that is already on the active path is flattening its own graph
+                // right now. A reference back to it is a cycle and paints nothing.
+                if (state.IsGlyphActive(pcg.GlyphId))
+                {
+                    return;
+                }
+
                 // Resolve the referenced glyph's root paint and recurse through its own bindings.
                 if (this.TryGetRootPaintOffset(pcg.GlyphId, out uint off) && off != 0
                     && this.TryGetPaint(off, out Paint? colrRoot))
                 {
-                    this.FlattenPaintToLayers(colrRoot, null, glyphTransform, Matrix3x2.Identity, false, processor, outLayers, compositeCommands);
+                    state.PushGlyph(pcg.GlyphId);
+                    this.FlattenPaintToLayers(colrRoot, null, glyphTransform, Matrix3x2.Identity, false, ref state);
+                    state.PopGlyph();
                 }
 
                 return;
@@ -407,7 +462,7 @@ internal class ColrTable : Table
             case PaintGlyph pg:
             {
                 // Bind geometry to the specified glyph id and recurse into its child paint.
-                this.FlattenPaintToLayers(pg.Child, pg.GlyphId, glyphTransform, Matrix3x2.Identity, true, processor, outLayers, compositeCommands);
+                this.FlattenPaintToLayers(pg.Child, pg.GlyphId, glyphTransform, Matrix3x2.Identity, true, ref state);
                 return;
             }
 
@@ -427,7 +482,7 @@ internal class ColrTable : Table
                     glyphTransform *= next;
                 }
 
-                this.FlattenPaintToLayers(pt.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, processor, outLayers, compositeCommands);
+                this.FlattenPaintToLayers(pt.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, ref state);
                 return;
             }
 
@@ -435,12 +490,12 @@ internal class ColrTable : Table
             {
                 VarAffine2x3 a = pvt.Transform;
                 uint vib = a.VarIndexBase;
-                float xx = a.Xx + this.ResolveDelta(processor, vib + 0u);
-                float yx = a.Yx + this.ResolveDelta(processor, vib + 1u);
-                float xy = a.Xy + this.ResolveDelta(processor, vib + 2u);
-                float yy = a.Yy + this.ResolveDelta(processor, vib + 3u);
-                float dx = a.Dx + this.ResolveDelta(processor, vib + 4u);
-                float dy = a.Dy + this.ResolveDelta(processor, vib + 5u);
+                float xx = a.Xx + this.ResolveDelta(state.Processor, vib + 0u);
+                float yx = a.Yx + this.ResolveDelta(state.Processor, vib + 1u);
+                float xy = a.Xy + this.ResolveDelta(state.Processor, vib + 2u);
+                float yy = a.Yy + this.ResolveDelta(state.Processor, vib + 3u);
+                float dx = a.Dx + this.ResolveDelta(state.Processor, vib + 4u);
+                float dy = a.Dy + this.ResolveDelta(state.Processor, vib + 5u);
                 Matrix3x2 next = new(xx, yx, xy, yy, dx, dy);
                 if (transformPaint)
                 {
@@ -451,7 +506,7 @@ internal class ColrTable : Table
                     glyphTransform *= next;
                 }
 
-                this.FlattenPaintToLayers(pvt.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, processor, outLayers, compositeCommands);
+                this.FlattenPaintToLayers(pvt.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, ref state);
                 return;
             }
 
@@ -467,14 +522,14 @@ internal class ColrTable : Table
                     glyphTransform *= next;
                 }
 
-                this.FlattenPaintToLayers(t.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, processor, outLayers, compositeCommands);
+                this.FlattenPaintToLayers(t.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, ref state);
                 return;
             }
 
             case PaintVarTranslate vt:
             {
-                float dx = vt.Dx + this.ResolveDelta(processor, vt.VarIndexBase + 0u);
-                float dy = vt.Dy + this.ResolveDelta(processor, vt.VarIndexBase + 1u);
+                float dx = vt.Dx + this.ResolveDelta(state.Processor, vt.VarIndexBase + 0u);
+                float dy = vt.Dy + this.ResolveDelta(state.Processor, vt.VarIndexBase + 1u);
                 Matrix3x2 next = Matrix3x2.CreateTranslation(dx, dy);
                 if (transformPaint)
                 {
@@ -485,7 +540,7 @@ internal class ColrTable : Table
                     glyphTransform *= next;
                 }
 
-                this.FlattenPaintToLayers(vt.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, processor, outLayers, compositeCommands);
+                this.FlattenPaintToLayers(vt.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, ref state);
                 return;
             }
 
@@ -501,18 +556,18 @@ internal class ColrTable : Table
                     glyphTransform *= next;
                 }
 
-                this.FlattenPaintToLayers(s.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, processor, outLayers, compositeCommands);
+                this.FlattenPaintToLayers(s.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, ref state);
                 return;
             }
 
             case PaintVarScale vs:
             {
                 uint vib = vs.VarIndexBase;
-                float sx = vs.ScaleX + this.ResolveDelta(processor, vib + 0u);
-                float sy = vs.Uniform ? sx : vs.ScaleY + this.ResolveDelta(processor, vib + 1u);
+                float sx = vs.ScaleX + this.ResolveDelta(state.Processor, vib + 0u);
+                float sy = vs.Uniform ? sx : vs.ScaleY + this.ResolveDelta(state.Processor, vib + 1u);
                 int centerOffset = vs.Uniform ? 1 : 2;
-                float cx = vs.AroundCenter ? vs.CenterX + this.ResolveDelta(processor, vib + (uint)centerOffset) : 0;
-                float cy = vs.AroundCenter ? vs.CenterY + this.ResolveDelta(processor, vib + (uint)centerOffset + 1u) : 0;
+                float cx = vs.AroundCenter ? vs.CenterX + this.ResolveDelta(state.Processor, vib + (uint)centerOffset) : 0;
+                float cy = vs.AroundCenter ? vs.CenterY + this.ResolveDelta(state.Processor, vib + (uint)centerOffset + 1u) : 0;
                 Matrix3x2 next = BuildScale(sx, sy, vs.AroundCenter, cx, cy);
                 if (transformPaint)
                 {
@@ -523,7 +578,7 @@ internal class ColrTable : Table
                     glyphTransform *= next;
                 }
 
-                this.FlattenPaintToLayers(vs.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, processor, outLayers, compositeCommands);
+                this.FlattenPaintToLayers(vs.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, ref state);
                 return;
             }
 
@@ -539,16 +594,16 @@ internal class ColrTable : Table
                     glyphTransform *= next;
                 }
 
-                this.FlattenPaintToLayers(r.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, processor, outLayers, compositeCommands);
+                this.FlattenPaintToLayers(r.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, ref state);
                 return;
             }
 
             case PaintVarRotate vr:
             {
                 uint vib = vr.VarIndexBase;
-                float angle = vr.Angle + this.ResolveDelta(processor, vib + 0u);
-                float cx = vr.AroundCenter ? vr.CenterX + this.ResolveDelta(processor, vib + 1u) : 0;
-                float cy = vr.AroundCenter ? vr.CenterY + this.ResolveDelta(processor, vib + 2u) : 0;
+                float angle = vr.Angle + this.ResolveDelta(state.Processor, vib + 0u);
+                float cx = vr.AroundCenter ? vr.CenterX + this.ResolveDelta(state.Processor, vib + 1u) : 0;
+                float cy = vr.AroundCenter ? vr.CenterY + this.ResolveDelta(state.Processor, vib + 2u) : 0;
                 Matrix3x2 next = BuildRotate(angle, vr.AroundCenter, cx, cy);
                 if (transformPaint)
                 {
@@ -559,7 +614,7 @@ internal class ColrTable : Table
                     glyphTransform *= next;
                 }
 
-                this.FlattenPaintToLayers(vr.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, processor, outLayers, compositeCommands);
+                this.FlattenPaintToLayers(vr.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, ref state);
                 return;
             }
 
@@ -575,17 +630,17 @@ internal class ColrTable : Table
                     glyphTransform *= next;
                 }
 
-                this.FlattenPaintToLayers(k.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, processor, outLayers, compositeCommands);
+                this.FlattenPaintToLayers(k.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, ref state);
                 return;
             }
 
             case PaintVarSkew vk:
             {
                 uint vib = vk.VarIndexBase;
-                float xSkew = vk.XSkew + this.ResolveDelta(processor, vib + 0u);
-                float ySkew = vk.YSkew + this.ResolveDelta(processor, vib + 1u);
-                float cx = vk.AroundCenter ? vk.CenterX + this.ResolveDelta(processor, vib + 2u) : 0;
-                float cy = vk.AroundCenter ? vk.CenterY + this.ResolveDelta(processor, vib + 3u) : 0;
+                float xSkew = vk.XSkew + this.ResolveDelta(state.Processor, vib + 0u);
+                float ySkew = vk.YSkew + this.ResolveDelta(state.Processor, vib + 1u);
+                float cx = vk.AroundCenter ? vk.CenterX + this.ResolveDelta(state.Processor, vib + 2u) : 0;
+                float cy = vk.AroundCenter ? vk.CenterY + this.ResolveDelta(state.Processor, vib + 3u) : 0;
                 Matrix3x2 next = BuildSkew(xSkew, ySkew, vk.AroundCenter, cx, cy);
                 if (transformPaint)
                 {
@@ -596,7 +651,7 @@ internal class ColrTable : Table
                     glyphTransform *= next;
                 }
 
-                this.FlattenPaintToLayers(vk.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, processor, outLayers, compositeCommands);
+                this.FlattenPaintToLayers(vk.Child, currentGlyphId, glyphTransform, paintTransform, transformPaint, ref state);
                 return;
             }
 
@@ -609,14 +664,14 @@ internal class ColrTable : Table
                 // A destructive mode can then only consume its partner stack, never content
                 // painted below the pair. Command layer indices keep the layer stream compact
                 // while preserving arbitrarily nested groups.
-                compositeCommands.Add(new(outLayers.Count, PaintedCompositeCommandKind.Begin, CompositeMode.SrcOver));
-                compositeCommands.Add(new(outLayers.Count, PaintedCompositeCommandKind.Begin, CompositeMode.SrcOver));
-                this.FlattenPaintToLayers(comp.Backdrop, currentGlyphId, glyphTransform, paintTransform, transformPaint, processor, outLayers, compositeCommands);
-                compositeCommands.Add(new(outLayers.Count, PaintedCompositeCommandKind.End));
-                compositeCommands.Add(new(outLayers.Count, PaintedCompositeCommandKind.Begin, compositeMode));
-                this.FlattenPaintToLayers(comp.Source, currentGlyphId, glyphTransform, paintTransform, transformPaint, processor, outLayers, compositeCommands);
-                compositeCommands.Add(new(outLayers.Count, PaintedCompositeCommandKind.End));
-                compositeCommands.Add(new(outLayers.Count, PaintedCompositeCommandKind.End));
+                state.CompositeCommands.Add(new(state.Layers.Count, PaintedCompositeCommandKind.Begin, CompositeMode.SrcOver));
+                state.CompositeCommands.Add(new(state.Layers.Count, PaintedCompositeCommandKind.Begin, CompositeMode.SrcOver));
+                this.FlattenPaintToLayers(comp.Backdrop, currentGlyphId, glyphTransform, paintTransform, transformPaint, ref state);
+                state.CompositeCommands.Add(new(state.Layers.Count, PaintedCompositeCommandKind.End));
+                state.CompositeCommands.Add(new(state.Layers.Count, PaintedCompositeCommandKind.Begin, compositeMode));
+                this.FlattenPaintToLayers(comp.Source, currentGlyphId, glyphTransform, paintTransform, transformPaint, ref state);
+                state.CompositeCommands.Add(new(state.Layers.Count, PaintedCompositeCommandKind.End));
+                state.CompositeCommands.Add(new(state.Layers.Count, PaintedCompositeCommandKind.End));
                 return;
             }
 
@@ -634,7 +689,7 @@ internal class ColrTable : Table
             {
                 // A paint without a bound outline stays a first-class layer; its figure is
                 // resolved at streaming time from the glyph's clip bounds or glyph bounds.
-                outLayers.Add(new ResolvedGlyphLayer(currentGlyphId, node, glyphTransform, paintTransform));
+                state.Layers.Add(new ResolvedGlyphLayer(currentGlyphId, node, glyphTransform, paintTransform));
 
                 return;
             }
@@ -768,7 +823,7 @@ internal class ColrTable : Table
             }
 
             using BigEndianBinaryReader reader = new(new MemoryStream(this.paintData, false), leaveOpen: false);
-            paint = LoadPaintAt(reader, paintOffset, this.layerList, this.paintCaches);
+            paint = LoadPaintAt(reader, paintOffset, this.layerList, this.paintCaches, 0);
             return paint is not null;
         }
     }
@@ -991,17 +1046,28 @@ internal class ColrTable : Table
     /// <param name="paintOffset">The COLR-relative offset of the paint table.</param>
     /// <param name="layerList">The layer list for resolving PaintColrLayers references, or <see langword="null"/>.</param>
     /// <param name="caches">The shared caches for deduplicating loaded objects.</param>
-    /// <returns>The loaded paint object.</returns>
-    private static Paint LoadPaintAt(
-        BigEndianBinaryReader reader,
-        uint paintOffset,
-        LayerList? layerList,
-        PaintCaches caches)
+    /// <param name="depth">The number of paint nodes above this one in the current decode.</param>
+    /// <returns>The loaded paint object, or <see cref="EmptyPaint"/> when the nesting limit cuts the decode.</returns>
+    private static Paint LoadPaintAt(BigEndianBinaryReader reader, uint paintOffset, LayerList? layerList, PaintCaches caches, int depth)
     {
         if (caches.PaintCache.TryGetValue(paintOffset, out Paint? p))
         {
             return p;
         }
+
+        // No valid graph nests deeper than the limit. The cut result is not cached, so a later
+        // walk that reaches this offset at a shallower depth still decodes it in full.
+        if (depth >= MaxPaintNestingLevel)
+        {
+            return EmptyPaint;
+        }
+
+        // Reserve the offset before the subtree is decoded. Child offsets are relative to
+        // their parent and only ever point forward, but an offset of zero names the parent
+        // itself, and a layer offset can lead back into any node still being decoded. The
+        // reservation turns such a reference into an empty child instead of re-entering
+        // the decode, and the finished node replaces it below.
+        caches.PaintCache[paintOffset] = EmptyPaint;
 
         long restore = reader.BaseStream.Position;
         reader.Seek(paintOffset, SeekOrigin.Begin);
@@ -1024,6 +1090,11 @@ internal class ColrTable : Table
                     FirstLayerIndex = firstLayerIndex
                 };
 
+                // Publish the node before its layers are decoded. Layer offsets can point
+                // anywhere in the table, including back to this node, and the cache hit is
+                // what ends such a loop here. The flattening walk then treats it as a cycle.
+                caches.PaintCache[paintOffset] = result;
+
                 // Walk children immediately:
                 if (layerList is not null)
                 {
@@ -1033,7 +1104,7 @@ internal class ColrTable : Table
                         uint layerPaintOff = layerList.PaintOffsets[idx];
                         if (layerPaintOff != 0)
                         {
-                            _ = LoadPaintAt(reader, layerPaintOff, layerList, caches);
+                            _ = LoadPaintAt(reader, layerPaintOff, layerList, caches, depth + 1);
                         }
                     }
                 }
@@ -1199,7 +1270,7 @@ internal class ColrTable : Table
             {
                 uint childOff = reader.ReadOffset24();
                 ushort gid = reader.ReadUInt16();
-                Paint child = LoadPaintAt(reader, paintOffset + childOff, layerList, caches);
+                Paint child = LoadPaintAt(reader, paintOffset + childOff, layerList, caches, depth + 1);
                 result = new PaintGlyph { Format = format, Child = child, GlyphId = gid };
                 break;
             }
@@ -1221,7 +1292,7 @@ internal class ColrTable : Table
                 uint transformOff = reader.ReadOffset24();
 
                 Affine2x3 m = ReadAffine2x3At(reader, paintOffset + transformOff, caches);
-                Paint child = LoadPaintAt(reader, paintOffset + childOff, layerList, caches);
+                Paint child = LoadPaintAt(reader, paintOffset + childOff, layerList, caches, depth + 1);
                 result = new PaintTransform { Format = format, Child = child, Transform = m };
                 break;
             }
@@ -1232,7 +1303,7 @@ internal class ColrTable : Table
                 uint transformOff = reader.ReadOffset24();
 
                 VarAffine2x3 vm = ReadVarAffine2x3At(reader, paintOffset + transformOff, caches);
-                Paint child = LoadPaintAt(reader, paintOffset + childOff, layerList, caches);
+                Paint child = LoadPaintAt(reader, paintOffset + childOff, layerList, caches, depth + 1);
                 result = new PaintVarTransform { Format = format, Child = child, Transform = vm };
                 break;
             }
@@ -1243,7 +1314,7 @@ internal class ColrTable : Table
                 uint childOff = reader.ReadOffset24();
                 short dx = reader.ReadFWORD();
                 short dy = reader.ReadFWORD();
-                Paint child = LoadPaintAt(reader, paintOffset + childOff, layerList, caches);
+                Paint child = LoadPaintAt(reader, paintOffset + childOff, layerList, caches, depth + 1);
                 result = new PaintTranslate { Format = format, Child = child, Dx = dx, Dy = dy };
                 break;
             }
@@ -1254,7 +1325,7 @@ internal class ColrTable : Table
                 short dx = reader.ReadFWORD();
                 short dy = reader.ReadFWORD();
                 uint varBase = reader.ReadUInt32();
-                Paint child = LoadPaintAt(reader, paintOffset + childOff, layerList, caches);
+                Paint child = LoadPaintAt(reader, paintOffset + childOff, layerList, caches, depth + 1);
                 result = new PaintVarTranslate { Format = format, Child = child, Dx = dx, Dy = dy, VarIndexBase = varBase };
                 break;
             }
@@ -1285,7 +1356,7 @@ internal class ColrTable : Table
                 }
 
                 uint varBase = isVar ? reader.ReadUInt32() : 0;
-                Paint child = LoadPaintAt(reader, paintOffset + childOff, layerList, caches);
+                Paint child = LoadPaintAt(reader, paintOffset + childOff, layerList, caches, depth + 1);
 
                 if (isVar)
                 {
@@ -1340,7 +1411,7 @@ internal class ColrTable : Table
                 }
 
                 uint varBase = isVar ? reader.ReadUInt32() : 0;
-                Paint child = LoadPaintAt(reader, paintOffset + childOff, layerList, caches);
+                Paint child = LoadPaintAt(reader, paintOffset + childOff, layerList, caches, depth + 1);
 
                 if (isVar)
                 {
@@ -1392,7 +1463,7 @@ internal class ColrTable : Table
                 }
 
                 uint varBase = isVar ? reader.ReadUInt32() : 0;
-                Paint child = LoadPaintAt(reader, paintOffset + childOff, layerList, caches);
+                Paint child = LoadPaintAt(reader, paintOffset + childOff, layerList, caches, depth + 1);
 
                 if (isVar)
                 {
@@ -1432,8 +1503,8 @@ internal class ColrTable : Table
                 ColrCompositeMode mode = reader.ReadByte<ColrCompositeMode>();
                 uint backOff = reader.ReadOffset24();
 
-                Paint src = LoadPaintAt(reader, paintOffset + srcOff, layerList, caches);
-                Paint back = LoadPaintAt(reader, paintOffset + backOff, layerList, caches);
+                Paint src = LoadPaintAt(reader, paintOffset + srcOff, layerList, caches, depth + 1);
+                Paint back = LoadPaintAt(reader, paintOffset + backOff, layerList, caches, depth + 1);
                 result = new PaintComposite { Format = format, CompositeMode = mode, Source = src, Backdrop = back };
                 break;
             }
@@ -1594,6 +1665,120 @@ internal sealed class PaintCaches
     /// Gets the cache of variable affine matrices keyed by their COLR-relative offset.
     /// </summary>
     public Dictionary<uint, VarAffine2x3> VarAffineCache { get; } = [];
+}
+
+/// <summary>
+/// Holds the state of one paint-graph flattening walk for a base glyph: the accumulators
+/// that receive the resolved layers and composite-group commands, the variation processor,
+/// and the guards that bound the walk over a malformed graph. The active paths live in
+/// caller-provided stack space sized to the nesting limit, so the walk allocates nothing
+/// beyond the accumulators.
+/// </summary>
+#pragma warning disable SA1201 // Elements should appear in the correct order
+internal ref struct PaintFlattenState
+#pragma warning restore SA1201 // Elements should appear in the correct order
+{
+    /// <summary>
+    /// The base glyph ids whose paint graphs are currently being flattened, outermost
+    /// first. Only the first <see cref="activeGlyphCount"/> entries are live.
+    /// </summary>
+    private readonly Span<ushort> activeGlyphs;
+
+    /// <summary>
+    /// The LayerList indices currently being flattened, outermost first. Only the first
+    /// <see cref="activeLayerCount"/> entries are live.
+    /// </summary>
+    private readonly Span<uint> activeLayers;
+
+    /// <summary>
+    /// The number of live entries in <see cref="activeGlyphs"/>.
+    /// </summary>
+    private int activeGlyphCount;
+
+    /// <summary>
+    /// The number of live entries in <see cref="activeLayers"/>.
+    /// </summary>
+    private int activeLayerCount;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PaintFlattenState"/> struct.
+    /// </summary>
+    /// <param name="processor">The glyph variation processor, or <see langword="null"/> for non-variable fonts.</param>
+    /// <param name="activeGlyphs">Stack space for the active glyph path, one entry longer than the nesting limit.</param>
+    /// <param name="activeLayers">Stack space for the active layer path, one entry longer than the nesting limit.</param>
+    public PaintFlattenState(GlyphVariationProcessor? processor, Span<ushort> activeGlyphs, Span<uint> activeLayers)
+    {
+        this.Processor = processor;
+        this.activeGlyphs = activeGlyphs;
+        this.activeLayers = activeLayers;
+        this.Layers = [];
+        this.CompositeCommands = [];
+        this.DepthLeft = ColrTable.MaxPaintNestingLevel;
+        this.EdgesLeft = ColrTable.MaxPaintGraphEdges;
+    }
+
+    /// <summary>
+    /// Gets the glyph variation processor, or <see langword="null"/> for non-variable fonts.
+    /// </summary>
+    public GlyphVariationProcessor? Processor { get; }
+
+    /// <summary>
+    /// Gets the accumulator for resolved layers.
+    /// </summary>
+    public List<ResolvedGlyphLayer> Layers { get; }
+
+    /// <summary>
+    /// Gets the accumulator for composite-group commands.
+    /// </summary>
+    public List<PaintedCompositeCommand> CompositeCommands { get; }
+
+    /// <summary>
+    /// Gets or sets the number of nesting levels still available to the walk.
+    /// </summary>
+    public int DepthLeft { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of paint-graph edges the walk may still follow.
+    /// </summary>
+    public int EdgesLeft { get; set; }
+
+    /// <summary>
+    /// Determines whether the paint graph of the given base glyph is currently being
+    /// flattened, in which case a <c>PaintColrGlyph</c> that names it is a cycle.
+    /// </summary>
+    /// <param name="glyphId">The base glyph id.</param>
+    /// <returns><see langword="true"/> if the glyph is on the active path; otherwise, <see langword="false"/>.</returns>
+    public readonly bool IsGlyphActive(ushort glyphId) => this.activeGlyphs[..this.activeGlyphCount].Contains(glyphId);
+
+    /// <summary>
+    /// Pushes a base glyph onto the active path before its paint graph is flattened.
+    /// </summary>
+    /// <param name="glyphId">The base glyph id.</param>
+    public void PushGlyph(ushort glyphId) => this.activeGlyphs[this.activeGlyphCount++] = glyphId;
+
+    /// <summary>
+    /// Pops the innermost base glyph off the active path after its paint graph is flattened.
+    /// </summary>
+    public void PopGlyph() => this.activeGlyphCount--;
+
+    /// <summary>
+    /// Determines whether the given LayerList entry is currently being flattened, in which
+    /// case a <c>PaintColrLayers</c> range that includes it is a cycle.
+    /// </summary>
+    /// <param name="layerIndex">The LayerList index.</param>
+    /// <returns><see langword="true"/> if the layer is on the active path; otherwise, <see langword="false"/>.</returns>
+    public readonly bool IsLayerActive(uint layerIndex) => this.activeLayers[..this.activeLayerCount].Contains(layerIndex);
+
+    /// <summary>
+    /// Pushes a LayerList entry onto the active path before its paint is flattened.
+    /// </summary>
+    /// <param name="layerIndex">The LayerList index.</param>
+    public void PushLayer(uint layerIndex) => this.activeLayers[this.activeLayerCount++] = layerIndex;
+
+    /// <summary>
+    /// Pops the innermost LayerList entry off the active path after its paint is flattened.
+    /// </summary>
+    public void PopLayer() => this.activeLayerCount--;
 }
 
 /// <summary>

@@ -123,6 +123,9 @@ internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
 
         glyph = result.Glyph;
         canvas = result.Canvas;
-        return result.Glyph.Layers.Count > 0;
+
+        // A base glyph whose paint graph yields no layers is cached as the default glyph,
+        // whose layer list is null; it is reported as not painted so the plain outline is used.
+        return result.Glyph.Layers?.Count > 0;
     }
 }
