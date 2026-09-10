@@ -7,7 +7,7 @@ namespace SixLabors.Fonts.Tests;
 
 public static class TestFonts
 {
-    private static readonly ConcurrentDictionary<string, Stream> FontStreamCache = new();
+    private static readonly ConcurrentDictionary<string, byte[]> FontDataCache = new();
 
     public static string TwemojiMozillaFile => GetFullPath("Twemoji Mozilla.ttf");
 
@@ -470,23 +470,10 @@ public static class TestFonts
     public static FontFamily GetFontFamily(FontCollection collection, string name)
         => collection.Add(name);
 
-    private static MemoryStream OpenStream(string path) =>
-        FontStreamCache.GetOrAdd(
-            path,
-            p =>
-            {
-                using FileStream fs = File.OpenRead(p);
-                return fs.Clone();
-            }).Clone();
-
-    private static MemoryStream Clone(this Stream src)
-    {
-        MemoryStream ms = new();
-        src.Position = 0;
-        src.CopyTo(ms);
-        ms.Position = 0;
-        return ms;
-    }
+    // Each caller gets its own read-only stream over the shared bytes, so parallel test
+    // classes never share a stream position.
+    private static MemoryStream OpenStream(string path)
+        => new(FontDataCache.GetOrAdd(path, File.ReadAllBytes), false);
 
     private static string GetFullPath(string file) => Path.Combine(TestEnvironment.FontTestDataFullPath, file);
 }
