@@ -989,7 +989,7 @@ internal class GlyphVariationProcessor
         IReadOnlyList<ushort> endPoints,
         Span<float> adjustX,
         Span<float> adjustY,
-        Span<byte> hasDelta)
+        ReadOnlySpan<byte> hasDelta)
     {
         if (points.Count == 0 || endPoints.Count == 0)
         {

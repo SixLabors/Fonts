@@ -13,12 +13,12 @@
   <Choose>
     <When Condition="$(SIXLABORS_TESTING_PREVIEW) == true">
       <PropertyGroup>
-        <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+        <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
       </PropertyGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
-        <TargetFrameworks>net8.0</TargetFrameworks>
+        <TargetFrameworks>net10.0</TargetFrameworks>
       </PropertyGroup>
     </Otherwise>
   </Choose>
@@ -47,7 +47,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="3.0.1-alpha.0.12" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="3.1.0" />
     <PackageReference Include="HarfBuzzSharp" Version="14.2.1.1" />
     <PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="14.2.1.1" Condition="'$(IsLinux)'=='true'" />
     <PackageReference Include="Pegasus" Version="4.1.0" PrivateAssets="all" />

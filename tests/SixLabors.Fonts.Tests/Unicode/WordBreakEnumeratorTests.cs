@@ -4,7 +4,6 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using SixLabors.Fonts.Unicode;
-using Xunit.Abstractions;
 
 namespace SixLabors.Fonts.Tests.Unicode;
 

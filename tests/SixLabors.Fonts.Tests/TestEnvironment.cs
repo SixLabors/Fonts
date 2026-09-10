@@ -10,7 +10,7 @@ internal static class TestEnvironment
 {
     private static readonly FileInfo TestAssemblyFile = new(typeof(TestEnvironment).GetTypeInfo().Assembly.Location);
 
-    private const string SixLaborsSolutionFileName = "SixLabors.Fonts.sln";
+    private const string SixLaborsSolutionFileName = "SixLabors.Fonts.slnx";
 
     private const string ActualOutputDirectoryRelativePath = @"tests\Images\ActualOutput";
 

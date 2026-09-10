@@ -1,0 +1,46 @@
+<Solution>
+  <Folder Name="/src/">
+    <File Path="src/Directory.Build.props" />
+    <File Path="src/Directory.Build.targets" />
+    <File Path="src/Fonts.ruleset" />
+    <Project Path="src/SixLabors.Fonts/SixLabors.Fonts.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <File Path="tests/Directory.Build.props" />
+    <File Path="tests/Directory.Build.targets" />
+    <Project Path="tests/SixLabors.Fonts.Benchmarks/SixLabors.Fonts.Benchmarks/SixLabors.Fonts.Benchmarks.csproj" />
+    <Project Path="tests/SixLabors.Fonts.Tests/SixLabors.Fonts.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/UnicodeTestData/">
+    <File Path="tests/UnicodeTestData/BidiCharacterTest.txt" />
+    <File Path="tests/UnicodeTestData/BidiTest.txt" />
+    <File Path="tests/UnicodeTestData/GraphemeBreakTest.txt" />
+    <File Path="tests/UnicodeTestData/LineBreakTest.txt" />
+    <File Path="tests/UnicodeTestData/README.md" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="src/UnicodeTrieGenerator/UnicodeTrieGenerator.csproj" />
+  </Folder>
+  <Folder Name="/_root/">
+    <File Path="ci-build.ps1" />
+    <File Path="ci-pack.ps1" />
+    <File Path="ci-test.ps1" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="NuGet.config" />
+    <File Path="README.md" />
+    <File Path="standards/.editorconfig" />
+  </Folder>
+  <Folder Name="/_root/.github/">
+    <File Path=".github/CONTRIBUTING.md" />
+    <File Path=".github/FUNDING.yml" />
+    <File Path=".github/PULL_REQUEST_TEMPLATE.md" />
+  </Folder>
+  <Folder Name="/_root/.github/ISSUE_TEMPLATE/">
+    <File Path=".github/ISSUE_TEMPLATE/config.yml" />
+    <File Path=".github/ISSUE_TEMPLATE/oss-bug-report.yml" />
+  </Folder>
+  <Folder Name="/_root/.github/workflows/">
+    <File Path=".github/workflows/build-and-test.yml" />
+  </Folder>
+</Solution>

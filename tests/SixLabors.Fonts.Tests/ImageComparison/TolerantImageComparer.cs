@@ -60,7 +60,7 @@ public class TolerantImageComparer : ImageComparer
     {
         if (expected.Size != actual.Size)
         {
-            throw new InvalidOperationException("Calling ImageComparer is invalid when dimensions mismatch!");
+            throw new InvalidOperationException($"Calling ImageComparer is invalid when dimensions mismatch! Actual size: {actual.Size} Expected size: {expected.Size}");
         }
 
         int width = actual.Width;

@@ -216,7 +216,7 @@ public class MeasureShapedRunBenchmark : IDisposable
     private static string GetRepositoryPath(string relativePath)
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);
-        while (directory != null && !File.Exists(Path.Combine(directory.FullName, "SixLabors.Fonts.sln")))
+        while (directory != null && !File.Exists(Path.Combine(directory.FullName, "SixLabors.Fonts.slnx")))
         {
             directory = directory.Parent;
         }
