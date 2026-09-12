@@ -10,6 +10,7 @@ using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
+using SixLabors.Fonts.Tables.General.Colr;
 using SixLabors.Fonts.Tables.General.Kern;
 using SixLabors.Fonts.Tables.General.Post;
 using SixLabors.Fonts.Tables.General.Svg;
@@ -431,6 +432,19 @@ internal partial class StreamFontMetrics : FontMetrics
                 key.IsVerticalLayout,
                 key.Palette),
             (textDecorations, codePoint, this));
+
+    /// <inheritdoc/>
+    internal override bool HasColorTable(ColorFontSupport colorSupport)
+    {
+        ColrTable? colr = this.trueTypeFontTables?.Colr ?? this.compactFontTables?.Colr;
+        if (colr is not null && ((colorSupport & ColorFontSupport.ColrV0) == ColorFontSupport.ColrV0 || ((colorSupport & ColorFontSupport.ColrV1) == ColorFontSupport.ColrV1 && colr.Version >= 1)))
+        {
+            return true;
+        }
+
+        SvgTable? svg = this.trueTypeFontTables?.Svg ?? this.compactFontTables?.Svg;
+        return svg is not null && (colorSupport & ColorFontSupport.Svg) == ColorFontSupport.Svg;
+    }
 
     /// <inheritdoc />
     public override ReadOnlyMemory<CodePoint> GetAvailableCodePoints()

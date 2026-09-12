@@ -41,6 +41,20 @@ public class HarfBuzzDifferentialTests
             { TestFonts.NotoColorEmojiRegular, "\u2764\uFE0F\u200D\U0001F525", false },
             { TestFonts.NotoColorEmojiRegular, "\u2764\uFE0F\u200D\U0001FA79", false },
 
+            // Emoji sequences from ImageSharp.Drawing discussion 418: the family joiner sequence,
+            // the shrug with a skin tone modifier with and without the female sign and its
+            // emoji presentation selector, and the sun with text and emoji presentation selectors.
+            // The shaping API returns what HarfBuzz returns for a selector the font cannot
+            // answer; the layout applies the request. Twemoji Mozilla has no space glyph, so
+            // its hidden selectors are deleted rather than replaced by a zero-advance space.
+            { TestFonts.SegoeuiEmojiFile, "👨‍👩‍👧‍👦", false },
+            { TestFonts.SegoeuiEmojiFile, "🤷🏽‍♀️ 🤷🏽", false },
+            { TestFonts.SegoeuiEmojiFile, "☀︎ ☀️", false },
+            { TestFonts.NotoColorEmojiRegular, "👨‍👩‍👧‍👦", false },
+            { TestFonts.NotoColorEmojiRegular, "🤷🏽‍♀️ 🤷🏽", false },
+            { TestFonts.NotoColorEmojiRegular, "☀︎ ☀️", false },
+            { TestFonts.TwemojiMozillaFile, "☀︎ ☀️", false },
+
             // Joiners inside shaping contexts: the joiner must steer the shaping
             // (ligature suppression/formation, joining forms, half forms) and then
             // render invisibly at zero advance.

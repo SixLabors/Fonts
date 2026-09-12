@@ -129,6 +129,16 @@ internal sealed class ShapingBuffer
     private const int DottedCircleCodePoint = 0x25CC;
 
     /// <summary>
+    /// U+FE0F VARIATION SELECTOR-16, which requests emoji presentation for the preceding character.
+    /// </summary>
+    public const int EmojiPresentationSelector = 0xFE0F;
+
+    /// <summary>
+    /// U+FE0E VARIATION SELECTOR-15, which requests text presentation for the preceding character.
+    /// </summary>
+    public const int TextPresentationSelector = 0xFE0E;
+
+    /// <summary>
     /// The multiplier used by the deterministic random sequence.
     /// </summary>
     private const uint RandomMultiplier = 48271;
@@ -338,6 +348,13 @@ internal sealed class ShapingBuffer
     /// hide-ignorables stage can skip plain text without a scan.
     /// </summary>
     public bool HasDefaultIgnorables { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether a record's base character was mapped but
+    /// the presentation its selector asks for was not, so the cluster is missing for
+    /// that font. When no font answers it, the fonts run again with selectors ignored.
+    /// </summary>
+    public bool HasUnmatchedVariationSequences { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether any record carries the fraction
@@ -554,7 +571,8 @@ internal sealed class ShapingBuffer
 
             FontGlyphMetrics glyphMetrics = this.GetGlyphMetrics(fontMetrics, codePoint, slot.GlyphId, textAttributes, textDecorations, layoutMode, textRun.ColorFontSupport ?? colorFontSupport, textRun.FontPalette ?? fontPalette);
 
-            if (glyphMetrics.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
+            // A default ignorable without a glyph is hidden later, never missing.
+            if (glyphMetrics.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint) && !slot.IsDefaultIgnorable)
             {
                 hasFallBacks = true;
             }
@@ -623,6 +641,7 @@ internal sealed class ShapingBuffer
         this.LigatureId = 1;
         this.EnabledFeatureMaskUnion = ShapePlanFeatures.GlobalFeatureMask;
         this.HasDefaultIgnorables = false;
+        this.HasUnmatchedVariationSequences = false;
         this.HasFractionSlash = false;
         this.HasVowelConstraintCandidates = false;
         this.placeholderBidiRuns.Clear();
@@ -1551,6 +1570,7 @@ internal sealed class ShapingBuffer
         // The hide-ignorables stage runs against this buffer, so the workspace's
         // knowledge of default ignorables must travel with its records.
         this.HasDefaultIgnorables |= workspace.HasDefaultIgnorables;
+        this.HasUnmatchedVariationSequences |= workspace.HasUnmatchedVariationSequences;
         this.HasFractionSlash |= workspace.HasFractionSlash;
         this.HasVowelConstraintCandidates |= workspace.HasVowelConstraintCandidates;
 
@@ -1593,7 +1613,8 @@ internal sealed class ShapingBuffer
 
             FontGlyphMetrics glyphMetrics = this.GetGlyphMetrics(fontMetrics, codePoint, id, textAttributes, textDecorations, layoutMode, sourceRun.ColorFontSupport ?? colorFontSupport, sourceRun.FontPalette ?? fontPalette);
 
-            if (glyphMetrics.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
+            // A default ignorable without a glyph is hidden later, never missing.
+            if (glyphMetrics.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint) && !source.IsDefaultIgnorable)
             {
                 hasFallBacks = true;
             }
@@ -1638,6 +1659,7 @@ internal sealed class ShapingBuffer
         // The hide-ignorables stage runs against this buffer, so the workspace's
         // knowledge of default ignorables must travel with its records.
         this.HasDefaultIgnorables |= workspace.HasDefaultIgnorables;
+        this.HasUnmatchedVariationSequences |= workspace.HasUnmatchedVariationSequences;
         this.HasFractionSlash |= workspace.HasFractionSlash;
         this.HasVowelConstraintCandidates |= workspace.HasVowelConstraintCandidates;
 
@@ -1645,10 +1667,11 @@ internal sealed class ShapingBuffer
 
         for (int i = 0; i < this.Count;)
         {
-            if (this.metrics[i].Metrics.GlyphType != GlyphType.Fallback)
+            if (this.metrics[i].Metrics.GlyphType != GlyphType.Fallback || this.data[i].IsDefaultIgnorable)
             {
                 // A primary or earlier fallback font already resolved this record.
-                // Later fallback passes must not replace a successful choice.
+                // Later fallback passes must not replace a successful choice. A
+                // default ignorable without a glyph is hidden later, never missing.
                 i++;
                 continue;
             }
@@ -1712,7 +1735,7 @@ internal sealed class ShapingBuffer
                     shapeRun.ColorFontSupport ?? colorFontSupport,
                     shapeRun.FontPalette ?? fontPalette);
 
-                if (glyphMetrics.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(shape.CodePoint))
+                if (glyphMetrics.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(shape.CodePoint) && !shape.IsDefaultIgnorable)
                 {
                     replacementsComplete = false;
                     break;
@@ -1993,7 +2016,7 @@ internal sealed class ShapingBuffer
         for (int i = 0; i < this.Count; i++)
         {
             ref GlyphShapingData slot = ref this.data[i];
-            if (slot.IsPlaceholder || CodePoint.IsControl(slot.CodePoint))
+            if (slot.IsPlaceholder || CodePoint.IsControl(slot.CodePoint) || slot.IsDefaultIgnorable)
             {
                 continue;
             }

@@ -283,13 +283,14 @@ public static partial class TextShaper
 
         // Single-run fast path: shape and seed one buffer in place and flip it to the
         // positioning role, so no record is copied between buffers. When fallback
-        // glyphs remain and fallback fonts exist, fall through to the general
-        // cross-buffer seed so the fallback passes can merge into the accumulator.
+        // glyphs remain and fallback fonts exist, or a selector cluster went unmatched
+        // and the pass that ignores selectors must run, fall through to the general
+        // cross-buffer seed so those passes can merge into the accumulator.
         ShapingBuffer shaped = positionings;
         if (textRuns.Count == 1 && !textRuns[0].Placeholder.HasValue)
         {
             TextRun onlyRun = textRuns[0];
-            int graphemeEnd = PopulateAndSubstitute(text, onlyRun.Start, textRuns, ref textRunIndex, ref codePointIndex, ref stringIndex, ref bidiRunIndex, onlyRun.ResolvedFont, bidiRuns, bidiMap, substitutions);
+            int graphemeEnd = PopulateAndSubstitute(text, onlyRun.Start, textRuns, ref textRunIndex, ref codePointIndex, ref stringIndex, ref bidiRunIndex, onlyRun.ResolvedFont, bidiRuns, bidiMap, substitutions, false);
 
             if (usesDefaultTextRun)
             {
@@ -300,7 +301,7 @@ public static partial class TextShaper
 
             complete = substitutions.SeedMetricsInPlace(onlyRun.ResolvedFont);
 
-            if (complete || (fallbackFonts.Length == 0 && options.FontFallbackResolver is null))
+            if (complete || (fallbackFonts.Length == 0 && options.FontFallbackResolver is null && !substitutions.HasUnmatchedVariationSequences))
             {
                 substitutions.SetRole(ShapingBufferRole.Positioning);
                 shaped = substitutions;
@@ -361,7 +362,8 @@ public static partial class TextShaper
                 bidiRuns,
                 bidiMap,
                 substitutions,
-                positionings))
+                positionings,
+                false))
             {
                 complete = false;
             }
@@ -391,7 +393,8 @@ public static partial class TextShaper
                     bidiRuns,
                     bidiMap,
                     substitutions,
-                    positionings))
+                    positionings,
+                    false))
                 {
                     complete = true;
                     break;
@@ -430,7 +433,48 @@ public static partial class TextShaper
                     bidiRuns,
                     bidiMap,
                     substitutions,
-                    positionings);
+                    positionings,
+                    false);
+            }
+        }
+
+        // A selector cluster no font answered in its requested presentation takes the
+        // base glyph from the first font that maps it, so the fonts run again with the
+        // selectors ignored. A cluster no font maps at all stays missing.
+        if (!complete && positionings.HasUnmatchedVariationSequences)
+        {
+            Font? previous = null;
+            for (int i = 0; i < textRuns.Count && !complete; i++)
+            {
+                Font font = textRuns[i].ResolvedFont;
+                if (font != previous)
+                {
+                    previous = font;
+                    complete = ShapeIgnoringSelectors(text, textRuns, font, bidiRuns, bidiMap, substitutions, positionings);
+                }
+            }
+
+            foreach (Font font in fallbackFonts)
+            {
+                if (complete)
+                {
+                    break;
+                }
+
+                complete = ShapeIgnoringSelectors(text, textRuns, font, bidiRuns, bidiMap, substitutions, positionings);
+            }
+
+            if (resolverFonts is not null)
+            {
+                foreach (Font font in resolverFonts)
+                {
+                    if (complete)
+                    {
+                        break;
+                    }
+
+                    complete = ShapeIgnoringSelectors(text, textRuns, font, bidiRuns, bidiMap, substitutions, positionings);
+                }
             }
         }
 
@@ -478,6 +522,28 @@ public static partial class TextShaper
         HideDefaultIgnorables(shaped);
 
         return shaped;
+    }
+
+    /// <summary>
+    /// Shapes the whole text with <paramref name="font"/> as a fallback pass that ignores
+    /// presentation selectors, so a selector cluster no font answered takes the base
+    /// glyph from the first font that maps it.
+    /// </summary>
+    /// <param name="text">The text to process.</param>
+    /// <param name="textRuns">The ordered list of resolved text runs.</param>
+    /// <param name="font">The font to shape with.</param>
+    /// <param name="bidiRuns">The resolved bidi runs covering the whole input.</param>
+    /// <param name="bidiMap">A codepoint → bidi-run mapping accumulated across shaping passes.</param>
+    /// <param name="substitutions">The GSUB substitution buffer to write into.</param>
+    /// <param name="positionings">The GPOS positioning buffer to write into.</param>
+    /// <returns><see langword="true"/> if every codepoint mapped successfully.</returns>
+    private static bool ShapeIgnoringSelectors(ReadOnlySpan<char> text, IReadOnlyList<TextRun> textRuns, Font font, BidiRun[] bidiRuns, int[] bidiMap, ShapingBuffer substitutions, ShapingBuffer positionings)
+    {
+        int textRunIndex = 0;
+        int codePointIndex = 0;
+        int stringIndex = 0;
+        int bidiRunIndex = 0;
+        return DoFontRun(text, 0, textRuns, ref textRunIndex, ref codePointIndex, ref stringIndex, ref bidiRunIndex, true, font, bidiRuns, bidiMap, substitutions, positionings, true);
     }
 
     /// <summary>
@@ -812,6 +878,10 @@ public static partial class TextShaper
     /// <param name="bidiMap">A codepoint → bidi-run mapping accumulated across shaping passes.</param>
     /// <param name="substitutions">The GSUB substitution buffer to write into.</param>
     /// <param name="positionings">The GPOS positioning buffer to write into.</param>
+    /// <param name="ignoreVariationSelectors">
+    /// <see langword="true"/> to map a base character without regard to the presentation
+    /// its selector asks for, once no font has answered it.
+    /// </param>
     /// <returns>
     /// <see langword="true"/> if every codepoint mapped successfully; <see langword="false"/> if any
     /// codepoint remains unmapped (so a fallback-font pass is needed).
@@ -829,9 +899,10 @@ public static partial class TextShaper
         BidiRun[] bidiRuns,
         int[] bidiMap,
         ShapingBuffer substitutions,
-        ShapingBuffer positionings)
+        ShapingBuffer positionings,
+        bool ignoreVariationSelectors)
     {
-        _ = PopulateAndSubstitute(text, start, textRuns, ref textRunIndex, ref codePointIndex, ref stringIndex, ref bidiRunIndex, font, bidiRuns, bidiMap, substitutions);
+        _ = PopulateAndSubstitute(text, start, textRuns, ref textRunIndex, ref codePointIndex, ref stringIndex, ref bidiRunIndex, font, bidiRuns, bidiMap, substitutions, ignoreVariationSelectors);
 
         bool result = !isFallbackRun
             ? positionings.TryAdd(font, substitutions)
@@ -855,8 +926,12 @@ public static partial class TextShaper
     /// <param name="bidiRuns">The resolved bidi runs covering the whole input.</param>
     /// <param name="bidiMap">A codepoint → bidi-run mapping accumulated across shaping passes.</param>
     /// <param name="substitutions">The GSUB substitution buffer to write into.</param>
+    /// <param name="ignoreVariationSelectors">
+    /// <see langword="true"/> to map a base character without regard to the presentation
+    /// its selector asks for, once no font has answered it.
+    /// </param>
     /// <returns>The exclusive grapheme index reached after consuming the text.</returns>
-    private static int PopulateAndSubstitute(ReadOnlySpan<char> text, int start, IReadOnlyList<TextRun> textRuns, ref int textRunIndex, ref int codePointIndex, ref int stringIndex, ref int bidiRunIndex, Font font, BidiRun[] bidiRuns, int[] bidiMap, ShapingBuffer substitutions)
+    private static int PopulateAndSubstitute(ReadOnlySpan<char> text, int start, IReadOnlyList<TextRun> textRuns, ref int textRunIndex, ref int codePointIndex, ref int stringIndex, ref int bidiRunIndex, Font font, BidiRun[] bidiRuns, int[] bidiMap, ShapingBuffer substitutions, bool ignoreVariationSelectors)
     {
         // For each run we start with a fresh substitution buffer to avoid
         // overwriting the glyph ids.
@@ -878,7 +953,6 @@ public static partial class TextShaper
         while (graphemeEnumerator.MoveNext())
         {
             ReadOnlySpan<char> grapheme = graphemeEnumerator.CurrentSpan;
-            int graphemeMax = grapheme.Length - 1;
             int graphemeCodePointIndex = 0;
             int charIndex = 0;
 
@@ -958,6 +1032,10 @@ public static partial class TextShaper
 
                 if (skipNextCodePoint)
                 {
+                    // The preceding codepoint consumed this variation selector as a
+                    // Unicode Variation Sequence, so it produces no record of its own.
+                    skipNextCodePoint = false;
+                    charIndex += current.Utf16SequenceLength;
                     codePointIndex++;
                     graphemeCodePointIndex++;
                     continue;
@@ -965,19 +1043,38 @@ public static partial class TextShaper
 
                 bidiMap[codePointIndex] = bidiRunIndex;
 
-                int charsConsumed = 0;
+                // Peek at the codepoint that follows so the cmap can resolve a Unicode
+                // Variation Sequence, and so a presentation selector can judge the base.
+                // The peek does not move the position; the loop reaches that codepoint on
+                // its next iteration.
                 charIndex += current.Utf16SequenceLength;
-                CodePoint? next = hasVariationSequences && graphemeCodePointIndex < graphemeMax
-                    ? CodePoint.DecodeFromUtf16At(grapheme, charIndex, out charsConsumed)
+                char following = charIndex < grapheme.Length ? grapheme[charIndex] : '\0';
+                bool followedByPresentationSelector = following is (char)ShapingBuffer.TextPresentationSelector or (char)ShapingBuffer.EmojiPresentationSelector;
+                CodePoint? next = (hasVariationSequences || followedByPresentationSelector) && charIndex < grapheme.Length
+                    ? CodePoint.DecodeFromUtf16At(grapheme, charIndex, out _)
                     : null;
-
-                charIndex += charsConsumed;
 
                 // Get the glyph id for the codepoint and add to the buffer. Every
                 // codepoint enters the buffer, including unmapped default
                 // ignorables as the missing glyph: sequence matching treats them
                 // as transparent and the hide stage replaces them at the end.
                 _ = substitutions.TryGetGlyphId(font.FontMetrics, current, next, out ushort glyphId, out skipNextCodePoint);
+
+                // A base character mapped without its selector's sequence answers the
+                // selector through the font as a whole: a font with an enabled color
+                // table has the emoji presentation, a font without one the text
+                // presentation. A font with the other presentation does not have the
+                // sequence, so the cluster is missing for it and the selector goes with it.
+                if (followedByPresentationSelector && !ignoreVariationSelectors && !skipNextCodePoint && glyphId != 0)
+                {
+                    ColorFontSupport colorFontSupport = textRuns[textRunIndex].ColorFontSupport ?? substitutions.TextOptions.ColorFontSupport;
+                    if (font.FontMetrics.HasColorTable(colorFontSupport) == (following == (char)ShapingBuffer.TextPresentationSelector))
+                    {
+                        glyphId = 0;
+                        skipNextCodePoint = true;
+                        substitutions.HasUnmatchedVariationSequences = true;
+                    }
+                }
 
                 // Capture all three source coordinates while the input enumerators
                 // provide them. Later substitutions move, duplicate, or combine the
