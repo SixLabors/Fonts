@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Emoji presentation browser comparison</title>
+  <style>
+    @font-face {
+      font-family: "Presentation DejaVu Sans";
+      src: url("../Fonts/DejaVuSans.ttf") format("truetype");
+      font-style: normal;
+      font-weight: 400;
+    }
+
+    @font-face {
+      font-family: "Presentation Noto Color Emoji";
+      src: url("../Fonts/NotoColorEmoji-Regular.ttf") format("truetype");
+      font-style: normal;
+      font-weight: 400;
+    }
+
+    @font-face {
+      font-family: "Presentation Arial";
+      src: url("../Fonts/arial.ttf") format("truetype");
+      font-style: normal;
+      font-weight: 400;
+    }
+
+    @font-face {
+      font-family: "Presentation Segoe UI Emoji";
+      src: url("../Fonts/seguiemj-win11.ttf") format("truetype");
+      font-style: normal;
+      font-weight: 400;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: #111;
+      background: #fff;
+      font-family: Arial, sans-serif;
+    }
+
+    header,
+    section {
+      padding: 16px 20px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    h1,
+    h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .sample {
+      margin: 0;
+      color: #000;
+      background: #fff;
+      font-size: 30pt;
+      font-kerning: normal;
+      line-height: 1.4;
+      white-space: pre;
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: max-content max-content;
+      gap: 24px;
+      align-items: start;
+      overflow-x: auto;
+    }
+
+    figure {
+      margin: 0;
+    }
+
+    figcaption {
+      margin-bottom: 8px;
+      color: #555;
+      font-size: 13px;
+    }
+
+    .actual-output {
+      display: block;
+      max-width: none;
+    }
+
+    .dejavu-noto {
+      font-family: "Presentation DejaVu Sans", "Presentation Noto Color Emoji";
+    }
+
+    .noto-dejavu {
+      font-family: "Presentation Noto Color Emoji", "Presentation DejaVu Sans";
+    }
+
+    .arial-segoe-dejavu {
+      font-family: "Presentation Arial", "Presentation Segoe UI Emoji", "Presentation DejaVu Sans";
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Browser emoji presentation comparison</h1>
+  </header>
+
+  <section>
+    <h2>DejaVu Sans, then Noto Color Emoji, 30pt</h2>
+    <div class="comparison">
+      <figure>
+        <figcaption>Browser</figcaption>
+        <p class="sample dejavu-noto">☀︎ ☀️ ☀ ☺︎ ☺️ ☺
+🤷🏽‍♀️ 🤷🏽 👨‍👩‍👧‍👦 ❤️‍🔥
+1️⃣ 🇯🇵 👍🏽 😀</p>
+      </figure>
+      <figure>
+        <figcaption>SixLabors.Fonts actual output</figcaption>
+        <img class="actual-output" src="../Images/ActualOutput/EmojiPresentation_BrowserComparison_DejaVuSans-NotoColorEmoji.png" alt="SixLabors.Fonts DejaVu Sans then Noto Color Emoji output">
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Noto Color Emoji, then DejaVu Sans, 30pt</h2>
+    <div class="comparison">
+      <figure>
+        <figcaption>Browser</figcaption>
+        <p class="sample noto-dejavu">☀︎ ☀️ ☀ ☺︎ ☺️ ☺
+🤷🏽‍♀️ 🤷🏽 👨‍👩‍👧‍👦 ❤️‍🔥
+1️⃣ 🇯🇵 👍🏽 😀</p>
+      </figure>
+      <figure>
+        <figcaption>SixLabors.Fonts actual output</figcaption>
+        <img class="actual-output" src="../Images/ActualOutput/EmojiPresentation_BrowserComparison_NotoColorEmoji-DejaVuSans.png" alt="SixLabors.Fonts Noto Color Emoji then DejaVu Sans output">
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Arial, then Segoe UI Emoji, then DejaVu Sans, 30pt</h2>
+    <div class="comparison">
+      <figure>
+        <figcaption>Browser</figcaption>
+        <p class="sample arial-segoe-dejavu">☀︎ ☀️ ☀ ☺︎ ☺️ ☺
+🤷🏽‍♀️ 🤷🏽 👨‍👩‍👧‍👦 ❤️‍🔥
+1️⃣ 🇯🇵 👍🏽 😀</p>
+      </figure>
+      <figure>
+        <figcaption>SixLabors.Fonts actual output</figcaption>
+        <img class="actual-output" src="../Images/ActualOutput/EmojiPresentation_BrowserComparison_Arial-SegoeUIEmoji-DejaVuSans.png" alt="SixLabors.Fonts Arial then Segoe UI Emoji then DejaVu Sans output">
+      </figure>
+    </div>
+  </section>
+</body>
+</html>

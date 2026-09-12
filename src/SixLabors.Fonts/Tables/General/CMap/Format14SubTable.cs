@@ -192,11 +192,11 @@ internal sealed class Format14SubTable : CMapSubTable
                 }
             }
 
-            // At this point we are neither a non-default UVS nor a default UVS,
-            // but we know the nextCodepoint is a variation selector. Unicode says
-            // this glyph should be invisible: "no visible rendering for the VS"
-            // (http://unicode.org/faq/unsup_char.html#4)
-            return defaultGlyphIndex;
+            // The selector has a record but the base character is in neither its
+            // default nor its non-default mappings, so the pair is not a variation
+            // sequence of this font. Both characters continue separately; the
+            // selector renders invisibly through its own glyph.
+            return 0;
         }
 
         // In all other cases, return 0
