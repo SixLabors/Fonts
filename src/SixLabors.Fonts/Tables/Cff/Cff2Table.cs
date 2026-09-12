@@ -79,7 +79,7 @@ internal sealed class Cff2Table : Table, ICffTable
             case 2:
                 Cff2Parser parser = new();
                 Cff2Font cffFont = parser.Load(reader, hdrSize, topDictLength, fontName, position);
-                return new(cffFont, cffFont.ItemVariationStore);
+                return new Cff2Table(cffFont, cffFont.ItemVariationStore);
 
             default:
                 throw new NotSupportedException("CFF version 2 is expected");

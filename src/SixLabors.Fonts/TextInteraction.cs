@@ -31,7 +31,7 @@ internal static class TextInteraction
     {
         if (lines.IsEmpty || graphemes.IsEmpty)
         {
-            return new(-1, -1, -1, false);
+            return new TextHit(-1, -1, -1, false);
         }
 
         bool isHorizontal = layoutMode.IsHorizontal();
@@ -77,7 +77,7 @@ internal static class TextInteraction
     {
         if (lines.IsEmpty || graphemes.IsEmpty)
         {
-            return new(-1, -1, -1, default, default, false, default, default, 0);
+            return new CaretPosition(-1, -1, -1, default, default, false, default, default, 0);
         }
 
         int lineIndex = FindLineByGraphemeIndex(lines, graphemeIndex);
@@ -109,7 +109,7 @@ internal static class TextInteraction
     {
         if (graphemes.IsEmpty)
         {
-            return new(lineIndex, line.GraphemeIndex, line.StringIndex, default, default, false, default, default, 0);
+            return new CaretPosition(lineIndex, line.GraphemeIndex, line.StringIndex, default, default, false, default, default, 0);
         }
 
         return CreateCaret(lineIndex, line, graphemes, graphemeIndex, layoutMode.IsHorizontal());
@@ -133,7 +133,7 @@ internal static class TextInteraction
     {
         if (lines.IsEmpty || graphemes.IsEmpty)
         {
-            return new(-1, -1, -1, default, default, false, default, default, 0);
+            return new CaretPosition(-1, -1, -1, default, default, false, default, default, 0);
         }
 
         int targetGraphemeIndex = placement == CaretPlacement.Start
@@ -169,7 +169,7 @@ internal static class TextInteraction
     {
         if (graphemes.IsEmpty)
         {
-            return new(lineIndex, line.GraphemeIndex, line.StringIndex, default, default, false, default, default, 0);
+            return new CaretPosition(lineIndex, line.GraphemeIndex, line.StringIndex, default, default, false, default, default, 0);
         }
 
         return CreateCaretAtVisualLineEdge(lineIndex, line, graphemes, placement, layoutMode.IsHorizontal(), direction);
@@ -557,7 +557,7 @@ internal static class TextInteraction
             ? primary < midpoint
             : primary >= midpoint;
 
-        return new(lineIndex, grapheme.GraphemeIndex, grapheme.StringIndex, trailing);
+        return new TextHit(lineIndex, grapheme.GraphemeIndex, grapheme.StringIndex, trailing);
     }
 
     /// <summary>
@@ -586,7 +586,7 @@ internal static class TextInteraction
             bool trailing = graphemeIndex > nearest.GraphemeIndex;
             CreateCaretEdge(line, nearest, trailing, isHorizontal, out Vector2 start, out Vector2 end);
 
-            return new(
+            return new CaretPosition(
                 lineIndex,
                 graphemeIndex,
                 nearest.StringIndex,
@@ -612,7 +612,7 @@ internal static class TextInteraction
                 // each neighboring run. Return both instead of asking callers to choose affinity.
                 if (start != secondaryStart || end != secondaryEnd)
                 {
-                    return new(
+                    return new CaretPosition(
                         lineIndex,
                         graphemeIndex,
                         next.StringIndex,
@@ -625,7 +625,7 @@ internal static class TextInteraction
                 }
             }
 
-            return new(
+            return new CaretPosition(
                 lineIndex,
                 graphemeIndex,
                 next.StringIndex,
@@ -662,7 +662,7 @@ internal static class TextInteraction
 
             // The newline grapheme gives the blank line source ownership, but the
             // editable insertion point after Enter belongs at the new line start.
-            return new(
+            return new CaretPosition(
                 lineIndex,
                 graphemeIndex,
                 previousOnly.StringIndex,
@@ -676,7 +676,7 @@ internal static class TextInteraction
 
         CreateCaretEdge(line, previousOnly, trailing: true, isHorizontal, out Vector2 primaryStart, out Vector2 primaryEnd);
 
-        return new(
+        return new CaretPosition(
             lineIndex,
             graphemeIndex,
             previousOnly.StringIndex,
@@ -774,7 +774,7 @@ internal static class TextInteraction
             end = new Vector2(line.Start.X + line.Extent.X, y);
         }
 
-        return new(
+        return new CaretPosition(
             lineIndex,
             insertionIndex,
             grapheme.StringIndex,
@@ -817,8 +817,8 @@ internal static class TextInteraction
         ReadOnlySpan<GraphemeMetrics> targetGraphemes = graphemes.Slice(graphemeOffset, targetLine.GraphemeCount);
 
         Vector2 hitPoint = isHorizontal
-            ? new(caret.LineNavigationPosition, targetLine.Start.Y + (targetLine.Extent.Y * 0.5F))
-            : new(targetLine.Start.X + (targetLine.Extent.X * 0.5F), caret.LineNavigationPosition);
+            ? new Vector2(caret.LineNavigationPosition, targetLine.Start.Y + (targetLine.Extent.Y * 0.5F))
+            : new Vector2(targetLine.Start.X + (targetLine.Extent.X * 0.5F), caret.LineNavigationPosition);
 
         TextHit hit = HitTestLineForCaretNavigation(targetLineIndex, targetGraphemes, hitPoint, isHorizontal);
         CaretPosition moved = GetCaretPositionLine(
@@ -858,7 +858,7 @@ internal static class TextInteraction
             ? primary < midpoint
             : primary >= midpoint;
 
-        return new(lineIndex, grapheme.GraphemeIndex, grapheme.StringIndex, trailing);
+        return new TextHit(lineIndex, grapheme.GraphemeIndex, grapheme.StringIndex, trailing);
     }
 
     /// <summary>

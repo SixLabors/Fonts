@@ -111,8 +111,8 @@ internal sealed class Format13SubTable : CMapSubTable
         uint language = reader.ReadUInt32();
         uint numGroups = reader.ReadUInt32();
 
-        var groups = new ConstantMapGroup[numGroups];
-        for (var i = 0; i < numGroups; i++)
+        ConstantMapGroup[] groups = new ConstantMapGroup[numGroups];
+        for (int i = 0; i < numGroups; i++)
         {
             groups[i] = ConstantMapGroup.Load(reader);
         }

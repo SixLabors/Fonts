@@ -47,7 +47,7 @@ internal sealed class TextLineBreakEnumerator
 
         // The breaker mutates the remaining line as it advances, so each cursor owns
         // a clone of the immutable prepared line held by TextBlock.
-        this.textLine = new(logicalLine.TextLine);
+        this.textLine = new TextLine(logicalLine.TextLine);
     }
 
     /// <summary>

@@ -51,7 +51,7 @@ internal class Cff1Parser : CffParserBase
         this.ReadCharsets(reader, stringIndex, glyphs);
         this.ReadEncodings(reader);
 
-        return new(fontName, topDictionary, glyphs);
+        return new CffFont(fontName, topDictionary, glyphs);
     }
 
     /// <summary>

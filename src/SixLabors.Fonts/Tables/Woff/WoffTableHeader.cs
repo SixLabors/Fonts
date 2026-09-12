@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using SixLabors.Fonts.IO;
+
 namespace SixLabors.Fonts.Tables.Woff;
 
 /// <summary>
@@ -43,7 +45,7 @@ internal sealed class WoffTableHeader : TableHeader
 
         // Read all data from the compressed stream.
         stream.Seek(this.Offset, SeekOrigin.Begin);
-        using var compressedStream = new IO.ZlibInflateStream(stream);
+        using ZlibInflateStream compressedStream = new(stream);
         byte[] uncompressedBytes = new byte[this.Length];
         int totalBytesRead = 0;
         int bytesLeftToRead = uncompressedBytes.Length;
@@ -59,7 +61,7 @@ internal sealed class WoffTableHeader : TableHeader
             bytesLeftToRead -= bytesRead;
         }
 
-        var memoryStream = new MemoryStream(uncompressedBytes);
+        MemoryStream memoryStream = new(uncompressedBytes);
         return new BigEndianBinaryReader(memoryStream, false);
     }
 
@@ -76,7 +78,7 @@ internal sealed class WoffTableHeader : TableHeader
     /// <param name="reader">The big-endian binary reader.</param>
     /// <returns>The parsed <see cref="WoffTableHeader"/>.</returns>
     public static new WoffTableHeader Read(BigEndianBinaryReader reader) =>
-        new WoffTableHeader(
+        new(
             reader.ReadTag(),
             reader.ReadUInt32(),
             reader.ReadUInt32(),

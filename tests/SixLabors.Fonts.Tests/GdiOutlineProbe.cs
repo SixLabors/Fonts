@@ -200,7 +200,7 @@ public class GdiOutlineProbe
         uint size = GetGlyphOutlineW(hdc, c, GgoNative, out _, 0, IntPtr.Zero, ref identity);
         if (size == GdiError || size == 0)
         {
-            return new();
+            return new List<(double X, double Y)>();
         }
 
         IntPtr buffer = Marshal.AllocHGlobal((int)size);
@@ -208,7 +208,7 @@ public class GdiOutlineProbe
         {
             if (GetGlyphOutlineW(hdc, c, GgoNative, out _, size, buffer, ref identity) == GdiError)
             {
-                return new();
+                return new List<(double X, double Y)>();
             }
 
             List<(double X, double Y)> points = new();

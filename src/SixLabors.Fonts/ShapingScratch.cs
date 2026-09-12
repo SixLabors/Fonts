@@ -87,13 +87,13 @@ internal sealed class ShapingScratch
     /// Gets the reusable bidi algorithm instance. Its work buffers grow to the
     /// workload's high-water mark and are reused across passes.
     /// </summary>
-    public BidiAlgorithm BidiAlgorithm => this.bidiAlgorithm ??= new();
+    public BidiAlgorithm BidiAlgorithm => this.bidiAlgorithm ??= new BidiAlgorithm();
 
     /// <summary>
     /// Gets the reusable bidi analysis data. Its builders grow to the workload's
     /// high-water mark and <see cref="BidiData.Init"/> resets them per pass.
     /// </summary>
-    public BidiData BidiData => this.bidiData ??= new();
+    public BidiData BidiData => this.bidiData ??= new BidiData();
 
     /// <summary>
     /// Gets the resolved bidi runs of the current pass. Only the first
@@ -268,8 +268,8 @@ internal sealed class ShapingScratch
         ShapingBuffer? result = this.result;
         if (workspace is null || result is null)
         {
-            workspace = new(options, ShapingBufferRole.Substitution);
-            result = new(options, ShapingBufferRole.Positioning);
+            workspace = new ShapingBuffer(options, ShapingBufferRole.Substitution);
+            result = new ShapingBuffer(options, ShapingBufferRole.Positioning);
             this.workspace = workspace;
             this.result = result;
         }

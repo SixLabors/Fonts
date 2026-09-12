@@ -79,12 +79,12 @@ internal class Cff2Parser : CffParserBase
         };
 
         CffPrivateDictionary privateDictionary = fontDicts.Length > 0
-            ? new(fontDicts[0].LocalSubr, 0, 0, CffHintingValues.Empty)
-            : new([], 0, 0, CffHintingValues.Empty);
+            ? new CffPrivateDictionary(fontDicts[0].LocalSubr, 0, 0, CffHintingValues.Empty)
+            : new CffPrivateDictionary([], 0, 0, CffHintingValues.Empty);
         int glyphCount = charStringOffsets.Length;
         CffGlyphData[] glyphs = this.ReadCharStringsIndex(topDictionary, globalSubrRawBuffers, fontDicts, privateDictionary, charStringBuffers, glyphCount);
 
-        return new(fontName, topDictionary, glyphs, this.itemVariationStore);
+        return new Cff2Font(fontName, topDictionary, glyphs, this.itemVariationStore);
     }
 
     /// <summary>
