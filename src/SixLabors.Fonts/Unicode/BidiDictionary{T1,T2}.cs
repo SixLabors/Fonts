@@ -12,9 +12,9 @@ internal sealed class BidiDictionary<T1, T2>
     where T1 : struct
     where T2 : struct
 {
-    public Dictionary<T1, T2> Forward { get; } = new Dictionary<T1, T2>();
+    public Dictionary<T1, T2> Forward { get; } = new();
 
-    public Dictionary<T2, T1> Reverse { get; } = new Dictionary<T2, T1>();
+    public Dictionary<T2, T1> Reverse { get; } = new();
 
     public void Clear()
     {

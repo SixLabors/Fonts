@@ -50,7 +50,7 @@ internal class TableHeader
     /// </summary>
     /// <param name="reader">The binary reader positioned at the table record.</param>
     /// <returns>The parsed <see cref="TableHeader"/>.</returns>
-    public static TableHeader Read(BigEndianBinaryReader reader) => new TableHeader(
+    public static TableHeader Read(BigEndianBinaryReader reader) => new(
             reader.ReadTag(),
             reader.ReadUInt32(),
             reader.ReadOffset32(),

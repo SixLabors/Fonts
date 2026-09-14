@@ -43,7 +43,7 @@ public readonly struct ArabicJoiningClass
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ArabicJoiningType GetJoiningType(uint value, UnicodeCategory category)
     {
-        var type = (ArabicJoiningType)(value & 0xFF);
+        ArabicJoiningType type = (ArabicJoiningType)(value & 0xFF);
         if (type != ArabicJoiningType.Unlisted)
         {
             return type;

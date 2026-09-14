@@ -385,8 +385,8 @@ public class TextBlockTests
         int middle = lines.Length / 2;
         LineMetrics middleLine = lines[middle];
         FontRectangle band = layoutMode == LayoutMode.HorizontalTopBottom
-            ? new(0, middleLine.Start.Y, 10000, middleLine.Extent.Y)
-            : new(middleLine.Start.X, 0, middleLine.Extent.X, 10000);
+            ? new FontRectangle(0, middleLine.Start.Y, 10000, middleLine.Extent.Y)
+            : new FontRectangle(middleLine.Start.X, 0, middleLine.Extent.X, 10000);
 
         GlyphRenderer culled = new();
         block.RenderTo(culled, wrappingLength, band);
@@ -495,7 +495,7 @@ public class TextBlockTests
 
         TextOptions options = Options(markerBreakAdvance + ((fullAdvance - markerBreakAdvance) * 0.5F));
         options.TextHyphenation = TextHyphenation.Custom;
-        options.CustomHyphen = new('*');
+        options.CustomHyphen = new CodePoint('*');
 
         TextMetrics metrics = TextMeasurer.Measure(text, options);
         GraphemeMetrics softHyphen = FindGrapheme(metrics.GraphemeMetrics, 5);
@@ -516,7 +516,7 @@ public class TextBlockTests
         const string text = "extra\u00AD\nordinary";
         TextOptions options = Options(1000);
         options.TextHyphenation = TextHyphenation.Custom;
-        options.CustomHyphen = new('*');
+        options.CustomHyphen = new CodePoint('*');
 
         TextMetrics metrics = TextMeasurer.Measure(text, options);
 
@@ -537,7 +537,7 @@ public class TextBlockTests
 
         TextOptions options = Options(softBreakWithoutMarker + ((softBreakWithMarker - softBreakWithoutMarker) * 0.5F));
         options.TextHyphenation = TextHyphenation.Custom;
-        options.CustomHyphen = new('*');
+        options.CustomHyphen = new CodePoint('*');
 
         TextBlock block = new(text, options);
         ReadOnlySpan<LineLayout> lines = block.GetLineLayouts(options.WrappingLength).Span;
@@ -574,7 +574,7 @@ public class TextBlockTests
         TextOptions options = Options(TextMeasurer.MeasureAdvance("one two", Options(-1)).Width);
         options.MaxLines = 1;
         options.TextEllipsis = TextEllipsis.Custom;
-        options.CustomEllipsis = new('*');
+        options.CustomEllipsis = new CodePoint('*');
 
         TextMetrics metrics = TextMeasurer.Measure(text, options);
 
@@ -1197,7 +1197,7 @@ public class TextBlockTests
     {
         const string text = "Hi";
         TextOptions options = Options(-1);
-        options.Origin = new(10, 20);
+        options.Origin = new Vector2(10, 20);
         TextMetrics metrics = TextMeasurer.Measure(text, options);
         LineMetrics line = metrics.LineMetrics[0];
         FontRectangle first = metrics.GraphemeMetrics[0].Advance;
@@ -1291,7 +1291,7 @@ public class TextBlockTests
     {
         const string text = "Hi\nYo";
         TextOptions options = Options(-1);
-        options.Origin = new(13, 29);
+        options.Origin = new Vector2(13, 29);
         options.LayoutMode = layoutMode;
         TextBlock block = new(text, options);
 
@@ -1324,7 +1324,7 @@ public class TextBlockTests
     {
         const string text = "Hi\nYo";
         TextOptions options = Options(-1);
-        options.Origin = new(13, 29);
+        options.Origin = new Vector2(13, 29);
         options.LayoutMode = layoutMode;
         TextBlock block = new(text, options);
 

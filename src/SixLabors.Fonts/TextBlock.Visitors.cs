@@ -238,7 +238,7 @@ public sealed partial class TextBlock
         {
             this.wordSegments = wordSegments;
             this.wordMetrics = wordMetrics;
-            this.graphemes = new(graphemes, dpi);
+            this.graphemes = new GraphemeMetricsAccumulator(graphemes, dpi);
         }
 
         /// <summary>
@@ -473,7 +473,7 @@ public sealed partial class TextBlock
             GraphemeMetrics[] graphemes)
         {
             this.dpi = dpi;
-            this.graphemes = new(graphemes, dpi);
+            this.graphemes = new GraphemeMetricsAccumulator(graphemes, dpi);
             this.left = float.MaxValue;
             this.top = float.MaxValue;
             this.right = float.MinValue;
@@ -554,7 +554,7 @@ public sealed partial class TextBlock
             WordMetrics[] wordMetrics)
         {
             this.dpi = dpi;
-            this.graphemes = new(graphemes, dpi, wordSegments, wordMetrics);
+            this.graphemes = new GraphemeAndWordMetricsAccumulator(graphemes, dpi, wordSegments, wordMetrics);
             this.left = float.MaxValue;
             this.top = float.MaxValue;
             this.right = float.MinValue;
@@ -655,7 +655,7 @@ public sealed partial class TextBlock
             this.lines = lines;
             this.graphemes = graphemes;
             this.wordMetrics = wordMetrics;
-            this.graphemeAccumulator = new(graphemes, dpi, wordSegments, wordMetrics);
+            this.graphemeAccumulator = new GraphemeAndWordMetricsAccumulator(graphemes, dpi, wordSegments, wordMetrics);
             this.lineIndex = 0;
             this.lineGraphemeStart = 0;
             this.metricIndex = 0;

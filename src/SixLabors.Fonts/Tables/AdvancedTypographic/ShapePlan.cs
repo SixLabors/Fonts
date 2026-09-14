@@ -153,7 +153,7 @@ internal sealed class ShapePlan
         List<ShapingStage> stages = shaper.GetShapingStages();
 
         _ = fontMetrics.TryGetGSubTable(out GSubTable? gsubTable);
-        return new(fontMetrics, script, scriptTag, shaper, stages, languageTags, gsubTable);
+        return new ShapePlan(fontMetrics, script, scriptTag, shaper, stages, languageTags, gsubTable);
     }
 
     /// <summary>

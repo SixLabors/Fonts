@@ -581,7 +581,7 @@ internal class GSubTable : Table
                 {
                     ushort lookupIndex = lookupListIndices[k];
                     LookupTable lookupTable = this.LookupList.LookupTables[lookupIndex];
-                    lookups.Add(new(feature, lookupIndex, lookupTable));
+                    lookups.Add((feature, lookupIndex, lookupTable));
                 }
             }
         }

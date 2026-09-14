@@ -65,7 +65,7 @@ internal sealed class PlaceholderGlyphMetrics : FontGlyphMetrics
             ? fileFontMetrics.StreamFontMetrics
             : (StreamFontMetrics)fontMetrics;
 
-        return new(streamFontMetrics, textRun.Placeholder.GetValueOrDefault(), font.Size, dpi, textRun);
+        return new PlaceholderGlyphMetrics(streamFontMetrics, textRun.Placeholder.GetValueOrDefault(), font.Size, dpi, textRun);
     }
 
     /// <inheritdoc/>

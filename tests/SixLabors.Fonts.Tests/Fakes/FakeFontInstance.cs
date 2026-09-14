@@ -72,7 +72,7 @@ internal class FakeFontInstance : StreamFontMetrics
         VerticalMetricsTable vmtx = GenerateVerticalMetricsTable(glyphs);
         IndexLocationTable loca = GenerateIndexLocationTable(glyphs);
 
-        return new(cmap, head, hhea, htmx, maxp, name, os2, post, glyf, loca)
+        return new TrueTypeFontTables(cmap, head, hhea, htmx, maxp, name, os2, post, glyf, loca)
         {
             Kern = kern,
             Vhea = vhea,

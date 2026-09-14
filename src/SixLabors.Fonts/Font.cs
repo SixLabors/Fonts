@@ -399,7 +399,7 @@ public sealed class Font
             TextRun textRun = new() { Start = 0, End = 1, Font = this, TextAttributes = textAttributes, TextDecorations = textDecorations };
             FontGlyphMetrics metrics = fontMetrics.GetGlyphMetrics(codePoint, glyphId, textAttributes, textDecorations, layoutMode, support, palette);
 
-            glyph = new(metrics, this.Size, textRun, Vector2.Zero, new Vector2(metrics.AdvanceWidth, metrics.AdvanceHeight));
+            glyph = new Glyph(metrics, this.Size, textRun, Vector2.Zero, new Vector2(metrics.AdvanceWidth, metrics.AdvanceHeight));
             return true;
         }
 

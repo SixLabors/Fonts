@@ -84,7 +84,7 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
     internal GlyphVector GetScaledOutline(float scaledPPEM, HintingMode hintingMode)
     {
         ConcurrentDictionary<ScaledVectorKey, GlyphVector> cache =
-            LazyInitializer.EnsureInitialized(ref this.scaledVectorCache, static () => new());
+            LazyInitializer.EnsureInitialized(ref this.scaledVectorCache, static () => new ConcurrentDictionary<ScaledVectorKey, GlyphVector>());
         return cache.GetOrAdd(new ScaledVectorKey(scaledPPEM, this.GetHintingMode(hintingMode)), static (key, self) => self.CreateScaledVector(key), this);
     }
 
@@ -183,7 +183,7 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
         // from the same scaled vector the renderer caches, so hinting runs once per size and
         // layout and raster agree exactly. The rounded design advance only covers glyphs the
         // interpreter could not hint.
-        ConcurrentDictionary<ScaledVectorKey, GlyphVector> cache = LazyInitializer.EnsureInitialized(ref this.scaledVectorCache, static () => new());
+        ConcurrentDictionary<ScaledVectorKey, GlyphVector> cache = LazyInitializer.EnsureInitialized(ref this.scaledVectorCache, static () => new ConcurrentDictionary<ScaledVectorKey, GlyphVector>());
         GlyphVector scaledVector = cache.GetOrAdd(new ScaledVectorKey(scaledPPEM, HintingMode.Full), static (key, self) => self.CreateScaledVector(key), this);
         if (scaledVector.IsHinted)
         {

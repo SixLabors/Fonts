@@ -531,7 +531,7 @@ internal sealed class UniversalShaper : DefaultShaper
 
         if (this.hasBrokenClusters)
         {
-            if (fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort circleId))
+            if (fontMetrics.TryGetGlyphId(new CodePoint(DottedCircle), out ushort circleId))
             {
                 // Insert one base into each broken syllable. The bounds grow as
                 // records are inserted, so both the current syllable end and the

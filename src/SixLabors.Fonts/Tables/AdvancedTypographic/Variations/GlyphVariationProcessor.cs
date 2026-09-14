@@ -135,7 +135,7 @@ internal class GlyphVariationProcessor
         this.mVar = mVar;
         this.cVar = cVar;
         this.normalizedCoords = this.NormalizeCoords(userCoordinates);
-        this.blendVectors = new();
+        this.blendVectors = new ConcurrentDictionary<ItemVariationData, float[]>();
     }
 
     /// <summary>

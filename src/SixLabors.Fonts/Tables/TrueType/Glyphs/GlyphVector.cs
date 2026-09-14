@@ -251,7 +251,7 @@ internal struct GlyphVector
         List<ControlPoint> controlPoints = [.. src.ControlPoints];
         List<ushort> endPoints = [.. src.EndPoints];
 
-        return new(controlPoints, endPoints, src.Bounds, src.Instructions, src.IsComposite)
+        return new GlyphVector(controlPoints, endPoints, src.Bounds, src.Instructions, src.IsComposite)
         {
             CompositeComponents = src.CompositeComponents is not null
                 ? [.. src.CompositeComponents]

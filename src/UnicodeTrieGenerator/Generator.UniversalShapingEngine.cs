@@ -128,13 +128,13 @@ public static partial class Generator
             new Dictionary<string, List<IPC>>()
             {
                 {
-                    "Abv", new List<IPC>() { IPC.Top }
+                    "Abv", [IPC.Top]
                 },
                 {
-                    "Blw", new List<IPC>() { IPC.Bottom }
+                    "Blw", [IPC.Bottom]
                 },
                 {
-                    "Pst", new List<IPC>() { IPC.Right }
+                    "Pst", [IPC.Right]
                 }
             }
         },
@@ -143,16 +143,16 @@ public static partial class Generator
             new Dictionary<string, List<IPC>>()
             {
                 {
-                    "Abv", new List<IPC>() { IPC.Top }
+                    "Abv", [IPC.Top]
                 },
                 {
-                    "Blw", new List<IPC>() { IPC.Bottom, IPC.BottomAndLeft, IPC.BottomAndRight }
+                    "Blw", [IPC.Bottom, IPC.BottomAndLeft, IPC.BottomAndRight]
                 },
                 {
-                    "Pst", new List<IPC>() { IPC.Right }
+                    "Pst", [IPC.Right]
                 },
                 {
-                    "Pre", new List<IPC>() { IPC.Left, IPC.TopAndBottomAndLeft }
+                    "Pre", [IPC.Left, IPC.TopAndBottomAndLeft]
                 }
             }
         },
@@ -162,10 +162,10 @@ public static partial class Generator
             new Dictionary<string, List<IPC>>()
             {
                 {
-                    "Abv", new List<IPC>() { IPC.Top }
+                    "Abv", [IPC.Top]
                 },
                 {
-                    "Blw", new List<IPC>() { IPC.Bottom, IPC.Overstruck }
+                    "Blw", [IPC.Bottom, IPC.Overstruck]
                 }
             }
         },
@@ -175,16 +175,16 @@ public static partial class Generator
             new Dictionary<string, List<IPC>>()
             {
                 {
-                    "Abv", new List<IPC>() { IPC.Top, IPC.TopAndBottom, IPC.TopAndBottomAndRight, IPC.TopAndRight }
+                    "Abv", [IPC.Top, IPC.TopAndBottom, IPC.TopAndBottomAndRight, IPC.TopAndRight]
                 },
                 {
-                    "Blw", new List<IPC>() { IPC.Bottom, IPC.Overstruck, IPC.BottomAndRight }
+                    "Blw", [IPC.Bottom, IPC.Overstruck, IPC.BottomAndRight]
                 },
                 {
-                    "Pst", new List<IPC>() { IPC.Right }
+                    "Pst", [IPC.Right]
                 },
                 {
-                    "Pre", new List<IPC>() { IPC.Left, IPC.TopAndLeft, IPC.TopAndLeftAndRight, IPC.LeftAndRight }
+                    "Pre", [IPC.Left, IPC.TopAndLeft, IPC.TopAndLeftAndRight, IPC.LeftAndRight]
                 }
             }
         },
@@ -194,16 +194,16 @@ public static partial class Generator
             new Dictionary<string, List<IPC>>()
             {
                 {
-                    "Abv", new List<IPC>() { IPC.Top }
+                    "Abv", [IPC.Top]
                 },
                 {
-                    "Blw", new List<IPC>() { IPC.Bottom, IPC.Overstruck }
+                    "Blw", [IPC.Bottom, IPC.Overstruck]
                 },
                 {
-                    "Pst", new List<IPC>() { IPC.Right }
+                    "Pst", [IPC.Right]
                 },
                 {
-                    "Pre", new List<IPC>() { IPC.Left }
+                    "Pre", [IPC.Left]
                 }
             }
         },
@@ -213,10 +213,10 @@ public static partial class Generator
             new Dictionary<string, List<IPC>>()
             {
                 {
-                    "Abv", new List<IPC>() { IPC.Top }
+                    "Abv", [IPC.Top]
                 },
                 {
-                    "Blw", new List<IPC>() { IPC.Bottom }
+                    "Blw", [IPC.Bottom]
                 }
             }
         },
@@ -226,13 +226,13 @@ public static partial class Generator
             new Dictionary<string, List<IPC>>()
             {
                 {
-                    "Abv", new List<IPC>() { IPC.Top }
+                    "Abv", [IPC.Top]
                 },
                 {
-                    "Blw", new List<IPC>() { IPC.Bottom }
+                    "Blw", [IPC.Bottom]
                 },
                 {
-                    "Pst", new List<IPC>() { IPC.NA }
+                    "Pst", [IPC.NA]
                 }
             }
         }

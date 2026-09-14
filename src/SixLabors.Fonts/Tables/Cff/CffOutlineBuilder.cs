@@ -66,7 +66,7 @@ internal sealed class CffOutlineBuilder : IGlyphRenderer
             this.contourEnds.Add((ushort)(this.points.Count - 1));
         }
 
-        return new([.. this.verbs], [.. this.points], [.. this.contourEnds], verticalStems, horizontalStems, initialStemCount, lockFixMapOk, hintRegions, counterMasks);
+        return new CffOutline([.. this.verbs], [.. this.points], [.. this.contourEnds], verticalStems, horizontalStems, initialStemCount, lockFixMapOk, hintRegions, counterMasks);
     }
 
     /// <inheritdoc/>

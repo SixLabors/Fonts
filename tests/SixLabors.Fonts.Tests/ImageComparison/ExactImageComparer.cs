@@ -9,7 +9,7 @@ namespace SixLabors.Fonts.Tests.ImageComparison;
 
 public class ExactImageComparer : ImageComparer
 {
-    public static ExactImageComparer Instance { get; } = new ExactImageComparer();
+    public static ExactImageComparer Instance { get; } = new();
 
     public override ImageSimilarityReport<TPixelA, TPixelB> CompareImagesOrFrames<TPixelA, TPixelB>(
         int index,

@@ -573,7 +573,7 @@ internal class GPosTable : Table
                 {
                     ushort lookupIndex = lookupListIndices[k];
                     LookupTable lookupTable = this.LookupList.LookupTables[lookupIndex];
-                    lookups.Add(new(feature, lookupIndex, lookupTable));
+                    lookups.Add(new ValueTuple<Tag, ushort, LookupTable>(feature, lookupIndex, lookupTable));
                 }
             }
         }

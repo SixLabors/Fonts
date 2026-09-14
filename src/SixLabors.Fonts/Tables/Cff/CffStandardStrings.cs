@@ -14,7 +14,7 @@ internal static class CffStandardStrings
     /// The lookup table mapping standard SID values to their string names.
     /// </summary>
     private static readonly string[] StringIdentifierToString =
-    {
+    [
         ".notdef",
         "space",
         "exclam",
@@ -406,7 +406,7 @@ internal static class CffStandardStrings
         "Regular",
         "Roman",
         "Semibold"
-    };
+    ];
 
     /// <summary>
     /// Gets the number of standard strings defined in the CFF specification.

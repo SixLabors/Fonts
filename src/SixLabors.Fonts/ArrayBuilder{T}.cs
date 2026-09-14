@@ -153,7 +153,7 @@ internal struct ArrayBuilder<T>
                 newCapacity = (uint)min;
             }
 
-            var array = new T[newCapacity];
+            T[] array = new T[newCapacity];
 
             if (this.size > 0)
             {

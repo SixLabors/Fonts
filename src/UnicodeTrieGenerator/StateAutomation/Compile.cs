@@ -16,7 +16,7 @@ internal static class Compile
     private static SymbolTable Parse(string value, IDictionary<string, int>? externalSymbols = null)
     {
         IList<INode> ast = new GrammarParser().Parse(value);
-        return new SymbolTable(ast, new(externalSymbols ?? new Dictionary<string, int>()));
+        return new SymbolTable(ast, new Dictionary<string, int>(externalSymbols ?? new Dictionary<string, int>()));
     }
 
     private static StateMachine Build(SymbolTable symbolTable)

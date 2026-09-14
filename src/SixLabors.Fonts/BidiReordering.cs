@@ -179,7 +179,7 @@ internal static class BidiReordering
     /// <param name="bidiRuns">The resolved bidirectional runs covering the source text.</param>
     /// <param name="bidiMap">The source codepoint to bidirectional-run mapping.</param>
     public static void Reorder(ShapingBuffer glyphs, BidiRun[] bidiRuns, int[] bidiMap)
-        => Reorder<ShapingGlyphState, ShapingGlyphOperations>(new(glyphs, bidiRuns, bidiMap), 0, glyphs.Count);
+        => Reorder<ShapingGlyphState, ShapingGlyphOperations>(new ShapingGlyphState(glyphs, bidiRuns, bidiMap), 0, glyphs.Count);
 
     /// <summary>
     /// Reorders a half-open range of positioned shaping records for one line.
@@ -190,7 +190,7 @@ internal static class BidiReordering
     /// <param name="start">The first glyph record in the line.</param>
     /// <param name="end">The glyph record immediately after the line.</param>
     public static void Reorder(ShapingBuffer glyphs, BidiRun[] bidiRuns, int[] bidiMap, int start, int end)
-        => Reorder<ShapingGlyphState, ShapingGlyphOperations>(new(glyphs, bidiRuns, bidiMap), start, end);
+        => Reorder<ShapingGlyphState, ShapingGlyphOperations>(new ShapingGlyphState(glyphs, bidiRuns, bidiMap), start, end);
 
     /// <summary>
     /// Applies rule L2 of the Unicode Bidirectional Algorithm to one line.

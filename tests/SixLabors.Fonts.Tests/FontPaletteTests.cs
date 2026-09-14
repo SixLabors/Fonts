@@ -115,7 +115,7 @@ public class FontPaletteTests
 
         Assert.Equal(6, renderer.Colors.Count);
         Assert.All(renderer.Colors.Take(3), c => Assert.Equal(GlyphColor.Red, c));
-        Assert.Equal(defaultRenderer.Colors, renderer.Colors.Skip(3).ToList());
+        Assert.Equal(defaultRenderer.Colors, [.. renderer.Colors.Skip(3)]);
     }
 
     [Fact]
