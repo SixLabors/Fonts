@@ -306,6 +306,15 @@ public abstract class FontMetrics
         FontPalette? palette);
 
     /// <summary>
+    /// Gets a value indicating whether the font carries a color table of a kind
+    /// <paramref name="colorSupport"/> enables: COLR for COLR v0, COLR version 1 for
+    /// COLR v1, or SVG.
+    /// </summary>
+    /// <param name="colorSupport">Options for enabling color font support during layout and rendering.</param>
+    /// <returns><see langword="true"/> when the font has an enabled color table.</returns>
+    internal abstract bool HasColorTable(ColorFontSupport colorSupport);
+
+    /// <summary>
     /// Tries to get the GSUB table.
     /// </summary>
     /// <param name="gSubTable">The GSUB table.</param>

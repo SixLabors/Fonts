@@ -378,15 +378,17 @@ internal struct SkippingGlyphIterator
 
     /// <summary>
     /// Determines whether the record is transparent to the current matcher: a
-    /// default ignorable whose joiner bits the matcher ignores. Transparent
-    /// records are stepped over during matching unless they match the sequence
-    /// position themselves.
+    /// default ignorable that no lookup has substituted and whose joiner bits the
+    /// matcher ignores. A substituted record is an ordinary glyph whatever
+    /// codepoint it came from. Transparent records are stepped over during
+    /// matching unless they match the sequence position themselves.
     /// </summary>
     /// <param name="data">The record to test.</param>
     /// <returns><see langword="true"/> when the record may be stepped over.</returns>
     public readonly bool IsTransparent(ref GlyphShapingData data)
         => (this.matchFlags & TransparencyActiveFlag) != 0
         && data.IsDefaultIgnorable
+        && !data.IsSubstituted
         && ((this.matchFlags & IgnoreZwnjFlag) != 0 || !data.IsZwnj)
         && ((this.matchFlags & IgnoreZwjFlag) != 0 || !data.IsZwj)
         && ((this.matchFlags & IgnoreHiddenFlag) != 0 || !data.IsHiddenIgnorable);

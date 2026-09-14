@@ -195,6 +195,9 @@ internal sealed class MemoryFontMetrics : FontMetrics
         => this.fontMetrics.Value.GetGlyphMetrics(codePoint, glyphId, textAttributes, textDecorations, layoutMode, support, palette);
 
     /// <inheritdoc />
+    internal override bool HasColorTable(ColorFontSupport colorSupport) => this.fontMetrics.Value.HasColorTable(colorSupport);
+
+    /// <inheritdoc />
     public override ReadOnlyMemory<CodePoint> GetAvailableCodePoints()
         => this.fontMetrics.Value.GetAvailableCodePoints();
 
