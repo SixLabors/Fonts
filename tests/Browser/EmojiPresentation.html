@@ -33,6 +33,13 @@
       font-weight: 400;
     }
 
+    @font-face {
+      font-family: "Presentation Segoe UI Emoji 1.70";
+      src: url("../Fonts/seguiemj-win11-1.70.ttf") format("truetype");
+      font-style: normal;
+      font-weight: 400;
+    }
+
     * {
       box-sizing: border-box;
     }
@@ -101,6 +108,23 @@
     .arial-segoe-dejavu {
       font-family: "Presentation Arial", "Presentation Segoe UI Emoji", "Presentation DejaVu Sans";
     }
+
+    .arial-segoe170-dejavu {
+      font-family: "Presentation Arial", "Presentation Segoe UI Emoji 1.70", "Presentation DejaVu Sans";
+    }
+
+    .segoe170 {
+      font-family: "Presentation Segoe UI Emoji 1.70";
+    }
+
+    .hand {
+      font-size: 192pt;
+      /* The library moves a first line's baseline down by the ink that rises above the
+         font's ascender so the bitmap holds it; the browser lets that ink overflow. The
+         thumb tip of the toned thumbs-up reaches 1740 units against Segoe UI Emoji's
+         ascender of 1491, so the browser copy moves down by that overshoot: 24px at 192pt. */
+      padding-top: 24px;
+    }
   </style>
 </head>
 <body>
@@ -152,6 +176,35 @@
       <figure>
         <figcaption>SixLabors.Fonts actual output</figcaption>
         <img class="actual-output" src="../Images/ActualOutput/EmojiPresentation_BrowserComparison_Arial-SegoeUIEmoji-DejaVuSans.png" alt="SixLabors.Fonts Arial then Segoe UI Emoji then DejaVu Sans output">
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Arial, then Segoe UI Emoji 1.70, then DejaVu Sans, 30pt</h2>
+    <div class="comparison">
+      <figure>
+        <figcaption>Browser</figcaption>
+        <p class="sample arial-segoe170-dejavu">☀︎ ☀️ ☀ ☺︎ ☺️ ☺
+🤷🏽‍♀️ 🤷🏽 👨‍👩‍👧‍👦 ❤️‍🔥
+1️⃣ 🇯🇵 👍🏽 😀</p>
+      </figure>
+      <figure>
+        <figcaption>SixLabors.Fonts actual output</figcaption>
+        <img class="actual-output" src="../Images/ActualOutput/EmojiPresentation_BrowserComparison_Arial-SegoeUIEmoji170-DejaVuSans.png" alt="SixLabors.Fonts Arial then Segoe UI Emoji 1.70 then DejaVu Sans output">
+      </figure>
+    </div>
+  </section>
+  <section>
+    <h2>Segoe UI Emoji 1.70 toned thumbs-up, 192pt</h2>
+    <div class="comparison">
+      <figure>
+        <figcaption>Browser</figcaption>
+        <p class="sample segoe170 hand">👍🏽</p>
+      </figure>
+      <figure>
+        <figcaption>SixLabors.Fonts actual output</figcaption>
+        <img class="actual-output" src="../Images/ActualOutput/EmojiPresentation_BrowserComparison_Hand_SegoeUIEmoji170.png" alt="SixLabors.Fonts Segoe UI Emoji 1.70 toned thumbs-up output">
       </figure>
     </div>
   </section>

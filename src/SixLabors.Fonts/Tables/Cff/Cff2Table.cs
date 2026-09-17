@@ -37,7 +37,15 @@ internal sealed class Cff2Table : Table, ICffTable
 
     /// <inheritdoc/>
     public CffGlyphData GetGlyph(int index)
-        => this.glyphs[index];
+    {
+        if ((uint)index >= (uint)this.glyphs.Length)
+        {
+            // A glyph id past the table's glyphs has no charstring.
+            return new CffGlyphData((ushort)index, [], [], 0, [], 2, this.ItemVariationStore);
+        }
+
+        return this.glyphs[index];
+    }
 
     /// <summary>
     /// Loads the CFF2 table from the specified font reader.

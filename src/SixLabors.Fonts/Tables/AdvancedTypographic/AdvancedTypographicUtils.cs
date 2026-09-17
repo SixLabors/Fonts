@@ -277,6 +277,7 @@ internal static class AdvancedTypographicUtils
     /// <param name="matchPositions">The buffer positions the input sequence matched at.</param>
     /// <param name="matchCount">The number of matched positions.</param>
     /// <param name="count">The number of glyphs in the input sequence.</param>
+    /// <param name="matchEnd">The position one past the final matched input record.</param>
     /// <returns><see langword="true"/> if the lookups were applied.</returns>
     public static bool ApplyLookupList(
         FontMetrics fontMetrics,
@@ -286,7 +287,8 @@ internal static class AdvancedTypographicUtils
         ShapingBuffer buffer,
         ReadOnlySpan<int> matchPositions,
         int matchCount,
-        int count)
+        int count,
+        int matchEnd)
     {
         if (buffer.NestingLimitReached)
         {
@@ -296,6 +298,7 @@ internal static class AdvancedTypographicUtils
         // Positioning never changes the buffer's length, so the matched
         // positions stand for the whole record list.
         int startIndex = matchPositions[0];
+        int end = buffer.PassBacktrackLength + (matchEnd - buffer.ReadIndex);
         buffer.PushNestedApplication();
 
         foreach (SequenceLookupRecord lookupRecord in records)
@@ -312,6 +315,9 @@ internal static class AdvancedTypographicUtils
         }
 
         buffer.PopNestedApplication();
+
+        // Everything the rule matched is now behind the cursor.
+        buffer.MoveTo(end);
         return true;
     }
 

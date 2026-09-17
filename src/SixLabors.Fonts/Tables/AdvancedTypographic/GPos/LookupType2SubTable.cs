@@ -45,19 +45,22 @@ internal static class LookupType2SubTable
     {
         private readonly CoverageTable coverageTable;
         private readonly PairSetTable[] pairSets;
+        private readonly ValueFormat valueFormat2;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LookupType2Format1SubTable"/> class.
         /// </summary>
         /// <param name="coverageTable">The coverage table.</param>
         /// <param name="pairSets">The array of pair set tables.</param>
+        /// <param name="valueFormat2">The value format of the second glyph's record.</param>
         /// <param name="lookupFlags">The lookup qualifiers.</param>
         /// <param name="markFilteringSet">The mark filtering set index.</param>
-        public LookupType2Format1SubTable(CoverageTable coverageTable, PairSetTable[] pairSets, LookupFlags lookupFlags, ushort markFilteringSet)
+        public LookupType2Format1SubTable(CoverageTable coverageTable, PairSetTable[] pairSets, ValueFormat valueFormat2, LookupFlags lookupFlags, ushort markFilteringSet)
             : base(lookupFlags, markFilteringSet)
         {
             this.coverageTable = coverageTable;
             this.pairSets = pairSets;
+            this.valueFormat2 = valueFormat2;
         }
 
         /// <summary>
@@ -110,7 +113,7 @@ internal static class LookupType2SubTable
 
             CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-            return new LookupType2Format1SubTable(coverageTable, pairSets, lookupFlags, markFilteringSet);
+            return new LookupType2Format1SubTable(coverageTable, pairSets, valueFormat2, lookupFlags, markFilteringSet);
         }
 
         /// <inheritdoc/>
@@ -165,6 +168,10 @@ internal static class LookupType2SubTable
                     ValueRecord record2 = pairValueRecord.ValueRecord2;
                     AdvancedTypographicUtils.ApplyPosition(fontMetrics, buffer, secondIndex, record2, feature);
 
+                    // With no second value record the second glyph is the next
+                    // glyph a lookup is performed for; with one, the pair is
+                    // closed and the walk resumes after it.
+                    buffer.MoveTo(this.valueFormat2 == 0 ? secondIndex : secondIndex + 1);
                     return true;
                 }
             }
@@ -262,6 +269,7 @@ internal static class LookupType2SubTable
         private readonly Class1Record[] class1Records;
         private readonly ClassDefinitionTable classDefinitionTable1;
         private readonly ClassDefinitionTable classDefinitionTable2;
+        private readonly ValueFormat valueFormat2;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LookupType2Format2SubTable"/> class.
@@ -270,6 +278,7 @@ internal static class LookupType2SubTable
         /// <param name="class1Records">The array of Class1 records.</param>
         /// <param name="classDefinitionTable1">The class definition table for the first glyph.</param>
         /// <param name="classDefinitionTable2">The class definition table for the second glyph.</param>
+        /// <param name="valueFormat2">The value format of the second glyph's record.</param>
         /// <param name="lookupFlags">The lookup qualifiers.</param>
         /// <param name="markFilteringSet">The mark filtering set index.</param>
         public LookupType2Format2SubTable(
@@ -277,6 +286,7 @@ internal static class LookupType2SubTable
             Class1Record[] class1Records,
             ClassDefinitionTable classDefinitionTable1,
             ClassDefinitionTable classDefinitionTable2,
+            ValueFormat valueFormat2,
             LookupFlags lookupFlags,
             ushort markFilteringSet)
             : base(lookupFlags, markFilteringSet)
@@ -285,6 +295,7 @@ internal static class LookupType2SubTable
             this.class1Records = class1Records;
             this.classDefinitionTable1 = classDefinitionTable1;
             this.classDefinitionTable2 = classDefinitionTable2;
+            this.valueFormat2 = valueFormat2;
         }
 
         /// <summary>
@@ -347,7 +358,7 @@ internal static class LookupType2SubTable
             ClassDefinitionTable classDefTable1 = ClassDefinitionTable.Load(reader, offset + classDef1Offset);
             ClassDefinitionTable classDefTable2 = ClassDefinitionTable.Load(reader, offset + classDef2Offset);
 
-            return new LookupType2Format2SubTable(coverageTable, class1Records, classDefTable1, classDefTable2, lookupFlags, markFilteringSet);
+            return new LookupType2Format2SubTable(coverageTable, class1Records, classDefTable1, classDefTable2, valueFormat2, lookupFlags, markFilteringSet);
         }
 
         /// <inheritdoc/>
@@ -405,6 +416,10 @@ internal static class LookupType2SubTable
                 ValueRecord record2 = class2Record.ValueRecord2;
                 AdvancedTypographicUtils.ApplyPosition(fontMetrics, buffer, secondIndex, record2, feature);
 
+                // With no second value record the second glyph is the next glyph
+                // a lookup is performed for; with one, the pair is closed and the
+                // walk resumes after it.
+                buffer.MoveTo(this.valueFormat2 == 0 ? secondIndex : secondIndex + 1);
                 return true;
             }
 

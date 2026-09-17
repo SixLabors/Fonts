@@ -236,13 +236,21 @@ internal class CffBoundsFinder : IGlyphRenderer
     }
 
     /// <summary>
-    /// Gets the computed bounding box from all tracked path coordinates.
+    /// Gets the computed bounding box from all tracked path coordinates, or an empty
+    /// box when the charstring drew nothing.
     /// </summary>
     /// <returns>The <see cref="Bounds"/> representing the glyph bounding box.</returns>
     public Bounds GetBounds()
-        => new(
+    {
+        if (this.firstEval)
+        {
+            return Bounds.Empty;
+        }
+
+        return new(
             (short)Math.Floor(this.minX),
             (short)Math.Floor(this.minY),
             (short)Math.Ceiling(this.maxX),
             (short)Math.Ceiling(this.maxY));
+    }
 }

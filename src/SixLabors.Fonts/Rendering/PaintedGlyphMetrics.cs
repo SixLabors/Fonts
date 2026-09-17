@@ -398,20 +398,21 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
     }
 
     /// <summary>
-    /// Converts a <see cref="Paint"/> into device-space geometry for the target layer,
-    /// removing (baking in) any paint-local transforms. Geometry path commands have already
-    /// been transformed elsewhere; this method only resolves paint geometry (start/end points,
-    /// centers, radii, angles) into device space so the renderer can construct brushes directly.
+    /// Resolves a <see cref="Paint"/> for the target layer. Geometry path commands have already
+    /// been transformed elsewhere; this method only resolves the paint geometry so the renderer
+    /// can construct brushes directly.
     /// <para>
     /// Rules:
     /// <list type="bullet">
-    ///   <item><description><b>UserSpaceOnUse</b>: Apply <see cref="Paint.Transform"/> in user space, then apply
-    ///   <paramref name="layerXform"/> to obtain device-space positions. Emit device-space values.</description></item>
-    ///   <item><description><b>ObjectBoundingBox</b>: Apply <see cref="Paint.Transform"/> in normalized [0..1] box space,
-    ///   then denormalize to device space using <paramref name="layerBounds"/>. Emit device-space values.</description></item>
+    ///   <item><description>Linear gradients: the points are transformed into device space, applying
+    ///   <see cref="Paint.Transform"/> in user space or in normalized [0..1] box space first, then
+    ///   <paramref name="layerXform"/>, with <paramref name="layerBounds"/> denormalizing box space.
+    ///   The returned paint has an identity <see cref="Paint.Transform"/>.</description></item>
+    ///   <item><description>Radial and sweep gradients: the centers, radii and angles stay in the
+    ///   paint's own space, flipped to y-down, and the returned <see cref="Paint.Transform"/> maps
+    ///   that space to device space. A skew or a non-uniform scale in the paint's transform
+    ///   therefore reaches the renderer instead of being reduced to a circle.</description></item>
     ///   <item><description>Color stops (ratios) remain normalized in [0..1] and are passed through unchanged.</description></item>
-    ///   <item><description>All returned paints have identity <see cref="Paint.Transform"/> and are suitable for direct
-    ///   consumption by Drawing brushes (e.g. <c>LinearGradientBrush</c> expects device-space points).</description></item>
     /// </list>
     /// </para>
     /// </summary>
@@ -423,7 +424,7 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
     /// using <paramref name="layerBounds"/> instead.
     /// </param>
     /// <returns>
-    /// A paint expressed in <b>device-space</b> with identity transform, or <see langword="null"/>
+    /// A paint with <see cref="GradientUnits.UserSpaceOnUse"/> geometry, or <see langword="null"/>
     /// if the input was <see langword="null"/>.
     /// </returns>
     private static Paint? TransformPaint(
@@ -485,107 +486,36 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
 
             case RadialGradientPaint rg:
             {
-                Vector2 c0;
-                Vector2 c1;
-                float r0;
-                float r1;
-
-                if (rg.Units == GradientUnits.UserSpaceOnUse)
-                {
-                    // USOU: transform directly to device space.
-                    Matrix3x2 paintXForm = rg.Transform * layerXform;
-
-                    // Centers get full layer transform.
-                    c0 = Vector2.Transform(rg.Center0, paintXForm);
-                    c1 = Vector2.Transform(rg.Center1, paintXForm);
-
-                    // Radii scale by uniform similarity only.
-                    Similarity compSim = Similarity.FromMatrix(paintXForm);
-                    r0 = rg.Radius0 * compSim.Scale;
-                    r1 = rg.Radius1 * compSim.Scale;
-                }
-                else
-                {
-                    // OBB: transform in normalized [0..1] space, then denormalize to device via layer bounds.
-                    Vector2 nc0 = Vector2.Transform(rg.Center0, rg.Transform);
-                    Vector2 nc1 = Vector2.Transform(rg.Center1, rg.Transform);
-
-                    c0 = Vector2.Transform(DenormalizePoint(nc0, layerBounds), layerXform);
-                    c1 = Vector2.Transform(DenormalizePoint(nc1, layerBounds), layerXform);
-
-                    // Radii scale by total similarity (paint * layer).
-                    Matrix3x2 paintXForm = rg.Transform * layerXform;
-                    Similarity compSim = Similarity.FromMatrix(paintXForm);
-                    r0 = rg.Radius0 * compSim.Scale;
-                    r1 = rg.Radius1 * compSim.Scale;
-                }
-
                 return new RadialGradientPaint
                 {
                     Units = GradientUnits.UserSpaceOnUse,
-                    Center0 = c0,
-                    Radius0 = r0,
-                    Center1 = c1,
-                    Radius1 = r1,
+                    Center0 = FlipY(rg.Center0),
+                    Radius0 = rg.Radius0,
+                    Center1 = FlipY(rg.Center1),
+                    Radius1 = rg.Radius1,
                     Spread = rg.Spread,
                     Stops = rg.Stops,
                     Opacity = rg.Opacity,
                     CompositeMode = rg.CompositeMode,
-                    Transform = Matrix3x2.Identity
+                    Transform = GetPaintTransform(rg.Transform, rg.Units, in layerBounds, layerXform)
                 };
             }
 
             case SweepGradientPaint sg:
             {
-                Vector2 center;
-                float start = sg.StartAngle;
-                float end = sg.EndAngle;
-
-                if (sg.Units == GradientUnits.UserSpaceOnUse)
-                {
-                    // USOU: transform directly to device space.
-                    Matrix3x2 paintXForm = sg.Transform * layerXform;
-
-                    // Center gets full layer transform.
-                    center = Vector2.Transform(sg.Center, paintXForm);
-
-                    // Angles adjust by similarity rotation and reflection only.
-                    Similarity compSim = Similarity.FromMatrix(paintXForm);
-                    start += compSim.RotationDegrees;
-                    end += compSim.RotationDegrees;
-                    if (compSim.Reflection)
-                    {
-                        (start, end) = (end, start);
-                    }
-                }
-                else
-                {
-                    // OBB: transform in normalized [0..1] space, then denormalize to device via layer bounds.
-                    Vector2 nc = Vector2.Transform(sg.Center, sg.Transform);
-                    center = Vector2.Transform(DenormalizePoint(nc, layerBounds), layerXform);
-
-                    // Angles adjust by total similarity (paint * layer).
-                    Matrix3x2 paintXForm = sg.Transform * layerXform;
-                    Similarity compSim = Similarity.FromMatrix(paintXForm);
-                    start += compSim.RotationDegrees;
-                    end += compSim.RotationDegrees;
-                    if (compSim.Reflection)
-                    {
-                        (start, end) = (end, start);
-                    }
-                }
-
+                // The paint space is y-down like the renderer's, so the counter-clockwise angles
+                // keep their direction and the transform carries any rotation or reflection.
                 return new SweepGradientPaint
                 {
                     Units = GradientUnits.UserSpaceOnUse,
-                    Center = center,
-                    StartAngle = start,
-                    EndAngle = end,
+                    Center = FlipY(sg.Center),
+                    StartAngle = sg.StartAngle,
+                    EndAngle = sg.EndAngle,
                     Spread = sg.Spread,
                     Stops = sg.Stops,
                     Opacity = sg.Opacity,
                     CompositeMode = sg.CompositeMode,
-                    Transform = Matrix3x2.Identity
+                    Transform = GetPaintTransform(sg.Transform, sg.Units, in layerBounds, layerXform)
                 };
             }
 
@@ -597,6 +527,33 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
 
         static Vector2 DenormalizePoint(Vector2 p, in FontRectangle bounds)
             => new(bounds.X + (p.X * bounds.Width), bounds.Y + (p.Y * bounds.Height));
+
+        static Vector2 FlipY(Vector2 p) => new(p.X, -p.Y);
+    }
+
+    /// <summary>
+    /// Builds the transform from a gradient paint's y-down space to device space.
+    /// </summary>
+    /// <param name="paintTransform">The paint's own transform in its y-up space.</param>
+    /// <param name="units">The coordinate system of the paint geometry.</param>
+    /// <param name="layerBounds">The layer bounds that normalized geometry maps through.</param>
+    /// <param name="layerXform">The transform from the layer to device space.</param>
+    /// <returns>The transform from the paint's y-down space to device space.</returns>
+    private static Matrix3x2 GetPaintTransform(
+        Matrix3x2 paintTransform,
+        GradientUnits units,
+        in FontRectangle layerBounds,
+        Matrix3x2 layerXform)
+    {
+        // The flip is its own inverse: it takes the y-down paint geometry back to the y-up
+        // space the paint's own transform is defined in.
+        Matrix3x2 transform = Matrix3x2.CreateScale(1F, -1F) * paintTransform;
+        if (units == GradientUnits.ObjectBoundingBox)
+        {
+            transform *= Matrix3x2.CreateScale(layerBounds.Width, layerBounds.Height) * Matrix3x2.CreateTranslation(layerBounds.X, layerBounds.Y);
+        }
+
+        return transform * layerXform;
     }
 
     /// <summary>

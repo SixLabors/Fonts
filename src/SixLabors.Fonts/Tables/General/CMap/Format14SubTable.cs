@@ -183,10 +183,11 @@ internal sealed class Format14SubTable : CMapSubTable
                 return ret;
             }
 
-            // If the sequence is a default UVS, return the default glyph
+            // If the sequence is a default UVS, return the default glyph. A range covers its
+            // start value plus the additional count, so the end value is inclusive.
             for (int i = 0; i < sel.DefaultStartCodes.Count; ++i)
             {
-                if (codePoint.Value >= sel.DefaultStartCodes[i] && codePoint.Value < sel.DefaultEndCodes[i])
+                if (codePoint.Value >= sel.DefaultStartCodes[i] && codePoint.Value <= sel.DefaultEndCodes[i])
                 {
                     return defaultGlyphIndex;
                 }

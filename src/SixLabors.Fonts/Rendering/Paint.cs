@@ -19,10 +19,11 @@ public abstract class Paint
     public float Opacity { get; init; } = 1f;
 
     /// <summary>
-    /// Gets or sets an optional transform to apply to the paint.
-    /// Used to pre-apply gradientTransform in SVG or equivalent.
+    /// Gets the transform from the paint's own coordinate space to the space the glyph is
+    /// rendered in. Gradient geometry is defined in the paint's space, so a renderer maps each
+    /// sample through the inverse of this transform before evaluating the gradient.
     /// </summary>
-    internal Matrix3x2 Transform { get; set; }
+    public Matrix3x2 Transform { get; init; } = Matrix3x2.Identity;
 
     /// <summary>
     /// Gets the composite mode to use when applying this paint over existing content.

@@ -116,7 +116,7 @@ internal static class LookupType7SubTable
                     continue;
                 }
 
-                if (!AdvancedTypographicUtils.MatchSequence(iterator, 1, ruleTable.InputSequence, buffer.LookupMask, false, matchPositions[1..], out _))
+                if (!AdvancedTypographicUtils.MatchSequence(iterator, 1, ruleTable.InputSequence, buffer.LookupMask, false, matchPositions[1..], out int matchEnd))
                 {
                     continue;
                 }
@@ -130,7 +130,8 @@ internal static class LookupType7SubTable
                     buffer,
                     matchPositions,
                     ruleTable.InputSequence.Length + 1,
-                    count);
+                    count,
+                    matchEnd);
             }
 
             return false;
@@ -232,7 +233,7 @@ internal static class LookupType7SubTable
                     continue;
                 }
 
-                if (!AdvancedTypographicUtils.MatchClassSequence(iterator, 1, ruleTable.InputSequence, this.classDefinitionTable, buffer.LookupMask, false, matchPositions[1..], out _))
+                if (!AdvancedTypographicUtils.MatchClassSequence(iterator, 1, ruleTable.InputSequence, this.classDefinitionTable, buffer.LookupMask, false, matchPositions[1..], out int matchEnd))
                 {
                     continue;
                 }
@@ -246,7 +247,8 @@ internal static class LookupType7SubTable
                     buffer,
                     matchPositions,
                     ruleTable.InputSequence.Length + 1,
-                    count);
+                    count,
+                    matchEnd);
             }
 
             return false;
@@ -329,7 +331,7 @@ internal static class LookupType7SubTable
             // address.
             SkippingGlyphIterator iterator = new(fontMetrics, buffer, index, this.LookupFlags, this.MarkFilteringSet);
             Span<int> matchPositions = buffer.GetContextMatchPositions()[..AdvancedTypographicUtils.MaxContextLength];
-            if (!AdvancedTypographicUtils.MatchCoverageSequence(iterator, this.coverageTables, index, index + count, buffer.LookupMask, false, matchPositions, out _))
+            if (!AdvancedTypographicUtils.MatchCoverageSequence(iterator, this.coverageTables, index, index + count, buffer.LookupMask, false, matchPositions, out int matchEnd))
             {
                 return false;
             }
@@ -342,7 +344,8 @@ internal static class LookupType7SubTable
                 buffer,
                 matchPositions,
                 this.coverageTables.Length,
-                count);
+                count,
+                matchEnd);
         }
     }
 }

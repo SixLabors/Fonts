@@ -126,37 +126,21 @@ internal static class LookupType8SubTable
             for (int lookupIndex = 0; lookupIndex < rules.Length; lookupIndex++)
             {
                 ChainedSequenceRuleTable rule = rules[lookupIndex];
-                if (!AdvancedTypographicUtils.ApplyChainedSequenceRule(iterator, rule, buffer.LookupMask, matchPositions[1..], out _))
+                if (!AdvancedTypographicUtils.ApplyChainedSequenceRule(iterator, rule, buffer.LookupMask, matchPositions[1..], out int matchEnd))
                 {
                     continue;
                 }
 
-                if (buffer.NestingLimitReached)
-                {
-                    return false;
-                }
-
-                bool hasChanged = false;
-                int matchCount = rule.InputSequence.Length + 1;
-                buffer.PushNestedApplication();
-                for (int j = 0; j < rule.SequenceLookupRecords.Length; j++)
-                {
-                    SequenceLookupRecord sequenceLookupRecord = rule.SequenceLookupRecords[j];
-                    LookupTable lookup = table.LookupList.LookupTables[sequenceLookupRecord.LookupListIndex];
-                    int sequenceIndex = sequenceLookupRecord.SequenceIndex;
-                    if (sequenceIndex >= matchCount)
-                    {
-                        continue;
-                    }
-
-                    if (lookup.TryUpdatePosition(fontMetrics, table, buffer, feature, matchPositions[sequenceIndex], 1))
-                    {
-                        hasChanged = true;
-                    }
-                }
-
-                buffer.PopNestedApplication();
-                return hasChanged;
+                return AdvancedTypographicUtils.ApplyLookupList(
+                    fontMetrics,
+                    table,
+                    feature,
+                    rule.SequenceLookupRecords,
+                    buffer,
+                    matchPositions,
+                    rule.InputSequence.Length + 1,
+                    count,
+                    matchEnd);
             }
 
             return false;
@@ -283,38 +267,22 @@ internal static class LookupType8SubTable
             {
                 ChainedClassSequenceRuleTable rule = rules[lookupIndex];
 
-                if (!AdvancedTypographicUtils.ApplyChainedClassSequenceRule(iterator, rule, this.inputClassDefinitionTable, this.backtrackClassDefinitionTable, this.lookaheadClassDefinitionTable, buffer.LookupMask, matchPositions[1..], out _))
+                if (!AdvancedTypographicUtils.ApplyChainedClassSequenceRule(iterator, rule, this.inputClassDefinitionTable, this.backtrackClassDefinitionTable, this.lookaheadClassDefinitionTable, buffer.LookupMask, matchPositions[1..], out int matchEnd))
                 {
                     continue;
                 }
 
                 // It's a match. Perform position update and return true if anything changed.
-                if (buffer.NestingLimitReached)
-                {
-                    return false;
-                }
-
-                bool hasChanged = false;
-                int matchCount = rule.InputSequence.Length + 1;
-                buffer.PushNestedApplication();
-                for (int j = 0; j < rule.SequenceLookupRecords.Length; j++)
-                {
-                    SequenceLookupRecord sequenceLookupRecord = rule.SequenceLookupRecords[j];
-                    LookupTable lookup = table.LookupList.LookupTables[sequenceLookupRecord.LookupListIndex];
-                    int sequenceIndex = sequenceLookupRecord.SequenceIndex;
-                    if (sequenceIndex >= matchCount)
-                    {
-                        continue;
-                    }
-
-                    if (lookup.TryUpdatePosition(fontMetrics, table, buffer, feature, matchPositions[sequenceIndex], 1))
-                    {
-                        hasChanged = true;
-                    }
-                }
-
-                buffer.PopNestedApplication();
-                return hasChanged;
+                return AdvancedTypographicUtils.ApplyLookupList(
+                    fontMetrics,
+                    table,
+                    feature,
+                    rule.SequenceLookupRecords,
+                    buffer,
+                    matchPositions,
+                    rule.InputSequence.Length + 1,
+                    count,
+                    matchEnd);
             }
 
             return false;
@@ -414,41 +382,22 @@ internal static class LookupType8SubTable
             // first glyph, so the match fills every position nested lookups
             // address.
             Span<int> matchPositions = buffer.GetContextMatchPositions()[..AdvancedTypographicUtils.MaxContextLength];
-            if (!AdvancedTypographicUtils.CheckAllCoverages(fontMetrics, this.LookupFlags, this.MarkFilteringSet, buffer, index, count, this.inputCoverageTables, this.backtrackCoverageTables, this.lookaheadCoverageTables, buffer.LookupMask, matchPositions, out _))
-            {
-                return false;
-            }
-
-            if (buffer.NestingLimitReached)
+            if (!AdvancedTypographicUtils.CheckAllCoverages(fontMetrics, this.LookupFlags, this.MarkFilteringSet, buffer, index, count, this.inputCoverageTables, this.backtrackCoverageTables, this.lookaheadCoverageTables, buffer.LookupMask, matchPositions, out int matchEnd))
             {
                 return false;
             }
 
             // It's a match. Perform position update and return true if anything changed.
-            bool hasChanged = false;
-            int matchCount = this.inputCoverageTables.Length;
-            buffer.PushNestedApplication();
-
-            foreach (SequenceLookupRecord lookupRecord in this.seqLookupRecords)
-            {
-                int sequenceIndex = lookupRecord.SequenceIndex;
-                if (sequenceIndex >= matchCount)
-                {
-                    continue;
-                }
-
-                ushort lookupIndex = lookupRecord.LookupListIndex;
-                int position = matchPositions[sequenceIndex];
-
-                LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                if (lookup.TryUpdatePosition(fontMetrics, table, buffer, feature, position, count - (position - index)))
-                {
-                    hasChanged = true;
-                }
-            }
-
-            buffer.PopNestedApplication();
-            return hasChanged;
+            return AdvancedTypographicUtils.ApplyLookupList(
+                fontMetrics,
+                table,
+                feature,
+                this.seqLookupRecords,
+                buffer,
+                matchPositions,
+                this.inputCoverageTables.Length,
+                count,
+                matchEnd);
         }
     }
 }

@@ -50,6 +50,16 @@ public class HarfBuzzDifferentialTests
             { TestFonts.SegoeuiEmojiFile, "👨‍👩‍👧‍👦", false },
             { TestFonts.SegoeuiEmojiFile, "🤷🏽‍♀️ 🤷🏽", false },
             { TestFonts.SegoeuiEmojiFile, "☀︎ ☀️", false },
+
+            // Segoe UI Emoji 1.70 builds families from positioned glyphs rather than one
+            // ligature, so every family and the skin tone modifiers run against it too.
+            { TestFonts.SegoeuiEmoji170File, "👨‍👩‍👧‍👦", false },
+            { TestFonts.SegoeuiEmoji170File, "👪 👨‍👩‍👧 👨‍👩‍👧‍👦", false },
+            { TestFonts.SegoeuiEmoji170File, "👩‍👩‍👧‍👦 👨‍👨‍👧‍👦 👨‍👩‍👦‍👦 👩‍👧‍👧", false },
+            { TestFonts.SegoeuiEmoji170File, "🤷🏽‍♀️ 🤷🏽", false },
+            { TestFonts.SegoeuiEmoji170File, "☀︎ ☀️", false },
+            { TestFonts.SegoeuiEmoji170File, "👌🏻 👌🏼 👌🏽 👌🏾 👌🏿", false },
+            { TestFonts.SegoeuiEmoji170File, "❤️‍🔥 1️⃣ 👍🏽 😀", false },
             { TestFonts.NotoColorEmojiRegular, "👨‍👩‍👧‍👦", false },
             { TestFonts.NotoColorEmojiRegular, "🤷🏽‍♀️ 🤷🏽", false },
             { TestFonts.NotoColorEmojiRegular, "☀︎ ☀️", false },
