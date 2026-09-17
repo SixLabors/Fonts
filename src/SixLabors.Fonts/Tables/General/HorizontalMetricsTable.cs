@@ -38,12 +38,18 @@ internal sealed class HorizontalMetricsTable : Table
 
     /// <summary>
     /// Gets the advance width for the specified glyph. If the glyph index exceeds the
-    /// number of metric records, the last record's advance width is returned.
+    /// number of metric records, the last record's advance width is returned. If it
+    /// exceeds the font's glyph count, the glyph has no metrics and zero is returned.
     /// </summary>
     /// <param name="glyphIndex">The glyph index.</param>
     /// <returns>The advance width in font design units.</returns>
     public ushort GetAdvancedWidth(int glyphIndex)
     {
+        if (glyphIndex >= this.leftSideBearings.Length)
+        {
+            return 0;
+        }
+
         if (glyphIndex >= this.advancedWidths.Length)
         {
             // Records are indexed by glyph ID. As an optimization, the number of records can
@@ -56,7 +62,8 @@ internal sealed class HorizontalMetricsTable : Table
     }
 
     /// <summary>
-    /// Gets the left side bearing for the specified glyph.
+    /// Gets the left side bearing for the specified glyph. If the glyph index exceeds
+    /// the font's glyph count, the glyph has no metrics and zero is returned.
     /// </summary>
     /// <param name="glyphIndex">The glyph index.</param>
     /// <returns>The left side bearing in font design units.</returns>
@@ -64,7 +71,7 @@ internal sealed class HorizontalMetricsTable : Table
     {
         if (glyphIndex >= this.leftSideBearings.Length)
         {
-            return this.leftSideBearings[^1];
+            return 0;
         }
 
         return this.leftSideBearings[glyphIndex];

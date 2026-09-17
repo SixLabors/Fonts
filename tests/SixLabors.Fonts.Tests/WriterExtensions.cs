@@ -231,6 +231,66 @@ internal static class WriterExtensions
     {
         writer.WriteCMapSubTable(subtable as Format0SubTable);
         writer.WriteCMapSubTable(subtable as Format4SubTable);
+        writer.WriteCMapSubTable(subtable as Format6SubTable);
+        writer.WriteCMapSubTable(subtable as Format10SubTable);
+    }
+
+    public static void WriteCMapSubTable(this BigEndianBinaryWriter writer, Format6SubTable subtable)
+    {
+        if (subtable == null)
+        {
+            return;
+        }
+
+        // Format 6 SubTable
+        // Type   | Name                     | Description
+        // -------|--------------------------|------------------------------------------------------------------------
+        // uint16 | format                   | Format number is set to 6.
+        // uint16 | length                   | This is the length in bytes of the subtable.
+        // uint16 | language                 | Please see “Note on the language field in 'cmap' subtables“ in this document.
+        // uint16 | firstCode                | First character code of subrange.
+        // uint16 | entryCount               | Number of character codes in subrange.
+        // uint16 | glyphIdArray[entryCount] | Array of glyph index values for character codes in the range.
+        writer.WriteUInt16(6);
+        writer.WriteUInt16((ushort)subtable.DataLength());
+        writer.WriteUInt16(subtable.Language);
+        writer.WriteUInt16(subtable.FirstCode);
+        writer.WriteUInt16((ushort)subtable.GlyphIds.Length);
+
+        foreach (ushort glyphId in subtable.GlyphIds)
+        {
+            writer.WriteUInt16(glyphId);
+        }
+    }
+
+    public static void WriteCMapSubTable(this BigEndianBinaryWriter writer, Format10SubTable subtable)
+    {
+        if (subtable == null)
+        {
+            return;
+        }
+
+        // Format 10 SubTable
+        // Type   | Name                   | Description
+        // -------|------------------------|-----------------------------------------------------------
+        // uint16 | format                 | Subtable format; set to 10.
+        // uint16 | reserved               | Reserved; set to 0.
+        // uint32 | length                 | Byte length of this subtable (including the header).
+        // uint32 | language               | Please see “Note on the language field in 'cmap' subtables“ in this document.
+        // uint32 | startCharCode          | First character code covered.
+        // uint32 | numChars               | Number of character codes covered.
+        // uint16 | glyphIdArray[numChars] | Array of glyph indices for the character codes covered.
+        writer.WriteUInt16(10);
+        writer.WriteUInt16(0);
+        writer.WriteUInt32((uint)subtable.DataLength());
+        writer.WriteUInt32(subtable.Language);
+        writer.WriteUInt32(subtable.StartCharCode);
+        writer.WriteUInt32((uint)subtable.GlyphIds.Length);
+
+        foreach (ushort glyphId in subtable.GlyphIds)
+        {
+            writer.WriteUInt16(glyphId);
+        }
     }
 
     public static void WriteCMapSubTable(this BigEndianBinaryWriter writer, Format0SubTable subtable)
@@ -376,6 +436,16 @@ internal static class WriterExtensions
             Format4SubTable.Segment[] segs = format4Table.Segments;
             ushort[] glyphs = format4Table.GlyphIds;
             return 16 + (segs.Length * 8) + (glyphs.Length * 2);
+        }
+
+        if (subtable is Format6SubTable format6Table)
+        {
+            return 10 + (format6Table.GlyphIds.Length * 2);
+        }
+
+        if (subtable is Format10SubTable format10Table)
+        {
+            return 20 + (format10Table.GlyphIds.Length * 2);
         }
 
         return 0;
