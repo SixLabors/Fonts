@@ -346,7 +346,12 @@ internal class GPosTable : Table
                 buffer.SetLookupMatchState(featureMask, autoZwnj, autoZwj, random, perSyllable);
                 iterator.Reset(index, featureLookupTable.LookupFlags, featureLookupTable.MarkFilteringSet);
 
-                while (iterator.Index < segmentEnd)
+                // The cursor walks the segment and each lookup leaves it where the
+                // records it consumed end: after a matched context's input, at or
+                // past a pair's second glyph. A lookup that leaves it in place
+                // consumed nothing, so the walk steps one record.
+                buffer.MoveTo(index);
+                while (buffer.ReadIndex < segmentEnd)
                 {
                     if (currentOperations++ >= maxOperationsCount)
                     {
@@ -356,18 +361,26 @@ internal class GPosTable : Table
 
                     // The digest cheaply rejects glyphs no subtable of this
                     // lookup can affect; a maybe falls through to the exact
-                    // coverage test inside.
-                    ref GlyphShapingData glyphData = ref buffer[iterator.Index];
-                    if ((glyphData.FeatureMask & featureMask) == 0 || !featureLookupTable.Digest.MightContain(glyphData.GlyphId))
+                    // coverage test inside. A record the lookup's flags ignore
+                    // is never applied at.
+                    int position = buffer.ReadIndex;
+                    ref GlyphShapingData glyphData = ref buffer[position];
+                    if ((glyphData.FeatureMask & featureMask) == 0
+                        || !featureLookupTable.Digest.MightContain(glyphData.GlyphId)
+                        || iterator.IsIgnored(position))
                     {
-                        iterator.Next();
+                        buffer.CopyGlyph();
                         continue;
                     }
 
-                    bool success = featureLookupTable.TryUpdatePosition(fontMetrics, this, buffer, feature, iterator.Index, segmentEnd - iterator.Index);
+                    bool success = featureLookupTable.TryUpdatePosition(fontMetrics, this, buffer, feature, position, segmentEnd - position);
                     kerned |= success && (feature == KernTag || feature == VKernTag);
                     updated |= success;
-                    iterator.Next();
+
+                    if (buffer.ReadIndex == position)
+                    {
+                        buffer.CopyGlyph();
+                    }
                 }
             }
 
