@@ -312,5 +312,99 @@ public class GlyphTests
     }
 
 #endif
+    [Fact]
+    public void RenderFamilySequence_SegoeUIEmoji170_ColrV0AndColrV1ShareGlyphs()
+    {
+        // Segoe UI Emoji 1.70 carries COLR v1 paint graphs and COLR v0 layer records in one
+        // table and builds the family from four positioned glyphs. HarfBuzz shapes the
+        // sequence to these glyph ids; the differential test checks their positions.
+        Font font = TestFonts.GetFont(TestFonts.SegoeuiEmoji170File, 72);
+        const string family = "👨‍👩‍👧‍👦";
+        ushort[] expectedGlyphIds = [1283, 1464, 1271, 1259];
+
+        PaintCaptureRenderer outlines = RenderFamily(font, family, ColorFontSupport.None);
+        PaintCaptureRenderer colrV0 = RenderFamily(font, family, ColorFontSupport.ColrV0);
+        PaintCaptureRenderer colrV1 = RenderFamily(font, family, ColorFontSupport.ColrV1);
+
+        foreach (PaintCaptureRenderer renderer in new[] { outlines, colrV0, colrV1 })
+        {
+            Assert.Equal(expectedGlyphIds, renderer.VisibleKeys.Select(k => k.GlyphId));
+        }
+
+        Assert.All(outlines.VisibleKeys, k => Assert.Equal(GlyphType.Standard, k.GlyphType));
+        Assert.Equal(0, outlines.SolidLayers + outlines.GradientLayers);
+
+        Assert.All(colrV0.VisibleKeys, k => Assert.Equal(GlyphType.Painted, k.GlyphType));
+        Assert.True(colrV0.SolidLayers > 0);
+        Assert.Equal(0, colrV0.GradientLayers);
+
+        Assert.All(colrV1.VisibleKeys, k => Assert.Equal(GlyphType.Painted, k.GlyphType));
+        Assert.True(colrV1.GradientLayers > 0);
+    }
+
+    [Fact]
+    public void RenderThumbsUp_SegoeUIEmoji170_RadialGradientsKeepTheirWholeTransform()
+    {
+        // The shading gradients of the toned thumbs-up sit under PaintTransform and PaintScale
+        // records that squash, skew and reflect them. The circles stay in the paint's own space
+        // and the whole transform reaches the renderer, so none of that is lost.
+        Font font = TestFonts.GetFont(TestFonts.SegoeuiEmoji170File, 72);
+        PaintCaptureRenderer renderer = RenderFamily(font, "👍🏽", ColorFontSupport.ColrV1);
+
+        RadialGradientPaint[] radials = renderer.Paints.OfType<RadialGradientPaint>().ToArray();
+        Assert.NotEmpty(radials);
+        Assert.All(radials, r => Assert.True(Matrix3x2.Invert(r.Transform, out _)));
+
+        // A similarity maps the axes to perpendicular vectors of equal length; the squashed
+        // shading gradients do not.
+        Assert.Contains(radials, r => MathF.Abs((r.Transform.M11 * r.Transform.M21) + (r.Transform.M12 * r.Transform.M22)) > 0.01F
+            || MathF.Abs(new Vector2(r.Transform.M11, r.Transform.M12).Length() - new Vector2(r.Transform.M21, r.Transform.M22).Length()) > 0.01F);
+
+        // PaintScale with a negative x scale reflects the gradient.
+        Assert.Contains(radials, r => r.Transform.GetDeterminant() < 0F);
+    }
+
+    private static PaintCaptureRenderer RenderFamily(Font font, string text, ColorFontSupport colorFontSupport)
+    {
+        PaintCaptureRenderer renderer = new();
+        TextRenderer.RenderTo(renderer, text, new TextOptions(font)
+        {
+            ColorFontSupport = colorFontSupport
+        });
+
+        return renderer;
+    }
+
     private static CodePoint AsCodePoint(string text) => CodePoint.DecodeFromUtf16At(text.AsSpan(), 0);
+
+    /// <summary>
+    /// Counts solid and gradient paint layers and exposes the glyph keys of the glyphs that
+    /// draw something, leaving out the zero width joiners.
+    /// </summary>
+    private sealed class PaintCaptureRenderer : GlyphRenderer
+    {
+        public int SolidLayers { get; private set; }
+
+        public int GradientLayers { get; private set; }
+
+        public List<Paint> Paints { get; } = [];
+
+        public GlyphRendererParameters[] VisibleKeys
+            => this.GlyphKeys.Where(k => !CodePoint.IsZeroWidthJoiner(k.CodePoint)).ToArray();
+
+        public override void BeginLayer(Paint paint, FillRule fillRule)
+        {
+            this.Paints.Add(paint);
+            if (paint is SolidPaint)
+            {
+                this.SolidLayers++;
+            }
+            else
+            {
+                this.GradientLayers++;
+            }
+
+            base.BeginLayer(paint, fillRule);
+        }
+    }
 }

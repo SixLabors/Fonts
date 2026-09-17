@@ -365,6 +365,12 @@ internal sealed class CMapTable : Table
                 case 4:
                     tables.AddRange(Format4SubTable.Load(encoding, reader));
                     break;
+                case 6:
+                    tables.AddRange(Format6SubTable.Load(encoding, reader));
+                    break;
+                case 10:
+                    tables.AddRange(Format10SubTable.Load(encoding, reader));
+                    break;
                 case 12:
                     tables.AddRange(Format12SubTable.Load(encoding, reader));
                     break;

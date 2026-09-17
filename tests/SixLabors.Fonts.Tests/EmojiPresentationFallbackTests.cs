@@ -32,14 +32,27 @@ public class EmojiPresentationFallbackTests
 
     private const int TextPresentationSelector = 0xFE0E;
 
+    private const int EmojiPresentationSelector = 0xFE0F;
+
     /// <summary>
-    /// Gets the color emoji fonts in the test set: COLR v1, COLR v0 with a cmap format 14, and COLR v0.
+    /// Gets the color emoji fonts in the test set: COLR v1, COLR v0 with a cmap format 14, COLR v1 that
+    /// also carries COLR v0 layer records with a cmap format 14, and COLR v0.
     /// </summary>
     public static TheoryData<string> ColorEmojiFonts { get; } = new()
     {
         TestFonts.NotoColorEmojiRegular,
         TestFonts.SegoeuiEmojiFile,
+        TestFonts.SegoeuiEmoji170File,
         TestFonts.TwemojiMozillaFile
+    };
+
+    /// <summary>
+    /// Gets both Segoe UI Emoji builds in the test set: 1.33 with COLR v0 and 1.70 with COLR v1.
+    /// </summary>
+    public static TheoryData<string> SegoeUIEmojiFonts { get; } = new()
+    {
+        TestFonts.SegoeuiEmojiFile,
+        TestFonts.SegoeuiEmoji170File
     };
 
     /// <summary>
@@ -70,6 +83,11 @@ public class EmojiPresentationFallbackTests
         {
             "Arial-SegoeUIEmoji-DejaVuSans",
             [TestFonts.Arial, TestFonts.SegoeuiEmojiFile, TestFonts.Anchor2FontFile],
+            [2, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1]
+        },
+        {
+            "Arial-SegoeUIEmoji170-DejaVuSans",
+            [TestFonts.Arial, TestFonts.SegoeuiEmoji170File, TestFonts.Anchor2FontFile],
             [2, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1]
         }
     };
@@ -160,6 +178,52 @@ public class EmojiPresentationFallbackTests
 
     [Theory]
     [MemberData(nameof(ColorEmojiFonts))]
+    public void VariationSequences_ResolveLikeHarfBuzz_ForEveryMappedCodePoint(string emojiFile)
+    {
+        // Every base character the font maps, paired with each presentation selector, resolves
+        // through the cmap format 14 default and non-default tables the way HarfBuzz resolves it.
+        using Blob blob = Blob.FromFile(emojiFile);
+        using HBFace face = new(blob, 0);
+        using HBFont hbFont = new(face);
+
+        FontMetrics metrics = TestFonts.GetFont(emojiFile, 12).FontMetrics;
+        ReadOnlySpan<CodePoint> codePoints = metrics.GetAvailableCodePoints().Span;
+        int[] selectors = [TextPresentationSelector, EmojiPresentationSelector];
+        foreach (CodePoint codePoint in codePoints)
+        {
+            foreach (int selector in selectors)
+            {
+                bool declared = hbFont.TryGetVariationGlyph((uint)codePoint.Value, (uint)selector, out uint expected);
+                Assert.True(metrics.TryGetGlyphId(codePoint, new CodePoint(selector), out ushort actual, out bool consumed));
+                Assert.True(declared == consumed, $"U+{codePoint.Value:X4} U+{selector:X4}: HarfBuzz declared {declared}, Fonts consumed {consumed}.");
+                if (declared)
+                {
+                    Assert.Equal(expected, actual);
+                }
+            }
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(SegoeUIEmojiFonts))]
+    public void SegoeUIEmoji_DefaultVariationSequences_ResolveToTheBaseGlyph(string emojiFile)
+    {
+        // Both builds list the female sign and the heart with U+FE0F in their default UVS
+        // ranges, so the pair resolves to the base glyph and the selector is consumed.
+        FontMetrics metrics = TestFonts.GetFont(emojiFile, 12).FontMetrics;
+        CodePoint selector = new(EmojiPresentationSelector);
+        foreach (int value in new[] { 0x2640, 0x2764 })
+        {
+            CodePoint codePoint = new(value);
+            Assert.True(metrics.TryGetGlyphId(codePoint, out ushort baseGlyph));
+            Assert.True(metrics.TryGetGlyphId(codePoint, selector, out ushort pairGlyph, out bool consumed));
+            Assert.True(consumed, $"U+{value:X4} U+FE0F was not consumed.");
+            Assert.Equal(baseGlyph, pairGlyph);
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(ColorEmojiFonts))]
     public void EmojiFontFirst_SelectorsChooseTheFont_ForEveryColorFont(string emojiFile)
     {
         FontFamily text = TestFonts.GetFontFamily(TestFonts.Anchor2FontFile);
@@ -173,13 +237,14 @@ public class EmojiPresentationFallbackTests
         AssertFont(emoji, suns[2]);
     }
 
-    [Fact]
-    public void ArialThenSegoeUIEmoji_TextSelectorWithoutAPlainSunTakesTheBaseGlyph()
+    [Theory]
+    [MemberData(nameof(SegoeUIEmojiFonts))]
+    public void ArialThenSegoeUIEmoji_TextSelectorWithoutAPlainSunTakesTheBaseGlyph(string emojiFile)
     {
         // Arial has no sun and Segoe UI Emoji has a color table, so no font answers ☀︎ and
         // the pass that ignores the selector takes the base glyph from Segoe UI Emoji.
         FontFamily text = TestFonts.GetFontFamily(TestFonts.Arial);
-        FontFamily emoji = TestFonts.GetFontFamily(TestFonts.SegoeuiEmojiFile);
+        FontFamily emoji = TestFonts.GetFontFamily(emojiFile);
 
         GlyphRendererParameters[] suns = RenderSuns(text, emoji);
 
@@ -232,12 +297,13 @@ public class EmojiPresentationFallbackTests
         Assert.All(suns, sun => Assert.Equal(GlyphType.Standard, sun.GlyphType));
     }
 
-    [Fact]
-    public void ArialThenSegoeUIEmoji_SmilingFaceSelectorsChooseTheFont()
+    [Theory]
+    [MemberData(nameof(SegoeUIEmojiFonts))]
+    public void ArialThenSegoeUIEmoji_SmilingFaceSelectorsChooseTheFont(string emojiFile)
     {
         // Arial maps the smiling face, and Segoe UI Emoji declares the emoji sequence in its cmap.
         FontFamily text = TestFonts.GetFontFamily(TestFonts.Arial);
-        FontFamily emoji = TestFonts.GetFontFamily(TestFonts.SegoeuiEmojiFile);
+        FontFamily emoji = TestFonts.GetFontFamily(emojiFile);
         TextOptions options = new(text.CreateFont(48))
         {
             FallbackFontFamilies = [emoji]
@@ -354,20 +420,45 @@ public class EmojiPresentationFallbackTests
         TextLayoutTestUtilities.TestLayout(ComparisonText, options, properties: [name]);
     }
 
+    [Fact]
+    public void EmojiPresentation_BrowserComparison_Hand()
+    {
+        // The toned thumbs-up of Segoe UI Emoji 1.70 shades its palm and fingers with radial
+        // gradients that the font squashes and skews with PaintTransform. At 192 points the
+        // shading is large enough to compare against the browser pixel for pixel.
+        FontCollection collection = new();
+        Font font = TestFonts.GetFontFamily(collection, TestFonts.SegoeuiEmoji170File).CreateFont(192);
+        TextOptions options = new(font)
+        {
+            Dpi = 96F,
+            LineSpacing = 1.4F
+        };
+
+        GlyphRenderer renderer = new();
+        TextRenderer.RenderTo(renderer, "👍🏽", options);
+        GlyphRendererParameters[] visible = renderer.GlyphKeys.Where(k => !CodePoint.IsVariationSelector(k.CodePoint)).ToArray();
+        Assert.NotEmpty(visible);
+        Assert.All(visible, glyph => Assert.Equal(GlyphType.Painted, glyph.GlyphType));
+
+        // A string property is decorated in the file name. The formattable string keeps the font name plain.
+        FormattableString name = $"SegoeUIEmoji170";
+        TextLayoutTestUtilities.TestLayout("👍🏽", options, properties: [name]);
+    }
+
     private static TheoryData<string, string> BuildSequenceCases()
     {
         // Keycap, flag, joiner with a selector inside, modifier, and the family joiner sequence.
         // Segoe UI Emoji draws no country flags; a regional indicator pair renders as two
-        // outline letters there, so the flag is paired with the other two fonts only.
+        // outline letters there, so the flag is paired with the other fonts only.
         const string flag = "🇯🇵";
         string[] sequences = ["1️⃣", flag, "❤️‍🔥", "👍🏽", "👨‍👩‍👧‍👦"];
-        string[] fonts = [TestFonts.NotoColorEmojiRegular, TestFonts.SegoeuiEmojiFile, TestFonts.TwemojiMozillaFile];
+        string[] fonts = [TestFonts.NotoColorEmojiRegular, TestFonts.SegoeuiEmojiFile, TestFonts.SegoeuiEmoji170File, TestFonts.TwemojiMozillaFile];
         TheoryData<string, string> cases = [];
         foreach (string sequence in sequences)
         {
             foreach (string font in fonts)
             {
-                if (sequence == flag && font == TestFonts.SegoeuiEmojiFile)
+                if (sequence == flag && (font == TestFonts.SegoeuiEmojiFile || font == TestFonts.SegoeuiEmoji170File))
                 {
                     continue;
                 }

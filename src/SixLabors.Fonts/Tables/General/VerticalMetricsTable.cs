@@ -38,22 +38,32 @@ internal sealed class VerticalMetricsTable : Table
 
     /// <summary>
     /// Gets the advance height for the specified glyph. If the glyph index exceeds the
-    /// number of metric records, the first record's advance height is returned.
+    /// number of metric records, the last record's advance height is returned. If it
+    /// exceeds the font's glyph count, the glyph has no metrics and zero is returned.
     /// </summary>
     /// <param name="glyphIndex">The glyph index.</param>
     /// <returns>The advance height in font design units.</returns>
     public ushort GetAdvancedHeight(int glyphIndex)
     {
+        if (glyphIndex >= this.topSideBearings.Length)
+        {
+            return 0;
+        }
+
         if (glyphIndex >= this.advancedHeights.Length)
         {
-            return this.advancedHeights[0];
+            // Records are indexed by glyph ID. As an optimization, the number of records can
+            // be less than the number of glyphs, in which case the advance height value of the
+            // last record applies to all remaining glyph IDs.
+            return this.advancedHeights[^1];
         }
 
         return this.advancedHeights[glyphIndex];
     }
 
     /// <summary>
-    /// Gets the top side bearing for the specified glyph.
+    /// Gets the top side bearing for the specified glyph. If the glyph index exceeds
+    /// the font's glyph count, the glyph has no metrics and zero is returned.
     /// </summary>
     /// <param name="glyphIndex">The glyph index.</param>
     /// <returns>The top side bearing in font design units.</returns>
@@ -61,7 +71,7 @@ internal sealed class VerticalMetricsTable : Table
     {
         if (glyphIndex >= this.topSideBearings.Length)
         {
-            return this.topSideBearings[0];
+            return 0;
         }
 
         return this.topSideBearings[glyphIndex];

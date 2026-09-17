@@ -28,7 +28,8 @@ internal interface ICffTable
     }
 
     /// <summary>
-    /// Gets the glyph data at the given index.
+    /// Gets the glyph data at the given index. An index past the table's glyphs
+    /// gets a glyph with no charstring.
     /// </summary>
     /// <param name="index">The glyph index.</param>
     /// <returns>The <see cref="CffGlyphData"/>.</returns>

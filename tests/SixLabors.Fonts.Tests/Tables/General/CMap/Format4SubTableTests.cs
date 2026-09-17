@@ -84,4 +84,66 @@ public class Format4SubTableTests
         Assert.Equal(expected, id);
         Assert.Equal(expectedFound, found);
     }
+
+    [Theory]
+    [InlineData(10, 12, true)] // 7 + 5
+    [InlineData(11, 0, false)] // a zero in the array is the missing glyph, the delta does not apply
+    [InlineData(12, 14, true)] // 9 + 5
+    public void GetCharacter_OffsetSegmentAddsDelta(int src, int expected, bool expectedFound)
+    {
+        // Two segments, so glyphIds[(offset / 2) + (src - start) - 2 + index] with
+        // offset 4 addresses glyphIds[src - start].
+        Format4SubTable.Segment[] segments =
+        [
+            new Format4SubTable.Segment(0, 12, 10, 5, 4),
+            new Format4SubTable.Segment(1, 0xFFFF, 0xFFFF, 1, 0),
+        ];
+
+        Format4SubTable table = new(0, PlatformIDs.Windows, 0, segments, [7, 0, 9]);
+
+        bool found = table.TryGetGlyphId(new CodePoint(src), out ushort id);
+
+        Assert.Equal(expectedFound, found);
+        Assert.Equal(expected, id);
+
+        if (expectedFound)
+        {
+            Assert.True(table.TryGetCodePoint(id, out CodePoint codePoint));
+            Assert.Equal(src, codePoint.Value);
+        }
+    }
+
+    [Fact]
+    public void GetCharacter_DeltaToZeroIsMissing()
+    {
+        Format4SubTable.Segment[] segments =
+        [
+            new Format4SubTable.Segment(0, 20, 20, -20, 0),
+            new Format4SubTable.Segment(1, 0xFFFF, 0xFFFF, 1, 0),
+        ];
+
+        Format4SubTable table = new(0, PlatformIDs.Windows, 0, segments, []);
+
+        bool found = table.TryGetGlyphId(new CodePoint(20), out ushort id);
+
+        Assert.False(found);
+        Assert.Equal(0, id);
+    }
+
+    [Fact]
+    public void GetCharacter_DeltaWrapsToSixteenBits()
+    {
+        // The sentinel segment with a delta of -1 maps U+FFFF to 0xFFFE.
+        Format4SubTable.Segment[] segments =
+        [
+            new Format4SubTable.Segment(0, 0xFFFF, 0xFFFF, -1, 0),
+        ];
+
+        Format4SubTable table = new(0, PlatformIDs.Windows, 0, segments, []);
+
+        bool found = table.TryGetGlyphId(new CodePoint(0xFFFF), out ushort id);
+
+        Assert.True(found);
+        Assert.Equal(0xFFFE, id);
+    }
 }

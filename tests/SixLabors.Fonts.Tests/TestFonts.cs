@@ -13,6 +13,8 @@ public static class TestFonts
 
     public static string SegoeuiEmojiFile => GetFullPath("seguiemj-win11.ttf");
 
+    public static string SegoeuiEmoji170File => GetFullPath("seguiemj-win11-1.70.ttf");
+
     public static string CarterOneFile => GetFullPath("Carter_One/CarterOne.ttf");
 
     // Subset of Noto Sans SC pinned to the TextBaselineTests browser comparison strings,

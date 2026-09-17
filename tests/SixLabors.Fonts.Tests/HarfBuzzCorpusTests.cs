@@ -21,7 +21,9 @@ namespace SixLabors.Fonts.Tests;
 /// <remarks>
 /// <para>
 /// The corpus is a pinned submodule fetched by the generator project, so the inputs
-/// and the reference version move only when the pin does.
+/// and the reference version move only when the pin does. It holds the reference
+/// implementation's own cases and the OpenType lookup test suite it carries, and
+/// both are shaped.
 /// </para>
 /// <para>
 /// Every glyph is compared whole: which glyph, where it sits, how far it advances,
@@ -74,13 +76,11 @@ public class HarfBuzzCorpusTests
     private static readonly string[] UnsupportedOptions =
     [
         "--font-size",
-        "--ned",
         "--remove-default-ignorables",
         "--preserve-default-ignorables",
         "--cluster-level",
         "--bot",
         "--eot",
-        "--single-par",
         "--shaper",
         "--language",
         "--font-ptem",
@@ -152,7 +152,7 @@ public class HarfBuzzCorpusTests
                     continue;
                 }
 
-                string fontPath = Path.GetFullPath(Path.Combine(CorpusRoot, "tests", parts[0]));
+                string fontPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(file)!, parts[0]));
                 if (!File.Exists(fontPath))
                 {
                     continue;
@@ -277,16 +277,27 @@ public class HarfBuzzCorpusTests
     [Fact]
     public void CorpusIsPresent()
     {
-        Assert.True(Directory.Exists(CorpusRoot), $"The corpus is missing from '{CorpusRoot}'.");
+        foreach (string root in CorpusRoots)
+        {
+            Assert.True(Directory.Exists(root), $"The corpus is missing from '{root}'.");
+            Assert.NotEmpty(Directory.GetFiles(Path.Combine(root, "fonts")));
+        }
+
         Assert.NotEmpty(EnumerateCorpusFiles());
-        Assert.NotEmpty(Directory.GetFiles(Path.Combine(CorpusRoot, "fonts")));
     }
 
     /// <summary>
-    /// Gets the root of the corpus within the pinned submodule.
+    /// Gets the roots of the corpus within the pinned submodule: the reference
+    /// implementation's own cases, and the OpenType lookup test suite it carries.
     /// </summary>
-    private static string CorpusRoot
-        => Path.Combine(TestEnvironment.SolutionDirectoryFullPath, "tests", "harfbuzz", "test", "shape", "data", "in-house");
+    private static string[] CorpusRoots
+    {
+        get
+        {
+            string data = Path.Combine(TestEnvironment.SolutionDirectoryFullPath, "tests", "harfbuzz", "test", "shape", "data");
+            return [Path.Combine(data, "in-house"), Path.Combine(data, "aots")];
+        }
+    }
 
     /// <summary>
     /// Enumerates the corpus files carrying cases this library is meant to match.
@@ -294,20 +305,23 @@ public class HarfBuzzCorpusTests
     /// <returns>The corpus file paths.</returns>
     private static List<string> EnumerateCorpusFiles()
     {
-        string directory = Path.Combine(CorpusRoot, "tests");
-        if (!Directory.Exists(directory))
-        {
-            return [];
-        }
-
         List<string> files = [];
-        foreach (string file in Directory.EnumerateFiles(directory, "*.tests"))
+        foreach (string root in CorpusRoots)
         {
-            // A file testing Apple Advanced Typography exclusively is left out whole:
-            // none of its cases are in scope for an OpenType engine.
-            if (!Path.GetFileName(file).StartsWith("aat", StringComparison.OrdinalIgnoreCase))
+            string directory = Path.Combine(root, "tests");
+            if (!Directory.Exists(directory))
             {
-                files.Add(file);
+                continue;
+            }
+
+            foreach (string file in Directory.EnumerateFiles(directory, "*.tests"))
+            {
+                // A file testing Apple Advanced Typography exclusively is left out whole:
+                // none of its cases are in scope for an OpenType engine.
+                if (!Path.GetFileName(file).StartsWith("aat", StringComparison.OrdinalIgnoreCase))
+                {
+                    files.Add(file);
+                }
             }
         }
 

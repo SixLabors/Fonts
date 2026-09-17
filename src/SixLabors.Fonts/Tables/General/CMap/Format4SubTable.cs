@@ -54,23 +54,36 @@ internal sealed class Format4SubTable : CMapSubTable
 
             if (seg.End >= charAsInt && seg.Start <= charAsInt)
             {
+                int gid;
                 if (seg.Offset == 0)
                 {
-                    glyphId = (ushort)((charAsInt + seg.Delta) & ushort.MaxValue);
-                    return true;
+                    gid = charAsInt + seg.Delta;
                 }
-
-                long offset = (seg.Offset / 2) + (charAsInt - seg.Start);
-                long idx = offset - this.Segments.Length + seg.Index;
-
-                if (idx < 0 || idx >= this.GlyphIds.Length)
+                else
                 {
-                    glyphId = 0;
-                    return false;
+                    long offset = (seg.Offset / 2) + (charAsInt - seg.Start);
+                    long idx = offset - this.Segments.Length + seg.Index;
+
+                    if (idx < 0 || idx >= this.GlyphIds.Length)
+                    {
+                        glyphId = 0;
+                        return false;
+                    }
+
+                    // A zero in the array is the missing glyph; the delta applies
+                    // only to the other values.
+                    gid = this.GlyphIds[idx];
+                    if (gid == 0)
+                    {
+                        glyphId = 0;
+                        return false;
+                    }
+
+                    gid += seg.Delta;
                 }
 
-                glyphId = this.GlyphIds[idx];
-                return true;
+                glyphId = (ushort)(gid & ushort.MaxValue);
+                return glyphId != 0;
             }
         }
 
@@ -103,7 +116,7 @@ internal sealed class Format4SubTable : CMapSubTable
                 // Reverse the offset-based calculation:
                 // Forward logic:
                 //   offset = (seg.Offset / 2) + (charAsInt - seg.Start)
-                //   glyphId = GlyphIds[offset - Segments.Length + seg.Index]
+                //   glyphId = (GlyphIds[offset - Segments.Length + seg.Index] + seg.Delta) & 0xFFFF, zero staying zero
 
                 // To reverse, iterate over possible codepoints in the segment and find the matching glyphId.
                 for (long j = 0; j <= (seg.End - seg.Start); j++)
@@ -117,7 +130,8 @@ internal sealed class Format4SubTable : CMapSubTable
                         return false;
                     }
 
-                    if (this.GlyphIds[idx] == glyphId)
+                    ushort value = this.GlyphIds[idx];
+                    if (value != 0 && ((value + seg.Delta) & ushort.MaxValue) == glyphId)
                     {
                         codePoint = new CodePoint((int)(seg.Start + j));
                         return true;

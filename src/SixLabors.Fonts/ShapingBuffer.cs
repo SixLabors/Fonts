@@ -2468,11 +2468,19 @@ internal sealed class ShapingBuffer
     /// Moves the pass position so that the given number of records sit on the
     /// output side. Advancing streams records forward; rewinding returns produced
     /// records to the input side ahead of the read cursor, exactly reversing the
-    /// stream.
+    /// stream. Outside a pass the sides are one array, so both cursors go
+    /// straight to the position.
     /// </summary>
     /// <param name="outputPosition">The output-side record count to move to.</param>
     public void MoveTo(int outputPosition)
     {
+        if (!this.IsPassActive)
+        {
+            this.ReadIndex = outputPosition;
+            this.PassOutputCount = outputPosition;
+            return;
+        }
+
         if (this.PassOutputCount < outputPosition && this.ReadIndex < this.Count)
         {
             int count = Math.Min(outputPosition - this.PassOutputCount, this.Count - this.ReadIndex);
