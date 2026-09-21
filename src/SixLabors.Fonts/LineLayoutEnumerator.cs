@@ -24,7 +24,7 @@ public sealed class LineLayoutEnumerator
     internal LineLayoutEnumerator(TextBlock textBlock)
     {
         this.textBlock = textBlock;
-        this.lineEnumerator = new(textBlock.LogicalLine, textBlock.Options);
+        this.lineEnumerator = new TextLineBreakEnumerator(textBlock.LogicalLine, textBlock.Options);
         this.textDirection = TextLayout.GetTextDirection(textBlock.LogicalLine, textBlock.Options);
         this.suppressLayout = textBlock.Options.MaxLines == 0;
     }

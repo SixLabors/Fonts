@@ -86,7 +86,7 @@ internal class AVarTable : Table
             throw new NotSupportedException("Only version 1 of avar table is supported");
         }
 
-        var segmentMaps = new SegmentMapRecord[axisCount];
+        SegmentMapRecord[] segmentMaps = new SegmentMapRecord[axisCount];
         for (int i = 0; i < axisCount; i++)
         {
             segmentMaps[i] = SegmentMapRecord.Load(reader);

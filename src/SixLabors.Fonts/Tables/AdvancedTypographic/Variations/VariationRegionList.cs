@@ -20,7 +20,8 @@ internal class VariationRegionList
     /// <summary>
     /// An empty variation region list with no axes or regions.
     /// </summary>
-    public static readonly VariationRegionList EmptyVariationRegionList = new(0, 0, new[] { Array.Empty<RegionAxisCoordinates>() });
+    public static readonly VariationRegionList EmptyVariationRegionList = new(0, 0, [[]
+    ]);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="VariationRegionList"/> class.
@@ -73,7 +74,7 @@ internal class VariationRegionList
         reader.Seek(offset, SeekOrigin.Begin);
         ushort axisCount = reader.ReadUInt16();
         ushort regionCount = reader.ReadUInt16();
-        var variationRegions = new RegionAxisCoordinates[regionCount][];
+        RegionAxisCoordinates[][] variationRegions = new RegionAxisCoordinates[regionCount][];
         for (int i = 0; i < regionCount; i++)
         {
             variationRegions[i] = new RegionAxisCoordinates[axisCount];

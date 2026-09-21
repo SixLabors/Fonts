@@ -14,7 +14,7 @@ public class Issues_104
     {
         Segment[] segments =
         [
-            new Segment(
+            new(
                 0,
                 ushort.MaxValue, // end
                 ushort.MinValue, // start of range

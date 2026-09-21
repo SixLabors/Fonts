@@ -102,11 +102,11 @@ internal static class TextLayoutTestUtilities
                 {
                     if (!options.LayoutMode.IsHorizontal())
                     {
-                        canvas.DrawLine(Pens.Solid(Color.Red, 1), new(0, wrappingLength), new(width, wrappingLength));
+                        canvas.DrawLine(Pens.Solid(Color.Red, 1), new PointF(0, wrappingLength), new PointF(width, wrappingLength));
                     }
                     else
                     {
-                        canvas.DrawLine(Pens.Solid(Color.Red, 1), new(wrappingLength, 0), new(wrappingLength, height));
+                        canvas.DrawLine(Pens.Solid(Color.Red, 1), new PointF(wrappingLength, 0), new PointF(wrappingLength, height));
                     }
                 }
             }));
@@ -138,11 +138,11 @@ internal static class TextLayoutTestUtilities
                 {
                     if (!options.LayoutMode.IsHorizontal())
                     {
-                        canvas.DrawLine(Pens.Solid(Color.Red, 1), new(0, wrappingLength), new(width, wrappingLength));
+                        canvas.DrawLine(Pens.Solid(Color.Red, 1), new PointF(0, wrappingLength), new PointF(width, wrappingLength));
                     }
                     else
                     {
-                        canvas.DrawLine(Pens.Solid(Color.Red, 1), new(wrappingLength, 0), new(wrappingLength, height));
+                        canvas.DrawLine(Pens.Solid(Color.Red, 1), new PointF(wrappingLength, 0), new PointF(wrappingLength, height));
                     }
                 }
             }));

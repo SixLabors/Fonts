@@ -54,7 +54,7 @@ public sealed partial class TextBlock
 
         if (text.IsEmpty)
         {
-            this.LogicalLine = new(new TextLine(), [], [], []);
+            this.LogicalLine = new LogicalTextLine(new TextLine(), [], [], []);
             return;
         }
 
@@ -546,12 +546,12 @@ public sealed partial class TextBlock
             // Descender line position relative to the same origin.
             float descender = baseline + line.ScaledMaxDescender + delta;
             Vector2 start = isHorizontalLayout
-                ? new(options.Origin.X + (offset * options.Dpi), lineOffset)
-                : new(lineOffset, options.Origin.Y + (offset * options.Dpi));
+                ? new Vector2(options.Origin.X + (offset * options.Dpi), lineOffset)
+                : new Vector2(lineOffset, options.Origin.Y + (offset * options.Dpi));
 
             Vector2 extent = isHorizontalLayout
-                ? new(line.ScaledLineAdvance * options.Dpi, line.ScaledMaxLineHeight * options.Dpi)
-                : new(line.ScaledMaxLineHeight * options.Dpi, line.ScaledLineAdvance * options.Dpi);
+                ? new Vector2(line.ScaledLineAdvance * options.Dpi, line.ScaledMaxLineHeight * options.Dpi)
+                : new Vector2(line.ScaledMaxLineHeight * options.Dpi, line.ScaledLineAdvance * options.Dpi);
 
             // Bidi reordering mutates entries into visual order, so the source
             // start is the minimum original source index rather than line[0].

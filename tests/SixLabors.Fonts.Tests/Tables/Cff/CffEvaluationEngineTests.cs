@@ -45,8 +45,8 @@ public class CffEvaluationEngineTests
     {
         using CffEvaluationEngine engine = new(
             IgrunokGlyph54Prefix,
-            Array.Empty<byte[]>(),
-            Array.Empty<byte[]>(),
+            [],
+            [],
             0,
             1);
         GlyphRenderer renderer = new();

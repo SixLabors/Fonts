@@ -131,7 +131,7 @@ internal partial class BidiData
 
         int i = 0;
         bool previousWasCarriageReturn = false;
-        var codePointEnumerator = new SpanCodePointEnumerator(text);
+        SpanCodePointEnumerator codePointEnumerator = new(text);
         while (codePointEnumerator.MoveNext())
         {
             CodePoint codePoint = codePointEnumerator.Current;

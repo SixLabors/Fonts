@@ -14,7 +14,7 @@ public class Issues_510
     {
         Segment[] segments =
         [
-            new Segment(
+            new(
                 0,
                 0,
                 0,
@@ -38,7 +38,7 @@ public class Issues_510
     {
         Segment[] segments =
         [
-            new Segment(
+            new(
                 0,
                 0,
                 0,

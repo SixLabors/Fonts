@@ -40,7 +40,7 @@ internal sealed class ScriptList : Dictionary<Tag, ScriptListTable>
         ushort scriptCount = reader.ReadUInt16();
 
         // Read records (tags and table offsets)
-        var scriptTags = new Tag[scriptCount];
+        Tag[] scriptTags = new Tag[scriptCount];
         ushort[] scriptOffsets = new ushort[scriptCount];
 
         for (int i = 0; i < scriptTags.Length; i++)
@@ -59,7 +59,7 @@ internal sealed class ScriptList : Dictionary<Tag, ScriptListTable>
                 scriptList = new ScriptList(scriptTag);
             }
 
-            var scriptTable = ScriptListTable.Load(scriptTag, reader, offset + scriptOffsets[i]);
+            ScriptListTable scriptTable = ScriptListTable.Load(scriptTag, reader, offset + scriptOffsets[i]);
             scriptList!.Add(scriptTag, scriptTable);
         }
 
@@ -133,7 +133,7 @@ internal sealed class ScriptListTable
         ushort defaultLangSysOffset = reader.ReadOffset16();
         ushort langSysCount = reader.ReadUInt16();
 
-        var langSysRecords = new LangSysRecord[langSysCount];
+        LangSysRecord[] langSysRecords = new LangSysRecord[langSysCount];
         for (int i = 0; i < langSysRecords.Length; i++)
         {
             // LangSysRecord
@@ -158,7 +158,7 @@ internal sealed class ScriptListTable
 
         // Load the other table features.
         // We do this last to avoid excessive seeking.
-        var langSysTables = new LangSysTable[langSysCount];
+        LangSysTable[] langSysTables = new LangSysTable[langSysCount];
         for (int i = 0; i < langSysTables.Length; i++)
         {
             LangSysRecord langSysRecord = langSysRecords[i];

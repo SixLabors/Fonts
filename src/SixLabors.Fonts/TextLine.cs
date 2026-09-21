@@ -19,14 +19,14 @@ internal sealed class TextLine
     /// <summary>
     /// Initializes a new instance of the <see cref="TextLine"/> class with a small default capacity.
     /// </summary>
-    public TextLine() => this.data = new(16);
+    public TextLine() => this.data = new List<GlyphLayoutData>(16);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TextLine"/> class with the specified initial
     /// entry capacity.
     /// </summary>
     /// <param name="capacity">Initial capacity for the internal entry list.</param>
-    public TextLine(int capacity) => this.data = new(capacity);
+    public TextLine(int capacity) => this.data = new List<GlyphLayoutData>(capacity);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TextLine"/> class by copying another line.
@@ -222,7 +222,7 @@ internal sealed class TextLine
             this.ScaledMinY = MathF.Min(this.ScaledMinY, scaledMinY);
         }
 
-        this.data.Add(new(
+        this.data.Add(new GlyphLayoutData(
             metrics,
             font,
             pointSize,
@@ -484,7 +484,7 @@ internal sealed class TextLine
             if (advance >= length)
             {
                 int count = this.data.Count - i;
-                result = new(count);
+                result = new TextLine(count);
                 result.data.AddRange(this.data.GetRange(i, count));
                 RecalculateLineMetrics(result);
 
@@ -547,7 +547,7 @@ internal sealed class TextLine
 
         // Create a new line ensuring we capture the initial metrics.
         int count = this.data.Count - index;
-        result = new(count);
+        result = new TextLine(count);
         result.data.AddRange(this.data.GetRange(index, count));
         RecalculateLineMetrics(result);
 
@@ -580,7 +580,7 @@ internal sealed class TextLine
         }
 
         int count = this.data.Count - start;
-        result = new(count);
+        result = new TextLine(count);
         result.data.AddRange(this.data.GetRange(start, count));
         RecalculateLineMetrics(result);
 

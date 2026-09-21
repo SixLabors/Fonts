@@ -150,16 +150,16 @@ internal sealed class HangulShaper : DefaultShaper
     {
         // #             X                       L                       V                       T                       LV                           LVT                          M
         // State 0: start state
-        { new byte[] { None, 0 }, new byte[] { None, 1 }, new byte[] { None, 0 }, new byte[] { None, 0 }, new byte[] { Decompose, 2 }, new byte[] { Decompose, 3 }, new byte[] { Invalid, 0 } },
+        { [None, 0], [None, 1], [None, 0], [None, 0], [Decompose, 2], [Decompose, 3], [Invalid, 0] },
 
         // State 1: <L>
-        { new byte[] { None, 0 }, new byte[] { None, 1 }, new byte[] { Compose, 2 }, new byte[] { None, 0 }, new byte[] { Decompose, 2 }, new byte[] { Decompose, 3 }, new byte[] { Invalid, 0 } },
+        { [None, 0], [None, 1], [Compose, 2], [None, 0], [Decompose, 2], [Decompose, 3], [Invalid, 0] },
 
         // State 2: <L,V> or <LV>
-        { new byte[] { None, 0 }, new byte[] { None, 1 }, new byte[] { None, 0 }, new byte[] { Compose, 3 }, new byte[] { Decompose, 2 }, new byte[] { Decompose, 3 }, new byte[] { ToneMark, 0 } },
+        { [None, 0], [None, 1], [None, 0], [Compose, 3], [Decompose, 2], [Decompose, 3], [ToneMark, 0] },
 
         // State 3: <L,V,T> or <LVT>
-        { new byte[] { None, 0 }, new byte[] { None, 1 }, new byte[] { None, 0 }, new byte[] { None, 0 }, new byte[] { Decompose, 2 }, new byte[] { Decompose, 3 }, new byte[] { ToneMark, 0 } },
+        { [None, 0], [None, 1], [None, 0], [None, 0], [Decompose, 2], [Decompose, 3], [ToneMark, 0] },
     };
 
     /// <summary>
@@ -390,9 +390,9 @@ internal sealed class HangulShaper : DefaultShaper
         FontMetrics metrics = this.fontMetrics;
 
         // Don't decompose if all of the components are not available
-        if (!metrics.TryGetGlyphId(new(l), out ushort ljmo) ||
-            !metrics.TryGetGlyphId(new(v), out ushort vjmo) ||
-            (!metrics.TryGetGlyphId(new(t), out ushort tjmo) && t != TBase))
+        if (!metrics.TryGetGlyphId(new CodePoint(l), out ushort ljmo) ||
+            !metrics.TryGetGlyphId(new CodePoint(v), out ushort vjmo) ||
+            (!metrics.TryGetGlyphId(new CodePoint(t), out ushort tjmo) && t != TBase))
         {
             return index;
         }
@@ -573,7 +573,7 @@ internal sealed class HangulShaper : DefaultShaper
         bool after = false;
         FontMetrics fontMetrics = this.fontMetrics;
 
-        if (fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort id))
+        if (fontMetrics.TryGetGlyphId(new CodePoint(DottedCircle), out ushort id))
         {
             TextRun textRun = buffer.TextRuns[data.TextRunIndex];
             TextAttributes textAttributes = textRun.TextAttributes;

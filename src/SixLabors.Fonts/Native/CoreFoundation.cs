@@ -34,7 +34,7 @@ internal static partial class CoreFoundation
     /// <param name="theArray">The array to examine.</param>
     /// <returns>The number of values in <paramref name="theArray"/>.</returns>
     [LibraryImport(CoreFoundationFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial long CFArrayGetCount(IntPtr theArray);
 
     /// <summary>
@@ -44,7 +44,7 @@ internal static partial class CoreFoundation
     /// <param name="idx">The index of the value to retrieve. If the index is outside the index space of <paramref name="theArray"/> (<c>0</c> to <c>N-1</c> inclusive where <c>N</c> is the count of <paramref name="theArray"/>), the behavior is undefined.</param>
     /// <returns>The value at the <paramref name="idx"/> index in <paramref name="theArray"/>. If the return value is a Core Foundation Object, ownership follows The Get Rule.</returns>
     [LibraryImport(CoreFoundationFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial IntPtr CFArrayGetValueAtIndex(IntPtr theArray, long idx);
 
     /// <summary>
@@ -58,7 +58,7 @@ internal static partial class CoreFoundation
     /// These values might change from release to release or platform to platform.
     /// </remarks>
     [LibraryImport(CoreFoundationFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial ulong CFGetTypeID(IntPtr cf);
 
     /// <summary>
@@ -66,7 +66,7 @@ internal static partial class CoreFoundation
     /// </summary>
     /// <returns>The type identifier for the CFDictionary opaque type.</returns>
     [LibraryImport(CoreFoundationFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial ulong CFDictionaryGetTypeID();
 
     /// <summary>
@@ -77,7 +77,7 @@ internal static partial class CoreFoundation
     /// <param name="value">The matching value.</param>
     /// <returns><see langword="true"/> when the key exists; otherwise, <see langword="false"/>.</returns>
     [LibraryImport(CoreFoundationFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     [return: MarshalAs(UnmanagedType.I1)]
     public static partial bool CFDictionaryGetValueIfPresent(IntPtr theDict, IntPtr key, out IntPtr value);
 
@@ -86,7 +86,7 @@ internal static partial class CoreFoundation
     /// </summary>
     /// <returns>The type identifier for the CFNumber opaque type.</returns>
     [LibraryImport(CoreFoundationFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial ulong CFNumberGetTypeID();
 
     /// <summary>
@@ -97,7 +97,7 @@ internal static partial class CoreFoundation
     /// <param name="value">The converted value.</param>
     /// <returns><see langword="true"/> when conversion succeeds; otherwise, <see langword="false"/>.</returns>
     [LibraryImport(CoreFoundationFramework, EntryPoint = "CFNumberGetValue")]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     [return: MarshalAs(UnmanagedType.I1)]
     public static partial bool CFNumberGetDoubleValue(IntPtr number, CFNumberType theType, out double value);
 
@@ -109,7 +109,7 @@ internal static partial class CoreFoundation
     /// <param name="value">The converted value.</param>
     /// <returns><see langword="true"/> when conversion succeeds; otherwise, <see langword="false"/>.</returns>
     [LibraryImport(CoreFoundationFramework, EntryPoint = "CFNumberGetValue")]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     [return: MarshalAs(UnmanagedType.I1)]
     public static partial bool CFNumberGetIntValue(IntPtr number, CFNumberType theType, out int value);
 
@@ -119,7 +119,7 @@ internal static partial class CoreFoundation
     /// <param name="theString">The string to examine.</param>
     /// <returns>The number (in terms of UTF-16 code pairs) of characters stored in <paramref name="theString"/>.</returns>
     [LibraryImport(CoreFoundationFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial long CFStringGetLength(IntPtr theString);
 
     /// <summary>
@@ -129,7 +129,7 @@ internal static partial class CoreFoundation
     /// <param name="range">The range of characters to copy.</param>
     /// <param name="buffer">The caller-provided UTF-16 character buffer.</param>
     [LibraryImport(CoreFoundationFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static unsafe partial void CFStringGetCharacters(IntPtr theString, CoreText.CFRange range, char* buffer);
 
     /// <summary>
@@ -147,7 +147,7 @@ internal static partial class CoreFoundation
     /// released with <see cref="CFRelease"/>.
     /// </remarks>
     [LibraryImport(CoreFoundationFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static unsafe partial IntPtr CFStringCreateWithCharacters(
         IntPtr allocator,
         char* characters,
@@ -158,7 +158,7 @@ internal static partial class CoreFoundation
     /// </summary>
     /// <param name="cf">A CFType object to release. This value must not be <c>NULL</c>.</param>
     [LibraryImport(CoreFoundationFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial void CFRelease(IntPtr cf);
 
     /// <summary>
@@ -169,7 +169,7 @@ internal static partial class CoreFoundation
     /// <returns>The URL's path in the format specified by <paramref name="pathStyle"/>. Ownership follows the create rule. See The Create Rule.</returns>
     /// <remarks>This function returns the URL's path as a file system path for a given path style.</remarks>
     [LibraryImport(CoreFoundationFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial IntPtr CFURLCopyFileSystemPath(IntPtr anURL, CFURLPathStyle pathStyle);
 
     /// <summary>
@@ -177,6 +177,6 @@ internal static partial class CoreFoundation
     /// </summary>
     /// <returns>The type identifier for the CFURL opaque type.</returns>
     [LibraryImport(CoreFoundationFramework)]
-    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     public static partial ulong CFURLGetTypeID();
 }

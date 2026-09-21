@@ -22,7 +22,7 @@ internal sealed class ShapePlanStageGroup<TLookup>
     {
         this.Start = start;
         this.End = end;
-        this.Lookups = new();
+        this.Lookups = new List<(Tag Feature, ushort Index, TLookup LookupTable, uint Mask, bool AutoZwnj, bool AutoZwj, bool Random, bool PerSyllable)>();
     }
 
     /// <summary>

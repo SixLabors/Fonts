@@ -166,7 +166,7 @@ internal class CffGlyphMetrics : FontGlyphMetrics
     private CffOutline GetScaledOutline(float scaledPPEM, HintingMode hintingMode)
     {
         ConcurrentDictionary<ScaledOutlineKey, CffOutline> cache =
-            LazyInitializer.EnsureInitialized(ref this.scaledOutlineCache, static () => new());
+            LazyInitializer.EnsureInitialized(ref this.scaledOutlineCache, static () => new ConcurrentDictionary<ScaledOutlineKey, CffOutline>());
 
         return cache.GetOrAdd(new ScaledOutlineKey(scaledPPEM, hintingMode), static (key, self) => self.CreateScaledOutline(key), this);
     }

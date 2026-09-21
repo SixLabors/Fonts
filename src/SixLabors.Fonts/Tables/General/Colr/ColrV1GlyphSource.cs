@@ -62,7 +62,7 @@ internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
                         && resolvedCompositeCommands[compositeCommandIndex].LayerIndex == i)
                     {
                         PaintedCompositeCommand command = resolvedCompositeCommands[compositeCommandIndex++];
-                        compositeCommands.Add(new(layers.Count, command.Kind, command.Mode));
+                        compositeCommands.Add(new PaintedCompositeCommand(layers.Count, command.Kind, command.Mode));
                     }
 
                     ResolvedGlyphLayer rl = resolved[i];
@@ -102,7 +102,7 @@ internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
                 while (compositeCommandIndex < resolvedCompositeCommands.Count)
                 {
                     PaintedCompositeCommand command = resolvedCompositeCommands[compositeCommandIndex++];
-                    compositeCommands.Add(new(layers.Count, command.Kind, command.Mode));
+                    compositeCommands.Add(new PaintedCompositeCommand(layers.Count, command.Kind, command.Mode));
                 }
 
                 if (layers.Count > 0)

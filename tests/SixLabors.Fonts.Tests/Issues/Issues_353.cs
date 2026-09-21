@@ -60,10 +60,10 @@ public class Issues_353
                     float start = m.Start.X;
                     float end = m.Start.X + m.Extent.X;
 
-                    canvas.DrawLine(Pens.Solid(Color.Orange, 1), new(start, ascent), new(end, ascent));
-                    canvas.DrawLine(Pens.Solid(Color.Red, 1), new(start, baseline), new(end, baseline));
-                    canvas.DrawLine(Pens.Solid(Color.Blue, 1), new(start, descender), new(end, descender));
-                    canvas.DrawLine(Pens.Solid(Color.Green, 1), new(start, lineBottom), new(end, lineBottom));
+                    canvas.DrawLine(Pens.Solid(Color.Orange, 1), new PointF(start, ascent), new PointF(end, ascent));
+                    canvas.DrawLine(Pens.Solid(Color.Red, 1), new PointF(start, baseline), new PointF(end, baseline));
+                    canvas.DrawLine(Pens.Solid(Color.Blue, 1), new PointF(start, descender), new PointF(end, descender));
+                    canvas.DrawLine(Pens.Solid(Color.Green, 1), new PointF(start, lineBottom), new PointF(end, lineBottom));
                 }
             }));
 

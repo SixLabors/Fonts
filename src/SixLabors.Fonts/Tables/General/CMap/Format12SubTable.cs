@@ -110,8 +110,8 @@ internal sealed class Format12SubTable : CMapSubTable
         uint language = reader.ReadUInt32();
         uint numGroups = reader.ReadUInt32();
 
-        var groups = new SequentialMapGroup[numGroups];
-        for (var i = 0; i < numGroups; i++)
+        SequentialMapGroup[] groups = new SequentialMapGroup[numGroups];
+        for (int i = 0; i < numGroups; i++)
         {
             groups[i] = SequentialMapGroup.Load(reader);
         }
@@ -163,9 +163,9 @@ internal sealed class Format12SubTable : CMapSubTable
         /// <returns>The parsed <see cref="SequentialMapGroup"/>.</returns>
         public static SequentialMapGroup Load(BigEndianBinaryReader reader)
         {
-            var startCodePoint = reader.ReadUInt32();
-            var endCodePoint = reader.ReadUInt32();
-            var startGlyph = reader.ReadUInt32();
+            uint startCodePoint = reader.ReadUInt32();
+            uint endCodePoint = reader.ReadUInt32();
+            uint startGlyph = reader.ReadUInt32();
             return new SequentialMapGroup(startCodePoint, endCodePoint, startGlyph);
         }
     }

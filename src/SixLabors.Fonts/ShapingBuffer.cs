@@ -580,11 +580,11 @@ internal sealed class ShapingBuffer
             // Feature masks persist deliberately: the in-place positioning pass
             // reuses the substitution pass's plan, whose registrations already cover
             // the positioning features.
-            this.positions[i] = new(isVertical
-                ? new(0, 0, 0, glyphMetrics.AdvanceHeight)
-                : new(0, 0, glyphMetrics.AdvanceWidth, 0));
+            this.positions[i] = new GlyphShapingPosition(isVertical
+                ? new GlyphShapingBounds(0, 0, 0, glyphMetrics.AdvanceHeight)
+                : new GlyphShapingBounds(0, 0, glyphMetrics.AdvanceWidth, 0));
 
-            this.metrics[i] = new(font, font.Size, glyphMetrics);
+            this.metrics[i] = new GlyphMetricsEntry(font, font.Size, glyphMetrics);
         }
 
         return !hasFallBacks;
@@ -822,7 +822,7 @@ internal sealed class ShapingBuffer
     {
         this.glyphDigest.Add(glyphId);
         ref GlyphShapingData slot = ref this.Append();
-        slot = new(textRunIndex)
+        slot = new GlyphShapingData(textRunIndex)
         {
             CodePointIndex = codePointIndex,
             StringIndex = stringIndex,
@@ -891,7 +891,7 @@ internal sealed class ShapingBuffer
     public void AddPlaceholder(CodePoint codePoint, BidiRun bidiRun, ushort textRunIndex, int codePointIndex)
     {
         ref GlyphShapingData slot = ref this.Append();
-        slot = new(textRunIndex)
+        slot = new GlyphShapingData(textRunIndex)
         {
             CodePointIndex = codePointIndex,
             CodePoint = codePoint,
@@ -1593,14 +1593,14 @@ internal sealed class ShapingBuffer
                 ref GlyphShapingData placeholderSlot = ref this.Append();
                 placeholderSlot = source;
                 placeholderSlot.ClearFeatures();
-                this.positions[this.Count - 1] = new(layoutMode.IsVertical()
-                    ? new(0, 0, 0, placeholderMetrics.AdvanceHeight)
-                    : new(0, 0, placeholderMetrics.AdvanceWidth, 0))
+                this.positions[this.Count - 1] = new GlyphShapingPosition(layoutMode.IsVertical()
+                    ? new GlyphShapingBounds(0, 0, 0, placeholderMetrics.AdvanceHeight)
+                    : new GlyphShapingBounds(0, 0, placeholderMetrics.AdvanceWidth, 0))
                 {
                     IsPositioned = true,
                 };
 
-                this.metrics[this.Count - 1] = new(font, font.Size, placeholderMetrics);
+                this.metrics[this.Count - 1] = new GlyphMetricsEntry(font, font.Size, placeholderMetrics);
                 continue;
             }
 
@@ -1625,11 +1625,11 @@ internal sealed class ShapingBuffer
             ref GlyphShapingData slot = ref this.Append();
             slot = source;
             slot.ClearFeatures();
-            this.positions[this.Count - 1] = new(isVertical
-                ? new(0, 0, 0, glyphMetrics.AdvanceHeight)
-                : new(0, 0, glyphMetrics.AdvanceWidth, 0));
+            this.positions[this.Count - 1] = new GlyphShapingPosition(isVertical
+                ? new GlyphShapingBounds(0, 0, 0, glyphMetrics.AdvanceHeight)
+                : new GlyphShapingBounds(0, 0, glyphMetrics.AdvanceWidth, 0));
 
-            this.metrics[this.Count - 1] = new(font, font.Size, glyphMetrics);
+            this.metrics[this.Count - 1] = new GlyphMetricsEntry(font, font.Size, glyphMetrics);
         }
 
         return !hasFallBacks;
@@ -1803,14 +1803,14 @@ internal sealed class ShapingBuffer
                 shape.ClearFeatures();
 
                 this.glyphDigest.Add(glyphMetrics.GlyphId);
-                this.InsertAt(destinationStart + replacementCount, shape, new(font, pointSize, glyphMetrics));
+                this.InsertAt(destinationStart + replacementCount, shape, new GlyphMetricsEntry(font, pointSize, glyphMetrics));
 
                 // Positioning begins from the fallback glyph's natural advance on the
                 // active layout axis. Offsets and cross-axis adjustments remain zero
                 // until the fallback font's positioning tables run.
-                this.positions[destinationStart + replacementCount] = new(isVertical
-                    ? new(0, 0, 0, glyphMetrics.AdvanceHeight)
-                    : new(0, 0, glyphMetrics.AdvanceWidth, 0));
+                this.positions[destinationStart + replacementCount] = new GlyphShapingPosition(isVertical
+                    ? new GlyphShapingBounds(0, 0, 0, glyphMetrics.AdvanceHeight)
+                    : new GlyphShapingBounds(0, 0, glyphMetrics.AdvanceWidth, 0));
                 replacementCount++;
             }
 
@@ -1884,7 +1884,7 @@ internal sealed class ShapingBuffer
         ulong entry = this.shapingClassCacheEntries[glyphId & 0xFF];
         if ((entry & ShapingClassCacheTagMask) == (ShapingClassCacheMarkerFlag | glyphId))
         {
-            shapingClass = new((ushort)(entry >> ShapingClassCachePropsShift));
+            shapingClass = new GlyphShapingClass((ushort)(entry >> ShapingClassCachePropsShift));
             return true;
         }
 

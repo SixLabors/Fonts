@@ -74,7 +74,7 @@ internal sealed class CompositeGlyphLoader : GlyphLoader
             }
         }
 
-        return new(controlPoints, endPoints, this.bounds, this.instructions, true)
+        return new GlyphVector(controlPoints, endPoints, this.bounds, this.instructions, true)
         {
             CompositeComponents = components
         };
