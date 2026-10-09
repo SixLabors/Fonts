@@ -25,8 +25,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <!--Bump to V2 prior to tagged release.-->
-    <MinVerMinimumMajorMinor>2.0</MinVerMinimumMajorMinor>
+    <!--Set the minimum version for the release branch.-->
+    <MinVerMinimumMajorMinor>2.2</MinVerMinimumMajorMinor>
   </PropertyGroup>
 
   <Choose>
