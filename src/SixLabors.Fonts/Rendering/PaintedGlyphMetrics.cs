@@ -160,24 +160,19 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
         layout *= Matrix3x2.CreateScale(1F, -1F);
         layout.Translation += glyphOrigin;
 
-        // Source-to-UPEM: viewBox mapping (uniform "meet"), optional y-flip, optional root transform.
+        // Source-to-UPEM: viewBox mapping (uniform "meet"), optional root transform, optional y-flip.
         return ComputeSourceToUpem(canvas, this.UnitsPerEm) * layout;
     }
 
     /// <summary>
     /// Computes the mapping from the interpreter's document-space to UPEM font space.
-    /// Enforces a uniform 'meet' scale from the root viewBox (if present) and normalizes
-    /// Y-down document coordinates to the Y-up glyph-metrics coordinate system.
+    /// Enforces a uniform 'meet' scale from the root viewBox (if present), then applies the
+    /// root transform in the space the viewBox maps into, and finally normalizes Y-down
+    /// document coordinates to the Y-up glyph-metrics coordinate system.
     /// </summary>
     private static Matrix3x2 ComputeSourceToUpem(in PaintedCanvasMetadata canvas, ushort upem)
     {
         Matrix3x2 m = Matrix3x2.Identity;
-
-        // Root transform (doc-space). Apply first if provided.
-        if (!canvas.RootTransform.IsIdentity)
-        {
-            m *= canvas.RootTransform;
-        }
 
         // Translate viewBox min to origin, then uniform scale to UPEM using "meet".
         if (canvas.HasViewBox)
@@ -191,6 +186,14 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
             Matrix3x2 sUni = Matrix3x2.CreateScale(s);
 
             m = m * t * sUni;
+        }
+
+        // Root transform. SVG 2 applies a transform on an <svg> element as if it were set on a
+        // parent element, so it acts in the parent (UPEM) space after the viewBox mapping.
+        // Matrix3x2 transforms row vectors, so appending it here makes it apply after the viewBox.
+        if (!canvas.RootTransform.IsIdentity)
+        {
+            m *= canvas.RootTransform;
         }
 
         // Normalize every painted source to the Y-up font-space contract used by glyph metrics.

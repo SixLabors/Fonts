@@ -47,14 +47,31 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                     string wantedId = "glyph" + gid.ToString(CultureInfo.InvariantCulture);
                     XElement glyphRoot = parsed.IdMap.TryGetValue(wantedId, out XElement? ge) ? ge : root;
 
+                    // SVG 2 applies a transform on an <svg> element as if it were set on a parent
+                    // element, so it acts in the parent space outside the viewBox mapping. Only the
+                    // canvas metadata can express that ordering, so the root transform travels there
+                    // alone and the layer transforms start from identity.
                     List<PaintedLayer> layers = [];
-                    Walk(
-                        glyphRoot,
-                        rootTransform,
-                        inheritedPaint: DefaultBlackFillPaint,
-                        inheritedOpacityMul: 1F,
-                        outputLayers: layers,
-                        parsedDoc: parsed);
+                    if (ReferenceEquals(glyphRoot, root))
+                    {
+                        // Walking the root itself would bake its transform into every layer as well,
+                        // so walk its children with the presentation attributes the root passes down.
+                        Paint? rootPaint = ResolvePaint(root, DefaultBlackFillPaint, parsed, out bool fillNone, out float opacityMul);
+                        foreach (XElement child in root.Elements())
+                        {
+                            Walk(child, Matrix3x2.Identity, fillNone ? null : rootPaint, opacityMul, layers, parsed);
+                        }
+                    }
+                    else
+                    {
+                        Walk(
+                            glyphRoot,
+                            Matrix3x2.Identity,
+                            inheritedPaint: DefaultBlackFillPaint,
+                            inheritedOpacityMul: 1F,
+                            outputLayers: layers,
+                            parsedDoc: parsed);
+                    }
 
                     if (layers.Count > 0)
                     {
