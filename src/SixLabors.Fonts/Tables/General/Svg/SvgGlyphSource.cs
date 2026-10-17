@@ -160,7 +160,10 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
     {
         Dictionary<string, XElement> idMap = parsedDoc.IdMap;
         Matrix3x2 nodeTransform = ParseTransform(node.Attribute("transform")?.Value);
-        Matrix3x2 localTransform = parentLocalTransform * nodeTransform;
+
+        // Matrix3x2 transforms row vectors, so the left operand applies first:
+        // a node's own transform maps into its parent's space before the parent's does.
+        Matrix3x2 localTransform = nodeTransform * parentLocalTransform;
 
         FillRule fillRule = ResolveFillRule(node, FillRule.NonZero);
         Paint? paint = ResolvePaint(node, inheritedPaint, parsedDoc, out bool fillNone, out float opacityMul);
@@ -190,9 +193,9 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
 
                 float ux = ParseFloat(node.Attribute("x")?.Value);
                 float uy = ParseFloat(node.Attribute("y")?.Value);
-                Matrix3x2 xf = parentLocalTransform
-                    * Matrix3x2.CreateTranslation(ux, uy)
-                    * nodeTransform;
+
+                // The referenced content is placed by translate(x, y) inside the use element's own transform.
+                Matrix3x2 xf = Matrix3x2.CreateTranslation(ux, uy) * localTransform;
 
                 Paint? childInherited = fillNone ? null : paint;
 
@@ -1493,7 +1496,12 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             }
             else if (op.SequenceEqual("rotate"))
             {
-                if (a.Length >= 1)
+                if (a.Length >= 3)
+                {
+                    // rotate(angle cx cy) rotates about (cx, cy) rather than the origin.
+                    t = Matrix3x2.CreateRotation(a[0] * (float)(Math.PI / 180.0), new Vector2(a[1], a[2]));
+                }
+                else if (a.Length >= 1)
                 {
                     t = Matrix3x2.CreateRotation(a[0] * (float)(Math.PI / 180.0));
                 }
@@ -1513,7 +1521,9 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                 }
             }
 
-            m *= t;
+            // A transform list applies right to left, and Matrix3x2 transforms row vectors
+            // (the left operand applies first), so each later entry is prepended.
+            m = t * m;
             SkipSep(s, ref i);
         }
 
