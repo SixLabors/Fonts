@@ -199,6 +199,95 @@ public class SvgGradientInheritanceTests
             $"<radialGradient id=\"g\" gradientUnits=\"userSpaceOnUse\" spreadMethod=\"reflect\" gradientTransform=\"rotate(30)\" cx=\"350\" cy=\"-350\" r=\"200\" fx=\"300\" fy=\"-320\" fr=\"20\">{Stops}</radialGradient>");
 
     /// <summary>
+    /// A linear gradient referencing an element that is not a gradient ignores the reference,
+    /// and so does not take geometry from a <c>line</c> with the same attribute names.
+    /// </summary>
+    [Fact]
+    public void LinearGradient_IgnoresReferenceToNonGradientElement()
+        => AssertEquivalentPaint(
+            "<defs><line id=\"c\" x1=\"0.9\" y1=\"0.8\" x2=\"0.1\" y2=\"0.3\"/></defs>" +
+            $"<linearGradient id=\"g\" href=\"#c\">{Stops}</linearGradient>",
+            $"<linearGradient id=\"g\">{Stops}</linearGradient>");
+
+    /// <summary>
+    /// A radial gradient referencing an element that is not a gradient ignores the reference, and so neither takes
+    /// geometry from a <c>circle</c> with the same attribute names nor follows the circle's own reference.
+    /// </summary>
+    [Fact]
+    public void RadialGradient_IgnoresReferenceToNonGradientElement()
+        => AssertEquivalentPaint(
+            "<radialGradient id=\"base\" gradientTransform=\"rotate(30)\" spreadMethod=\"reflect\"/>" +
+            "<defs><circle id=\"c\" href=\"#base\" cx=\"0.2\" cy=\"0.3\" r=\"0.15\"/></defs>" +
+            $"<radialGradient id=\"g\" href=\"#c\">{Stops}</radialGradient>",
+            $"<radialGradient id=\"g\">{Stops}</radialGradient>");
+
+    /// <summary>
+    /// A linear gradient referencing a radial gradient inherits the attributes common to both gradient types and the
+    /// stops, but not geometry attributes, which only apply to linear gradients.
+    /// </summary>
+    [Fact]
+    public void LinearGradient_InheritsOnlyCommonAttributesFromRadialGradient()
+        => AssertEquivalentPaint(
+            "<radialGradient id=\"base\" gradientUnits=\"userSpaceOnUse\" spreadMethod=\"reflect\" gradientTransform=\"rotate(30)\" " +
+            $"cx=\"350\" cy=\"-350\" r=\"200\" x1=\"150\" y1=\"-500\" x2=\"550\" y2=\"-200\">{Stops}</radialGradient>" +
+            "<linearGradient id=\"g\" href=\"#base\"/>",
+            $"<linearGradient id=\"g\" gradientUnits=\"userSpaceOnUse\" spreadMethod=\"reflect\" gradientTransform=\"rotate(30)\">{Stops}</linearGradient>");
+
+    /// <summary>
+    /// A radial gradient takes its geometry from the nearest radial gradient in its chain, passing over
+    /// a linear gradient in between, while still inheriting the common attributes from that linear gradient.
+    /// </summary>
+    [Fact]
+    public void RadialGradient_InheritsGeometryOnlyFromRadialGradients()
+        => AssertEquivalentPaint(
+            "<radialGradient id=\"base\" cx=\"0.7\" cy=\"0.4\" r=\"0.25\" fx=\"0.65\" fy=\"0.45\" fr=\"0.05\" spreadMethod=\"pad\"/>" +
+            $"<linearGradient id=\"mid\" href=\"#base\" cx=\"0.2\" cy=\"0.3\" r=\"0.15\" fx=\"0.25\" fy=\"0.35\" spreadMethod=\"repeat\">{Stops}</linearGradient>" +
+            "<radialGradient id=\"g\" href=\"#mid\"/>",
+            $"<radialGradient id=\"g\" cx=\"0.7\" cy=\"0.4\" r=\"0.25\" fx=\"0.65\" fy=\"0.45\" fr=\"0.05\" spreadMethod=\"repeat\">{Stops}</radialGradient>");
+
+    /// <summary>
+    /// A linear gradient with <c>stop</c> children does not inherit the referenced gradient's stops,
+    /// even when its own stops have invalid values.
+    /// </summary>
+    [Fact]
+    public void LinearGradient_WithInvalidStopsDoesNotInheritStops()
+        => AssertEquivalentPaint(
+            $"<linearGradient id=\"base\">{Stops}</linearGradient>" +
+            "<linearGradient id=\"g\" href=\"#base\"><stop offset=\"bogus\" stop-color=\"bogus\"/></linearGradient>",
+            "<linearGradient id=\"g\"><stop offset=\"bogus\" stop-color=\"bogus\"/></linearGradient>");
+
+    /// <summary>
+    /// A radial gradient with <c>stop</c> children does not inherit the referenced gradient's stops,
+    /// even when its own stops have invalid values.
+    /// </summary>
+    [Fact]
+    public void RadialGradient_WithInvalidStopsDoesNotInheritStops()
+        => AssertEquivalentPaint(
+            $"<radialGradient id=\"base\">{Stops}</radialGradient>" +
+            "<radialGradient id=\"g\" href=\"#base\"><stop offset=\"bogus\" stop-color=\"bogus\"/></radialGradient>",
+            "<radialGradient id=\"g\"><stop offset=\"bogus\" stop-color=\"bogus\"/></radialGradient>");
+
+    /// <summary>
+    /// A chain that refers back to the starting linear gradient terminates and resolves each attribute once.
+    /// </summary>
+    [Fact]
+    public void LinearGradient_CycleBackToStartTerminates()
+        => AssertEquivalentPaint(
+            $"<linearGradient id=\"b\" href=\"#g\" gradientTransform=\"rotate(30)\" spreadMethod=\"reflect\" x1=\"0.9\">{Stops}</linearGradient>" +
+            "<linearGradient id=\"g\" href=\"#b\" x1=\"0.1\" y1=\"0.2\" x2=\"0.6\" y2=\"0.6\"/>",
+            $"<linearGradient id=\"g\" gradientTransform=\"rotate(30)\" spreadMethod=\"reflect\" x1=\"0.1\" y1=\"0.2\" x2=\"0.6\" y2=\"0.6\">{Stops}</linearGradient>");
+
+    /// <summary>
+    /// A chain that refers back to the starting radial gradient terminates and resolves each attribute once.
+    /// </summary>
+    [Fact]
+    public void RadialGradient_CycleBackToStartTerminates()
+        => AssertEquivalentPaint(
+            $"<radialGradient id=\"b\" href=\"#g\" gradientTransform=\"rotate(30)\" spreadMethod=\"reflect\" cx=\"0.9\">{Stops}</radialGradient>" +
+            "<radialGradient id=\"g\" href=\"#b\" cx=\"0.4\" cy=\"0.6\" r=\"0.3\"/>",
+            $"<radialGradient id=\"g\" gradientTransform=\"rotate(30)\" spreadMethod=\"reflect\" cx=\"0.4\" cy=\"0.6\" r=\"0.3\">{Stops}</radialGradient>");
+
+    /// <summary>
     /// Renders both documents and asserts that their gradient <c>g</c> resolves to the same paint.
     /// </summary>
     /// <param name="chainedDefs">Definitions in which gradient <c>g</c> references other gradients.</param>
