@@ -183,9 +183,9 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                 // The document root's own transform is carried once on the canvas, after the viewBox
                 // mapping, so its children start from the parent transform, however the walk reached the
                 // root (for example as the glyph when no glyph{gid} element exists). The root of an SVG
-                // document is an <svg> container, so this is the only place its transform could enter
-                // the layers.
-                Matrix3x2 childTransform = ReferenceEquals(node, node.Document?.Root) ? parentLocalTransform : localTransform;
+                // document is an <svg> container, and the only element without a parent, so this is the
+                // only place its transform could enter the layers.
+                Matrix3x2 childTransform = node.Parent is null ? parentLocalTransform : localTransform;
                 foreach (XElement child in node.Elements())
                 {
                     Walk(child, childTransform, fillNone ? null : paint, combinedOpacityMul, outputLayers, parsedDoc);
@@ -488,8 +488,8 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         Paint? paint = tag switch
         {
             // SVG only has linearGradient and radialGradient.
-            "linearGradient" => BuildLinearGradient(server, parsedDoc.IdMap),
-            "radialGradient" => BuildRadialGradient(server, parsedDoc.IdMap),
+            "linearGradient" => BuildLinearGradient(server, id, parsedDoc.IdMap),
+            "radialGradient" => BuildRadialGradient(server, id, parsedDoc.IdMap),
             _ => null
         };
 
@@ -506,9 +506,10 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
     /// and stops it inherits through its <c>href</c> chain.
     /// </summary>
     /// <param name="grad">The <c>linearGradient</c> element to build.</param>
+    /// <param name="id">The id <paramref name="grad"/> was referenced by.</param>
     /// <param name="idMap">The document's elements by id, used to follow <c>href</c> references.</param>
     /// <returns>The linear gradient paint.</returns>
-    private static LinearGradientPaint? BuildLinearGradient(XElement grad, Dictionary<string, XElement> idMap)
+    private static LinearGradientPaint? BuildLinearGradient(XElement grad, string id, Dictionary<string, XElement> idMap)
     {
         // A gradient inherits an attribute or its stops from the gradient it references only when
         // it does not specify them itself (SVG 1.1 §13.2.2 xlink:href; SVG 2 paint server templates).
@@ -523,12 +524,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         bool hasStops = false;
 
         // Seed the visited set with the starting gradient so a chain that leads back to it ends there.
-        HashSet<string> visited = new(StringComparer.Ordinal);
-        string? id = grad.Attribute("id")?.Value;
-        if (id is not null)
-        {
-            visited.Add(id);
-        }
+        HashSet<string> visited = new(StringComparer.Ordinal) { id };
 
         XElement? cur = grad;
 
@@ -641,9 +637,10 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
     /// and stops it inherits through its <c>href</c> chain.
     /// </summary>
     /// <param name="grad">The <c>radialGradient</c> element to build.</param>
+    /// <param name="id">The id <paramref name="grad"/> was referenced by.</param>
     /// <param name="idMap">The document's elements by id, used to follow <c>href</c> references.</param>
     /// <returns>The radial gradient paint.</returns>
-    private static RadialGradientPaint? BuildRadialGradient(XElement grad, Dictionary<string, XElement> idMap)
+    private static RadialGradientPaint? BuildRadialGradient(XElement grad, string id, Dictionary<string, XElement> idMap)
     {
         // A gradient inherits an attribute or its stops from the gradient it references only when
         // it does not specify them itself (SVG 1.1 §13.2.3 xlink:href; SVG 2 paint server templates).
@@ -658,12 +655,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         bool hasStops = false;
 
         // Seed the visited set with the starting gradient so a chain that leads back to it ends there.
-        HashSet<string> visited = new(StringComparer.Ordinal);
-        string? id = grad.Attribute("id")?.Value;
-        if (id is not null)
-        {
-            visited.Add(id);
-        }
+        HashSet<string> visited = new(StringComparer.Ordinal) { id };
 
         XElement? cur = grad;
 

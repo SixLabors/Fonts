@@ -104,6 +104,104 @@ public class SvgRootTransformTests
     }
 
     /// <summary>
+    /// A quarter-turn root transform keeps the axes aligned, so the bounds match the equivalent pre-rotated
+    /// geometry exactly.
+    /// </summary>
+    [Fact]
+    public void QuarterTurnRootTransformKeepsExactBounds()
+    {
+        // rotate(90) maps (x, y) to (-y, x), so the rect x 0..300, y -500..-100 becomes x 100..500, y 0..300.
+        Font transformed = SvgTestFonts.CreateFontFromDocument(gid => Format(
+            $"<svg {Namespaces} transform=\"rotate(90)\"><g id=\"glyph{gid}\"><rect x=\"0\" y=\"-500\" width=\"300\" height=\"400\"/></g></svg>"));
+
+        Font expected = SvgTestFonts.CreateFontFromDocument(gid => Format(
+            $"<svg {Namespaces}><g id=\"glyph{gid}\"><rect x=\"100\" y=\"0\" width=\"400\" height=\"300\"/></g></svg>"));
+
+        AssertSameBounds(expected, transformed);
+    }
+
+    /// <summary>
+    /// A skewed root transform yields the same tight bounds as the equivalent pre-skewed geometry.
+    /// </summary>
+    [Fact]
+    public void SkewedRootTransformKeepsTightBounds()
+    {
+        // skewX(45) maps (x, y) to (x + y, y), so the triangle (0, 0), (300, 0), (300, -300) becomes
+        // (0, 0), (300, 0), (0, -300), x 0..300. Skewing the triangle's own box instead would give
+        // x -300..300.
+        Font transformed = SvgTestFonts.CreateFontFromDocument(gid => Format(
+            $"<svg {Namespaces} transform=\"skewX(45)\"><g id=\"glyph{gid}\"><polygon points=\"0 0 300 0 300 -300\"/></g></svg>"));
+
+        Font expected = SvgTestFonts.CreateFontFromDocument(gid => Format(
+            $"<svg {Namespaces}><g id=\"glyph{gid}\"><polygon points=\"0 0 300 0 0 -300\"/></g></svg>"));
+
+        AssertSameBounds(expected, transformed);
+    }
+
+    /// <summary>
+    /// Under a rotated root transform the bounds of a cubic curve are measured from its transformed control
+    /// points, matching the equivalent pre-rotated curve.
+    /// </summary>
+    [Fact]
+    public void RotatedRootTransformMeasuresCubicControlPoints()
+    {
+        // rotate(45) maps (x, y) to (c(x - y), c(x + y)) with c = sqrt(2) / 2, so the control points
+        // (0, -400), (400, -400) and the end point (400, 0) become (282.843, -282.843), (565.685, 0)
+        // and (282.843, 282.843).
+        Font transformed = SvgTestFonts.CreateFontFromDocument(gid => Format(
+            $"<svg {Namespaces} transform=\"rotate(45)\"><g id=\"glyph{gid}\"><path d=\"M0 0 C0 -400 400 -400 400 0 Z\"/></g></svg>"));
+
+        Font expected = SvgTestFonts.CreateFontFromDocument(gid => Format(
+            $"<svg {Namespaces}><g id=\"glyph{gid}\"><path d=\"M0 0 C282.84271 -282.84271 565.68542 0 282.84271 282.84271 Z\"/></g></svg>"));
+
+        AssertSameBounds(expected, transformed);
+    }
+
+    /// <summary>
+    /// Under a rotated root transform the bounds of an arc still enclose the whole arc.
+    /// </summary>
+    [Fact]
+    public void RotatedRootTransformBoundsEncloseArcs()
+    {
+        // rotate(45) moves the circle's centre (300, -300) to (424.264, 0). A diamond through the rotated
+        // circle's four extreme points has exactly the circle's true bounds.
+        Font transformed = SvgTestFonts.CreateFontFromDocument(gid => Format(
+            $"<svg {Namespaces} transform=\"rotate(45)\"><g id=\"glyph{gid}\"><circle cx=\"300\" cy=\"-300\" r=\"200\"/></g></svg>"));
+
+        Font circleExtent = SvgTestFonts.CreateFontFromDocument(gid => Format(
+            $"<svg {Namespaces}><g id=\"glyph{gid}\"><polygon points=\"224.26407 0 424.26407 -200 624.26407 0 424.26407 200\"/></g></svg>"));
+
+        FontRectangle actual = TextMeasurer.MeasureBounds("A", new TextOptions(transformed) { ColorFontSupport = ColorFontSupport.Svg });
+        FontRectangle extent = TextMeasurer.MeasureBounds("A", new TextOptions(circleExtent) { ColorFontSupport = ColorFontSupport.Svg });
+
+        const float tolerance = 0.01F;
+        Assert.True(actual.Left <= extent.Left + tolerance, $"{actual} does not enclose {extent}");
+        Assert.True(actual.Top <= extent.Top + tolerance, $"{actual} does not enclose {extent}");
+        Assert.True(actual.Right >= extent.Right - tolerance, $"{actual} does not enclose {extent}");
+        Assert.True(actual.Bottom >= extent.Bottom - tolerance, $"{actual} does not enclose {extent}");
+    }
+
+    /// <summary>
+    /// <c>fill="none"</c> on the root element, which renders as the glyph when no <c>glyph{gid}</c> element exists,
+    /// does not hide a child's own fill.
+    /// </summary>
+    [Fact]
+    public void RootFillNoneKeepsChildFill()
+    {
+        Font font = SvgTestFonts.CreateFontFromDocument(_ =>
+            $"<svg {Namespaces} fill=\"none\"><rect x=\"0\" y=\"-500\" width=\"300\" height=\"400\" fill=\"#FF0000\"/></svg>");
+
+        Font expected = SvgTestFonts.CreateFontFromDocument(_ =>
+            $"<svg {Namespaces}><rect x=\"0\" y=\"-500\" width=\"300\" height=\"400\" fill=\"#FF0000\"/></svg>");
+
+        AssertSamePoints(expected, font);
+
+        ColorGlyphRenderer renderer = new();
+        TextRenderer.RenderTo(renderer, "A", new TextOptions(font) { ColorFontSupport = ColorFontSupport.Svg });
+        Assert.Equal(new GlyphColor(255, 0, 0, 255), Assert.Single(renderer.Colors));
+    }
+
+    /// <summary>
     /// Formats an interpolated document string with the invariant culture so numbers use '.' separators.
     /// </summary>
     /// <param name="document">The interpolated document.</param>
@@ -129,6 +227,26 @@ public class SvgRootTransformTests
         {
             Assert.Equal(expectedPoints[i], actualPoints[i], comparer);
         }
+    }
+
+    /// <summary>
+    /// Asserts that 'A' from both fonts has the same measured ink bounds and the same glyph box passed to the renderer.
+    /// </summary>
+    /// <param name="expected">The font with the hand-computed, untransformed document.</param>
+    /// <param name="actual">The font with the transformed document.</param>
+    private static void AssertSameBounds(Font expected, Font actual)
+    {
+        ApproximateFloatComparer comparer = new(0.01F);
+
+        TextOptions expectedOptions = new(expected) { ColorFontSupport = ColorFontSupport.Svg };
+        TextOptions actualOptions = new(actual) { ColorFontSupport = ColorFontSupport.Svg };
+        Assert.Equal(TextMeasurer.MeasureBounds("A", expectedOptions), TextMeasurer.MeasureBounds("A", actualOptions), comparer);
+
+        GlyphRenderer expectedRenderer = new();
+        GlyphRenderer actualRenderer = new();
+        TextRenderer.RenderTo(expectedRenderer, "A", expectedOptions);
+        TextRenderer.RenderTo(actualRenderer, "A", actualOptions);
+        Assert.Equal(Assert.Single(expectedRenderer.GlyphRects), Assert.Single(actualRenderer.GlyphRects), comparer);
     }
 
     /// <summary>

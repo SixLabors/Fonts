@@ -288,6 +288,27 @@ public class SvgGradientInheritanceTests
             $"<radialGradient id=\"g\" gradientTransform=\"rotate(30)\" spreadMethod=\"reflect\" cx=\"0.4\" cy=\"0.6\" r=\"0.3\">{Stops}</radialGradient>");
 
     /// <summary>
+    /// A radial gradient's own focal radius is kept when a referenced radial gradient specifies another.
+    /// </summary>
+    [Fact]
+    public void RadialGradient_OwnFocalRadiusOverridesReferenced()
+        => AssertEquivalentPaint(
+            "<radialGradient id=\"base\" r=\"0.4\" fr=\"0.3\"/>" +
+            $"<radialGradient id=\"g\" href=\"#base\" fr=\"0.1\">{Stops}</radialGradient>",
+            $"<radialGradient id=\"g\" r=\"0.4\" fr=\"0.1\">{Stops}</radialGradient>");
+
+    /// <summary>
+    /// The defaults for a radial gradient's unspecified center and radius follow the gradient units it
+    /// inherits, not the initial objectBoundingBox units.
+    /// </summary>
+    [Fact]
+    public void RadialGradient_DefaultGeometryFollowsInheritedUnits()
+        => AssertEquivalentPaint(
+            "<radialGradient id=\"base\" gradientUnits=\"userSpaceOnUse\"/>" +
+            $"<radialGradient id=\"g\" href=\"#base\">{Stops}</radialGradient>",
+            $"<radialGradient id=\"g\" gradientUnits=\"userSpaceOnUse\">{Stops}</radialGradient>");
+
+    /// <summary>
     /// Renders both documents and asserts that their gradient <c>g</c> resolves to the same paint.
     /// </summary>
     /// <param name="chainedDefs">Definitions in which gradient <c>g</c> references other gradients.</param>
