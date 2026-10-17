@@ -507,11 +507,22 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         return paint;
     }
 
+    /// <summary>
+    /// Builds a linear gradient paint from a <c>linearGradient</c> element, resolving the attributes
+    /// and stops it inherits through its <c>href</c> chain.
+    /// </summary>
+    /// <param name="grad">The <c>linearGradient</c> element to build.</param>
+    /// <param name="idMap">The document's elements by id, used to follow <c>href</c> references.</param>
+    /// <returns>The linear gradient paint.</returns>
     private static LinearGradientPaint? BuildLinearGradient(XElement grad, Dictionary<string, XElement> idMap)
     {
-        GradientUnits units = GradientUnits.ObjectBoundingBox;
-        SpreadMethod spread = SpreadMethod.Pad;
-        Matrix3x2 gxf = Matrix3x2.Identity;
+        // A gradient inherits an attribute or its stops from the gradient it references only when
+        // it does not specify them itself (SVG 1.1 §13.2.2 xlink:href; SVG 2 paint server templates).
+        // The chain is walked from the referencing gradient outward, so the first element to specify
+        // a value supplies it and later ones are ignored. Null means "not yet specified".
+        GradientUnits? units = null;
+        SpreadMethod? spread = null;
+        Matrix3x2? gxf = null;
 
         float? x1 = null, y1 = null, x2 = null, y2 = null;
         List<(float Offset, GlyphColor Color)> stops = [];
@@ -521,43 +532,48 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
 
         while (cur is not null)
         {
+            // An enumerated or transform attribute counts as specified when it is present, matching
+            // browsers. A value the parsers do not recognize resolves to the attribute's initial value
+            // (objectBoundingBox, pad, identity) and still hides the referenced gradient's value.
             string? u = cur.Attribute("gradientUnits")?.Value;
-            if (u is not null)
+            if (units is null && u is not null)
             {
                 units = ParseGradientUnits(u);
             }
 
             string? sm = cur.Attribute("spreadMethod")?.Value;
-            if (sm is not null)
+            if (spread is null && sm is not null)
             {
                 spread = ParseSpreadMethod(sm);
             }
 
-            gxf = ParseTransform(cur.Attribute("gradientTransform")?.Value) * gxf;
+            string? t = cur.Attribute("gradientTransform")?.Value;
+            if (gxf is null && t is not null)
+            {
+                gxf = ParseTransform(t);
+            }
 
             x1 ??= ParseCoordNullable(cur.Attribute("x1")?.Value);
             y1 ??= ParseCoordNullable(cur.Attribute("y1")?.Value);
             x2 ??= ParseCoordNullable(cur.Attribute("x2")?.Value);
             y2 ??= ParseCoordNullable(cur.Attribute("y2")?.Value);
 
-            bool hadStops = false;
-            foreach (XElement s in cur.Elements())
+            // Stops come from the first element in the chain that has any. Later elements may still
+            // supply attributes, so the walk continues past it.
+            if (stops.Count == 0)
             {
-                if (s.Name.LocalName != "stop")
+                foreach (XElement s in cur.Elements())
                 {
-                    continue;
-                }
+                    if (s.Name.LocalName != "stop")
+                    {
+                        continue;
+                    }
 
-                if (TryParseStop(s, out float off, out GlyphColor c))
-                {
-                    stops.Add((off, c));
-                    hadStops = true;
+                    if (TryParseStop(s, out float off, out GlyphColor c))
+                    {
+                        stops.Add((off, c));
+                    }
                 }
-            }
-
-            if (hadStops)
-            {
-                break;
             }
 
             string? href = GetHref(cur);
@@ -583,9 +599,11 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             y1 = 0f;
         }
 
+        GradientUnits resolvedUnits = units ?? GradientUnits.ObjectBoundingBox;
+
         if (!x2.HasValue)
         {
-            x2 = units == GradientUnits.ObjectBoundingBox ? 1f : 0f;
+            x2 = resolvedUnits == GradientUnits.ObjectBoundingBox ? 1f : 0f;
         }
 
         if (!y2.HasValue)
@@ -597,20 +615,31 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
 
         return new LinearGradientPaint
         {
-            Units = units,
+            Units = resolvedUnits,
             P0 = new Vector2(x1.Value, y1.Value),
             P1 = new Vector2(x2.Value, y2.Value),
-            Spread = spread,
+            Spread = spread ?? SpreadMethod.Pad,
             Stops = gs,
-            Transform = gxf
+            Transform = gxf ?? Matrix3x2.Identity
         };
     }
 
+    /// <summary>
+    /// Builds a radial gradient paint from a <c>radialGradient</c> element, resolving the attributes
+    /// and stops it inherits through its <c>href</c> chain.
+    /// </summary>
+    /// <param name="grad">The <c>radialGradient</c> element to build.</param>
+    /// <param name="idMap">The document's elements by id, used to follow <c>href</c> references.</param>
+    /// <returns>The radial gradient paint.</returns>
     private static RadialGradientPaint? BuildRadialGradient(XElement grad, Dictionary<string, XElement> idMap)
     {
-        GradientUnits units = GradientUnits.ObjectBoundingBox;
-        SpreadMethod spread = SpreadMethod.Pad;
-        Matrix3x2 gxf = Matrix3x2.Identity;
+        // A gradient inherits an attribute or its stops from the gradient it references only when
+        // it does not specify them itself (SVG 1.1 §13.2.3 xlink:href; SVG 2 paint server templates).
+        // The chain is walked from the referencing gradient outward, so the first element to specify
+        // a value supplies it and later ones are ignored. Null means "not yet specified".
+        GradientUnits? units = null;
+        SpreadMethod? spread = null;
+        Matrix3x2? gxf = null;
 
         float? cx = null, cy = null, r = null, fx = null, fy = null, fr = null;
         List<(float Offset, GlyphColor Color)> stops = [];
@@ -620,19 +649,26 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
 
         while (cur is not null)
         {
+            // An enumerated or transform attribute counts as specified when it is present, matching
+            // browsers. A value the parsers do not recognize resolves to the attribute's initial value
+            // (objectBoundingBox, pad, identity) and still hides the referenced gradient's value.
             string? u = cur.Attribute("gradientUnits")?.Value;
-            if (u is not null)
+            if (units is null && u is not null)
             {
                 units = ParseGradientUnits(u);
             }
 
             string? sm = cur.Attribute("spreadMethod")?.Value;
-            if (sm is not null)
+            if (spread is null && sm is not null)
             {
                 spread = ParseSpreadMethod(sm);
             }
 
-            gxf = ParseTransform(cur.Attribute("gradientTransform")?.Value) * gxf;
+            string? t = cur.Attribute("gradientTransform")?.Value;
+            if (gxf is null && t is not null)
+            {
+                gxf = ParseTransform(t);
+            }
 
             cx ??= ParseCoordNullable(cur.Attribute("cx")?.Value);
             cy ??= ParseCoordNullable(cur.Attribute("cy")?.Value);
@@ -641,24 +677,22 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             fy ??= ParseCoordNullable(cur.Attribute("fy")?.Value);
             fr ??= ParseRadiusNullable(cur.Attribute("fr")?.Value);
 
-            bool hadStops = false;
-            foreach (XElement s in cur.Elements())
+            // Stops come from the first element in the chain that has any. Later elements may still
+            // supply attributes, so the walk continues past it.
+            if (stops.Count == 0)
             {
-                if (s.Name.LocalName != "stop")
+                foreach (XElement s in cur.Elements())
                 {
-                    continue;
-                }
+                    if (s.Name.LocalName != "stop")
+                    {
+                        continue;
+                    }
 
-                if (TryParseStop(s, out float off, out GlyphColor c))
-                {
-                    stops.Add((off, c));
-                    hadStops = true;
+                    if (TryParseStop(s, out float off, out GlyphColor c))
+                    {
+                        stops.Add((off, c));
+                    }
                 }
-            }
-
-            if (hadStops)
-            {
-                break;
             }
 
             string? href = GetHref(cur);
@@ -674,19 +708,21 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             }
         }
 
+        GradientUnits resolvedUnits = units ?? GradientUnits.ObjectBoundingBox;
+
         if (!cx.HasValue)
         {
-            cx = units == GradientUnits.ObjectBoundingBox ? 0.5f : 0f;
+            cx = resolvedUnits == GradientUnits.ObjectBoundingBox ? 0.5f : 0f;
         }
 
         if (!cy.HasValue)
         {
-            cy = units == GradientUnits.ObjectBoundingBox ? 0.5f : 0f;
+            cy = resolvedUnits == GradientUnits.ObjectBoundingBox ? 0.5f : 0f;
         }
 
         if (!r.HasValue)
         {
-            r = units == GradientUnits.ObjectBoundingBox ? 0.5f : 0f;
+            r = resolvedUnits == GradientUnits.ObjectBoundingBox ? 0.5f : 0f;
         }
 
         if (!fx.HasValue)
@@ -709,14 +745,14 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         // Center0=(fx,fy), Radius0=fr; Center1=(cx,cy), Radius1=r
         return new RadialGradientPaint
         {
-            Units = units,
+            Units = resolvedUnits,
             Center0 = new Vector2(fx.Value, fy.Value),
             Radius0 = fr.Value,
             Center1 = new Vector2(cx.Value, cy.Value),
             Radius1 = r.Value,
-            Spread = spread,
+            Spread = spread ?? SpreadMethod.Pad,
             Stops = gs,
-            Transform = gxf
+            Transform = gxf ?? Matrix3x2.Identity
         };
     }
 
