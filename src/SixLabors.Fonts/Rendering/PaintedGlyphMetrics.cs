@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Rendering;
@@ -14,6 +15,12 @@ namespace SixLabors.Fonts.Rendering;
 public sealed class PaintedGlyphMetrics : FontGlyphMetrics
 {
     private readonly IPaintedGlyphSource source;
+
+    /// <summary>
+    /// The design bounds measured from the glyph's geometry when the source-to-UPEM mapping
+    /// rotates or skews, or <see langword="null"/> until first requested.
+    /// </summary>
+    private StrongBox<Bounds>? rotatedDesignBounds;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PaintedGlyphMetrics"/> class.
@@ -81,15 +88,38 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
         Matrix3x2 sourceToUpem = ComputeSourceToUpem(canvas, this.UnitsPerEm);
 
         // Transforming the cached box is exact while the mapping keeps the axes aligned (scale,
-        // translation, Y-flip), because the image of an axis-aligned box is then itself a box.
-        // A rotation or skew, which only a root transform introduces, would inflate the box
-        // around the rotated corners, so the geometry is measured under the full mapping instead.
-        if (sourceToUpem.M12 == 0 && sourceToUpem.M21 == 0)
+        // translation, Y-flip, or a quarter-turn that swaps the axes), because the image of an
+        // axis-aligned box is then itself a box. A rotation or skew, which only a root transform
+        // introduces, would inflate the box around the rotated corners, so the geometry is
+        // measured under the full mapping instead.
+        if (IsAxisAligned(in sourceToUpem))
         {
             return Bounds.Transform(glyph.Bounds, sourceToUpem);
         }
 
-        return glyph.GetBounds(sourceToUpem);
+        // The glyph and its canvas are fixed for this instance, so the geometry pass runs once.
+        // A reference write is atomic, so concurrent callers at worst compute the same value twice.
+        StrongBox<Bounds>? cached = this.rotatedDesignBounds;
+        if (cached is null)
+        {
+            cached = new StrongBox<Bounds>(glyph.GetBounds(sourceToUpem));
+            this.rotatedDesignBounds = cached;
+        }
+
+        return cached.Value;
+    }
+
+    /// <summary>
+    /// Returns whether a transform maps axis-aligned boxes to axis-aligned boxes, allowing for the
+    /// rounding noise that trigonometric construction leaves in the zero terms.
+    /// </summary>
+    /// <param name="m">The transform to test.</param>
+    /// <returns><see langword="true"/> if the transform keeps or swaps the axes.</returns>
+    private static bool IsAxisAligned(in Matrix3x2 m)
+    {
+        float eps = 1e-5F * (MathF.Abs(m.M11) + MathF.Abs(m.M12) + MathF.Abs(m.M21) + MathF.Abs(m.M22));
+        return (MathF.Abs(m.M12) <= eps && MathF.Abs(m.M21) <= eps)
+            || (MathF.Abs(m.M11) <= eps && MathF.Abs(m.M22) <= eps);
     }
 
     /// <inheritdoc/>
