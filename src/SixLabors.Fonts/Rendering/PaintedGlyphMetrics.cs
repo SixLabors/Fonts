@@ -233,8 +233,8 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
             // pre-applied transforms (element/group)
             Matrix3x2 layerXform = layer.Transform * xform;
 
-            // Similarity decomposition for arc radii/angle/sweep adjustment (from layer).
-            Similarity sim = Similarity.FromMatrix(layerXform);
+            // A reflecting transform reverses the direction of every arc.
+            bool reflection = layerXform.GetDeterminant() < 0F;
 
             // Transform userSpaceOnUse paints into device space; keep ObjectBoundingBox normalized.
             Paint? paint = TransformPaint(layer.Paint, in bounds, layerXform);
@@ -323,13 +323,10 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
 
                     case PathVerb.ArcTo:
                     {
-                        // Adjust radii by the scale component of the transform;
-                        // angle/sweep by the similarity component;
-                        // endpoint is fully transformed.
-                        float rx = c.RadiusX * layerXform.M11;
-                        float ry = c.RadiusY * layerXform.M12;
-                        float ang = c.RotationDegrees + sim.RotationDegrees;
-                        bool sweep = sim.Reflection ? !c.Sweep : c.Sweep;
+                        // The arc's ellipse maps to another ellipse whose axes depend on the whole
+                        // linear part of the transform; the endpoint is fully transformed.
+                        TransformEllipse(c.RadiusX, c.RadiusY, c.RotationDegrees, in layerXform, out float rx, out float ry, out float ang);
+                        bool sweep = reflection ? !c.Sweep : c.Sweep;
 
                         renderer.ArcTo(rx, ry, ang, c.LargeArc, sweep, Vector2.Transform(c.EndPoint, layerXform));
                         break;
@@ -557,65 +554,47 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
     }
 
     /// <summary>
-    /// Represents the similarity component of a 2D affine transformation.
+    /// Maps an elliptical arc's ellipse through the linear part of a transform.
     /// </summary>
     /// <remarks>
-    /// A similarity transformation is an affine transform that preserves an object's shape and angles,
-    /// allowing only uniform scaling, rotation, and optional reflection. This structure isolates those
-    /// properties from a general <see cref="Matrix3x2"/> so that dependent operations such as arc or
-    /// gradient adjustment can apply proportional transformations correctly.
+    /// An affine transform maps an ellipse to another ellipse, but rotation, reflection, non-uniform
+    /// scale and shear all change its axes, so the radii cannot be scaled independently. The transformed
+    /// semi-axes are recovered from the eigen-decomposition of the ellipse's shape matrix.
     /// </remarks>
-    private readonly struct Similarity
+    /// <param name="radiusX">The x-radius of the source ellipse.</param>
+    /// <param name="radiusY">The y-radius of the source ellipse.</param>
+    /// <param name="rotationDegrees">The rotation of the source ellipse's x-axis, in degrees.</param>
+    /// <param name="transform">The transform to apply.</param>
+    /// <param name="rx">The x-radius of the transformed ellipse.</param>
+    /// <param name="ry">The y-radius of the transformed ellipse.</param>
+    /// <param name="rotation">The rotation of the transformed ellipse's x-axis, in degrees.</param>
+    private static void TransformEllipse(
+        float radiusX,
+        float radiusY,
+        float rotationDegrees,
+        in Matrix3x2 transform,
+        out float rx,
+        out float ry,
+        out float rotation)
     {
-        private Similarity(float scale, float rotationDeg, bool reflection, bool isSimilarity)
-        {
-            this.Scale = scale;
-            this.RotationDegrees = rotationDeg;
-            this.Reflection = reflection;
-            this.IsSimilarity = isSimilarity;
-        }
+        // The ellipse is the image of the unit circle under its two semi-axis vectors.
+        (float sin, float cos) = MathF.SinCos(rotationDegrees * (MathF.PI / 180F));
+        Vector2 a = Vector2.TransformNormal(new Vector2(cos, sin) * radiusX, transform);
+        Vector2 b = Vector2.TransformNormal(new Vector2(-sin, cos) * radiusY, transform);
 
-        /// <summary>
-        /// Gets the length of the first column.
-        /// </summary>
-        public float Scale { get; }
+        // The transformed axes are the eigenvectors of the shape matrix a·aᵀ + b·bᵀ,
+        // and the radii are the square roots of its eigenvalues.
+        float sxx = (a.X * a.X) + (b.X * b.X);
+        float syy = (a.Y * a.Y) + (b.Y * b.Y);
+        float sxy = (a.X * a.Y) + (b.X * b.Y);
+        float mean = (sxx + syy) * .5F;
+        float half = (sxx - syy) * .5F;
 
-        /// <summary>
-        /// Gets the rotation in degrees.
-        /// </summary>
-        public float RotationDegrees { get; }
+        rx = MathF.Sqrt(mean + MathF.Sqrt((half * half) + (sxy * sxy)));
 
-        /// <summary>
-        /// Gets a value indicating whether this matrix includes a reflection.</summary>
-        public bool Reflection { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether this matrix is a similarity transform.
-        /// True if columns are orthogonal and equal length within tolerance.
-        /// </summary>
-        public bool IsSimilarity { get; }
-
-        public static Similarity FromMatrix(in Matrix3x2 m)
-        {
-            float a = m.M11, b = m.M12, c = m.M21, d = m.M22;
-
-            // scale = |X column|
-            float sx = MathF.Sqrt((a * a) + (b * b));
-
-            // rotation from X column
-            float rotDeg = MathF.Atan2(b, a) * (180f / MathF.PI);
-
-            // reflection from determinant
-            bool refl = ((a * d) - (b * c)) < 0f;
-
-            // similarity test: columns orthogonal and same length
-            float dot = (a * c) + (b * d);
-            float sy = MathF.Sqrt((c * c) + (d * d));
-            const float eps = 1e-4f;
-            bool ortho = MathF.Abs(dot) <= eps;
-            bool equal = MathF.Abs(sx - sy) <= eps;
-
-            return new Similarity(sx, rotDeg, refl, ortho && equal && sx > 0f);
-        }
+        // The product of the radii is the area scale |det[a b]|, which stays accurate for
+        // very eccentric ellipses where subtracting the eigenvalues would cancel.
+        ry = rx > 0F ? MathF.Abs((a.X * b.Y) - (a.Y * b.X)) / rx : 0F;
+        rotation = MathF.Atan2(sxy, half) * .5F * (180F / MathF.PI);
     }
 }
