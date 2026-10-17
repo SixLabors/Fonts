@@ -50,28 +50,16 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                     // SVG 2 applies a transform on an <svg> element as if it were set on a parent
                     // element, so it acts in the parent space outside the viewBox mapping. Only the
                     // canvas metadata can express that ordering, so the root transform travels there
-                    // alone and the layer transforms start from identity.
+                    // alone: the layer transforms start from identity, and Walk never applies the
+                    // root element's own transform.
                     List<PaintedLayer> layers = [];
-                    if (ReferenceEquals(glyphRoot, root))
-                    {
-                        // Walking the root itself would bake its transform into every layer as well,
-                        // so walk its children with the presentation attributes the root passes down.
-                        Paint? rootPaint = ResolvePaint(root, DefaultBlackFillPaint, parsed, out bool fillNone, out float opacityMul);
-                        foreach (XElement child in root.Elements())
-                        {
-                            Walk(child, Matrix3x2.Identity, fillNone ? null : rootPaint, opacityMul, layers, parsed);
-                        }
-                    }
-                    else
-                    {
-                        Walk(
-                            glyphRoot,
-                            Matrix3x2.Identity,
-                            inheritedPaint: DefaultBlackFillPaint,
-                            inheritedOpacityMul: 1F,
-                            outputLayers: layers,
-                            parsedDoc: parsed);
-                    }
+                    Walk(
+                        glyphRoot,
+                        Matrix3x2.Identity,
+                        inheritedPaint: DefaultBlackFillPaint,
+                        inheritedOpacityMul: 1F,
+                        outputLayers: layers,
+                        parsedDoc: parsed);
 
                     if (layers.Count > 0)
                     {
@@ -192,9 +180,15 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             case "svg":
             case "g":
             {
+                // The document root's own transform is carried once on the canvas, after the viewBox
+                // mapping, so its children start from the parent transform, however the walk reached the
+                // root (for example as the glyph when no glyph{gid} element exists). The root of an SVG
+                // document is an <svg> container, so this is the only place its transform could enter
+                // the layers.
+                Matrix3x2 childTransform = ReferenceEquals(node, node.Document?.Root) ? parentLocalTransform : localTransform;
                 foreach (XElement child in node.Elements())
                 {
-                    Walk(child, localTransform, fillNone ? null : paint, combinedOpacityMul, outputLayers, parsedDoc);
+                    Walk(child, childTransform, fillNone ? null : paint, combinedOpacityMul, outputLayers, parsedDoc);
                 }
 
                 break;

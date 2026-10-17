@@ -74,6 +74,36 @@ public class SvgRootTransformTests
     }
 
     /// <summary>
+    /// A rotated root transform yields the same tight ink bounds as the equivalent pre-rotated geometry,
+    /// not the looser box around the rotated bounds of the unrotated geometry.
+    /// </summary>
+    [Fact]
+    public void RotatedRootTransformKeepsTightBounds()
+    {
+        // A thin diagonal strip. rotate(45) maps (x, y) to (c(x - y), c(x + y)) with c = sqrt(2) / 2, so
+        // (0, 0) -> (0, 0), (500, -500) -> (707.107, 0), (490, -510) -> (707.107, -14.142) and
+        // (-10, -10) -> (0, -14.142): an axis-aligned 707.107 x 14.142 rectangle. Rotating the strip's
+        // own 510 x 510 box instead would give a box roughly 721 units on each side.
+        Font transformed = SvgTestFonts.CreateFontFromDocument(gid => Format(
+            $"<svg {Namespaces} transform=\"rotate(45)\"><g id=\"glyph{gid}\"><polygon points=\"0 0 500 -500 490 -510 -10 -10\"/></g></svg>"));
+
+        Font expected = SvgTestFonts.CreateFontFromDocument(gid => Format(
+            $"<svg {Namespaces}><g id=\"glyph{gid}\"><rect x=\"0\" y=\"-14.142136\" width=\"707.10678\" height=\"14.142136\"/></g></svg>"));
+
+        ApproximateFloatComparer comparer = new(0.01F);
+
+        TextOptions expectedOptions = new(expected) { ColorFontSupport = ColorFontSupport.Svg };
+        TextOptions transformedOptions = new(transformed) { ColorFontSupport = ColorFontSupport.Svg };
+        Assert.Equal(TextMeasurer.MeasureBounds("A", expectedOptions), TextMeasurer.MeasureBounds("A", transformedOptions), comparer);
+
+        GlyphRenderer expectedRenderer = new();
+        GlyphRenderer transformedRenderer = new();
+        TextRenderer.RenderTo(expectedRenderer, "A", expectedOptions);
+        TextRenderer.RenderTo(transformedRenderer, "A", transformedOptions);
+        Assert.Equal(Assert.Single(expectedRenderer.GlyphRects), Assert.Single(transformedRenderer.GlyphRects), comparer);
+    }
+
+    /// <summary>
     /// Formats an interpolated document string with the invariant culture so numbers use '.' separators.
     /// </summary>
     /// <param name="document">The interpolated document.</param>

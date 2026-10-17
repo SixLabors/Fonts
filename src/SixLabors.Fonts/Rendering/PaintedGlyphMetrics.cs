@@ -79,7 +79,17 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
         }
 
         Matrix3x2 sourceToUpem = ComputeSourceToUpem(canvas, this.UnitsPerEm);
-        return Bounds.Transform(glyph.Bounds, sourceToUpem);
+
+        // Transforming the cached box is exact while the mapping keeps the axes aligned (scale,
+        // translation, Y-flip), because the image of an axis-aligned box is then itself a box.
+        // A rotation or skew, which only a root transform introduces, would inflate the box
+        // around the rotated corners, so the geometry is measured under the full mapping instead.
+        if (sourceToUpem.M12 == 0 && sourceToUpem.M21 == 0)
+        {
+            return Bounds.Transform(glyph.Bounds, sourceToUpem);
+        }
+
+        return glyph.GetBounds(sourceToUpem);
     }
 
     /// <inheritdoc/>
