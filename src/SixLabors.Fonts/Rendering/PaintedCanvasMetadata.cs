@@ -15,7 +15,7 @@ internal readonly struct PaintedCanvasMetadata
     /// </summary>
     /// <param name="viewBox">The viewBox rectangle (minX, minY, width, height).</param>
     /// <param name="isYDown">True if the source coordinate system is y-down; false if y-up.</param>
-    /// <param name="rootTransform">An optional root transform in document-space.</param>
+    /// <param name="rootTransform">An optional root transform, applied after the viewBox mapping and before any Y-flip.</param>
     public PaintedCanvasMetadata(FontRectangle viewBox, bool isYDown, Matrix3x2 rootTransform)
     {
         this.HasViewBox = viewBox != FontRectangle.Empty;
@@ -40,7 +40,9 @@ internal readonly struct PaintedCanvasMetadata
     public bool IsYDown { get; }
 
     /// <summary>
-    /// Gets the root transform in document-space.
+    /// Gets the root transform. It applies in the space the viewBox maps into (font units, in the
+    /// source's Y direction), after the viewBox mapping and before any Y-flip. Layer transforms
+    /// do not include it.
     /// </summary>
     public Matrix3x2 RootTransform { get; }
 }

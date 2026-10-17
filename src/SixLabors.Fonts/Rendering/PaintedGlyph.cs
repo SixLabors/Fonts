@@ -31,7 +31,7 @@ internal readonly struct PaintedGlyph
         this.Layers = layers;
         this.CompositeCommands = compositeCommands;
         this.ClipBounds = clipBounds;
-        this.Bounds = CalculateBounds(layers);
+        this.Bounds = CalculateBounds(layers, Matrix3x2.Identity);
     }
 
     /// <summary>
@@ -68,11 +68,22 @@ internal readonly struct PaintedGlyph
     public static PaintedGlyph Empty => new([]);
 
     /// <summary>
-    /// Calculates the bounds of all painted geometry after applying each layer transform.
+    /// Calculates the bounds of all painted geometry after applying each layer transform followed by
+    /// <paramref name="transform"/>. Unlike transforming <see cref="Bounds"/>, this stays tight when
+    /// <paramref name="transform"/> rotates or skews, at the cost of a pass over all geometry.
+    /// </summary>
+    /// <param name="transform">The transform applied after each layer transform.</param>
+    /// <returns>The calculated bounds.</returns>
+    public Bounds GetBounds(Matrix3x2 transform) => CalculateBounds(this.Layers, transform);
+
+    /// <summary>
+    /// Calculates the bounds of all painted geometry after applying each layer transform followed by
+    /// <paramref name="transform"/>.
     /// </summary>
     /// <param name="layers">The painted layers.</param>
+    /// <param name="transform">The transform applied after each layer transform.</param>
     /// <returns>The calculated bounds.</returns>
-    private static Bounds CalculateBounds(List<PaintedLayer> layers)
+    private static Bounds CalculateBounds(IReadOnlyList<PaintedLayer> layers, Matrix3x2 transform)
     {
         Vector2 min = new(float.MaxValue);
         Vector2 max = new(float.MinValue);
@@ -81,6 +92,9 @@ internal readonly struct PaintedGlyph
         for (int i = 0; i < layers.Count; i++)
         {
             PaintedLayer layer = layers[i];
+
+            // Matrix3x2 transforms row vectors, so the layer transform applies first.
+            Matrix3x2 layerTransform = layer.Transform * transform;
             IReadOnlyList<PathCommand> path = layer.Path;
             Vector2 current = default;
 
@@ -91,19 +105,19 @@ internal readonly struct PaintedGlyph
                 {
                     case PathVerb.MoveTo:
                     case PathVerb.LineTo:
-                        Include(command.EndPoint, layer.Transform, ref min, ref max, ref hasPoint);
+                        Include(command.EndPoint, layerTransform, ref min, ref max, ref hasPoint);
                         break;
                     case PathVerb.QuadraticTo:
-                        Include(command.ControlPoint1, layer.Transform, ref min, ref max, ref hasPoint);
-                        Include(command.EndPoint, layer.Transform, ref min, ref max, ref hasPoint);
+                        Include(command.ControlPoint1, layerTransform, ref min, ref max, ref hasPoint);
+                        Include(command.EndPoint, layerTransform, ref min, ref max, ref hasPoint);
                         break;
                     case PathVerb.CubicTo:
-                        Include(command.ControlPoint1, layer.Transform, ref min, ref max, ref hasPoint);
-                        Include(command.ControlPoint2, layer.Transform, ref min, ref max, ref hasPoint);
-                        Include(command.EndPoint, layer.Transform, ref min, ref max, ref hasPoint);
+                        Include(command.ControlPoint1, layerTransform, ref min, ref max, ref hasPoint);
+                        Include(command.ControlPoint2, layerTransform, ref min, ref max, ref hasPoint);
+                        Include(command.EndPoint, layerTransform, ref min, ref max, ref hasPoint);
                         break;
                     case PathVerb.ArcTo:
-                        IncludeArc(current, command, layer.Transform, ref min, ref max, ref hasPoint);
+                        IncludeArc(current, command, layerTransform, ref min, ref max, ref hasPoint);
                         break;
                 }
 
