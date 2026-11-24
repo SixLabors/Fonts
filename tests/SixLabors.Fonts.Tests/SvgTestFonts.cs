@@ -36,6 +36,22 @@ internal static class SvgTestFonts
     }
 
     /// <summary>
+    /// Creates a font whose glyph for 'A' is drawn from a complete SVG document, so tests can control the root
+    /// <c>&lt;svg&gt;</c> element and whether a <c>glyph{gid}</c> element exists at all.
+    /// </summary>
+    /// <param name="document">Builds the complete SVG document from the glyph id of 'A'.</param>
+    /// <param name="size">The font size.</param>
+    /// <returns>The font.</returns>
+    public static Font CreateFontFromDocument(Func<ushort, string> document, float size = 100)
+    {
+        byte[] source = File.ReadAllBytes(TestFonts.SimpleFontFile);
+        Font plain = new FontCollection().Add(new MemoryStream(source)).CreateFont(size);
+        Assert.True(plain.TryGetGlyphId(new CodePoint('A'), out ushort glyphId));
+
+        return new FontCollection().Add(AddSvgTable(source, glyphId, document(glyphId))).CreateFont(size);
+    }
+
+    /// <summary>
     /// Returns a copy of a TrueType font with an 'SVG ' table holding one document for one glyph.
     /// </summary>
     /// <param name="font">The source font, which must not already contain an 'SVG ' table.</param>
