@@ -68,9 +68,9 @@ internal readonly struct PaintedGlyph
     public static PaintedGlyph Empty => new([]);
 
     /// <summary>
-    /// Calculates the bounds of all painted geometry after applying each layer transform followed by
-    /// <paramref name="transform"/>. Unlike transforming <see cref="Bounds"/>, this stays tight when
-    /// <paramref name="transform"/> rotates or skews, at the cost of a pass over all geometry.
+    /// Measures the bounds after applying each layer transform and then <paramref name="transform"/>.
+    /// This applies rotation and skew to the path instead of the cached bounds.
+    /// The bounds include Bézier control points and an estimated box for each arc.
     /// </summary>
     /// <param name="transform">The transform applied after each layer transform.</param>
     /// <returns>The calculated bounds.</returns>
