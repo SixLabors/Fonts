@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Rendering;
@@ -14,6 +15,12 @@ namespace SixLabors.Fonts.Rendering;
 public sealed class PaintedGlyphMetrics : FontGlyphMetrics
 {
     private readonly IPaintedGlyphSource source;
+
+    /// <summary>
+    /// The design bounds measured from the glyph's geometry when the source-to-UPEM mapping
+    /// rotates or skews, or <see langword="null"/> until first requested.
+    /// </summary>
+    private StrongBox<Bounds>? rotatedDesignBounds;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PaintedGlyphMetrics"/> class.
@@ -79,7 +86,40 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
         }
 
         Matrix3x2 sourceToUpem = ComputeSourceToUpem(canvas, this.UnitsPerEm);
-        return Bounds.Transform(glyph.Bounds, sourceToUpem);
+
+        // Transforming the cached box is exact while the mapping keeps the axes aligned (scale,
+        // translation, Y-flip, or a quarter-turn that swaps the axes), because the image of an
+        // axis-aligned box is then itself a box. A rotation or skew, which only a root transform
+        // introduces, would inflate the box around the rotated corners, so the geometry is
+        // measured under the full mapping instead.
+        if (IsAxisAligned(in sourceToUpem))
+        {
+            return Bounds.Transform(glyph.Bounds, sourceToUpem);
+        }
+
+        // The glyph and its canvas are fixed for this instance, so the geometry pass runs once.
+        // A reference write is atomic, so concurrent callers at worst compute the same value twice.
+        StrongBox<Bounds>? cached = this.rotatedDesignBounds;
+        if (cached is null)
+        {
+            cached = new StrongBox<Bounds>(glyph.GetBounds(sourceToUpem));
+            this.rotatedDesignBounds = cached;
+        }
+
+        return cached.Value;
+    }
+
+    /// <summary>
+    /// Returns whether a transform maps axis-aligned boxes to axis-aligned boxes, allowing for the
+    /// rounding noise that trigonometric construction leaves in the zero terms.
+    /// </summary>
+    /// <param name="m">The transform to test.</param>
+    /// <returns><see langword="true"/> if the transform keeps or swaps the axes.</returns>
+    private static bool IsAxisAligned(in Matrix3x2 m)
+    {
+        float eps = 1e-5F * (MathF.Abs(m.M11) + MathF.Abs(m.M12) + MathF.Abs(m.M21) + MathF.Abs(m.M22));
+        return (MathF.Abs(m.M12) <= eps && MathF.Abs(m.M21) <= eps)
+            || (MathF.Abs(m.M11) <= eps && MathF.Abs(m.M22) <= eps);
     }
 
     /// <inheritdoc/>
@@ -160,24 +200,19 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
         layout *= Matrix3x2.CreateScale(1F, -1F);
         layout.Translation += glyphOrigin;
 
-        // Source-to-UPEM: viewBox mapping (uniform "meet"), optional y-flip, optional root transform.
+        // Source-to-UPEM: viewBox mapping (uniform "meet"), optional root transform, optional y-flip.
         return ComputeSourceToUpem(canvas, this.UnitsPerEm) * layout;
     }
 
     /// <summary>
     /// Computes the mapping from the interpreter's document-space to UPEM font space.
-    /// Enforces a uniform 'meet' scale from the root viewBox (if present) and normalizes
-    /// Y-down document coordinates to the Y-up glyph-metrics coordinate system.
+    /// Enforces a uniform 'meet' scale from the root viewBox (if present), then applies the
+    /// root transform in the space the viewBox maps into, and finally normalizes Y-down
+    /// document coordinates to the Y-up glyph-metrics coordinate system.
     /// </summary>
     private static Matrix3x2 ComputeSourceToUpem(in PaintedCanvasMetadata canvas, ushort upem)
     {
         Matrix3x2 m = Matrix3x2.Identity;
-
-        // Root transform (doc-space). Apply first if provided.
-        if (!canvas.RootTransform.IsIdentity)
-        {
-            m *= canvas.RootTransform;
-        }
 
         // Translate viewBox min to origin, then uniform scale to UPEM using "meet".
         if (canvas.HasViewBox)
@@ -191,6 +226,14 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
             Matrix3x2 sUni = Matrix3x2.CreateScale(s);
 
             m = m * t * sUni;
+        }
+
+        // Root transform. SVG 2 applies a transform on an <svg> element as if it were set on a
+        // parent element, so it acts in the parent (UPEM) space after the viewBox mapping.
+        // Matrix3x2 transforms row vectors, so appending it here makes it apply after the viewBox.
+        if (!canvas.RootTransform.IsIdentity)
+        {
+            m *= canvas.RootTransform;
         }
 
         // Normalize every painted source to the Y-up font-space contract used by glyph metrics.
@@ -233,8 +276,8 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
             // pre-applied transforms (element/group)
             Matrix3x2 layerXform = layer.Transform * xform;
 
-            // Similarity decomposition for arc radii/angle/sweep adjustment (from layer).
-            Similarity sim = Similarity.FromMatrix(layerXform);
+            // A reflecting transform reverses the direction of every arc.
+            double determinant = ((double)layerXform.M11 * layerXform.M22) - ((double)layerXform.M12 * layerXform.M21);
 
             // Transform userSpaceOnUse paints into device space; keep ObjectBoundingBox normalized.
             Paint? paint = TransformPaint(layer.Paint, in bounds, layerXform);
@@ -323,13 +366,10 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
 
                     case PathVerb.ArcTo:
                     {
-                        // Adjust radii by the scale component of the transform;
-                        // angle/sweep by the similarity component;
-                        // endpoint is fully transformed.
-                        float rx = c.RadiusX * layerXform.M11;
-                        float ry = c.RadiusY * layerXform.M12;
-                        float ang = c.RotationDegrees + sim.RotationDegrees;
-                        bool sweep = sim.Reflection ? !c.Sweep : c.Sweep;
+                        // The arc's ellipse maps to another ellipse whose axes depend on the whole
+                        // linear part of the transform; the endpoint is fully transformed.
+                        TransformEllipse(c.RadiusX, c.RadiusY, c.RotationDegrees, in layerXform, determinant, out float rx, out float ry, out float ang);
+                        bool sweep = determinant < 0D ? !c.Sweep : c.Sweep;
 
                         renderer.ArcTo(rx, ry, ang, c.LargeArc, sweep, Vector2.Transform(c.EndPoint, layerXform));
                         break;
@@ -557,65 +597,52 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
     }
 
     /// <summary>
-    /// Represents the similarity component of a 2D affine transformation.
+    /// Maps an elliptical arc's ellipse through the linear part of a transform.
     /// </summary>
     /// <remarks>
-    /// A similarity transformation is an affine transform that preserves an object's shape and angles,
-    /// allowing only uniform scaling, rotation, and optional reflection. This structure isolates those
-    /// properties from a general <see cref="Matrix3x2"/> so that dependent operations such as arc or
-    /// gradient adjustment can apply proportional transformations correctly.
+    /// An affine transform maps an ellipse to another ellipse, but rotation, reflection, non-uniform
+    /// scale and shear all change its axes, so the radii cannot be scaled independently. The transformed
+    /// semi-axes are recovered from the eigen-decomposition of the ellipse's shape matrix.
     /// </remarks>
-    private readonly struct Similarity
+    /// <param name="radiusX">The x-radius of the source ellipse.</param>
+    /// <param name="radiusY">The y-radius of the source ellipse.</param>
+    /// <param name="rotationDegrees">The rotation of the source ellipse's x-axis, in degrees.</param>
+    /// <param name="transform">The transform to apply.</param>
+    /// <param name="determinant">The determinant of the transform.</param>
+    /// <param name="rx">The x-radius of the transformed ellipse.</param>
+    /// <param name="ry">The y-radius of the transformed ellipse.</param>
+    /// <param name="rotation">The rotation of the transformed ellipse's x-axis, in degrees.</param>
+    private static void TransformEllipse(
+        float radiusX,
+        float radiusY,
+        float rotationDegrees,
+        in Matrix3x2 transform,
+        double determinant,
+        out float rx,
+        out float ry,
+        out float rotation)
     {
-        private Similarity(float scale, float rotationDeg, bool reflection, bool isSimilarity)
-        {
-            this.Scale = scale;
-            this.RotationDegrees = rotationDeg;
-            this.Reflection = reflection;
-            this.IsSimilarity = isSimilarity;
-        }
+        // Transform both axes of the source ellipse. Use double precision because the shape
+        // calculation raises the axis lengths to the fourth power.
+        (double sin, double cos) = Math.SinCos(rotationDegrees * (Math.PI / 180D));
+        double ax = radiusX * ((cos * transform.M11) + (sin * transform.M21));
+        double ay = radiusX * ((cos * transform.M12) + (sin * transform.M22));
+        double bx = radiusY * ((-sin * transform.M11) + (cos * transform.M21));
+        double by = radiusY * ((-sin * transform.M12) + (cos * transform.M22));
 
-        /// <summary>
-        /// Gets the length of the first column.
-        /// </summary>
-        public float Scale { get; }
+        // The transformed axes are the eigenvectors of the shape matrix a·aᵀ + b·bᵀ.
+        // The radii are the square roots of its eigenvalues.
+        double sxx = (ax * ax) + (bx * bx);
+        double syy = (ay * ay) + (by * by);
+        double sxy = (ax * ay) + (bx * by);
+        double mean = (sxx + syy) * 0.5D;
+        double half = (sxx - syy) * 0.5D;
+        double majorRadius = Math.Sqrt(mean + Math.Sqrt((half * half) + (sxy * sxy)));
 
-        /// <summary>
-        /// Gets the rotation in degrees.
-        /// </summary>
-        public float RotationDegrees { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether this matrix includes a reflection.</summary>
-        public bool Reflection { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether this matrix is a similarity transform.
-        /// True if columns are orthogonal and equal length within tolerance.
-        /// </summary>
-        public bool IsSimilarity { get; }
-
-        public static Similarity FromMatrix(in Matrix3x2 m)
-        {
-            float a = m.M11, b = m.M12, c = m.M21, d = m.M22;
-
-            // scale = |X column|
-            float sx = MathF.Sqrt((a * a) + (b * b));
-
-            // rotation from X column
-            float rotDeg = MathF.Atan2(b, a) * (180f / MathF.PI);
-
-            // reflection from determinant
-            bool refl = ((a * d) - (b * c)) < 0f;
-
-            // similarity test: columns orthogonal and same length
-            float dot = (a * c) + (b * d);
-            float sy = MathF.Sqrt((c * c) + (d * d));
-            const float eps = 1e-4f;
-            bool ortho = MathF.Abs(dot) <= eps;
-            bool equal = MathF.Abs(sx - sy) <= eps;
-
-            return new Similarity(sx, rotDeg, refl, ortho && equal && sx > 0f);
-        }
+        // The product of the radii scales by the absolute determinant. Use this product
+        // to get the minor radius without subtracting nearly equal eigenvalues.
+        rx = (float)majorRadius;
+        ry = majorRadius > 0D ? (float)(Math.Abs(determinant * radiusX * radiusY) / majorRadius) : 0F;
+        rotation = (float)(Math.Atan2(sxy, half) * 0.5D * (180D / Math.PI));
     }
 }
