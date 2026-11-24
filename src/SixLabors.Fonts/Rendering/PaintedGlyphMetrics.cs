@@ -277,7 +277,7 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
             Matrix3x2 layerXform = layer.Transform * xform;
 
             // A reflecting transform reverses the direction of every arc.
-            bool reflection = layerXform.GetDeterminant() < 0F;
+            double determinant = ((double)layerXform.M11 * layerXform.M22) - ((double)layerXform.M12 * layerXform.M21);
 
             // Transform userSpaceOnUse paints into device space; keep ObjectBoundingBox normalized.
             Paint? paint = TransformPaint(layer.Paint, in bounds, layerXform);
@@ -368,8 +368,8 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
                     {
                         // The arc's ellipse maps to another ellipse whose axes depend on the whole
                         // linear part of the transform; the endpoint is fully transformed.
-                        TransformEllipse(c.RadiusX, c.RadiusY, c.RotationDegrees, in layerXform, out float rx, out float ry, out float ang);
-                        bool sweep = reflection ? !c.Sweep : c.Sweep;
+                        TransformEllipse(c.RadiusX, c.RadiusY, c.RotationDegrees, in layerXform, determinant, out float rx, out float ry, out float ang);
+                        bool sweep = determinant < 0D ? !c.Sweep : c.Sweep;
 
                         renderer.ArcTo(rx, ry, ang, c.LargeArc, sweep, Vector2.Transform(c.EndPoint, layerXform));
                         break;
@@ -608,6 +608,7 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
     /// <param name="radiusY">The y-radius of the source ellipse.</param>
     /// <param name="rotationDegrees">The rotation of the source ellipse's x-axis, in degrees.</param>
     /// <param name="transform">The transform to apply.</param>
+    /// <param name="determinant">The determinant of the transform.</param>
     /// <param name="rx">The x-radius of the transformed ellipse.</param>
     /// <param name="ry">The y-radius of the transformed ellipse.</param>
     /// <param name="rotation">The rotation of the transformed ellipse's x-axis, in degrees.</param>
@@ -616,28 +617,32 @@ public sealed class PaintedGlyphMetrics : FontGlyphMetrics
         float radiusY,
         float rotationDegrees,
         in Matrix3x2 transform,
+        double determinant,
         out float rx,
         out float ry,
         out float rotation)
     {
-        // The ellipse is the image of the unit circle under its two semi-axis vectors.
-        (float sin, float cos) = MathF.SinCos(rotationDegrees * (MathF.PI / 180F));
-        Vector2 a = Vector2.TransformNormal(new Vector2(cos, sin) * radiusX, transform);
-        Vector2 b = Vector2.TransformNormal(new Vector2(-sin, cos) * radiusY, transform);
+        // Transform both axes of the source ellipse. Use double precision because the shape
+        // calculation raises the axis lengths to the fourth power.
+        (double sin, double cos) = Math.SinCos(rotationDegrees * (Math.PI / 180D));
+        double ax = radiusX * ((cos * transform.M11) + (sin * transform.M21));
+        double ay = radiusX * ((cos * transform.M12) + (sin * transform.M22));
+        double bx = radiusY * ((-sin * transform.M11) + (cos * transform.M21));
+        double by = radiusY * ((-sin * transform.M12) + (cos * transform.M22));
 
-        // The transformed axes are the eigenvectors of the shape matrix a·aᵀ + b·bᵀ,
-        // and the radii are the square roots of its eigenvalues.
-        float sxx = (a.X * a.X) + (b.X * b.X);
-        float syy = (a.Y * a.Y) + (b.Y * b.Y);
-        float sxy = (a.X * a.Y) + (b.X * b.Y);
-        float mean = (sxx + syy) * .5F;
-        float half = (sxx - syy) * .5F;
+        // The transformed axes are the eigenvectors of the shape matrix a·aᵀ + b·bᵀ.
+        // The radii are the square roots of its eigenvalues.
+        double sxx = (ax * ax) + (bx * bx);
+        double syy = (ay * ay) + (by * by);
+        double sxy = (ax * ay) + (bx * by);
+        double mean = (sxx + syy) * 0.5D;
+        double half = (sxx - syy) * 0.5D;
+        double majorRadius = Math.Sqrt(mean + Math.Sqrt((half * half) + (sxy * sxy)));
 
-        rx = MathF.Sqrt(mean + MathF.Sqrt((half * half) + (sxy * sxy)));
-
-        // The product of the radii is the area scale |det[a b]|, which stays accurate for
-        // very eccentric ellipses where subtracting the eigenvalues would cancel.
-        ry = rx > 0F ? MathF.Abs((a.X * b.Y) - (a.Y * b.X)) / rx : 0F;
-        rotation = MathF.Atan2(sxy, half) * .5F * (180F / MathF.PI);
+        // The product of the radii scales by the absolute determinant. Use this product
+        // to get the minor radius without subtracting nearly equal eigenvalues.
+        rx = (float)majorRadius;
+        ry = majorRadius > 0D ? (float)(Math.Abs(determinant * radiusX * radiusY) / majorRadius) : 0F;
+        rotation = (float)(Math.Atan2(sxy, half) * 0.5D * (180D / Math.PI));
     }
 }
