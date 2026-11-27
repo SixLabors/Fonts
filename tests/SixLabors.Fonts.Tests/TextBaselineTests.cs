@@ -465,6 +465,28 @@ public class TextBaselineTests
     public void RendersAnchoredToReference_CjkVerticalMixedLeftRight(TextBaseline baseline)
         => TestVerticalLayout(LayoutMode.VerticalMixedLeftRight, baseline, TestFonts.NotoSansSCBaselineSubsetFile, BrowserComparisonCjkText);
 
+    /// <summary>
+    /// Checks that upright punctuation keeps the kerning on the preceding sideways letters.
+    /// </summary>
+    [Fact]
+    public void MixedVerticalLayout_KernsSidewaysLettersBeforeUprightPunctuation()
+    {
+        Font font = TestFonts.GetFont(TestFonts.NotoSansSCBaselineSubsetFile, BrowserComparisonPointSize);
+        TextOptions options = new(font)
+        {
+            LayoutMode = LayoutMode.VerticalMixedLeftRight,
+            Dpi = 96F
+        };
+
+        float kerned = TextMeasurer.MeasureAdvance(BrowserComparisonCjkText, options).Height;
+        options.KerningMode = KerningMode.None;
+        float unkerned = TextMeasurer.MeasureAdvance(BrowserComparisonCjkText, options).Height;
+
+        // The font shortens the xq pair by 22 units. At 96 pixels per em
+        // with 1,000 units per em, this shortens the column by 2.112 pixels.
+        Assert.Equal(2.112F, unkerned - kerned, Comparer);
+    }
+
     [Theory]
     [InlineData(-40F)]
     [InlineData(-20F)]

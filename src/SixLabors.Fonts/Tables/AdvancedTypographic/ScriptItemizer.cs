@@ -59,6 +59,21 @@ internal static class ScriptItemizer
     }
 
     /// <summary>
+    /// Gets whether shaping uses the vertical axis for this character.
+    /// </summary>
+    /// <param name="codePoint">The character to shape.</param>
+    /// <param name="layoutMode">The layout mode for the text.</param>
+    /// <returns>Whether to apply vertical shaping features.</returns>
+    public static bool UsesVerticalShaping(CodePoint codePoint, LayoutMode layoutMode)
+    {
+        // Characters with orientation Tr also need vertical shaping so the
+        // font can supply a vertical form. Layout rotates the glyph only if
+        // shaping does not substitute that form.
+        return layoutMode.IsVertical()
+            || (layoutMode.IsVerticalMixed() && CodePoint.GetVerticalOrientationType(codePoint) != VerticalOrientationType.Rotate);
+    }
+
+    /// <summary>
     /// Resolves the script that applies to one shaping record.
     /// </summary>
     /// <param name="buffer">The glyph shaping buffer.</param>
@@ -203,6 +218,7 @@ internal static class ScriptItemizer
     {
         private int textRunIndex;
         private readonly TextDirection direction;
+        private readonly bool isVertical;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ShapingRun"/> struct from the first shaping record in a run.
@@ -214,8 +230,10 @@ internal static class ScriptItemizer
             this.Script = ResolveScript(buffer, index);
             this.Culture = ResolveCulture(buffer, index);
             this.FeatureTags = ResolveFeatureTags(buffer, index);
-            this.textRunIndex = buffer[index].TextRunIndex;
-            this.direction = buffer[index].Direction;
+            ref GlyphShapingData first = ref buffer[index];
+            this.textRunIndex = first.TextRunIndex;
+            this.direction = first.Direction;
+            this.isVertical = UsesVerticalShaping(first.CodePoint, buffer.TextOptions.LayoutMode);
         }
 
         /// <summary>
@@ -237,20 +255,31 @@ internal static class ScriptItemizer
         /// Attempts to extend the run through one adjacent shaping record.
         /// </summary>
         /// <param name="buffer">The glyph shaping buffer.</param>
-        /// <param name="index">The zero-based index of the adjacent record.</param>
+        /// <param name="index">The zero-based index immediately after the last record in the run.</param>
         /// <returns><see langword="true"/> when the record belongs to this run.</returns>
         public bool TryInclude(ShapingBuffer buffer, int index)
         {
-            CodePoint codePoint = buffer[index].CodePoint;
+            ref GlyphShapingData data = ref buffer[index];
+            CodePoint codePoint = data.CodePoint;
             ScriptClass next = ResolveScript(buffer, index);
-            int nextTextRunIndex = buffer[index].TextRunIndex;
-            if (buffer[index].Direction != this.direction)
+            int nextTextRunIndex = data.TextRunIndex;
+            if (data.Direction != this.direction)
             {
                 // Browsers resolve bidi runs before shaping and require the
                 // direction to match before adjacent segments can share one
                 // shaping call.
                 // Splitting here confines GSUB, GPOS, and cursive attachment to
                 // the same directional boundary without another glyph pass.
+                return false;
+            }
+
+            LayoutMode layoutMode = buffer.TextOptions.LayoutMode;
+            if (layoutMode.IsVerticalMixed()
+                && data.GraphemeIndex != buffer[index - 1].GraphemeIndex
+                && UsesVerticalShaping(codePoint, layoutMode) != this.isVertical)
+            {
+                // Sideways text uses horizontal features such as kern. Split at
+                // the grapheme boundary to keep those features and keep marks with their base.
                 return false;
             }
 

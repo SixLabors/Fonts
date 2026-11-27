@@ -17,7 +17,7 @@ internal readonly struct Class2Record
     /// <param name="reader">The big endian binary reader.</param>
     /// <param name="valueFormat1">The value format for value record 1.</param>
     /// <param name="valueFormat2">The value format for value record 2.</param>
-    /// <param name="parentBase">The absolute stream position of the parent table for resolving device offsets.</param>
+    /// <param name="parentBase">The offset of the parent table from the start of GPOS.</param>
     public Class2Record(BigEndianBinaryReader reader, ValueFormat valueFormat1, ValueFormat valueFormat2, long parentBase = -1)
     {
         this.ValueRecord1 = new ValueRecord(reader, valueFormat1, parentBase);

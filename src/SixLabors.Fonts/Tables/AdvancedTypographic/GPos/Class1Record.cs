@@ -28,7 +28,7 @@ internal sealed class Class1Record
     /// <param name="class2Count">The number of classes in the second class definition table.</param>
     /// <param name="valueFormat1">The value format for the first glyph.</param>
     /// <param name="valueFormat2">The value format for the second glyph.</param>
-    /// <param name="parentBase">The absolute stream position of the parent table for resolving device offsets.</param>
+    /// <param name="parentBase">The offset of the parent table from the start of GPOS.</param>
     /// <returns>The loaded <see cref="Class1Record"/>.</returns>
     public static Class1Record Load(BigEndianBinaryReader reader, int class2Count, ValueFormat valueFormat1, ValueFormat valueFormat2, long parentBase = -1)
     {

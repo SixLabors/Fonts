@@ -216,7 +216,7 @@ internal abstract class AnchorTable
         /// Loads the Format 3 anchor table from the reader.
         /// </summary>
         /// <param name="reader">The big endian binary reader.</param>
-        /// <param name="anchorBase">The absolute stream position of the anchor table start.</param>
+        /// <param name="anchorBase">The offset of the anchor table from the start of GPOS.</param>
         /// <returns>The loaded <see cref="AnchorFormat3"/>.</returns>
         public static AnchorFormat3 LoadFormat3(BigEndianBinaryReader reader, long anchorBase)
         {
@@ -272,7 +272,7 @@ internal abstract class AnchorTable
         /// if it is a VariationIndex table (deltaFormat == 0x8000), or 0 otherwise.
         /// </summary>
         /// <param name="reader">The big endian binary reader.</param>
-        /// <param name="anchorBase">The absolute stream position of the anchor table.</param>
+        /// <param name="anchorBase">The offset of the anchor table from the start of GPOS.</param>
         /// <param name="deviceOffset">The offset to the Device/VariationIndex table from the anchor table base.</param>
         /// <returns>The packed VariationIndex, or 0 if not applicable.</returns>
         private static uint ResolveVariationIndex(BigEndianBinaryReader reader, long anchorBase, ushort deviceOffset)
@@ -283,7 +283,10 @@ internal abstract class AnchorTable
             }
 
             long savedPosition = reader.BaseStream.Position;
-            reader.BaseStream.Position = anchorBase + deviceOffset;
+
+            // The device offset starts at the anchor. Seek adds the start of GPOS
+            // because the anchor offset is relative to GPOS.
+            reader.Seek(anchorBase + deviceOffset, SeekOrigin.Begin);
 
             ushort first = reader.ReadUInt16();
             ushort second = reader.ReadUInt16();
