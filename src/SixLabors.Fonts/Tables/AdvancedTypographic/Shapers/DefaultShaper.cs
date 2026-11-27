@@ -335,7 +335,7 @@ internal class DefaultShaper : BaseShaper
         for (int i = index; i < index + count; i++)
         {
             ref GlyphShapingData shapingData = ref buffer[i];
-            isVerticalLayout |= AdvancedTypographicUtils.IsVerticalGlyph(shapingData.CodePoint, layoutMode);
+            isVerticalLayout |= ScriptItemizer.UsesVerticalShaping(shapingData.CodePoint, layoutMode);
         }
 
         // Add horizontal or vertical features.

@@ -15,7 +15,7 @@ internal readonly struct PairValueRecord
     /// <param name="reader">The big endian binary reader.</param>
     /// <param name="valueFormat1">The types of data in valueRecord1 — for the first glyph in the pair (may be zero).</param>
     /// <param name="valueFormat2">The types of data in valueRecord2 — for the first glyph in the pair (may be zero).</param>
-    /// <param name="parentBase">The absolute stream position of the parent table for resolving device offsets.</param>
+    /// <param name="parentBase">The offset of the parent table from the start of GPOS.</param>
     public PairValueRecord(BigEndianBinaryReader reader, ValueFormat valueFormat1, ValueFormat valueFormat2, long parentBase = -1)
     {
         // +--------------+------------------+--------------------------------------------------------------------------------------+

@@ -265,6 +265,24 @@ public class VariationFontTests
         Assert.NotEqual(g200.Value.GlyphMetrics.Width, g900.Value.GlyphMetrics.Width);
     }
 
+    /// <summary>
+    /// Checks that a composite glyph uses the outline of its component at the selected weight.
+    /// </summary>
+    [Fact]
+    public void GVar_RobotoFlex_CompositeGlyphUsesVariedComponent()
+    {
+        FontFamily family = TestFonts.GetFontFamily(TestFonts.RobotoFlex);
+        Font font = family.CreateFont(12, new FontVariation("wght", 900));
+
+        Assert.True(font.TryGetGlyphs(new CodePoint('A'), out Glyph? plain));
+        Assert.True(font.TryGetGlyphs(new CodePoint('Ä'), out Glyph? accented));
+
+        // Roboto Flex places the A component at the origin in Ä. The accent
+        // lies inside the horizontal bounds of the varied A outline.
+        Assert.Equal(plain.Value.GlyphMetrics.Bounds.Min.X, accented.Value.GlyphMetrics.Bounds.Min.X);
+        Assert.Equal(plain.Value.GlyphMetrics.Bounds.Max.X, accented.Value.GlyphMetrics.Bounds.Max.X);
+    }
+
     [Fact]
     public void GVar_AdobeVFPrototype_GSUB_SubstitutesGlyphAtHeavyWeight()
     {

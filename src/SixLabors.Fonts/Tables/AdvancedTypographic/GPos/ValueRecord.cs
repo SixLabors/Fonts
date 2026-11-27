@@ -34,8 +34,8 @@ internal readonly struct ValueRecord
     /// <param name="reader">The big endian binary reader.</param>
     /// <param name="valueFormat">Defines the types of data in the ValueRecord.</param>
     /// <param name="parentBase">
-    /// The absolute stream position of the immediate parent table (SinglePos subtable,
-    /// PairPosFormat2 subtable, or PairSet table). Device offsets are relative to this position.
+    /// The offset of the SinglePos subtable, PairPos format 2 subtable, or PairSet table
+    /// from the start of GPOS. Device offsets are relative to that parent table.
     /// Pass -1 to skip VariationIndex resolution.
     /// </param>
     public ValueRecord(BigEndianBinaryReader reader, ValueFormat valueFormat, long parentBase)
@@ -160,7 +160,7 @@ internal readonly struct ValueRecord
     /// or 0 if null, a Device table, or invalid.
     /// </summary>
     /// <param name="reader">The big endian binary reader.</param>
-    /// <param name="parentBase">The absolute stream position of the parent table.</param>
+    /// <param name="parentBase">The offset of the parent table from the start of GPOS.</param>
     /// <param name="deviceOffset">The offset to the Device/VariationIndex table from the parent table base.</param>
     /// <returns>The packed VariationIndex, or 0 if not applicable.</returns>
     private static uint ResolveVariationIndex(BigEndianBinaryReader reader, long parentBase, short deviceOffset)
@@ -170,9 +170,9 @@ internal readonly struct ValueRecord
             return 0;
         }
 
-        // Device offsets are relative to the parent table base.
-        // Use absolute positioning to avoid BigEndianBinaryReader.Seek startOfStream rebasing.
-        reader.BaseStream.Position = parentBase + (ushort)deviceOffset;
+        // The parent offset is relative to GPOS. Seek adds the start of GPOS
+        // after we add the device offset to the parent offset.
+        reader.Seek(parentBase + (ushort)deviceOffset, SeekOrigin.Begin);
 
         // VariationIndex table (reuses the Device table format):
         // uint16 deltaSetOuterIndex

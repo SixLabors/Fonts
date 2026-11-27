@@ -273,16 +273,11 @@ internal partial class StreamFontMetrics
         HorizontalMetricsTable htmx = tables.Htmx;
         VerticalMetricsTable? vtmx = tables.Vmtx;
 
-        GlyphVector vector = glyf.GetGlyph(glyphId);
         Vector2 glyphAdvanceAdjustment = Vector2.Zero;
-
-        // Apply gvar deltas to the glyph outline if a variation processor is present.
-        // Clone first so we don't mutate the shared glyph cache.
-        if (this.GlyphVariationProcessor is not null)
-        {
-            vector = GlyphVector.DeepClone(vector);
-            this.GlyphVariationProcessor.TransformPoints(glyphId, ref vector, out glyphAdvanceAdjustment);
-        }
+        GlyphVariationProcessor? variationProcessor = this.GlyphVariationProcessor;
+        GlyphVector vector = variationProcessor is not null && tables.Gvar is not null
+            ? glyf.GetVariedGlyph(glyphId, variationProcessor, 0, out glyphAdvanceAdjustment)
+            : glyf.GetGlyph(glyphId);
 
         Bounds bounds = vector.Bounds;
 
