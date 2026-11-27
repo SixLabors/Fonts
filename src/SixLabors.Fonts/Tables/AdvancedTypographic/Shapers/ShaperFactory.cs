@@ -40,20 +40,23 @@ internal static class ShaperFactory
         => (unicodeScriptTag.Value & 0xFF) == ThirdRevisionTagSuffix;
 
     /// <summary>
-    /// Creates a shaper based on the given script language.
+    /// Creates the shaper for a run. AAT supplies script substitutions, so
+    /// specialized scripts use default preparation without mark zeroing.
     /// </summary>
-    /// <param name="script">The script language.</param>
-    /// <param name="unicodeScriptTag">The unicode script tag found in the font matching the script.</param>
-    /// <param name="fontMetrics">The current font metrics.</param>
-    /// <param name="textOptions">The global text options.</param>
-    /// <param name="languageTags">The language system candidates used to resolve feature availability.</param>
-    /// <returns>A shaper for the given script.</returns>
+    /// <param name="script">The Unicode script of the run.</param>
+    /// <param name="unicodeScriptTag">The OpenType script tag selected for the run.</param>
+    /// <param name="fontMetrics">The font metrics for the run.</param>
+    /// <param name="textOptions">The text options for the run.</param>
+    /// <param name="languageTags">The candidate OpenType language system tags.</param>
+    /// <param name="useMetamorphosis">Whether the run uses AAT substitution.</param>
+    /// <returns>The shaper for the run.</returns>
     public static BaseShaper Create(
         ScriptClass script,
         Tag unicodeScriptTag,
         FontMetrics fontMetrics,
         TextOptions textOptions,
-        Tag[] languageTags)
+        Tag[] languageTags,
+        bool useMetamorphosis)
         => script switch
         {
             // Arabic and Syriac
@@ -71,18 +74,26 @@ internal static class ShaperFactory
             // their horizontal RTL inline direction and script-specific joining.
             => (unicodeScriptTag != default || script == ScriptClass.Arabic)
             && !textOptions.LayoutMode.IsVertical()
-            ? new ArabicShaper(script, textOptions, fontMetrics, languageTags)
+            ? useMetamorphosis
+                ? DefaultShaper.CreateForMetamorphosis(script, textOptions, true)
+                : new ArabicShaper(script, textOptions, fontMetrics, languageTags)
             : new DefaultShaper(script, textOptions),
 
             // Hebrew
-            ScriptClass.Hebrew => new HebrewShaper(script, textOptions, fontMetrics, unicodeScriptTag != default),
+            ScriptClass.Hebrew => useMetamorphosis
+                ? DefaultShaper.CreateForMetamorphosis(script, textOptions, true)
+                : new HebrewShaper(script, textOptions, fontMetrics, unicodeScriptTag != default),
 
             // Thai / Lao
             ScriptClass.Thai
-            or ScriptClass.Lao => new ThaiShaper(script, textOptions, fontMetrics, unicodeScriptTag != default),
+            or ScriptClass.Lao => useMetamorphosis
+                ? DefaultShaper.CreateForMetamorphosis(script, textOptions, false)
+                : new ThaiShaper(script, textOptions, fontMetrics, unicodeScriptTag != default),
 
             // Hangul
-            ScriptClass.Hangul => new HangulShaper(script, textOptions, fontMetrics),
+            ScriptClass.Hangul => useMetamorphosis
+                ? DefaultShaper.CreateForMetamorphosis(script, textOptions, true)
+                : new HangulShaper(script, textOptions, fontMetrics),
 
             // Indic
             ScriptClass.Bengali
@@ -103,10 +114,16 @@ internal static class ShaperFactory
             => IsDefaultDesign(unicodeScriptTag)
             ? new DefaultShaper(script, textOptions)
             : IsThirdRevision(unicodeScriptTag)
-            ? new UniversalShaper(script, textOptions, fontMetrics)
-            : new IndicShaper(script, unicodeScriptTag, textOptions, fontMetrics),
+            ? useMetamorphosis
+                ? DefaultShaper.CreateForMetamorphosis(script, textOptions, false)
+                : new UniversalShaper(script, textOptions, fontMetrics)
+            : (useMetamorphosis
+                ? DefaultShaper.CreateForMetamorphosis(script, textOptions, false)
+                : new IndicShaper(script, unicodeScriptTag, textOptions, fontMetrics)),
 
-            ScriptClass.Khmer => new KhmerShaper(script, textOptions, fontMetrics),
+            ScriptClass.Khmer => useMetamorphosis
+                ? DefaultShaper.CreateForMetamorphosis(script, textOptions, false)
+                : new KhmerShaper(script, textOptions, fontMetrics),
 
             // Myanmar
             ScriptClass.Myanmar
@@ -119,10 +136,14 @@ internal static class ShaperFactory
             // shaper.  That's tag used from before Myanmar shaping spec
             // was developed.  The shaping spec uses 'mym2' tag.
             => unicodeScriptTag == Mym2Tag
-            ? new MyanmarShaper(script, textOptions, fontMetrics)
+            ? useMetamorphosis
+                ? DefaultShaper.CreateForMetamorphosis(script, textOptions, false)
+                : new MyanmarShaper(script, textOptions, fontMetrics)
             : new DefaultShaper(script, textOptions),
 
-            ScriptClass.MyanmarZawgyi => new MyanmarZawgyiShaper(script, textOptions),
+            ScriptClass.MyanmarZawgyi => useMetamorphosis
+                ? DefaultShaper.CreateForMetamorphosis(script, textOptions, false)
+                : new MyanmarZawgyiShaper(script, textOptions),
 
             // Universal
             ScriptClass.Balinese
@@ -217,7 +238,9 @@ internal static class ShaperFactory
             // Universal syllable analysis is selected from the Unicode script,
             // independently of which layout tables the font provides. A font with
             // no script system still needs broken-syllable repair and reordering.
-            => new UniversalShaper(script, textOptions, fontMetrics),
+            => useMetamorphosis
+                ? DefaultShaper.CreateForMetamorphosis(script, textOptions, false)
+                : new UniversalShaper(script, textOptions, fontMetrics),
             _ => new DefaultShaper(script, textOptions),
         };
 }

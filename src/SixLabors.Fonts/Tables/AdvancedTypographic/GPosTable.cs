@@ -21,7 +21,7 @@ internal class GPosTable : Table
     /// candidates. See <see cref="TryGetFeatureLookups"/> for the variable-font bypass
     /// and the read-only contract on cached lists.
     /// </summary>
-    private readonly ConcurrentDictionary<FeatureLookupsKey, List<(Tag Feature, ushort Index, LookupTable LookupTable)>> featureLookupsCache = new();
+    private readonly ConcurrentDictionary<FeatureLookupsKey, List<(Tag Feature, ushort Index, LookupTable LookupTable)>?> featureLookupsCache = new();
 
     /// <summary>
     /// The tag for the horizontal kerning feature ('kern').
@@ -59,6 +59,17 @@ internal class GPosTable : Table
     }
 
     /// <summary>
+    /// Applies fallback pair kerning to a run before attachment offsets are resolved.
+    /// </summary>
+    /// <param name="fontMetrics">The font metrics.</param>
+    /// <param name="buffer">The glyph positioning buffer.</param>
+    /// <param name="start">The first glyph in the run.</param>
+    /// <param name="end">The index after the last glyph in the run.</param>
+    /// <param name="vertical">Whether the run uses vertical kerning.</param>
+    /// <returns>Whether the fallback applied kerning.</returns>
+    public delegate bool KerningFallback(FontMetrics fontMetrics, ShapingBuffer buffer, int start, int end, bool vertical);
+
+    /// <summary>
     /// Gets the script list table, or <see langword="null"/> if not present.
     /// </summary>
     public ScriptList? ScriptList { get; }
@@ -85,7 +96,7 @@ internal class GPosTable : Table
     /// <returns>The <see cref="GPosTable"/>, or <see langword="null"/> if not present.</returns>
     public static GPosTable? Load(FontReader fontReader)
     {
-        if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
+        if (!fontReader.TryGetBoundedReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
         {
             return null;
         }
@@ -157,150 +168,30 @@ internal class GPosTable : Table
     }
 
     /// <summary>
-    /// Tries to update the positions of glyphs in the buffer using GPOS lookup rules.
+    /// Applies GPOS lookups and resolves attachments within the active span.
     /// </summary>
     /// <param name="fontMetrics">The font metrics.</param>
     /// <param name="buffer">The glyph positioning buffer.</param>
+    /// <param name="shapePlan">The shape plan for the span.</param>
+    /// <param name="vertical">Whether the span uses vertical shaping.</param>
+    /// <param name="kerningFallback">Pair kerning to use when the run has no GPOS kerning feature.</param>
     /// <param name="kerned">When this method returns, indicates whether kerning was applied.</param>
-    /// <returns><see langword="true"/> if any positioning was updated; otherwise, <see langword="false"/>.</returns>
-    public bool TryUpdatePositions(FontMetrics fontMetrics, ShapingBuffer buffer, out bool kerned)
-    {
-        // Set max constraints to prevent OutOfMemoryException or infinite loops from attacks.
-        int maxCount = AdvancedTypographicUtils.GetMaxAllowableShapingCollectionCount(buffer.Count);
-        int maxOperationsCount = AdvancedTypographicUtils.GetMaxAllowableShapingOperationsCount(buffer.Count);
-        int currentOperations = 0;
-        bool maxOperationsReached = false;
-
-        kerned = false;
-        bool updated = false;
-
-        // Segments recorded during an in-place substitution pass carry their plan;
-        // reuse them so one plan drives both tables and positioning never
-        // re-segments, re-creates, or re-plans. An empty list means records were
-        // seeded across buffers and positioning must segment for itself below.
-        List<(int Index, int Count, ScriptClass Script, ShapePlan Plan)> segments = buffer.SegmentPlans;
-        if (segments.Count > 0)
-        {
-            for (int s = 0; s < segments.Count; s++)
-            {
-                (int index, int count, ScriptClass script, ShapePlan shapePlan) = segments[s];
-                if (shapePlan.FontMetrics != fontMetrics)
-                {
-                    // Glyph ids and lookup indices are local to the font bound to
-                    // the plan, even though all fonts share one positioning buffer.
-                    continue;
-                }
-
-                updated |= this.PositionSegment(
-                    fontMetrics,
-                    buffer,
-                    shapePlan,
-                    index,
-                    count,
-                    maxOperationsCount,
-                    ref currentOperations,
-                    ref kerned,
-                    ref maxOperationsReached);
-
-                if (maxOperationsReached)
-                {
-                    break;
-                }
-            }
-
-            return updated;
-        }
-
-        for (int i = 0; i < buffer.Count; i++)
-        {
-            if (!buffer.ShouldProcess(fontMetrics, i))
-            {
-                continue;
-            }
-
-            ScriptItemizer.ShapingRun run = new(buffer, i);
-
-            int index = i;
-            int count = 1;
-            while (i < buffer.Count - 1)
-            {
-                // We want to assign the same feature lookups to individual sections of the text rather
-                // than the text as a whole to ensure that different language shapers do not interfere
-                // with each other when the text contains multiple languages.
-                int ni = i + 1;
-                if (!buffer.ShouldProcess(fontMetrics, ni))
-                {
-                    break;
-                }
-
-                if (!run.TryInclude(buffer, ni))
-                {
-                    break;
-                }
-
-                i++;
-                count++;
-
-                if (i >= maxCount)
-                {
-                    break;
-                }
-            }
-
-            Tag unicodeScriptTag = this.GetUnicodeScriptTag(run.Script);
-            ShapePlan shapePlan = buffer.GetOrCreatePlan(run.Script, unicodeScriptTag, fontMetrics, run.Culture, run.FeatureTags);
-
-            // Plan positioning features for each glyph. Records seeded across buffers
-            // had their feature registrations cleared, so this pass re-plans.
-            shapePlan.Shaper.Plan(fontMetrics, buffer, index, count);
-
-            updated |= this.PositionSegment(
-                fontMetrics,
-                buffer,
-                shapePlan,
-                index,
-                count,
-                maxOperationsCount,
-                ref currentOperations,
-                ref kerned,
-                ref maxOperationsReached);
-
-            if (i >= maxCount || maxOperationsReached)
-            {
-                return updated;
-            }
-        }
-
-        return updated;
-    }
-
-    /// <summary>
-    /// Applies the positioning stages of a planned segment: mark zeroing, the
-    /// pause-delimited stage groups in lookup-index order, attachment resolution, and
-    /// position materialization. The caller supplies the plan that covers the
-    /// segment, either freshly re-planned or reused from the substitution pass.
-    /// </summary>
-    /// <param name="fontMetrics">The font metrics.</param>
-    /// <param name="buffer">The glyph positioning buffer.</param>
-    /// <param name="shapePlan">The plan covering the segment.</param>
-    /// <param name="index">The starting index of the segment.</param>
-    /// <param name="count">The number of glyphs in the segment.</param>
-    /// <param name="maxOperationsCount">The maximum allowable operations count.</param>
-    /// <param name="currentOperations">The current operations counter.</param>
-    /// <param name="kerned">Set when a kerning feature applied.</param>
-    /// <param name="maxOperationsReached">Set when the operations budget ran out.</param>
-    /// <returns><see langword="true"/> if any positioning was updated.</returns>
-    private bool PositionSegment(
+    /// <returns>
+    /// Whether a lookup or the pair kerning fallback applied. Mark zeroing can change advances independently.
+    /// </returns>
+    public bool TryUpdatePositions(
         FontMetrics fontMetrics,
         ShapingBuffer buffer,
         ShapePlan shapePlan,
-        int index,
-        int count,
-        int maxOperationsCount,
-        ref int currentOperations,
-        ref bool kerned,
-        ref bool maxOperationsReached)
+        bool vertical,
+        KerningFallback? kerningFallback,
+        out bool kerned)
     {
+        int index = buffer.SpanStart;
+        int segmentEnd = buffer.SpanEnd;
+        int count = segmentEnd - index;
+
+        kerned = false;
         bool updated = false;
 
         if (shapePlan.Shaper.MarkZeroingMode == MarkZeroingMode.PreGPos)
@@ -316,9 +207,27 @@ internal class GPosTable : Table
         // their glyph masks combined. Group boundaries, merged lookup lists, and
         // entry masks are all prebuilt on the plan.
         List<ShapePlanStageGroup<LookupTable>> groups = shapePlan.GetOrBuildGPosStageGroups(this);
+
+        if (kerningFallback is not null)
+        {
+            // A declared kerning feature owns the run even if no lookup matches.
+            // Resolve by tag because a merged lookup can carry a different feature's tag.
+            Tag kerningTag = vertical ? VKernTag : KernTag;
+            this.TryGetFeatureLookups(fontMetrics, in kerningTag, shapePlan.Script, shapePlan.LanguageTags, out List<(Tag Feature, ushort Index, LookupTable LookupTable)>? kerningLookups);
+            if (kerningLookups is not null)
+            {
+                kerningFallback = null;
+            }
+        }
+
         List<ShapingStage> shapingStages = shapePlan.Stages;
         SkippingGlyphIterator iterator = new(fontMetrics, buffer, index, default, 0);
-        int segmentEnd = index + count;
+
+        // Count GPOS visits locally. Publish the total before fallback kerning
+        // so that it sees the positioning budget that remains.
+        int budget = buffer.RemainingOperations;
+        int remaining = budget;
+
         for (int g = 0; g < groups.Count; g++)
         {
             ShapePlanStageGroup<LookupTable> group = groups[g];
@@ -353,9 +262,8 @@ internal class GPosTable : Table
                 buffer.MoveTo(index);
                 while (buffer.ReadIndex < segmentEnd)
                 {
-                    if (currentOperations++ >= maxOperationsCount)
+                    if (remaining-- == 0)
                     {
-                        maxOperationsReached = true;
                         goto EndLookups;
                     }
 
@@ -388,15 +296,31 @@ internal class GPosTable : Table
         }
 
         EndLookups:
+        buffer.CountOperations(budget - remaining);
+
         if (shapePlan.Shaper.MarkZeroingMode == MarkZeroingMode.PostGpos)
         {
             AdvancedTypographicUtils.ZeroMarkAdvances(fontMetrics, buffer, index, count, false);
         }
 
-        ZeroDefaultIgnorableAdvances(buffer, index, count);
-        FixCursiveAttachment(buffer, index, count);
-        FixMarkAttachment(buffer, index, count);
-        UpdatePositions(buffer, index, count);
+        AdvancedTypographicUtils.ZeroDefaultIgnorableAdvances(buffer, index, count);
+
+        if (kerningFallback is not null && buffer.RemainingOperations > 0)
+        {
+            // Mark offsets use the advances between the mark and its base.
+            // Apply pair kerning before resolving those offsets.
+            bool applied = kerningFallback(fontMetrics, buffer, index, segmentEnd, vertical);
+            kerned |= applied;
+            updated |= applied;
+        }
+
+        // Metrics seeding leaves every link clear. A lookup that sets a
+        // link reports success, so a run with no updates has no links to resolve.
+        if (updated)
+        {
+            FixCursiveAttachment(buffer, index, count);
+            FixMarkAttachment(buffer, index, count);
+        }
 
         return updated;
     }
@@ -411,7 +335,10 @@ internal class GPosTable : Table
     /// The candidate OpenType language system tags, most specific first. An empty array
     /// selects the default language system.
     /// </param>
-    /// <param name="value">When this method returns, contains the list of feature lookups if found.</param>
+    /// <param name="value">
+    /// Receives the lookups for a declared feature, or <see langword="null"/> if the feature is absent.
+    /// The list can be empty when the feature has no lookups.
+    /// </param>
     /// <returns><see langword="true"/> if lookups were found; otherwise, <see langword="false"/>.</returns>
     public bool TryGetFeatureLookups(
         FontMetrics fontMetrics,
@@ -431,11 +358,11 @@ internal class GPosTable : Table
         if (this.FeatureVariations is not null)
         {
             value = this.ResolveFeatureLookups(fontMetrics, stageFeature, script, languageTags);
-            return value.Count > 0;
+            return value is not null && value.Count > 0;
         }
 
         // Resolution depends only on this table's data for a given feature, script,
-        // and language candidates, so results, including empty ones, are cached for
+        // and language candidates, so results, including missing features, are cached for
         // the table's lifetime. The cached list is shared: consumers must not mutate
         // it. A concurrent first-resolution race only duplicates deterministic work.
         FeatureLookupsKey key = new(stageFeature, script, languageTags);
@@ -445,7 +372,7 @@ internal class GPosTable : Table
             this.featureLookupsCache.TryAdd(key, value);
         }
 
-        return value.Count > 0;
+        return value is not null && value.Count > 0;
     }
 
     /// <summary>
@@ -456,8 +383,8 @@ internal class GPosTable : Table
     /// <param name="stageFeature">The feature tag for the current shaping stage.</param>
     /// <param name="script">The script class.</param>
     /// <param name="languageTags">The candidate OpenType language system tags, most specific first.</param>
-    /// <returns>The resolved lookups; empty when the feature yields none.</returns>
-    private List<(Tag Feature, ushort Index, LookupTable LookupTable)> ResolveFeatureLookups(
+    /// <returns>The resolved lookups, or <see langword="null"/> when the feature is absent.</returns>
+    private List<(Tag Feature, ushort Index, LookupTable LookupTable)>? ResolveFeatureLookups(
         FontMetrics fontMetrics,
         Tag stageFeature,
         ScriptClass script,
@@ -527,31 +454,7 @@ internal class GPosTable : Table
         // language system means no lookups. Features such as SimSun's vertical
         // alternates, which live only under its Chinese language systems, are reached by
         // setting TextOptions.Culture to a Chinese culture.
-        return [];
-    }
-
-    /// <summary>
-    /// Gets the OpenType script tag for the given script class, checking against the font's ScriptList.
-    /// </summary>
-    /// <param name="script">The script class.</param>
-    /// <returns>The matching script tag, or default if not found.</returns>
-    private Tag GetUnicodeScriptTag(ScriptClass script)
-    {
-        if (this.ScriptList is null)
-        {
-            return default;
-        }
-
-        Tag[] tags = UnicodeScriptTagMap.Instance[script];
-        for (int i = 0; i < tags.Length; i++)
-        {
-            if (this.ScriptList.TryGetValue(tags[i].Value, out ScriptListTable? _))
-            {
-                return tags[i];
-            }
-        }
-
-        return default;
+        return null;
     }
 
     /// <summary>
@@ -560,13 +463,13 @@ internal class GPosTable : Table
     /// <param name="stageFeature">The feature tag for the current shaping stage.</param>
     /// <param name="substitutions">Optional feature table substitutions from FeatureVariations.</param>
     /// <param name="langSysTables">The language system tables to search.</param>
-    /// <returns>A sorted list of feature lookups.</returns>
-    private List<(Tag Feature, ushort Index, LookupTable LookupTable)> GetFeatureLookups(
+    /// <returns>A sorted list of lookups, or <see langword="null"/> when the feature is absent.</returns>
+    private List<(Tag Feature, ushort Index, LookupTable LookupTable)>? GetFeatureLookups(
         in Tag stageFeature,
         FeatureTableSubstitutionRecord[]? substitutions,
         params LangSysTable[] langSysTables)
     {
-        List<(Tag Feature, ushort Index, LookupTable LookupTable)> lookups = [];
+        List<(Tag Feature, ushort Index, LookupTable LookupTable)>? lookups = null;
         for (int i = 0; i < langSysTables.Length; i++)
         {
             ushort[] featureIndices = langSysTables[i].FeatureIndices;
@@ -581,6 +484,7 @@ internal class GPosTable : Table
                     continue;
                 }
 
+                lookups ??= [];
                 ushort[] lookupListIndices = featureTable.LookupListIndices;
                 for (int k = 0; k < lookupListIndices.Length; k++)
                 {
@@ -591,7 +495,7 @@ internal class GPosTable : Table
             }
         }
 
-        lookups.Sort((x, y) => x.Index - y.Index);
+        lookups?.Sort((x, y) => x.Index - y.Index);
         return lookups;
     }
 
@@ -619,46 +523,6 @@ internal class GPosTable : Table
         }
 
         return featureList.FeatureTables[featureIndex];
-    }
-
-    /// <summary>
-    /// Zeros the movement-axis geometry of default ignorables before attachment offsets are resolved.
-    /// </summary>
-    /// <param name="buffer">The glyph positioning buffer.</param>
-    /// <param name="index">The starting index.</param>
-    /// <param name="count">The number of glyphs to process.</param>
-    private static void ZeroDefaultIgnorableAdvances(ShapingBuffer buffer, int index, int count)
-    {
-        if (!buffer.HasDefaultIgnorables)
-        {
-            return;
-        }
-
-        bool isVertical = buffer.TextOptions.LayoutMode.IsVertical();
-        int end = index + count;
-        for (int i = index; i < end; i++)
-        {
-            ref GlyphShapingData data = ref buffer[i];
-            if (!data.IsDefaultIgnorable || data.IsSubstituted)
-            {
-                continue;
-            }
-
-            // Attachment propagation sums every intervening advance. The invisible
-            // record therefore has to become zero-width before that sum is evaluated,
-            // while retaining its cross-axis adjustment until final hiding.
-            ref GlyphShapingPosition position = ref buffer.PositionAt(i);
-            position.Bounds.Width = 0;
-            position.Bounds.Height = 0;
-            if (isVertical)
-            {
-                position.Bounds.Y = 0;
-            }
-            else
-            {
-                position.Bounds.X = 0;
-            }
-        }
     }
 
     /// <summary>
@@ -753,8 +617,8 @@ internal class GPosTable : Table
                 bool isVertical = AdvancedTypographicUtils.IsVerticalGlyph(buffer[currentIndex].CodePoint, buffer.TextOptions.LayoutMode);
                 if (isVertical)
                 {
-                    GetVerticalOrigin(buffer.MetricsAt(currentIndex).Metrics, buffer.UseShapingVerticalOrigin, out int markOriginX, out int markOriginY);
-                    GetVerticalOrigin(buffer.MetricsAt(j).Metrics, buffer.UseShapingVerticalOrigin, out int baseOriginX, out int baseOriginY);
+                    AdvancedTypographicUtils.GetVerticalOrigin(buffer.MetricsAt(currentIndex).Metrics, buffer.UseShapingVerticalOrigin, out int markOriginX, out int markOriginY);
+                    AdvancedTypographicUtils.GetVerticalOrigin(buffer.MetricsAt(j).Metrics, buffer.UseShapingVerticalOrigin, out int baseOriginX, out int baseOriginY);
 
                     // OpenType mark attachment replaces the mark offset with its
                     // anchor delta. Origins are applied only when the result is
@@ -797,49 +661,6 @@ internal class GPosTable : Table
                     }
                 }
             }
-        }
-    }
-
-    /// <summary>
-    /// Gets the vertical origin for a glyph in font design units.
-    /// </summary>
-    /// <param name="metrics">The glyph metrics.</param>
-    /// <param name="useShapingVerticalOrigin">Whether to use the public shaping fallback when the font has no authored vertical origin.</param>
-    /// <param name="x">The horizontal origin.</param>
-    /// <param name="y">The vertical origin.</param>
-    private static void GetVerticalOrigin(FontGlyphMetrics metrics, bool useShapingVerticalOrigin, out int x, out int y)
-    {
-        // OpenType vertical origins are horizontally centered on the glyph's
-        // nominal horizontal advance, using integer division in font units.
-        x = metrics.AdvanceWidth / 2;
-
-        VerticalMetrics verticalMetrics = metrics.FontMetrics.VerticalMetrics;
-        if (verticalMetrics.Synthesized && useShapingVerticalOrigin)
-        {
-            // Public shaping follows the shaping-engine fallback by centering each
-            // glyph's extents within the font's ascender-to-descender height.
-            float fontAdvance = verticalMetrics.Ascender - verticalMetrics.Descender;
-            y = (int)(metrics.Bounds.Max.Y + MathF.Floor((fontAdvance - metrics.Height) * .5F));
-            return;
-        }
-
-        // Authored origins are shared by both contracts. When tables are absent,
-        // synthesized TopSideBearing resolves to the font-ascent origin used by
-        // browsers for layout and painting.
-        y = (int)(metrics.Bounds.Max.Y + metrics.TopSideBearing);
-    }
-
-    /// <summary>
-    /// Updates glyph positions in the buffer for the specified range.
-    /// </summary>
-    /// <param name="buffer">The glyph positioning buffer.</param>
-    /// <param name="index">The starting index.</param>
-    /// <param name="count">The number of glyphs to process.</param>
-    private static void UpdatePositions(ShapingBuffer buffer, int index, int count)
-    {
-        for (int i = 0; i < count; i++)
-        {
-            buffer.UpdatePosition(i + index);
         }
     }
 }

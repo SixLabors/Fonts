@@ -54,7 +54,7 @@ public class DfaTests
     [InlineData(0x0627, "O")]
     [InlineData(0x0DCA, "HVM")]
     [InlineData(0x200D, "CGJ")]
-    [InlineData(0x2015, "O")]
+    [InlineData(0x2015, "GB")]
     [InlineData(0xE0000, "WJ")]
     public void UniversalCategoriesMatchReferenceTable(int codePoint, string expected)
     {

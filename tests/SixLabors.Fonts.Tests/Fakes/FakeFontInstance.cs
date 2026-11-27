@@ -26,8 +26,11 @@ internal class FakeFontInstance : StreamFontMetrics
     }
 
     /// <summary>
-    /// Creates a fake font with varying vertical font metrics to facilitate testing.
+    /// Creates a test font with different values for its vertical metrics.
     /// </summary>
+    /// <param name="text">The characters to include in the font.</param>
+    /// <param name="fontName">The name to put in the font's naming table.</param>
+    /// <returns>The test font metrics.</returns>
     public static FakeFontInstance CreateFontWithVaryingVerticalFontMetrics(string text, string fontName = "name")
     {
         List<FakeGlyphSource> glyphs = GetGlyphs(text);
@@ -38,7 +41,7 @@ internal class FakeFontInstance : StreamFontMetrics
         CMapTable cmap = GenerateCMapTable(glyphs);
         FakeGlyphTable glyf = new(glyphs);
         PostTable post = GeneratePostTable();
-        KerningTable kern = new(Array.Empty<KerningSubTable>());
+        KernTable kern = new(Array.Empty<KerningSubTable>());
         OS2Table os2 = GenerateOS2TableWithVaryingVerticalFontMetrics();
         HorizontalMetricsTable htmx = GenerateHorizontalMetricsTable(glyphs);
         VerticalHeadTable vhea = GenerateVerticalHeadTable();
@@ -55,6 +58,12 @@ internal class FakeFontInstance : StreamFontMetrics
         return new FakeFontInstance(tables);
     }
 
+    /// <summary>
+    /// Creates the TrueType tables for a test font with the specified characters.
+    /// </summary>
+    /// <param name="text">The characters to include in the font.</param>
+    /// <param name="fontName">The name to put in the font's naming table.</param>
+    /// <returns>The test font tables.</returns>
     private static TrueTypeFontTables CreateTrueTypeFontTables(string text, string fontName = "name")
     {
         List<FakeGlyphSource> glyphs = GetGlyphs(text);
@@ -65,7 +74,7 @@ internal class FakeFontInstance : StreamFontMetrics
         CMapTable cmap = GenerateCMapTable(glyphs);
         FakeGlyphTable glyf = new(glyphs);
         PostTable post = GeneratePostTable();
-        KerningTable kern = new(Array.Empty<KerningSubTable>());
+        KernTable kern = new(Array.Empty<KerningSubTable>());
         OS2Table os2 = GenerateOS2Table();
         HorizontalMetricsTable htmx = GenerateHorizontalMetricsTable(glyphs);
         VerticalHeadTable vhea = GenerateVerticalHeadTable();
@@ -80,14 +89,17 @@ internal class FakeFontInstance : StreamFontMetrics
         };
     }
 
+    /// <summary>
+    /// Creates one test glyph for each distinct code point and reserves glyph ID zero for .notdef.
+    /// </summary>
+    /// <param name="text">The characters to include in the font.</param>
+    /// <returns>The glyph sources in glyph ID order.</returns>
     private static List<FakeGlyphSource> GetGlyphs(string text)
     {
+        // Glyph ID zero represents a missing glyph. Reserve it before adding the test characters.
         HashSet<CodePoint> codePoints =
         [
-            // Regardless of the encoding scheme, character codes that do
-            // not correspond to any glyph in the font should be mapped to glyph index 0.
-            // The glyph at this location must be a special glyph representing a missing character, commonly known as .notdef.
-            default, .. text.AsSpan().EnumerateCodePoints() // Add default at position 0;
+            default, .. text.AsSpan().EnumerateCodePoints()
         ];
 
         return [.. codePoints.Select((x, i) => new FakeGlyphSource(x, (ushort)i))];

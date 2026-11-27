@@ -20,7 +20,7 @@ public class KerningTableTests
         using (MemoryStream stream = writer.GetStream())
         {
             using FontReader reader = new(stream);
-            KerningTable table = KerningTable.Load(reader);
+            KernTable table = KernTable.Load(reader);
             Assert.NotNull(table);
         }
     }
@@ -57,7 +57,7 @@ public class KerningTableTests
         writer.Write((short)-30);
 
         using BigEndianBinaryReader reader = writer.GetReader();
-        KerningTable table = KerningTable.Load(reader);
+        KernTable table = KernTable.Load(reader);
 
         Assert.True(table.TryGetKerningOffset(10, 21, out Vector2 firstRow));
         Assert.Equal(new Vector2(-10, 0), firstRow);
@@ -99,7 +99,7 @@ public class KerningTableTests
         writer.Write((short)-30);
 
         using BigEndianBinaryReader reader = writer.GetReader();
-        KerningTable table = KerningTable.Load(reader);
+        KernTable table = KernTable.Load(reader);
 
         Assert.True(table.TryGetKerningOffset(11, 21, out Vector2 result));
         Assert.Equal(new Vector2(-30, 0), result);

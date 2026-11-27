@@ -167,6 +167,13 @@ internal class GlyphVariationProcessor
         GlyphVariationData variationData = this.gVar.GlyphVariations[glyphId];
         if (!variationData.HasData)
         {
+            // A composite can inherit changes from its components even when
+            // the composite glyph itself has no deltas in gvar.
+            if (glyphPoints.IsComposite)
+            {
+                glyphPoints.Bounds = CalculateBounds(glyphPoints.ControlPoints);
+            }
+
             return;
         }
 

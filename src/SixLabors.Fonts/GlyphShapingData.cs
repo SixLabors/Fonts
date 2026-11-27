@@ -177,6 +177,7 @@ internal struct GlyphShapingData
         this.CodePointCount = data.CodePointCount;
         this.Direction = data.Direction;
         this.TextRunIndex = data.TextRunIndex;
+        this.FallbackFontIndex = data.FallbackFontIndex;
         this.LigatureId = data.LigatureId;
         this.IsLigated = data.IsLigated;
         this.LigatureComponent = data.LigatureComponent;
@@ -299,6 +300,12 @@ internal struct GlyphShapingData
     /// the garbage collector never scans the pooled glyph arrays.
     /// </summary>
     public ushort TextRunIndex { get; set; }
+
+    /// <summary>
+    /// Gets or sets the one-based index into the fallback font list.
+    /// Zero selects the font of the text run.
+    /// </summary>
+    public int FallbackFontIndex { get; set; }
 
     /// <summary>
     /// Gets or sets the id of any ligature this glyph is a member of. Zero means the

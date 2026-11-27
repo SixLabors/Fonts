@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Aat;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
@@ -44,11 +45,13 @@ internal class TableLoader
         this.Register(OS2Table.TableName, OS2Table.Load);
         this.Register(IndexLocationTable.TableName, IndexLocationTable.Load);
         this.Register(GlyphTable.TableName, GlyphTable.Load);
-        this.Register(KerningTable.TableName, KerningTable.Load);
+        this.Register(KernTable.TableName, KernTable.Load);
         this.Register(ColrTable.TableName, ColrTable.Load);
         this.Register(CpalTable.TableName, CpalTable.Load);
         this.Register(GPosTable.TableName, GPosTable.Load);
         this.Register(GSubTable.TableName, GSubTable.Load);
+        this.Register(MortTable.TableName, MortTable.Load);
+        this.Register(MorxTable.TableName, MorxTable.Load);
         this.Register(BaseTable.TableName, BaseTable.Load);
         this.Register(CvtTable.TableName, CvtTable.Load);
         this.Register(FpgmTable.TableName, FpgmTable.Load);

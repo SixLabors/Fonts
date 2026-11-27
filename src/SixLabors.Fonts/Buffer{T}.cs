@@ -18,15 +18,28 @@ internal ref struct Buffer<T>
     private readonly Span<T> span;
     private bool isDisposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Buffer{T}"/> struct.
+    /// </summary>
+    /// <param name="length">The number of elements to expose.</param>
     public Buffer(int length)
         : this(length, clear: false)
     {
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Buffer{T}"/> struct.
+    /// </summary>
+    /// <param name="length">The number of elements to expose.</param>
+    /// <param name="clear">Whether to set the exposed elements to zero.</param>
     public Buffer(int length, bool clear)
     {
         Guard.MustBeGreaterThanOrEqualTo(length, 0, nameof(length));
+
+        // The pool rents bytes. Check the entry count before converting it to bytes.
         int itemSizeBytes = Unsafe.SizeOf<T>();
+        Guard.MustBeLessThanOrEqualTo(length, Array.MaxLength / itemSizeBytes, nameof(length));
+
         int bufferSizeInBytes = length * itemSizeBytes;
         this.buffer = ArrayPool<byte>.Shared.Rent(bufferSizeInBytes);
         this.length = length;

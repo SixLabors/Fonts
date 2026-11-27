@@ -12,11 +12,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 internal readonly struct ValueRecord
 {
     /// <summary>
-    /// The deltaFormat value used by VariationIndex tables (as opposed to Device tables).
-    /// </summary>
-    private const ushort VariationIndexFormat = 0x8000;
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="ValueRecord"/> struct.
     /// </summary>
     /// <param name="reader">The big endian binary reader.</param>
@@ -87,19 +82,19 @@ internal readonly struct ValueRecord
         this.XAdvance = (valueFormat & ValueFormat.XAdvance) != 0 ? reader.ReadInt16() : (short)0;
         this.YAdvance = (valueFormat & ValueFormat.YAdvance) != 0 ? reader.ReadInt16() : (short)0;
 
-        short xPlaDevOff = (valueFormat & ValueFormat.XPlacementDevice) != 0 ? reader.ReadInt16() : (short)0;
-        short yPlaDevOff = (valueFormat & ValueFormat.YPlacementDevice) != 0 ? reader.ReadInt16() : (short)0;
-        short xAdvDevOff = (valueFormat & ValueFormat.XAdvanceDevice) != 0 ? reader.ReadInt16() : (short)0;
-        short yAdvDevOff = (valueFormat & ValueFormat.YAdvanceDevice) != 0 ? reader.ReadInt16() : (short)0;
+        ushort xPlaDevOff = (valueFormat & ValueFormat.XPlacementDevice) != 0 ? reader.ReadOffset16() : (ushort)0;
+        ushort yPlaDevOff = (valueFormat & ValueFormat.YPlacementDevice) != 0 ? reader.ReadOffset16() : (ushort)0;
+        ushort xAdvDevOff = (valueFormat & ValueFormat.XAdvanceDevice) != 0 ? reader.ReadOffset16() : (ushort)0;
+        ushort yAdvDevOff = (valueFormat & ValueFormat.YAdvanceDevice) != 0 ? reader.ReadOffset16() : (ushort)0;
 
         // Resolve device offsets to VariationIndex tables when the parent base is known.
-        if (parentBase >= 0 && ((ushort)xPlaDevOff | (ushort)yPlaDevOff | (ushort)xAdvDevOff | (ushort)yAdvDevOff) != 0)
+        if (parentBase >= 0 && (xPlaDevOff | yPlaDevOff | xAdvDevOff | yAdvDevOff) != 0)
         {
             long savedPosition = reader.BaseStream.Position;
-            this.XPlacementVariation = ResolveVariationIndex(reader, parentBase, xPlaDevOff);
-            this.YPlacementVariation = ResolveVariationIndex(reader, parentBase, yPlaDevOff);
-            this.XAdvanceVariation = ResolveVariationIndex(reader, parentBase, xAdvDevOff);
-            this.YAdvanceVariation = ResolveVariationIndex(reader, parentBase, yAdvDevOff);
+            this.XPlacementVariation = AdvancedTypographicUtils.ReadVariationIndex(reader, parentBase, xPlaDevOff);
+            this.YPlacementVariation = AdvancedTypographicUtils.ReadVariationIndex(reader, parentBase, yPlaDevOff);
+            this.XAdvanceVariation = AdvancedTypographicUtils.ReadVariationIndex(reader, parentBase, xAdvDevOff);
+            this.YAdvanceVariation = AdvancedTypographicUtils.ReadVariationIndex(reader, parentBase, yAdvDevOff);
             reader.BaseStream.Position = savedPosition;
         }
     }
@@ -125,25 +120,25 @@ internal readonly struct ValueRecord
     public short YAdvance { get; }
 
     /// <summary>
-    /// Gets the packed VariationIndex for horizontal placement: (outerIndex &lt;&lt; 16) | innerIndex.
+    /// Gets the one-based packed VariationIndex for horizontal placement.
     /// Zero means no variation data.
     /// </summary>
     public uint XPlacementVariation { get; }
 
     /// <summary>
-    /// Gets the packed VariationIndex for vertical placement: (outerIndex &lt;&lt; 16) | innerIndex.
+    /// Gets the one-based packed VariationIndex for vertical placement.
     /// Zero means no variation data.
     /// </summary>
     public uint YPlacementVariation { get; }
 
     /// <summary>
-    /// Gets the packed VariationIndex for horizontal advance: (outerIndex &lt;&lt; 16) | innerIndex.
+    /// Gets the one-based packed VariationIndex for horizontal advance.
     /// Zero means no variation data.
     /// </summary>
     public uint XAdvanceVariation { get; }
 
     /// <summary>
-    /// Gets the packed VariationIndex for vertical advance: (outerIndex &lt;&lt; 16) | innerIndex.
+    /// Gets the one-based packed VariationIndex for vertical advance.
     /// Zero means no variation data.
     /// </summary>
     public uint YAdvanceVariation { get; }
@@ -153,41 +148,4 @@ internal readonly struct ValueRecord
     /// </summary>
     public bool HasVariation
         => (this.XPlacementVariation | this.YPlacementVariation | this.XAdvanceVariation | this.YAdvanceVariation) != 0;
-
-    /// <summary>
-    /// Reads a Device/VariationIndex table at the given offset and returns a packed VariationIndex
-    /// (outerIndex &lt;&lt; 16 | innerIndex) if it is a VariationIndex table (deltaFormat == 0x8000),
-    /// or 0 if null, a Device table, or invalid.
-    /// </summary>
-    /// <param name="reader">The big endian binary reader.</param>
-    /// <param name="parentBase">The absolute stream position of the parent table.</param>
-    /// <param name="deviceOffset">The offset to the Device/VariationIndex table from the parent table base.</param>
-    /// <returns>The packed VariationIndex, or 0 if not applicable.</returns>
-    private static uint ResolveVariationIndex(BigEndianBinaryReader reader, long parentBase, short deviceOffset)
-    {
-        if (deviceOffset == 0)
-        {
-            return 0;
-        }
-
-        // Device offsets are relative to the parent table base.
-        // Use absolute positioning to avoid BigEndianBinaryReader.Seek startOfStream rebasing.
-        reader.BaseStream.Position = parentBase + (ushort)deviceOffset;
-
-        // VariationIndex table (reuses the Device table format):
-        // uint16 deltaSetOuterIndex
-        // uint16 deltaSetInnerIndex
-        // uint16 deltaFormat  (0x8000 for VariationIndex, 1/2/3 for Device)
-        ushort first = reader.ReadUInt16();
-        ushort second = reader.ReadUInt16();
-        ushort format = reader.ReadUInt16();
-
-        if (format == VariationIndexFormat)
-        {
-            return ((uint)first << 16) | second;
-        }
-
-        // TODO: Device table (per-ppem pixel adjustments for non-variable fonts) — not yet implemented.
-        return 0;
-    }
 }

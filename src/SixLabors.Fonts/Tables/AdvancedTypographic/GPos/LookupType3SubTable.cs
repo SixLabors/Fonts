@@ -177,35 +177,43 @@ internal static class LookupType3SubTable
                 // Horizontal
                 if (current.Direction == TextDirection.LeftToRight)
                 {
-                    previousPosition.Bounds.Width = exitXY.XCoordinate + previousPosition.Bounds.X;
+                    previousPosition.Bounds.Width = (int)MathF.Round(exitXY.XCoordinate, MidpointRounding.AwayFromZero) + previousPosition.Bounds.X;
 
-                    int delta = entryXY.XCoordinate + currentPosition.Bounds.X;
+                    int delta = (int)MathF.Round(entryXY.XCoordinate, MidpointRounding.AwayFromZero) + currentPosition.Bounds.X;
                     currentPosition.Bounds.Width -= delta;
                     currentPosition.Bounds.X -= delta;
                 }
                 else
                 {
-                    int delta = exitXY.XCoordinate + previousPosition.Bounds.X;
+                    int delta = (int)MathF.Round(exitXY.XCoordinate, MidpointRounding.AwayFromZero) + previousPosition.Bounds.X;
                     previousPosition.Bounds.Width -= delta;
                     previousPosition.Bounds.X -= delta;
 
-                    currentPosition.Bounds.Width = entryXY.XCoordinate + currentPosition.Bounds.X;
+                    currentPosition.Bounds.Width = (int)MathF.Round(entryXY.XCoordinate, MidpointRounding.AwayFromZero) + currentPosition.Bounds.X;
                 }
             }
             else
             {
                 // Vertical layout modes advance top-to-bottom; column progression is handled by layout.
-                previousPosition.Bounds.Height = exitXY.YCoordinate + previousPosition.Bounds.Y;
+                previousPosition.Bounds.Height = (int)MathF.Round(exitXY.YCoordinate, MidpointRounding.AwayFromZero) + previousPosition.Bounds.Y;
 
-                int delta = entryXY.YCoordinate + currentPosition.Bounds.Y;
+                int delta = (int)MathF.Round(entryXY.YCoordinate, MidpointRounding.AwayFromZero) + currentPosition.Bounds.Y;
                 currentPosition.Bounds.Height -= delta;
                 currentPosition.Bounds.Y -= delta;
             }
 
+            if (previousPosition.Bounds.HasOutOfRangeAdvance || currentPosition.Bounds.HasOutOfRangeAdvance)
+            {
+                buffer.HasOutOfRangeAdvances = true;
+            }
+
             int child = previousIndex;
             int parent = index;
-            int xOffset = entryXY.XCoordinate - exitXY.XCoordinate;
-            int yOffset = entryXY.YCoordinate - exitXY.YCoordinate;
+
+            // Round after subtracting the anchors so fractional deltas from
+            // both anchors contribute to the attachment.
+            int xOffset = (int)MathF.Round(entryXY.XCoordinate - exitXY.XCoordinate, MidpointRounding.AwayFromZero);
+            int yOffset = (int)MathF.Round(entryXY.YCoordinate - exitXY.YCoordinate, MidpointRounding.AwayFromZero);
             if ((this.LookupFlags & LookupFlags.RightToLeft) != LookupFlags.RightToLeft)
             {
                 (parent, child) = (child, parent);

@@ -242,7 +242,18 @@ public struct FontFamily : IEquatable<FontFamily>
 
     /// <inheritdoc/>
     public override readonly int GetHashCode()
-        => HashCode.Combine(this.collection, this.Name, this.Culture);
+    {
+        // Family equality ignores case. Use the same comparison for the hash.
+        int nameHash = 0;
+        if (this.Name is not null)
+        {
+            nameHash = this.Culture is not null
+                ? this.Culture.CompareInfo.GetHashCode(this.Name, CompareOptions.IgnoreCase)
+                : StringComparer.OrdinalIgnoreCase.GetHashCode(this.Name);
+        }
+
+        return HashCode.Combine(this.collection, this.Culture, nameHash);
+    }
 
     /// <inheritdoc/>
     public override readonly string ToString() => this.Name;

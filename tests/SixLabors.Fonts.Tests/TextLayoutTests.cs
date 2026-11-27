@@ -1467,6 +1467,72 @@ public class TextLayoutTests
         }
     }
 
+    /// <summary>
+    /// Renders upright and sideways scripts together with fallback fonts and wrapping.
+    /// </summary>
+    /// <param name="layoutMode">The column order.</param>
+    /// <param name="direction">The base direction for bidirectional text.</param>
+    [Theory]
+    [InlineData(LayoutMode.VerticalMixedLeftRight, TextDirection.LeftToRight)]
+    [InlineData(LayoutMode.VerticalMixedLeftRight, TextDirection.RightToLeft)]
+    [InlineData(LayoutMode.VerticalMixedRightLeft, TextDirection.LeftToRight)]
+    [InlineData(LayoutMode.VerticalMixedRightLeft, TextDirection.RightToLeft)]
+    public void MixedVerticalLayout_RendersFallbackScripts(LayoutMode layoutMode, TextDirection direction)
+    {
+        const string text = "Cafe\u0301「縦書き。」\nשָׁלוֹם ABC مَرْحَبًا\n「日本語」 र्किर्कि office";
+        FontCollection fonts = new();
+        FontFamily latin = TestFonts.GetFontFamily(fonts, TestFonts.OpenSansFile);
+        FontFamily japanese = TestFonts.GetFontFamily(fonts, TestFonts.NotoSansJPRegular);
+        FontFamily hebrew = TestFonts.GetFontFamily(fonts, TestFonts.NotoSansHebrewRegular);
+        FontFamily arabic = TestFonts.GetFontFamily(fonts, TestFonts.NotoNaskhArabicRegular);
+        FontFamily devanagari = TestFonts.GetFontFamily(fonts, TestFonts.NotoSansDevanagariRegular);
+        TextOptions options = new(latin.CreateFont(26))
+        {
+            LayoutMode = layoutMode,
+            TextDirection = direction,
+            FallbackFontFamilies = [hebrew, arabic, devanagari, japanese],
+            Origin = new(16, 16),
+            LineSpacing = 1.4F,
+            WrappingLength = 210,
+            TextRuns = [new() { Start = 0, End = 4, TextDecorations = TextDecorations.Underline }]
+        };
+
+        TextLayoutTestUtilities.TestLayout(text, options, properties: [layoutMode, direction]);
+    }
+
+    /// <summary>
+    /// Verifies table selection when glyph orientation changes in mixed vertical layout.
+    /// </summary>
+    /// <param name="layoutMode">The column order.</param>
+    [Theory]
+    [InlineData(LayoutMode.VerticalMixedLeftRight)]
+    [InlineData(LayoutMode.VerticalMixedRightLeft)]
+    public void MixedVerticalLayout_SelectsSubstitutionTableByOrientation(LayoutMode layoutMode)
+    {
+        const string text = "!\uFF01!\n\uFF01!!\n!!!";
+        Font font = new FontCollection().Add(System.IO.Path.Combine(TestEnvironment.FontTestDataFullPath, "Issues", "morx-mixed-orientation.ttf")).CreateFont(112);
+        TextOptions options = new(font)
+        {
+            LayoutMode = layoutMode,
+            TextDirection = TextDirection.LeftToRight,
+            Script = ScriptClass.Common
+        };
+
+        GlyphRenderer renderer = new();
+        TextRenderer.RenderTo(renderer, text, options);
+
+        // Both characters map to glyph 1. GSUB selects glyph 4 for upright ！.
+        // The horizontal morx subtable selects glyph 2 for sideways !.
+        ushort[] expected = layoutMode == LayoutMode.VerticalMixedLeftRight
+            ? [2, 4, 2, 4, 2, 2, 2, 2, 2]
+            : [2, 2, 2, 4, 2, 2, 2, 4, 2];
+
+        Assert.Equal(expected, renderer.GlyphKeys.Select(x => x.GlyphId));
+        Assert.Equal(
+            expected.Select(id => id == 4 ? GlyphLayoutMode.Vertical : GlyphLayoutMode.VerticalRotated),
+            renderer.GlyphKeys.Select(x => x.LayoutMode));
+    }
+
     [Theory]
     [InlineData(LayoutMode.HorizontalTopBottom)]
     [InlineData(LayoutMode.HorizontalBottomTop)]

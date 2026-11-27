@@ -214,16 +214,16 @@ internal sealed class MemoryFontMetrics : FontMetrics
         => this.fontMetrics.Value.TryGetBaselineCoordinate(baselineTag, isVerticalLayout, out coordinate);
 
     /// <inheritdoc/>
-    internal override void ApplySubstitution(ShapingBuffer buffer)
-        => this.fontMetrics.Value.ApplySubstitution(buffer);
+    internal override ShapePlan ApplySubstitution(ShapingBuffer buffer, ScriptItemizer.ShapingRun run)
+        => this.fontMetrics.Value.ApplySubstitution(buffer, run);
 
     /// <inheritdoc/>
     internal override bool TryGetKerningOffset(ushort currentId, ushort nextId, out Vector2 vector)
         => this.fontMetrics.Value.TryGetKerningOffset(currentId, nextId, out vector);
 
     /// <inheritdoc/>
-    internal override void UpdatePositions(ShapingBuffer buffer)
-        => this.fontMetrics.Value.UpdatePositions(buffer);
+    internal override void UpdatePositions(ShapingBuffer buffer, ShapePlan plan, bool vertical)
+        => this.fontMetrics.Value.UpdatePositions(buffer, plan, vertical);
 
     /// <inheritdoc/>
     internal override float GetGDefVariationDelta(uint packedVariationIndex)

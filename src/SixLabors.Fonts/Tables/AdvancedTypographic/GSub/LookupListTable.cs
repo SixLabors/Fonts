@@ -174,12 +174,30 @@ internal sealed class LookupTable
         LookupFlags lookupFlags = reader.ReadUInt16<LookupFlags>();
         ushort subTableCount = reader.ReadUInt16();
 
+        // An unknown lookup type has no subtables that GSUB can interpret.
+        // Keep its slot so that feature lookup indices stay valid.
+        if (lookupType is < 1 or > 8)
+        {
+            return new LookupTable(lookupType, lookupFlags, 0, []);
+        }
+
+        bool hasMarkFilteringSet = (lookupFlags & LookupFlags.UseMarkFilteringSet) != 0;
+        long tableEnd = reader.BaseStream.Length;
+
+        // Validate the offset array and the optional mark filtering field as
+        // a unit before allocating storage or reading beyond GSUB.
+        int offsetBytes = sizeof(ushort) * (subTableCount + (hasMarkFilteringSet ? 1 : 0));
+        if (offsetBytes > tableEnd - reader.BaseStream.Position)
+        {
+            return new LookupTable(lookupType, lookupFlags, 0, []);
+        }
+
         using Buffer<ushort> subTableOffsetsBuffer = new(subTableCount);
         Span<ushort> subTableOffsets = subTableOffsetsBuffer.GetSpan();
         reader.ReadUInt16Array(subTableOffsets);
 
         // The fifth bit indicates the presence of a MarkFilteringSet field in the Lookup table.
-        ushort markFilteringSet = ((lookupFlags & LookupFlags.UseMarkFilteringSet) != 0)
+        ushort markFilteringSet = hasMarkFilteringSet
             ? reader.ReadUInt16()
             : (ushort)0;
 
@@ -187,7 +205,11 @@ internal sealed class LookupTable
 
         for (int i = 0; i < lookupSubTables.Length; i++)
         {
-            lookupSubTables[i] = LoadLookupSubTable(lookupType, lookupFlags, markFilteringSet, reader, offset + subTableOffsets[i]);
+            // Every supported subtable begins with a 16-bit format field.
+            long subtableOffset = offset + subTableOffsets[i];
+            lookupSubTables[i] = subtableOffset <= tableEnd - reader.StartOfStream - sizeof(ushort)
+                ? LoadLookupSubTable(lookupType, lookupFlags, markFilteringSet, reader, subtableOffset)
+                : new NotImplementedSubTable();
         }
 
         return new LookupTable(lookupType, lookupFlags, markFilteringSet, lookupSubTables);
@@ -280,25 +302,36 @@ internal sealed class LookupTable
     /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
     /// <param name="reader">The big-endian binary reader.</param>
     /// <param name="offset">The offset to the beginning of the subtable.</param>
-    /// <returns>The loaded <see cref="LookupSubTable"/>.</returns>
+    /// <returns>The loaded subtable, or an inactive subtable if its data is invalid.</returns>
     private static LookupSubTable LoadLookupSubTable(
         ushort lookupType,
         LookupFlags lookupFlags,
         ushort markFilteringSet,
         BigEndianBinaryReader reader,
         long offset)
-        => lookupType switch
+    {
+        try
         {
-            1 => LookupType1SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
-            2 => LookupType2SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
-            3 => LookupType3SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
-            4 => LookupType4SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
-            5 => LookupType5SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
-            6 => LookupType6SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
-            7 => LookupType7SubTable.Load(reader, offset, lookupFlags, markFilteringSet, LoadLookupSubTable),
-            8 => LookupType8SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
-            _ => new NotImplementedSubTable(),
-        };
+            return lookupType switch
+            {
+                1 => LookupType1SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+                2 => LookupType2SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+                3 => LookupType3SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+                4 => LookupType4SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+                5 => LookupType5SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+                6 => LookupType6SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+                7 => LookupType7SubTable.Load(reader, offset, lookupFlags, markFilteringSet, LoadLookupSubTable),
+                8 => LookupType8SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+                _ => new NotImplementedSubTable(),
+            };
+        }
+        catch (Exception exception) when (exception is EndOfStreamException or InvalidFontFileException)
+        {
+            // A nested offset can lead to invalid data. Each sibling
+            // subtable starts at its own offset and can still be loaded.
+            return new NotImplementedSubTable();
+        }
+    }
 }
 
 /// <summary>

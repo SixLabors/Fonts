@@ -1,18 +1,19 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
+using SixLabors.Fonts.Unicode.Resources;
 
 namespace SixLabors.Fonts;
 
 /// <summary>
-/// The shaping pipeline: font-run itemization, bidi analysis, glyph population, GSUB
-/// substitution, and GPOS positioning. <see cref="TextLayout"/> and the public shaping
-/// API both consume this single pipeline; layout composes and positions lines from its
-/// output but performs no shaping of its own.
+/// Maps characters to glyphs and groups them into shaping runs. It applies substitution and
+/// positioning with the selected Apple Advanced Typography or OpenType tables.
+/// <see cref="TextLayout"/> and the public shaping API use this pipeline.
+/// Layout uses its output to compose and position lines.
 /// </summary>
 public static partial class TextShaper
 {
@@ -111,24 +112,6 @@ public static partial class TextShaper
     }
 
     /// <summary>
-    /// Materializes the fallback fonts for the pass. Lives apart from the pipeline
-    /// body so shaping without fallbacks never pays for the construction.
-    /// </summary>
-    /// <param name="options">The text options carrying the fallback families.</param>
-    /// <returns>The fallback fonts.</returns>
-    private static Font[] BuildFallbackFonts(TextOptions options)
-    {
-        IReadOnlyList<FontFamily> families = options.FallbackFontFamilies;
-        Font[] fonts = new Font[families.Count];
-        for (int i = 0; i < fonts.Length; i++)
-        {
-            fonts[i] = new Font(families[i], options.Font.Size, options.Font.RequestedStyle);
-        }
-
-        return fonts;
-    }
-
-    /// <summary>
     /// Shapes <paramref name="text"/> into a scope that owns the pooled pipeline
     /// state backing the shaped views.
     /// </summary>
@@ -179,18 +162,8 @@ public static partial class TextShaper
     /// <returns>The positioned buffer.</returns>
     private static ShapingBuffer ShapeCore(ReadOnlySpan<char> text, TextOptions options, ShapingScratch scratch, IReadOnlyList<TextRun>? prebuiltRuns, bool useShapingVerticalOrigin)
     {
-        (ShapingBuffer substitutions, ShapingBuffer positionings) = scratch.Prepare(options);
-
-        // Public shaping and browser-compatible layout use different synthesized
-        // vertical Y origins. Select that policy once per pass so mark attachment
-        // materializes the right origin without another pass or per-glyph state.
-        substitutions.UseShapingVerticalOrigin = useShapingVerticalOrigin;
-        positionings.UseShapingVerticalOrigin = useShapingVerticalOrigin;
-
-        // Gather the font and fallbacks.
-        Font[] fallbackFonts = (options.FallbackFontFamilies?.Count > 0)
-            ? BuildFallbackFonts(options)
-            : [];
+        ShapingBuffer shaped = scratch.Prepare(options);
+        shaped.UseShapingVerticalOrigin = useShapingVerticalOrigin;
 
         // Analyse the text for bidi directional runs.
         BidiAlgorithm bidi = scratch.BidiAlgorithm;
@@ -263,287 +236,105 @@ public static partial class TextShaper
         BidiRun[] bidiRuns = scratch.BidiRuns;
         int[] bidiMap = scratch.GetBidiMap(codePointCount);
 
-        // Incrementally build out buffer of glyphs. Both buffers share the run list so
-        // per-glyph run indices agree when records are seeded across them. Callers
-        // retaining run references beyond the scratch scope supply their own runs;
-        // otherwise the synthesized whole-text run reuses scratch state.
         bool usesDefaultTextRun = prebuiltRuns is null && !(options.TextRuns?.Count > 0);
         IReadOnlyList<TextRun> textRuns = prebuiltRuns ?? ((options.TextRuns?.Count > 0)
             ? BuildTextRuns(text, options)
             : scratch.GetDefaultTextRuns(options));
-        substitutions.SetTextRuns(textRuns);
-        positionings.SetTextRuns(textRuns);
 
-        // First do multiple font runs using the individual text runs.
-        bool complete = true;
-        int textRunIndex = 0;
-        int codePointIndex = 0;
-        int stringIndex = 0;
-        int bidiRunIndex = 0;
+        shaped.SetTextRuns(textRuns);
+        shaped.SetShapingLimits(codePointCount);
+        (ScriptHorizontalDirection? nativeDirection, OrderedDictionary<FontFamily, Font>? fallbackFonts, int graphemeCount) =
+            ReadShapingInput(text, options, textRuns, bidiRuns, bidiMap, shaped);
 
-        // Single-run fast path: shape and seed one buffer in place and flip it to the
-        // positioning role, so no record is copied between buffers. When fallback
-        // glyphs remain and fallback fonts exist, or a selector cluster went unmatched
-        // and the pass that ignores selectors must run, fall through to the general
-        // cross-buffer seed so those passes can merge into the accumulator.
-        ShapingBuffer shaped = positionings;
-        if (textRuns.Count == 1 && !textRuns[0].Placeholder.HasValue)
+        shaped.HorizontalScriptDirection = nativeDirection;
+
+        if (usesDefaultTextRun)
         {
-            TextRun onlyRun = textRuns[0];
-            int graphemeEnd = PopulateAndSubstitute(text, onlyRun.Start, textRuns, ref textRunIndex, ref codePointIndex, ref stringIndex, ref bidiRunIndex, onlyRun.ResolvedFont, bidiRuns, bidiMap, substitutions, false);
-
-            if (usesDefaultTextRun)
-            {
-                // Population has already visited every grapheme, so its final index
-                // is the exact exclusive end without a separate counting pass.
-                onlyRun.End = graphemeEnd;
-            }
-
-            complete = substitutions.SeedMetricsInPlace(onlyRun.ResolvedFont);
-
-            if (complete || (fallbackFonts.Length == 0 && options.FontFallbackResolver is null && !substitutions.HasUnmatchedVariationSequences))
-            {
-                substitutions.SetRole(ShapingBufferRole.Positioning);
-                shaped = substitutions;
-                complete = true;
-            }
-            else
-            {
-                complete = positionings.TryAdd(onlyRun.ResolvedFont, substitutions);
-            }
-
-            goto FallbackPasses;
+            textRuns[0].End = graphemeCount;
         }
 
-        for (int runIndex = 0; runIndex < textRuns.Count; runIndex++)
+        int runIndex = 0;
+        int inputIndex = 0;
+        ReadOnlySpan<(int End, ScriptItemizer.ShapingRun Run)> inputRuns = shaped.InputRuns;
+        bool hasFontOrRunBoundaries = fallbackFonts is not null || textRuns.Count > 1;
+        int glyphStart = 0;
+        while (glyphStart < shaped.Count)
         {
-            TextRun textRun = textRuns[runIndex];
-            if (textRun.Placeholder.HasValue)
+            if (shaped[glyphStart].IsPlaceholder)
             {
-                substitutions.Clear();
-
-                while (bidiRunIndex < bidiRuns.Length && codePointIndex == bidiRuns[bidiRunIndex].End)
-                {
-                    bidiRunIndex++;
-                }
-
-                // Placeholder direction comes from the bidi region at the insertion
-                // point. If the insertion point is after all source text, use the
-                // default even/LTR embedding level.
-                BidiRun placeholderBidiRun = bidiRunIndex < bidiRuns.Length
-                    ? bidiRuns[bidiRunIndex]
-                    : new(BidiCharacterType.LeftToRight, 2, codePointIndex, 0);
-
-                // Placeholder runs are inserted into the layout stream and do not consume
-                // source graphemes, source codepoints, or bidi runs. The loop position
-                // is the placeholder's own run index; the populate tracker below may
-                // lag it between runs.
-                substitutions.AddPlaceholder(
-                    CodePoint.ObjectReplacementChar,
-                    placeholderBidiRun,
-                    (ushort)runIndex,
-                    codePointIndex);
-
-                complete &= positionings.TryAdd(textRun.ResolvedFont, substitutions);
-                textRunIndex++;
+                // Placeholders occupy a slot outside the source run counts.
+                shaped.SeedPlaceholderMetrics(glyphStart);
+                glyphStart++;
                 continue;
             }
 
-            if (!DoFontRun(
-                textRun.Slice(text),
-                textRun.Start,
-                textRuns,
-                ref textRunIndex,
-                ref codePointIndex,
-                ref stringIndex,
-                ref bidiRunIndex,
-                false,
-                textRun.ResolvedFont,
-                bidiRuns,
-                bidiMap,
-                substitutions,
-                positionings,
-                false))
+            if (inputIndex == inputRuns[runIndex].End)
             {
-                complete = false;
+                runIndex++;
             }
-        }
 
-        FallbackPasses:
-        if (!complete)
-        {
-            // Finally try our fallback fonts.
-            // We do a complete run here across the whole buffer.
-            foreach (Font font in fallbackFonts)
+            (int inputEnd, ScriptItemizer.ShapingRun run) = inputRuns[runIndex];
+            ushort textRunIndex = shaped[glyphStart].TextRunIndex;
+            int fontIndex = shaped[glyphStart].FallbackFontIndex;
+            Font font = fontIndex == 0
+                ? textRuns[textRunIndex].ResolvedFont
+                : fallbackFonts!.GetAt(fontIndex - 1).Value;
+
+            // The run end counts original mapped glyphs. Add its remaining
+            // length to the current index, which includes prior substitutions.
+            int glyphEnd = glyphStart + (inputEnd - inputIndex);
+            if (hasFontOrRunBoundaries)
             {
-                textRunIndex = 0;
-                codePointIndex = 0;
-                stringIndex = 0;
-                bidiRunIndex = 0;
-                if (DoFontRun(
-                    text,
-                    0,
-                    textRuns,
-                    ref textRunIndex,
-                    ref codePointIndex,
-                    ref stringIndex,
-                    ref bidiRunIndex,
-                    true,
-                    font,
-                    bidiRuns,
-                    bidiMap,
-                    substitutions,
-                    positionings,
-                    false))
+                // Declared runs and fallback faces can split a shaping run.
+                // Stop at the first such boundary within the recorded range.
+                int runEnd = glyphEnd;
+                glyphEnd = glyphStart + 1;
+
+                while (glyphEnd < runEnd)
                 {
-                    complete = true;
-                    break;
-                }
-            }
-        }
-
-        // Last-resort resolver passes: one whole-buffer pass per newly resolved family.
-        // The path only runs when unresolved code points remain, so its collections are
-        // transient.
-        List<Font>? resolverFonts = null;
-        if (!complete && options.FontFallbackResolver is IFontFallbackResolver resolver)
-        {
-            List<CodePoint> unresolved = [];
-            HashSet<int> queriedCodePoints = [];
-            HashSet<string> attemptedFamilies = [];
-
-            while (!complete && TryGetNextResolverFont(positionings, resolver, options, unresolved, queriedCodePoints, attemptedFamilies, out Font? next))
-            {
-                (resolverFonts ??= []).Add(next);
-
-                textRunIndex = 0;
-                codePointIndex = 0;
-                stringIndex = 0;
-                bidiRunIndex = 0;
-                complete = DoFontRun(
-                    text,
-                    0,
-                    textRuns,
-                    ref textRunIndex,
-                    ref codePointIndex,
-                    ref stringIndex,
-                    ref bidiRunIndex,
-                    true,
-                    next,
-                    bidiRuns,
-                    bidiMap,
-                    substitutions,
-                    positionings,
-                    false);
-            }
-        }
-
-        // A selector cluster no font answered in its requested presentation takes the
-        // base glyph from the first font that maps it, so the fonts run again with the
-        // selectors ignored. A cluster no font maps at all stays missing.
-        if (!complete && positionings.HasUnmatchedVariationSequences)
-        {
-            Font? previous = null;
-            for (int i = 0; i < textRuns.Count && !complete; i++)
-            {
-                Font font = textRuns[i].ResolvedFont;
-                if (font != previous)
-                {
-                    previous = font;
-                    complete = ShapeIgnoringSelectors(text, textRuns, font, bidiRuns, bidiMap, substitutions, positionings);
-                }
-            }
-
-            foreach (Font font in fallbackFonts)
-            {
-                if (complete)
-                {
-                    break;
-                }
-
-                complete = ShapeIgnoringSelectors(text, textRuns, font, bidiRuns, bidiMap, substitutions, positionings);
-            }
-
-            if (resolverFonts is not null)
-            {
-                foreach (Font font in resolverFonts)
-                {
-                    if (complete)
+                    ref GlyphShapingData glyph = ref shaped[glyphEnd];
+                    if (glyph.IsPlaceholder || glyph.TextRunIndex != textRunIndex || glyph.FallbackFontIndex != fontIndex)
                     {
                         break;
                     }
 
-                    complete = ShapeIgnoringSelectors(text, textRuns, font, bidiRuns, bidiMap, substitutions, positionings);
+                    glyphEnd++;
                 }
             }
-        }
 
-        // Update the positions of the glyphs in the completed buffer.
-        // Each set of metrics is associated with single font and will only be updated
-        // by that font so it's safe to use a single buffer.
-        Font? lastFont = null;
-        for (int i = 0; i < textRuns.Count; i++)
-        {
-            TextRun textRun = textRuns[i];
+            inputIndex += glyphEnd - glyphStart;
+            shaped.SetSpan(glyphStart, glyphEnd);
+            shaped.SetRole(ShapingBufferRole.Substitution);
+            FontMetrics metrics = font.FontMetrics;
+            SubstituteBidiMirrors(metrics, shaped, glyphStart);
+            ShapePlan plan = metrics.ApplySubstitution(shaped, run);
 
-            Font font = textRun.ResolvedFont;
-            if (font == lastFont)
+            int count = shaped.SpanEnd - glyphStart;
+            if (count > 0)
             {
-                continue;
+                shaped.SeedMetricsInPlace(font, glyphStart);
+                shaped.SetRole(ShapingBufferRole.Positioning);
+                plan.FontMetrics.UpdatePositions(shaped, plan, run.IsVertical);
+                if (shaped.HasOutOfRangeAdvances)
+                {
+                    // Resolve attachments with the original pen steps before
+                    // converting the advances for the unsigned layout contract.
+                    AdvancedTypographicUtils.NormalizeAdvances(shaped);
+                }
+
+                plan.Shaper.PostprocessGlyphs(shaped, glyphStart, count);
             }
 
-            font.FontMetrics.UpdatePositions(shaped);
-            lastFont = font;
+            // Substitution can change the span length. Its current end is
+            // the first glyph of the next span. The source run counts mapped glyphs.
+            glyphStart = shaped.SpanEnd;
         }
 
-        foreach (Font font in fallbackFonts)
-        {
-            font.FontMetrics.UpdatePositions(shaped);
-        }
-
-        if (resolverFonts is not null)
-        {
-            foreach (Font font in resolverFonts)
-            {
-                font.FontMetrics.UpdatePositions(shaped);
-            }
-        }
-
-        // Script-specific expansion runs only after every font has finished
-        // positioning. Process segments from the end so an expansion cannot move
-        // the not-yet-processed range of an earlier segment.
-        List<(int Index, int Count, ScriptClass Script, ShapePlan Plan)> segments = shaped.SegmentPlans;
-        for (int i = segments.Count - 1; i >= 0; i--)
-        {
-            (int index, int count, ScriptClass _, ShapePlan plan) = segments[i];
-            plan.Shaper.PostprocessGlyphs(shaped, index, count);
-        }
-
+        shaped.SetRole(ShapingBufferRole.Positioning);
+        shaped.SetSpan(0, shaped.Count);
         HideDefaultIgnorables(shaped);
 
         return shaped;
-    }
-
-    /// <summary>
-    /// Shapes the whole text with <paramref name="font"/> as a fallback pass that ignores
-    /// presentation selectors, so a selector cluster no font answered takes the base
-    /// glyph from the first font that maps it.
-    /// </summary>
-    /// <param name="text">The text to process.</param>
-    /// <param name="textRuns">The ordered list of resolved text runs.</param>
-    /// <param name="font">The font to shape with.</param>
-    /// <param name="bidiRuns">The resolved bidi runs covering the whole input.</param>
-    /// <param name="bidiMap">A codepoint → bidi-run mapping accumulated across shaping passes.</param>
-    /// <param name="substitutions">The GSUB substitution buffer to write into.</param>
-    /// <param name="positionings">The GPOS positioning buffer to write into.</param>
-    /// <returns><see langword="true"/> if every codepoint mapped successfully.</returns>
-    private static bool ShapeIgnoringSelectors(ReadOnlySpan<char> text, IReadOnlyList<TextRun> textRuns, Font font, BidiRun[] bidiRuns, int[] bidiMap, ShapingBuffer substitutions, ShapingBuffer positionings)
-    {
-        int textRunIndex = 0;
-        int codePointIndex = 0;
-        int stringIndex = 0;
-        int bidiRunIndex = 0;
-        return DoFontRun(text, 0, textRuns, ref textRunIndex, ref codePointIndex, ref stringIndex, ref bidiRunIndex, true, font, bidiRuns, bidiMap, substitutions, positionings, true);
     }
 
     /// <summary>
@@ -589,11 +380,10 @@ public static partial class TextShaper
             // in visual order for the directional run. Fonts shapes in
             // logical storage, so apply the same proven finalization used by ShapeRun
             // once per resolved run before projecting the contiguous arrays.
-            if (layoutMode.IsVertical())
+            if (layoutMode.IsVertical() || shaped.HorizontalScriptDirection == ScriptHorizontalDirection.LeftToRight)
             {
-                // Bottom-to-top HarfBuzz shaping reverses graphemes before shaping.
-                // Reverse their order while retaining the shaped glyph order inside
-                // each grapheme, exactly as the public directional-run contract does.
+                // Bottom-to-top and forced right-to-left runs with a
+                // left-to-right script keep glyph order inside each grapheme.
                 shaped.ReverseGraphemeRange(glyphStart, glyphIndex);
             }
             else
@@ -663,6 +453,7 @@ public static partial class TextShaper
             ref GlyphShapingData shaping = ref shaped[i];
             ref ShapingBuffer.GlyphMetricsEntry entry = ref shaped.MetricsAt(i);
             ref GlyphShapingPosition shapingPosition = ref shaped.PositionAt(i);
+            FontGlyphMetrics glyphMetrics = entry.Metrics;
 
             // Placeholders carry a bidi run of their own, so they always cut a run.
             BidiRun shapingBidiRun = shaping.IsPlaceholder
@@ -675,7 +466,11 @@ public static partial class TextShaper
                 runFont = entry.Font;
                 runTextRunIndex = shaping.TextRunIndex;
                 runBidiRun = shapingBidiRun;
-                scratch.AddRun(new(entry.Font, entry.PointSize, shaped.TextRuns[shaping.TextRunIndex], shapingBidiRun));
+
+                // The selected face supplies glyph metrics. The text run sets
+                // the size at which layout uses those metrics.
+                TextRun textRun = shaped.TextRuns[runTextRunIndex];
+                scratch.AddRun(new(entry.Font, textRun.ResolvedFont.Size, textRun, shapingBidiRun));
             }
 
             ShapedGlyphFlags flags = ShapedGlyphFlags.None;
@@ -711,7 +506,7 @@ public static partial class TextShaper
                 shaping.CodePointIndex,
                 shaping.CodePoint,
                 shaping.CodePointCount,
-                entry.Metrics.GlyphId,
+                glyphMetrics.GlyphId,
                 (ushort)(scratch.RunCount - 1),
                 flags);
 
@@ -719,7 +514,7 @@ public static partial class TextShaper
                 entry.GetAdvanceWidth(in shapingPosition),
                 entry.GetAdvanceHeight(in shapingPosition),
                 new Vector2(shapingPosition.Bounds.X, shapingPosition.Bounds.Y),
-                entry.Metrics.Offset);
+                glyphMetrics.Offset);
         }
 
         return new ShapedText(
@@ -810,338 +605,497 @@ public static partial class TextShaper
     }
 
     /// <summary>
-    /// Finds the next font for a resolver fallback pass: re-collects the still-unresolved
-    /// code points, then queries the resolver for each code point not queried before until
-    /// one yields a family not shaped with before.
-    /// Termination is structural: a successful return consumes at least one code point from
-    /// <paramref name="queriedCodePoints"/>' complement, both sets only grow, and the
-    /// candidates come from the text's finite code points — so repeated calls must
-    /// eventually return <see langword="false"/> and the caller's loop is bounded by the
-    /// number of distinct unresolved code points.
+    /// Selects a font for the current character before the input loop advances.
     /// </summary>
-    /// <param name="positionings">The accumulator buffer holding the shaped records.</param>
-    /// <param name="resolver">The configured fallback resolver.</param>
-    /// <param name="options">The text options supplying the requested family, size, style, and culture.</param>
-    /// <param name="unresolved">The reusable scratch list receiving the unresolved code points.</param>
-    /// <param name="queriedCodePoints">The code points already sent to the resolver, matched or not.</param>
-    /// <param name="attemptedFamilies">The family names already shaped with.</param>
-    /// <param name="font">When this method returns <see langword="true"/>, the font for the next pass.</param>
-    /// <returns><see langword="true"/> if a new family was resolved; otherwise, <see langword="false"/>.</returns>
-    private static bool TryGetNextResolverFont(
-        ShapingBuffer positionings,
-        IFontFallbackResolver resolver,
-        TextOptions options,
-        List<CodePoint> unresolved,
-        HashSet<int> queriedCodePoints,
-        HashSet<string> attemptedFamilies,
-        [NotNullWhen(true)] out Font? font)
+    /// <param name="buffer">The preshaped glyph buffer.</param>
+    /// <param name="index">The entry for the current character.</param>
+    /// <param name="next">The next character in the grapheme, if present.</param>
+    /// <param name="fallbackFonts">The font list in priority order. The method creates the list on first use.</param>
+    /// <param name="precedingFontIndex">The fallback font index of the preceding character in the grapheme, or zero.</param>
+    /// <param name="queried">Code points already sent to the resolver.</param>
+    /// <param name="consumed">Receives whether the selected glyph includes the following character.</param>
+    private static void ResolveFallbackGlyph(
+        ShapingBuffer buffer,
+        int index,
+        CodePoint? next,
+        ref OrderedDictionary<FontFamily, Font>? fallbackFonts,
+        int precedingFontIndex,
+        ref HashSet<int>? queried,
+        ref bool consumed)
     {
-        unresolved.Clear();
-        positionings.CollectUnresolvedCodePoints(unresolved);
-
-        foreach (CodePoint codePoint in unresolved)
+        TextOptions options = buffer.TextOptions;
+        if (fallbackFonts is null)
         {
-            if (!queriedCodePoints.Add(codePoint.Value))
+            // Allocate the list only when a character needs a font search.
+            // Keep configured fonts first. The resolver adds new fonts at the end.
+            IReadOnlyList<FontFamily> families = options.FallbackFontFamilies ?? [];
+            fallbackFonts = new(families.Count);
+            for (int i = 0; i < families.Count; i++)
             {
-                continue;
-            }
-
-            if (resolver.TryResolve(codePoint, options.Font.Family, options.Font.RequestedStyle, options.Culture, out FontFamily family) && attemptedFamilies.Add(family.Name))
-            {
-                font = new Font(family, options.Font.Size, options.Font.RequestedStyle);
-                return true;
+                FontFamily configuredFamily = families[i];
+                fallbackFonts.TryAdd(configuredFamily, new Font(configuredFamily, options.Font.Size, options.Font.RequestedStyle));
             }
         }
 
-        font = null;
-        return false;
+        ref GlyphShapingData glyph = ref buffer[index];
+        int preferredFontIndex = glyph.IsDefaultIgnorable ? precedingFontIndex : 0;
+        (int FontIndex, ushort GlyphId) baseMapping = default;
+
+        // An invisible character can affect the glyph before it. Try that
+        // glyph's font first so both characters can stay in one shaping span.
+        if (preferredFontIndex != 0 && TryMapFallbackGlyph(buffer, index, next, fallbackFonts, preferredFontIndex, precedingFontIndex, ref baseMapping, ref consumed))
+        {
+            return;
+        }
+
+        for (int i = 1; i <= fallbackFonts.Count; i++)
+        {
+            if (i != preferredFontIndex && TryMapFallbackGlyph(buffer, index, next, fallbackFonts, i, precedingFontIndex, ref baseMapping, ref consumed))
+            {
+                return;
+            }
+        }
+
+        // Ask the resolver only after trying the fonts already on the list.
+        // A visible base glyph here can still lack the requested presentation.
+        if ((!glyph.IsDefaultIgnorable || glyph.GlyphId == 0)
+            && options.FontFallbackResolver is IFontFallbackResolver resolver
+            && (queried ??= []).Add(glyph.CodePoint.Value)
+            && resolver.TryResolve(glyph.CodePoint, options.Font.Family, options.Font.RequestedStyle, options.Culture, out FontFamily family)
+            && !fallbackFonts.ContainsKey(family))
+        {
+            // Add new families at the end so later glyphs try them in order.
+            Font font = new(family, options.Font.Size, options.Font.RequestedStyle);
+            fallbackFonts.Add(family, font);
+            if (TryMapFallbackGlyph(buffer, index, next, fallbackFonts, fallbackFonts.Count, precedingFontIndex, ref baseMapping, ref consumed))
+            {
+                return;
+            }
+        }
+
+        // A text or emoji style can be unavailable in every font. Keep the
+        // grapheme together if its preceding font maps the base. Otherwise
+        // keep the original base glyph or use the first fallback that has one.
+        if (baseMapping.FontIndex != 0 && (baseMapping.FontIndex == precedingFontIndex || glyph.GlyphId == 0))
+        {
+            buffer.SetGlyphId(index, baseMapping.GlyphId);
+            glyph.FallbackFontIndex = baseMapping.FontIndex;
+            consumed = false;
+        }
     }
 
     /// <summary>
-    /// Shapes a single font run — maps codepoints in <paramref name="text"/> to glyph ids using
-    /// <paramref name="font"/>, then runs GSUB substitution and GPOS positioning. Codepoints that
-    /// the font cannot map are recorded for a later fallback pass.
+    /// Assigns a font if it maps the character and meets its presentation request.
     /// </summary>
-    /// <param name="text">The run-relative text slice to shape.</param>
-    /// <param name="start">The starting grapheme index (absolute within the original input).</param>
-    /// <param name="textRuns">The ordered list of resolved text runs.</param>
-    /// <param name="textRunIndex">The index of the current text run; advanced as the enumerator crosses run boundaries.</param>
-    /// <param name="codePointIndex">The running codepoint index (absolute within the original input).</param>
-    /// <param name="stringIndex">The running char index (absolute within the original input).</param>
-    /// <param name="bidiRunIndex">The running bidi run index.</param>
-    /// <param name="isFallbackRun">
-    /// <see langword="true"/> if this call is the fallback-font pass (in which case unmapped codepoints
-    /// may still emit <c>.notdef</c> glyphs).
-    /// </param>
-    /// <param name="font">The font to shape with.</param>
-    /// <param name="bidiRuns">The resolved bidi runs covering the whole input.</param>
-    /// <param name="bidiMap">A codepoint → bidi-run mapping accumulated across shaping passes.</param>
-    /// <param name="substitutions">The GSUB substitution buffer to write into.</param>
-    /// <param name="positionings">The GPOS positioning buffer to write into.</param>
-    /// <param name="ignoreVariationSelectors">
-    /// <see langword="true"/> to map a base character without regard to the presentation
-    /// its selector asks for, once no font has answered it.
-    /// </param>
-    /// <returns>
-    /// <see langword="true"/> if every codepoint mapped successfully; <see langword="false"/> if any
-    /// codepoint remains unmapped (so a fallback-font pass is needed).
-    /// </returns>
-    private static bool DoFontRun(
+    /// <param name="buffer">The preshaped glyph buffer.</param>
+    /// <param name="index">The missing entry.</param>
+    /// <param name="next">The next character in the grapheme, if present.</param>
+    /// <param name="fallbackFonts">The fallback font list in priority order.</param>
+    /// <param name="fontIndex">The one-based index of the candidate font.</param>
+    /// <param name="precedingFontIndex">The fallback font index of the preceding character in the grapheme, or zero.</param>
+    /// <param name="baseMapping">The base glyph to use if no font matches the presentation request.</param>
+    /// <param name="consumed">Receives whether a successful mapping includes the following character.</param>
+    /// <returns>Whether the font was assigned.</returns>
+    private static bool TryMapFallbackGlyph(
+        ShapingBuffer buffer,
+        int index,
+        CodePoint? next,
+        OrderedDictionary<FontFamily, Font> fallbackFonts,
+        int fontIndex,
+        int precedingFontIndex,
+        ref (int FontIndex, ushort GlyphId) baseMapping,
+        ref bool consumed)
+    {
+        ref GlyphShapingData glyph = ref buffer[index];
+        FontMetrics metrics = fallbackFonts.GetAt(fontIndex - 1).Value.FontMetrics;
+        CodePoint? selector = GetVariationSelector(next, metrics);
+
+        // Use the font's cmap cache here. The buffer's cache is useful when
+        // mapping one face at a time and clears when its font changes.
+        if (!metrics.TryGetGlyphId(glyph.CodePoint, selector, out ushort glyphId, out bool consumesNext))
+        {
+            return false;
+        }
+
+        if (!consumesNext && !MatchesPresentation(buffer, glyph.TextRunIndex, next, metrics))
+        {
+            // Save the base glyph from the same grapheme's font when possible.
+            // Keep the first mapping otherwise to avoid repeating the lookup.
+            if (baseMapping.FontIndex == 0 || fontIndex == precedingFontIndex)
+            {
+                baseMapping = (fontIndex, glyphId);
+            }
+
+            return false;
+        }
+
+        buffer.SetGlyphId(index, glyphId);
+        glyph.FallbackFontIndex = fontIndex;
+        consumed = consumesNext;
+        return true;
+    }
+
+    /// <summary>
+    /// Selects the following code point when it can affect cmap lookup.
+    /// </summary>
+    /// <param name="next">The next character in the grapheme, if present.</param>
+    /// <param name="font">The font to map with.</param>
+    /// <returns>The code point to pass to cmap.</returns>
+    private static CodePoint? GetVariationSelector(CodePoint? next, FontMetrics font)
+        => IsPresentationSelector(next) || (next.HasValue && font.HasUnicodeVariationSequences) ? next : null;
+
+    /// <summary>
+    /// Checks whether a code point requests text or emoji presentation.
+    /// </summary>
+    /// <param name="codePoint">The next code point, if present.</param>
+    /// <returns>Whether it is a text or emoji presentation selector.</returns>
+    private static bool IsPresentationSelector(CodePoint? codePoint)
+        => codePoint?.Value == ShapingBuffer.TextPresentationSelector || codePoint?.Value == ShapingBuffer.EmojiPresentationSelector;
+
+    /// <summary>
+    /// Checks the font's color support when cmap did not consume a presentation selector.
+    /// </summary>
+    /// <param name="buffer">The buffer supplying color font options.</param>
+    /// <param name="textRunIndex">The declared run supplying color font options.</param>
+    /// <param name="next">The next character in the grapheme, if present.</param>
+    /// <param name="font">The font that maps the base character.</param>
+    /// <returns>Whether the font supports the requested presentation.</returns>
+    private static bool MatchesPresentation(ShapingBuffer buffer, ushort textRunIndex, CodePoint? next, FontMetrics font)
+    {
+        if (!IsPresentationSelector(next))
+        {
+            return true;
+        }
+
+        ColorFontSupport color = buffer.TextRuns[textRunIndex].ColorFontSupport ?? buffer.TextOptions.ColorFontSupport;
+        return font.HasColorTable(color) == (next?.Value == ShapingBuffer.EmojiPresentationSelector);
+    }
+
+    /// <summary>
+    /// Checks whether an unmapped source character needs fallback.
+    /// </summary>
+    /// <param name="codePoint">The unmapped source character.</param>
+    /// <returns>Whether the character needs a glyph.</returns>
+    private static bool RequiresGlyph(CodePoint codePoint)
+        => !CodePoint.IsControl(codePoint)
+            && (!UnicodeUtility.IsDefaultIgnorableCodePoint((uint)codePoint.Value) || UnicodeUtility.ShouldRenderWhiteSpaceOnly(codePoint));
+
+    /// <summary>
+    /// Maps the text to glyphs, selects fallback fonts, and resolves the source runs.
+    /// </summary>
+    /// <param name="text">The original UTF-16 text.</param>
+    /// <param name="options">The shaping options.</param>
+    /// <param name="textRuns">The declared or default text runs.</param>
+    /// <param name="bidiRuns">The resolved bidi runs.</param>
+    /// <param name="bidiMap">The destination for the bidi run index of each character.</param>
+    /// <param name="buffer">The buffer receiving the selected fonts, glyph IDs, and source runs.</param>
+    /// <returns>The native script direction, fallback fonts, and grapheme count.</returns>
+    private static (ScriptHorizontalDirection? Direction, OrderedDictionary<FontFamily, Font>? FallbackFonts, int GraphemeCount) ReadShapingInput(
         ReadOnlySpan<char> text,
-        int start,
+        TextOptions options,
         IReadOnlyList<TextRun> textRuns,
-        ref int textRunIndex,
-        ref int codePointIndex,
-        ref int stringIndex,
-        ref int bidiRunIndex,
-        bool isFallbackRun,
-        Font font,
         BidiRun[] bidiRuns,
         int[] bidiMap,
-        ShapingBuffer substitutions,
-        ShapingBuffer positionings,
-        bool ignoreVariationSelectors)
+        ShapingBuffer buffer)
     {
-        _ = PopulateAndSubstitute(text, start, textRuns, ref textRunIndex, ref codePointIndex, ref stringIndex, ref bidiRunIndex, font, bidiRuns, bidiMap, substitutions, ignoreVariationSelectors);
+        int codePointIndex = 0;
+        int inputGlyphCount = 0;
+        int runStart = 0;
+        int stringIndex = 0;
+        int textRunIndex = 0;
+        int bidiRunIndex = 0;
+        int clusterStart = 0;
+        int mappedClusterStart = -1;
+        int clusterStringIndex = 0;
+        int clusterGraphemeIndex = 0;
+        int graphemeCount = 0;
 
-        bool result = !isFallbackRun
-            ? positionings.TryAdd(font, substitutions)
-            : positionings.TryUpdate(font, substitutions);
-        return result;
-    }
-
-    /// <summary>
-    /// Populates the substitution buffer from <paramref name="text"/> and runs bidi
-    /// mirroring and GSUB substitution over it, leaving the shaped records in the
-    /// buffer for either in-place metrics seeding or a cross-buffer seed.
-    /// </summary>
-    /// <param name="text">The run-relative text slice to shape.</param>
-    /// <param name="start">The starting grapheme index (absolute within the original input).</param>
-    /// <param name="textRuns">The ordered list of resolved text runs.</param>
-    /// <param name="textRunIndex">The index of the current text run; advanced as the enumerator crosses run boundaries.</param>
-    /// <param name="codePointIndex">The running codepoint index (absolute within the original input).</param>
-    /// <param name="stringIndex">The running char index (absolute within the original input).</param>
-    /// <param name="bidiRunIndex">The running bidi run index.</param>
-    /// <param name="font">The font to shape with.</param>
-    /// <param name="bidiRuns">The resolved bidi runs covering the whole input.</param>
-    /// <param name="bidiMap">A codepoint → bidi-run mapping accumulated across shaping passes.</param>
-    /// <param name="substitutions">The GSUB substitution buffer to write into.</param>
-    /// <param name="ignoreVariationSelectors">
-    /// <see langword="true"/> to map a base character without regard to the presentation
-    /// its selector asks for, once no font has answered it.
-    /// </param>
-    /// <returns>The exclusive grapheme index reached after consuming the text.</returns>
-    private static int PopulateAndSubstitute(ReadOnlySpan<char> text, int start, IReadOnlyList<TextRun> textRuns, ref int textRunIndex, ref int codePointIndex, ref int stringIndex, ref int bidiRunIndex, Font font, BidiRun[] bidiRuns, int[] bidiMap, ShapingBuffer substitutions, bool ignoreVariationSelectors)
-    {
-        // For each run we start with a fresh substitution buffer to avoid
-        // overwriting the glyph ids.
-        substitutions.Clear();
-
-        // A font without variation sequences never consumes the following codepoint
-        // during glyph lookup, so the per-codepoint lookahead decode is skipped.
-        bool hasVariationSequences = font.FontMetrics.HasUnicodeVariationSequences;
-
-        // Shaping needs each grapheme's boundary and source slice, but not terminal
-        // width, emoji, or display flags. The boundary-only mode avoids deriving
-        // metadata that no shaping operation consumes.
-        int graphemeIndex = start;
-        int inputGroupStart = substitutions.Count;
         bool previousWasContinuation = false;
         bool previousWasRegionalIndicator = false;
         bool previousWasZeroWidthJoiner = false;
-        SpanGraphemeEnumerator graphemeEnumerator = new(text, true);
-        while (graphemeEnumerator.MoveNext())
-        {
-            ReadOnlySpan<char> grapheme = graphemeEnumerator.CurrentSpan;
-            int graphemeCodePointIndex = 0;
-            int charIndex = 0;
+        bool mixedVertical = options.LayoutMode.IsVerticalMixed();
+        bool vertical = options.LayoutMode.IsVertical();
+        bool hasFallback = options.FallbackFontFamilies?.Count > 0 || options.FontFallbackResolver is not null;
+        OrderedDictionary<FontFamily, Font>? fallbackFonts = null;
+        HashSet<int>? queried = null;
+        bool needsNativeDirection = options.TextBidiMode == TextBidiMode.Override
+            && options.TextDirection == TextDirection.RightToLeft
+            && options.LayoutMode.IsHorizontal();
 
-            while (textRunIndex < textRuns.Count - 1 && graphemeIndex == textRuns[textRunIndex].End)
+        ScriptHorizontalDirection? nativeDirection = null;
+        ScriptItemizer.ShapingRun run = default;
+        ScriptClass? scriptOverride = options.Script;
+        FontMetrics metrics = options.Font.FontMetrics;
+        bool hasVariationSequences = metrics.HasUnicodeVariationSequences;
+        CultureInfo culture = options.Culture ?? CultureInfo.CurrentCulture;
+        IReadOnlyList<Tag> featureTags = options.FeatureTags;
+
+        // Only grapheme boundaries are needed here. The enumerator can skip
+        // computing width and display flags, which layout resolves separately.
+        SpanGraphemeEnumerator graphemes = new(text, true);
+        while (graphemes.MoveNext())
+        {
+            int previousTextRun = textRunIndex;
+            bool followsPlaceholder = false;
+            while (textRunIndex < textRuns.Count - 1 && graphemeCount >= textRuns[textRunIndex].End)
             {
+                if (textRuns[textRunIndex].Placeholder.HasValue)
+                {
+                    // Use the bidi run of the following source character.
+                    // The placeholder occupies a slot and consumes no text.
+                    int followingRun = codePointIndex == bidiRuns[bidiRunIndex].End ? bidiRunIndex + 1 : bidiRunIndex;
+                    buffer.AddPlaceholder(CodePoint.ObjectReplacementChar, bidiRuns[followingRun], (ushort)textRunIndex, codePointIndex);
+                    followsPlaceholder = true;
+                }
+
                 textRunIndex++;
             }
 
-            // Now enumerate through each codepoint in the grapheme.
-            bool skipNextCodePoint = false;
-            SpanCodePointEnumerator codePointEnumerator = new(grapheme);
-            while (codePointEnumerator.MoveNext())
+            if (codePointIndex == 0 || previousTextRun != textRunIndex)
             {
-                CodePoint current = codePointEnumerator.Current;
-                int currentStringIndex = stringIndex;
-                stringIndex += current.Utf16SequenceLength;
+                TextRun textRun = textRuns[textRunIndex];
+                metrics = textRun.ResolvedFont.FontMetrics;
+                hasVariationSequences = metrics.HasUnicodeVariationSequences;
+                scriptOverride = textRun.Script ?? options.Script;
+                culture = textRun.Culture ?? options.Culture ?? CultureInfo.CurrentCulture;
+                featureTags = textRun.FeatureTags ?? options.FeatureTags;
+            }
 
-                uint value = (uint)current.Value;
-                GraphemeClusterClass graphemeClass = CodePoint.GetGraphemeClusterClass(current);
+            bool firstInGrapheme = true;
+            bool consumed = false;
+            ReadOnlySpan<char> grapheme = graphemes.CurrentSpan;
+            int graphemeOffset = 0;
+            SpanCodePointEnumerator characters = new(grapheme);
+            while (characters.MoveNext())
+            {
+                CodePoint codePoint = characters.Current;
+                uint value = (uint)codePoint.Value;
+                GraphemeClusterClass graphemeClass = CodePoint.GetGraphemeClusterClass(codePoint);
 
-                // HarfBuzz deliberately uses a smaller continuation rule set than
-                // the complete Unicode grapheme algorithm. In particular, ZWNJ and
-                // adjacent Hangul letters keep distinct input starts, while marks,
-                // emoji modifiers, paired regional indicators, ZWJ emoji sequences,
-                // half-width voiced marks, and emoji tag characters continue the
-                // preceding input group.
+                // Input clusters follow the shaping continuation rules. Marks,
+                // emoji modifiers, regional indicator pairs, ZWJ emoji sequences,
+                // half-width voiced marks, and emoji tags share an input start.
                 bool isRegionalIndicator = graphemeClass == GraphemeClusterClass.RegionalIndicator;
-                bool isZeroWidthJoiner = CodePoint.IsZeroWidthJoiner(current);
-                bool isContinuation =
-
-                    // Combining, spacing-combining, and enclosing marks belong to
-                    // the preceding base character.
-                    CodePoint.IsMark(current)
-
-                    // U+1F3FB..U+1F3FF are the five emoji skin-tone modifiers.
+                bool isZeroWidthJoiner = CodePoint.IsZeroWidthJoiner(codePoint);
+                bool continuation = CodePoint.IsMark(codePoint)
                     || value is >= 0x1F3FB and <= 0x1F3FF
-
-                    // Regional indicators form flag pairs. The second indicator
-                    // continues the first; the third starts the next pair.
                     || (isRegionalIndicator && previousWasRegionalIndicator && !previousWasContinuation)
-
-                    // U+200D ZERO WIDTH JOINER connects the characters on either side.
                     || isZeroWidthJoiner
-
-                    // An extended pictographic character following U+200D continues
-                    // the emoji sequence selected by that joiner.
                     || (previousWasZeroWidthJoiner && graphemeClass == GraphemeClusterClass.ExtendedPictographic)
-
-                    // U+FF9E and U+FF9F are the half-width Katakana voiced and
-                    // semi-voiced sound marks.
                     || value is >= 0xFF9E and <= 0xFF9F
-
-                    // U+E0020 TAG SPACE through U+E007F CANCEL TAG encode the
-                    // invisible tag sequences used by emoji subregion flags.
                     || value is >= 0xE0020 and <= 0xE007F;
 
-                if (!isContinuation)
+                if (!continuation || (firstInGrapheme && (previousTextRun != textRunIndex || followsPlaceholder)))
                 {
-                    // The preceding group is now complete. Combine its exact input
-                    // starts once, before GSUB can move or expand any of its records.
-                    if (substitutions.Count - inputGroupStart > 1)
-                    {
-                        substitutions.CombineInputStarts(inputGroupStart, substitutions.Count);
-                    }
-
-                    inputGroupStart = substitutions.Count;
+                    clusterStart = codePointIndex;
                 }
 
-                previousWasContinuation = isContinuation;
+                previousWasContinuation = continuation;
                 previousWasRegionalIndicator = isRegionalIndicator;
                 previousWasZeroWidthJoiner = isZeroWidthJoiner;
 
-                if (codePointIndex == bidiRuns[bidiRunIndex].End)
+                // UAX #9 limits shaping to one bidi level run. Two levels
+                // with the same reading direction still have separate runs.
+                bool bidiBoundary = codePointIndex == bidiRuns[bidiRunIndex].End;
+                if (bidiBoundary)
                 {
                     bidiRunIndex++;
                 }
 
-                if (skipNextCodePoint)
-                {
-                    // The preceding codepoint consumed this variation selector as a
-                    // Unicode Variation Sequence, so it produces no record of its own.
-                    skipNextCodePoint = false;
-                    charIndex += current.Utf16SequenceLength;
-                    codePointIndex++;
-                    graphemeCodePointIndex++;
-                    continue;
-                }
-
+                // Record a bidi index even for a selector that cmap consumes.
+                // The index describes the source character.
                 bidiMap[codePointIndex] = bidiRunIndex;
 
-                // Peek at the codepoint that follows so the cmap can resolve a Unicode
-                // Variation Sequence, and so a presentation selector can judge the base.
-                // The peek does not move the position; the loop reaches that codepoint on
-                // its next iteration.
-                charIndex += current.Utf16SequenceLength;
-                char following = charIndex < grapheme.Length ? grapheme[charIndex] : '\0';
-                bool followedByPresentationSelector = following is (char)ShapingBuffer.TextPresentationSelector or (char)ShapingBuffer.EmojiPresentationSelector;
-                CodePoint? next = (hasVariationSequences || followedByPresentationSelector) && charIndex < grapheme.Length
-                    ? CodePoint.DecodeFromUtf16At(grapheme, charIndex, out _)
-                    : null;
-
-                // Get the glyph id for the codepoint and add to the buffer. Every
-                // codepoint enters the buffer, including unmapped default
-                // ignorables as the missing glyph: sequence matching treats them
-                // as transparent and the hide stage replaces them at the end.
-                _ = substitutions.TryGetGlyphId(font.FontMetrics, current, next, out ushort glyphId, out skipNextCodePoint);
-
-                // A base character mapped without its selector's sequence answers the
-                // selector through the font as a whole: a font with an enabled color
-                // table has the emoji presentation, a font without one the text
-                // presentation. A font with the other presentation does not have the
-                // sequence, so the cluster is missing for it and the selector goes with it.
-                if (followedByPresentationSelector && !ignoreVariationSelectors && !skipNextCodePoint && glyphId != 0)
+                if (mixedVertical && firstInGrapheme)
                 {
-                    ColorFontSupport colorFontSupport = textRuns[textRunIndex].ColorFontSupport ?? substitutions.TextOptions.ColorFontSupport;
-                    if (font.FontMetrics.HasColorTable(colorFontSupport) == (following == (char)ShapingBuffer.TextPresentationSelector))
+                    // A transform-and-rotate character needs vertical shaping
+                    // so the font can supply a vertical form. The rest of the
+                    // grapheme, including combining marks, uses the same axis.
+                    VerticalOrientationType orientation = CodePoint.GetVerticalOrientationType(codePoint);
+                    vertical = AdvancedTypographicUtils.IsVerticalGlyph(orientation) || orientation == VerticalOrientationType.TransformRotate;
+                }
+
+                // Resolve the source script here. A font can substitute a
+                // glyph from another character, but the input run still owns it.
+                ScriptClass script = scriptOverride ?? CodePoint.GetScriptClass(codePoint);
+                if (codePointIndex == 0
+                    || bidiBoundary
+                    || (firstInGrapheme && followsPlaceholder)
+                    || (firstInGrapheme && previousTextRun != textRunIndex && !run.HasSameSettings(culture, featureTags))
+                    || !run.TryInclude(codePoint, script, vertical))
+                {
+                    // Use counts of emitted glyphs. Consumed selectors keep
+                    // their source indices but do not occupy buffer slots.
+                    if (inputGlyphCount > runStart)
                     {
-                        glyphId = 0;
-                        skipNextCodePoint = true;
-                        substitutions.HasUnmatchedVariationSequences = true;
+                        buffer.AddInputRun(inputGlyphCount, run);
+                        runStart = inputGlyphCount;
+                    }
+
+                    run = new(script, culture, featureTags, vertical);
+                }
+
+                if (needsNativeDirection && (options.Script is not null || run.Script is not (ScriptClass.Common or ScriptClass.Inherited or ScriptClass.Unknown)))
+                {
+                    nativeDirection = ScriptDirectionData.GetDirection(options.Script ?? run.Script);
+                    needsNativeDirection = false;
+                }
+
+                int utf16Length = codePoint.Utf16SequenceLength;
+                graphemeOffset += utf16Length;
+                int selectorFontIndex = 0;
+                ushort glyphId = 0;
+                bool skipSelector = consumed;
+                bool selectorUsesBaseFont = hasFallback && !firstInGrapheme && IsPresentationSelector(codePoint);
+                if (selectorUsesBaseFont && !skipSelector)
+                {
+                    selectorFontIndex = buffer[buffer.Count - 1].FallbackFontIndex;
+                    if (selectorFontIndex != 0)
+                    {
+                        // The base glyph's fallback font supplies the selector if it
+                        // maps one. Otherwise the base glyph already sets the presentation.
+                        FontMetrics precedingMetrics = fallbackFonts!.GetAt(selectorFontIndex - 1).Value.FontMetrics;
+                        skipSelector = !precedingMetrics.TryGetGlyphId(codePoint, out glyphId);
                     }
                 }
 
-                // Capture all three source coordinates while the input enumerators
-                // provide them. Later substitutions move, duplicate, or combine the
-                // complete record without reconstructing source positions.
-                substitutions.AddGlyph(glyphId, current, (TextDirection)bidiRuns[bidiRunIndex].Direction, (ushort)textRunIndex, codePointIndex, currentStringIndex, graphemeIndex);
+                if (skipSelector)
+                {
+                    // The preceding glyph already accounts for this selector.
+                    // Advance through the source without adding a glyph.
+                    consumed = false;
+                }
+                else
+                {
+                    // Only cmap variation sequences and presentation selectors
+                    // need the next character. Limit lookahead to this grapheme.
+                    CodePoint? next = graphemeOffset < grapheme.Length
+                        && (hasVariationSequences
+                            || grapheme[graphemeOffset] == ShapingBuffer.TextPresentationSelector
+                            || grapheme[graphemeOffset] == ShapingBuffer.EmojiPresentationSelector)
+                        ? CodePoint.DecodeFromUtf16At(grapheme, graphemeOffset)
+                        : null;
+
+                    bool mapped = selectorFontIndex != 0 || buffer.TryGetGlyphId(metrics, codePoint, next, out glyphId, out consumed);
+
+                    // Every glyph in a cluster uses the source indices of the
+                    // first glyph that was emitted. Selectors consumed by cmap
+                    // have no glyph slot and do not set these indices.
+                    if (clusterStart != mappedClusterStart)
+                    {
+                        mappedClusterStart = clusterStart;
+                        clusterStringIndex = stringIndex;
+                        clusterGraphemeIndex = graphemeCount;
+                    }
+
+                    TextDirection direction = (TextDirection)bidiRuns[bidiRunIndex].Direction;
+                    buffer.AddGlyph(glyphId, codePoint, direction, (ushort)textRunIndex, clusterStart, clusterStringIndex, clusterGraphemeIndex);
+                    inputGlyphCount++;
+
+                    if (hasFallback)
+                    {
+                        int index = buffer.Count - 1;
+                        buffer[index].FallbackFontIndex = selectorFontIndex;
+                        int precedingFontIndex = firstInGrapheme ? 0 : buffer[index - 1].FallbackFontIndex;
+
+                        bool needsFallback;
+                        if (buffer[index].IsDefaultIgnorable)
+                        {
+                            // Once fallback has started, an invisible character
+                            // can stay with the font chosen for the preceding glyph.
+                            // Keep a presentation selector with its base font even
+                            // if cmap supplies glyph zero. A font change breaks the sequence.
+                            needsFallback = !selectorUsesBaseFont && fallbackFonts is not null
+                                && (!mapped || precedingFontIndex != 0);
+                            next = null;
+                        }
+                        else
+                        {
+                            needsFallback = (!mapped || (!consumed && !MatchesPresentation(buffer, (ushort)textRunIndex, next, metrics)))
+                                && RequiresGlyph(codePoint);
+
+                            if (needsFallback && next is null && graphemeOffset < grapheme.Length)
+                            {
+                                // A fallback font can have a cmap variation even
+                                // when the declared font has no variation table.
+                                next = CodePoint.DecodeFromUtf16At(grapheme, graphemeOffset);
+                            }
+                        }
+
+                        if (needsFallback)
+                        {
+                            // Finish the font search before reading the selector.
+                            // Only the selected mapping can consume that character.
+                            ResolveFallbackGlyph(buffer, index, next, ref fallbackFonts, precedingFontIndex, ref queried, ref consumed);
+                        }
+                    }
+                }
 
                 codePointIndex++;
-                graphemeCodePointIndex++;
+                stringIndex += utf16Length;
+                firstInGrapheme = false;
             }
 
-            graphemeIndex++;
+            graphemeCount++;
         }
 
-        if (substitutions.Count - inputGroupStart > 1)
+        if (inputGlyphCount > runStart)
         {
-            // Complete the final input group because no following codepoint exists
-            // to close it inside the loop.
-            substitutions.CombineInputStarts(inputGroupStart, substitutions.Count);
+            buffer.AddInputRun(inputGlyphCount, run);
         }
 
-        // Apply the simple and complex substitutions.
-        SubstituteBidiMirrors(font.FontMetrics, substitutions);
+        // Placeholders at the end have no following bidi run.
+        for (; textRunIndex < textRuns.Count; textRunIndex++)
+        {
+            if (textRuns[textRunIndex].Placeholder.HasValue)
+            {
+                BidiRun endRun = new(BidiCharacterType.LeftToRight, 2, codePointIndex, 0);
+                buffer.AddPlaceholder(CodePoint.ObjectReplacementChar, endRun, (ushort)textRunIndex, codePointIndex);
+            }
+        }
 
-        font.FontMetrics.ApplySubstitution(substitutions);
-        return graphemeIndex;
+        return (nativeDirection, fallbackFonts, graphemeCount);
     }
 
     /// <summary>
-    /// Substitutes mirrored bracket glyphs (for example <c>(</c> ↔ <c>)</c>) inside right-to-left
-    /// bidi runs, per Unicode Bidirectional Algorithm rule L4. Relies on the font's <c>rtlm</c>
-    /// feature when available and falls back to the Unicode mirror table otherwise.
+    /// Maps Unicode mirrors before the substitution table runs.
+    /// In right-to-left runs, the map applies Unicode Bidirectional Algorithm rule L4.
+    /// In vertical layouts, it also uses the vertical mirror map for glyphs that rotate by default.
     /// </summary>
     /// <param name="fontMetrics">The font metrics used to look up mirrored glyph ids.</param>
     /// <param name="buffer">The substitution buffer whose glyphs will be rewritten in place.</param>
-    private static void SubstituteBidiMirrors(FontMetrics fontMetrics, ShapingBuffer buffer)
+    /// <param name="start">The first glyph in the new font span.</param>
+    private static void SubstituteBidiMirrors(FontMetrics fontMetrics, ShapingBuffer buffer, int start)
     {
-        for (int i = 0; i < buffer.Count; i++)
+        int end = buffer.SpanEnd;
+
+        // The mapped run ends at each bidi boundary. Its font spans therefore
+        // have one direction, which decides whether to look for bidi mirrors.
+        if (buffer[start].Direction == TextDirection.RightToLeft)
         {
-            ref GlyphShapingData data = ref buffer[i];
-
-            if (data.Direction != TextDirection.RightToLeft)
+            for (int i = start; i < end; i++)
             {
-                continue;
-            }
-
-            if (!CodePoint.TryGetBidiMirror(data.CodePoint, out CodePoint mirror))
-            {
-                continue;
-            }
-
-            if (fontMetrics.TryGetGlyphId(mirror, out ushort glyphId))
-            {
-                buffer.Replace(i, glyphId, KnownFeatureTags.RightToLeftMirroredForms);
+                if (CodePoint.TryGetBidiMirror(buffer[i].CodePoint, out CodePoint mirror)
+                    && fontMetrics.TryGetGlyphId(mirror, out ushort glyphId))
+                {
+                    buffer.Replace(i, glyphId, KnownFeatureTags.RightToLeftMirroredForms);
+                }
             }
         }
 
-        // TODO: This only replaces certain glyphs. We should investigate the specification further.
+        // Use the vertical mirror map for characters it covers.
+        // TODO: Check which other characters need vertical alternates.
+        // See Unicode Standard Annex #50, Vertical Alternates.
         // https://www.unicode.org/reports/tr50/#vertical_alternates
         if (buffer.TextOptions.LayoutMode.IsHorizontal())
         {
             return;
         }
 
-        for (int i = 0; i < buffer.Count; i++)
+        for (int i = start; i < end; i++)
         {
             ref GlyphShapingData data = ref buffer[i];
-            if (CodePoint.GetVerticalOrientationType(data.CodePoint) is VerticalOrientationType.Upright or VerticalOrientationType.TransformUpright)
+            if (AdvancedTypographicUtils.IsVerticalGlyph(CodePoint.GetVerticalOrientationType(data.CodePoint)))
             {
                 continue;
             }

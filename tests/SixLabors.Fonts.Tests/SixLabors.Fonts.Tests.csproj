@@ -3,6 +3,8 @@
   <PropertyGroup>
     <DebugSymbols>True</DebugSymbols>
     <Platforms>AnyCPU;x64;x86</Platforms>
+    <HarfBuzzSharpVersion>14.2.1.1</HarfBuzzSharpVersion>
+    <DefineConstants Condition="'$(HarfBuzzSharpVersion)' == '14.2.1.1'">$(DefineConstants);HARFBUZZSHARP_14_2_1_1</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -25,10 +27,10 @@
 
   <PropertyGroup>
     <!--
-    Comment out this constant declaration to disable all tests based upon image generation.
-    This allows us to make breaking changes to the Fonts API without breaking the tests.
+    This constant enables the image comparison helpers.
+    These helpers depend on the published Drawing package.
     -->
-    <!-- <DefineConstants>$(DefineConstants);SUPPORTS_DRAWING</DefineConstants> -->
+    <DefineConstants>$(DefineConstants);SUPPORTS_DRAWING</DefineConstants>
     <HasSupportForDrawing Condition="$(DefineConstants.Contains('SUPPORTS_DRAWING'))">true</HasSupportForDrawing>
   </PropertyGroup>
 
@@ -47,9 +49,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="3.1.2-alpha.0.1" />
-    <PackageReference Include="HarfBuzzSharp" Version="14.2.1.1" />
-    <PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="14.2.1.1" Condition="'$(IsLinux)'=='true'" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="3.1.3" />
+    <PackageReference Include="HarfBuzzSharp" Version="$(HarfBuzzSharpVersion)" />
+    <PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="$(HarfBuzzSharpVersion)" Condition="'$(IsLinux)'=='true'" />
     <PackageReference Include="Pegasus" Version="4.1.0" PrivateAssets="all" />
     <Compile Include="..\..\src\UnicodeTrieGenerator\StateAutomation\DeterministicFiniteAutomata.cs" Link="Unicode\StateAutomation\DeterministicFiniteAutomata.cs" />
     <Compile Include="..\..\src\UnicodeTrieGenerator\StateAutomation\Compile.cs" Link="Unicode\StateAutomation\Compile.cs" />

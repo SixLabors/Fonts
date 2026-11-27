@@ -19,6 +19,12 @@ internal sealed class FontReader : IDisposable
     private readonly bool isOwnedStream;
     private bool isDisposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FontReader"/> class.
+    /// Reads the table directory and prepares the data source for table reads.
+    /// </summary>
+    /// <param name="stream">The stream that contains the font.</param>
+    /// <param name="loader">The loader that maps font table types to table tags.</param>
     internal FontReader(Stream stream, TableLoader loader)
     {
         this.loader = loader;
@@ -26,14 +32,14 @@ internal sealed class FontReader : IDisposable
         Func<BigEndianBinaryReader, TableHeader> loadHeader = TableHeader.Read;
 
         this.stream = stream;
-        using var reader = new BigEndianBinaryReader(stream, true);
+        using BigEndianBinaryReader reader = new(stream, true);
 
-        // we should immediately read the table header to learn which tables we have and what order they are in
+        // The first four bytes identify the font container.
         uint version = reader.ReadUInt32();
         ushort tableCount;
         if (version == 0x774F4646)
         {
-            // This is a woff file.
+            // 'wOFF' identifies WOFF 1.
             this.TableFormat = TableFormat.Woff;
 
             // WOFFHeader
@@ -68,7 +74,7 @@ internal sealed class FontReader : IDisposable
         }
         else if (version == 0x774F4632)
         {
-            // This is a woff2 file.
+            // 'wOF2' identifies WOFF 2.
             this.TableFormat = TableFormat.Woff2;
 
             uint flavor = reader.ReadUInt32();
@@ -90,10 +96,12 @@ internal sealed class FontReader : IDisposable
 
             this.isOwnedStream = true;
 
+            // WOFF 2 stores all tables in one Brotli stream. The directory
+            // offsets refer to the decompressed data that this reader owns.
             byte[] compressedBuffer = reader.ReadBytes((int)totalCompressedSize);
-            var decompressedStream = new MemoryStream();
-            using var input = new MemoryStream(compressedBuffer);
-            using var decompressor = new BrotliStream(input, CompressionMode.Decompress);
+            MemoryStream decompressedStream = new();
+            using MemoryStream input = new(compressedBuffer);
+            using BrotliStream decompressor = new(input, CompressionMode.Decompress);
             decompressor.CopyTo(decompressedStream);
             decompressedStream.Position = 0;
             this.stream = decompressedStream;
@@ -112,7 +120,7 @@ internal sealed class FontReader : IDisposable
             this.CompressedTableData = false;
         }
 
-        var headers = new Dictionary<string, TableHeader>(tableCount);
+        Dictionary<string, TableHeader> headers = new(tableCount);
         for (int i = 0; i < tableCount; i++)
         {
             TableHeader tbl = loadHeader(reader);
@@ -184,20 +192,45 @@ internal sealed class FontReader : IDisposable
         return reader!;
     }
 
+    /// <summary>
+    /// Opens a reader at the start of the requested table.
+    /// </summary>
+    /// <param name="tableName">The tag of the requested table.</param>
+    /// <param name="reader">The reader on success.</param>
+    /// <returns>Whether the table directory contains the requested table.</returns>
     public bool TryGetReaderAtTablePosition(string tableName, [NotNullWhen(returnValue: true)] out BigEndianBinaryReader? reader)
         => this.TryGetReaderAtTablePosition(tableName, out reader, out _);
 
+    /// <summary>
+    /// Opens a reader at the start of the requested table and returns its directory entry.
+    /// </summary>
+    /// <param name="tableName">The tag of the requested table.</param>
+    /// <param name="reader">The reader on success.</param>
+    /// <param name="header">The table directory entry on success.</param>
+    /// <returns>Whether the table directory contains the requested table.</returns>
     public bool TryGetReaderAtTablePosition(string tableName, [NotNullWhen(returnValue: true)] out BigEndianBinaryReader? reader, [NotNullWhen(returnValue: true)] out TableHeader? header)
     {
         header = this.GetHeader(tableName);
-        if (header == null)
+        if (header is null)
         {
             reader = null;
             return false;
         }
 
-        reader = header?.CreateReader(this.stream);
-        return reader != null;
+        reader = header.CreateReader(this.stream);
+        return true;
+    }
+
+    /// <summary>
+    /// Opens a reader that can read only the requested table's bytes.
+    /// </summary>
+    /// <param name="tableName">The tag of the requested table.</param>
+    /// <param name="reader">The table reader on success.</param>
+    /// <returns>Whether the reader opened the complete table.</returns>
+    public bool TryGetBoundedReaderAtTablePosition(string tableName, [NotNullWhen(returnValue: true)] out BigEndianBinaryReader? reader)
+    {
+        reader = this.GetHeader(tableName)?.CreateBoundedReader(this.stream);
+        return reader is not null;
     }
 
     public bool TryGetTableData(Tag tag, out ReadOnlyMemory<byte> table)

@@ -4,24 +4,11 @@
 namespace SixLabors.Fonts;
 
 /// <summary>
-/// One glyph's positioning-phase state, stored in a stream parallel to the glyph
-/// records: the shaping bounds that accumulate placement and advance adjustments,
-/// the attachment links, and the positioned and kerned marks. Entries are seeded
-/// alongside the metrics stream after substitution; structural buffer operations
-/// before seeding need not preserve alignment, matching the metrics stream.
+/// Stores the bounds, attachment links, and kerning state for one glyph.
+/// The buffer sets the initial bounds with the glyph metrics after substitution.
 /// </summary>
 internal struct GlyphShapingPosition
 {
-    /// <summary>
-    /// The <see cref="flags"/> bit recording <see cref="IsPositioned"/>.
-    /// </summary>
-    private const byte PositionedFlag = 1 << 0;
-
-    /// <summary>
-    /// The <see cref="flags"/> bit recording <see cref="IsKerned"/>.
-    /// </summary>
-    private const byte KernedFlag = 1 << 1;
-
     /// <summary>
     /// The relative cursive attachment value that identifies an unattached glyph. A nonzero value is the signed distance to the parent glyph.
     /// </summary>
@@ -46,14 +33,8 @@ internal struct GlyphShapingPosition
 #pragma warning restore SA1401
 
     /// <summary>
-    /// Packed boolean positioning state addressed through the named flag constants
-    /// above.
-    /// </summary>
-    private byte flags;
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="GlyphShapingPosition"/> struct
-    /// in its seeded state: unattached, unpositioned, with the given bounds.
+    /// with the given bounds and no attachments.
     /// </summary>
     /// <param name="bounds">The seeded shaping bounds.</param>
     public GlyphShapingPosition(GlyphShapingBounds bounds)
@@ -61,24 +42,11 @@ internal struct GlyphShapingPosition
         this.Bounds = bounds;
         this.MarkAttachment = -1;
         this.CursiveAttachment = NoCursiveAttachment;
-        this.flags = 0;
-    }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether this glyph has been positioned.
-    /// </summary>
-    public bool IsPositioned
-    {
-        readonly get => (this.flags & PositionedFlag) != 0;
-        set => this.flags = value ? (byte)(this.flags | PositionedFlag) : (byte)(this.flags & ~PositionedFlag);
+        this.IsKerned = false;
     }
 
     /// <summary>
     /// Gets or sets a value indicating whether this glyph has been kerned.
     /// </summary>
-    public bool IsKerned
-    {
-        readonly get => (this.flags & KernedFlag) != 0;
-        set => this.flags = value ? (byte)(this.flags | KernedFlag) : (byte)(this.flags & ~KernedFlag);
-    }
+    public bool IsKerned { get; set; }
 }

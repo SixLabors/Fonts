@@ -13,38 +13,43 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 internal static class AdvancedTypographicUtils
 {
     /// <summary>
-    /// The maximum context length for sequence matching operations.
-    /// Used to prevent excessive processing from maliciously crafted fonts.
-    /// Based on HarfBuzz hb-buffer.hh.
+    /// The maximum number of glyph slots in a context match. Matches HarfBuzz's hb-limits.hh.
     /// </summary>
     public const int MaxContextLength = 64;
 
     /// <summary>
-    /// The maximum depth of nested lookup application. Contextual lookups may
-    /// recurse into one another, so a font can describe unbounded nesting;
-    /// application stops at this depth instead.
+    /// The maximum depth of nested lookup application. Contextual lookups can call
+    /// one another without an end condition. The depth limit stops that recursion.
     /// </summary>
     public const int MaxNestingLevel = 64;
 
     /// <summary>
-    /// The maximum length factor multiplied by buffer count to compute max allowable buffer size.
+    /// The owner value of a deletion outside a state table stream.
     /// </summary>
-    private const int MaxLengthFactor = 64;
+    public const int NoDeletionOwner = int.MaxValue;
+
+    // These shaping limits match hb-limits.hh in the pinned HarfBuzz source.
+    // They bound glyph growth and lookup work. Table loaders check byte ranges separately.
 
     /// <summary>
-    /// The minimum value for the max allowable buffer size.
+    /// The factor that sets the glyph count limit from the input length.
     /// </summary>
-    private const int MaxLengthMinimum = 16384;
+    private const int MaxLengthFactor = 512;
 
     /// <summary>
-    /// The maximum operations factor multiplied by buffer count to compute max allowable operations.
+    /// The smallest glyph count limit. Short input can produce many glyphs.
     /// </summary>
-    private const int MaxOperationsFactor = 1024;
+    private const int MaxLengthMinimum = 65536;
 
     /// <summary>
-    /// The minimum value for the max allowable operations count.
+    /// The factor that sets the operation limit from the input length.
     /// </summary>
-    private const int MaxOperationsMinimum = 16384;
+    private const int MaxOperationsFactor = 65536;
+
+    /// <summary>
+    /// The smallest operation limit. Short input can require many table passes.
+    /// </summary>
+    private const int MaxOperationsMinimum = 524288;
 
     /// <summary>
     /// The absolute maximum number of shaping characters, set to half of int.MaxValue.
@@ -83,7 +88,7 @@ internal static class AdvancedTypographicUtils
     }
 
     /// <summary>
-    /// Gets a value indicating whether the glyph represented by the codepoint should be interpreted vertically.
+    /// Gets whether the glyph uses vertical metrics by default in the specified layout mode.
     /// </summary>
     /// <param name="codePoint">The codepoint represented by the glyph.</param>
     /// <param name="layoutMode">The layout mode.</param>
@@ -95,8 +100,43 @@ internal static class AdvancedTypographicUtils
             return true;
         }
 
-        bool isVerticalLayout = layoutMode.IsVerticalMixed();
-        return isVerticalLayout && CodePoint.GetVerticalOrientationType(codePoint) is VerticalOrientationType.Upright or VerticalOrientationType.TransformUpright;
+        return layoutMode.IsVerticalMixed() && IsVerticalGlyph(CodePoint.GetVerticalOrientationType(codePoint));
+    }
+
+    /// <summary>
+    /// Gets whether the default glyph is upright in vertical text.
+    /// </summary>
+    /// <param name="orientation">The Unicode orientation of the character.</param>
+    /// <returns>Whether the default glyph is upright.</returns>
+    public static bool IsVerticalGlyph(VerticalOrientationType orientation)
+        => orientation is VerticalOrientationType.Upright or VerticalOrientationType.TransformUpright;
+
+    /// <summary>
+    /// Counts the deletion events before a live glyph or state table index.
+    /// </summary>
+    /// <param name="events">The ordered deletion events.</param>
+    /// <param name="index">The exclusive index to count up to.</param>
+    /// <param name="liveBoundary">Whether the index is in the live glyph buffer.</param>
+    /// <returns>The number of events before the index.</returns>
+    public static int CountDeletionsBefore(ReadOnlySpan<(int Index, int Owner, GlyphShapingData Glyph)> events, int index, bool liveBoundary)
+    {
+        int low = 0;
+        int high = events.Length;
+        while (low < high)
+        {
+            int mid = low + ((high - low) / 2);
+            int eventIndex = liveBoundary ? events[mid].Owner : events[mid].Index;
+            if (eventIndex < index)
+            {
+                low = mid + 1;
+            }
+            else
+            {
+                high = mid;
+            }
+        }
+
+        return low;
     }
 
     /// <summary>
@@ -144,24 +184,7 @@ internal static class AdvancedTypographicUtils
             return false;
         }
 
-        // Matching walked the records still to be read; applying works against
-        // the pass position, where the produced side has its own length. A
-        // sequence index can name a record a nested lookup produced, which no
-        // input position describes, so the matched positions move into that
-        // frame once and stay in it.
-        int shift = buffer.PassBacktrackLength - buffer.ReadIndex;
-        int end = buffer.PassBacktrackLength + (matchEnd - buffer.ReadIndex);
-
-        // The two sides sit level until a lookup in this pass changes a length,
-        // and level means the frames coincide.
-        if (shift != 0)
-        {
-            for (int i = 0; i < matchCount; i++)
-            {
-                matchPositions[i] += shift;
-            }
-        }
-
+        int end = matchEnd;
         buffer.PushNestedApplication();
 
         foreach (SequenceLookupRecord lookupRecord in records)
@@ -172,7 +195,7 @@ internal static class AdvancedTypographicUtils
                 continue;
             }
 
-            int total = buffer.PassBacktrackLength + buffer.PassLookaheadLength;
+            int total = buffer.SpanEnd;
             int position = matchPositions[sequenceIndex];
 
             // An earlier nested lookup can consume enough records to strand a
@@ -182,15 +205,14 @@ internal static class AdvancedTypographicUtils
                 continue;
             }
 
-            // The nested lookup applies at the cursor, so the cursor goes to the
-            // record: forward over what it passes, back over what an earlier
-            // nested lookup already produced.
+            // An earlier nested lookup can move the cursor past this position.
+            // Use the live index that tracks the matched glyph.
             buffer.MoveTo(position);
 
             GSub.LookupTable lookup = table.LookupList.LookupTables[lookupRecord.LookupListIndex];
             _ = lookup.TrySubstitution(fontMetrics, table, buffer, feature, lookupMask, buffer.ReadIndex, buffer.PassLookaheadLength);
 
-            int delta = buffer.PassBacktrackLength + buffer.PassLookaheadLength - total;
+            int delta = buffer.SpanEnd - total;
             if (delta == 0)
             {
                 continue;
@@ -298,7 +320,6 @@ internal static class AdvancedTypographicUtils
         // Positioning never changes the buffer's length, so the matched
         // positions stand for the whole record list.
         int startIndex = matchPositions[0];
-        int end = buffer.PassBacktrackLength + (matchEnd - buffer.ReadIndex);
         buffer.PushNestedApplication();
 
         foreach (SequenceLookupRecord lookupRecord in records)
@@ -317,7 +338,7 @@ internal static class AdvancedTypographicUtils
         buffer.PopNestedApplication();
 
         // Everything the rule matched is now behind the cursor.
-        buffer.MoveTo(end);
+        buffer.MoveTo(matchEnd);
         return true;
     }
 
@@ -464,7 +485,7 @@ internal static class AdvancedTypographicUtils
                 return false;
             }
 
-            while (i < sequence.Length && i < MaxContextLength && solidOffset < buffer.Count)
+            while (i < sequence.Length && i < MaxContextLength && solidOffset < buffer.SpanEnd)
             {
                 ref GlyphShapingData solidData = ref buffer[solidOffset];
                 if (!iterator.MayMatch(ref solidData) || sequence[i] != classDefinitionTable.ClassIndexOf(solidData.GlyphId))
@@ -507,7 +528,7 @@ internal static class AdvancedTypographicUtils
         // Property-skipped records never participate. A transparent record can
         // match its named class; otherwise it is stepped over, while a solid
         // class mismatch refuses the rule.
-        while (i < sequence.Length && i < MaxContextLength && offset < buffer.Count)
+        while (i < sequence.Length && i < MaxContextLength && offset < buffer.SpanEnd)
         {
             if (iterator.IsPropertySkipped(offset))
             {
@@ -653,10 +674,11 @@ internal static class AdvancedTypographicUtils
 
         int offset = startIndex;
         int limit = iterator.RecordCount;
+        int first = iterator.Collection.SpanStart;
         int i = 0;
         while (i < sequence.Length && i < MaxContextLength)
         {
-            if (offset < 0 || offset >= limit)
+            if (offset < first || offset >= limit)
             {
                 return false;
             }
@@ -883,10 +905,444 @@ internal static class AdvancedTypographicUtils
         AnchorXY markXY = markRecord.MarkAnchorTable.GetAnchor(fontMetrics, ref markData, buffer);
 
         ref GlyphShapingPosition markPosition = ref buffer.PositionAt(index);
-        markPosition.Bounds.X = baseXY.XCoordinate - markXY.XCoordinate;
-        markPosition.Bounds.Y = baseXY.YCoordinate - markXY.YCoordinate;
+
+        // Round the difference once so fractional variation deltas from the
+        // two anchors combine before the result enters integer positioning.
+        markPosition.Bounds.X = (int)MathF.Round(baseXY.XCoordinate - markXY.XCoordinate, MidpointRounding.AwayFromZero);
+        markPosition.Bounds.Y = (int)MathF.Round(baseXY.YCoordinate - markXY.YCoordinate, MidpointRounding.AwayFromZero);
         markPosition.MarkAttachment = baseGlyphIndex;
         markData.AppliedFeatureMask |= ShapePlanFeatures.GetVerticalMask(feature);
+    }
+
+    /// <summary>
+    /// Clears the advances and the offset along the layout axis for unchanged default ignorable glyphs.
+    /// </summary>
+    /// <param name="buffer">The glyph positioning buffer.</param>
+    /// <param name="index">The starting index.</param>
+    /// <param name="count">The number of glyphs to process.</param>
+    public static void ZeroDefaultIgnorableAdvances(ShapingBuffer buffer, int index, int count)
+    {
+        if (!buffer.HasDefaultIgnorables)
+        {
+            return;
+        }
+
+        bool isVertical = buffer.TextOptions.LayoutMode.IsVertical();
+        int end = index + count;
+        for (int i = index; i < end; i++)
+        {
+            ref GlyphShapingData data = ref buffer[i];
+            if (!data.IsDefaultIgnorable || data.IsSubstituted)
+            {
+                continue;
+            }
+
+            // Attachment resolution sums the advances between the base and the mark.
+            // Clear these advances before the sum. Keep the offset across the layout axis.
+            ref GlyphShapingPosition position = ref buffer.PositionAt(i);
+            position.Bounds.Width = 0;
+            position.Bounds.Height = 0;
+            if (isVertical)
+            {
+                position.Bounds.Y = 0;
+            }
+            else
+            {
+                position.Bounds.X = 0;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Resolves the mark links set by the selected positioning subtable.
+    /// </summary>
+    /// <param name="buffer">The glyph positioning buffer.</param>
+    /// <param name="start">The first glyph index in the run.</param>
+    /// <param name="end">The glyph index after the run.</param>
+    public static void ResolveMarkAttachments(ShapingBuffer buffer, int start, int end)
+    {
+        for (int i = start; i < end; i++)
+        {
+            if (buffer.PositionAt(i).MarkAttachment != -1)
+            {
+                FixMarkAttachment(buffer, start, end, i, MaxNestingLevel);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Converts out-of-range advances after positioning. Attachment resolution
+    /// uses the original pen steps before this conversion preserves their geometry.
+    /// </summary>
+    /// <param name="buffer">The shaped glyph buffer.</param>
+    public static void NormalizeAdvances(ShapingBuffer buffer)
+    {
+        int start = buffer.SpanStart;
+        int end = buffer.SpanEnd;
+        bool verticalLayout = buffer.TextOptions.LayoutMode.IsVertical();
+        while (start < end)
+        {
+            int grapheme = buffer[start].GraphemeIndex;
+            int next = start;
+            bool normalizeWidth = false;
+            bool normalizeHeight = false;
+            do
+            {
+                ref GlyphShapingBounds bounds = ref buffer.PositionAt(next).Bounds;
+                normalizeWidth |= (uint)bounds.Width > ushort.MaxValue;
+                normalizeHeight |= (uint)bounds.Height > ushort.MaxValue;
+                next++;
+            }
+            while (next < end && buffer[next].GraphemeIndex == grapheme);
+
+            bool backwards = !verticalLayout && buffer[start].Direction == TextDirection.RightToLeft;
+            int first = backwards ? next - 1 : start;
+            int stop = backwards ? start - 1 : next;
+            int step = backwards ? -1 : 1;
+            if (normalizeWidth)
+            {
+                NormalizeGraphemeAdvance(buffer, first, stop, step, false);
+            }
+
+            if (normalizeHeight)
+            {
+                NormalizeGraphemeAdvance(buffer, first, stop, step, true);
+            }
+
+            start = next;
+        }
+    }
+
+    /// <summary>
+    /// Moves an advance adjustment within one grapheme and preserves the glyph origins.
+    /// </summary>
+    /// <param name="buffer">The shaped glyph buffer.</param>
+    /// <param name="first">The first glyph in visual order.</param>
+    /// <param name="stop">The index after the last glyph in visual order.</param>
+    /// <param name="step">The index increment in visual order.</param>
+    /// <param name="vertical">Whether to adjust heights and Y offsets.</param>
+    private static void NormalizeGraphemeAdvance(ShapingBuffer buffer, int first, int stop, int step, bool vertical)
+    {
+        long carry = 0;
+        long advanceTotal = 0;
+        for (int i = first; i != stop; i += step)
+        {
+            ref GlyphShapingBounds bounds = ref buffer.PositionAt(i).Bounds;
+            int advance = vertical ? bounds.Height : bounds.Width;
+            long requested = carry + advance;
+            int reduced = (int)Math.Clamp(requested, 0, ushort.MaxValue);
+
+            // The earlier pen step changed by the carried amount. Move the
+            // current origin to compensate and carry any remaining spacing forward.
+            if (vertical)
+            {
+                bounds.Y -= (int)carry;
+                bounds.Height = reduced;
+            }
+            else
+            {
+                bounds.X += (int)carry;
+                bounds.Width = reduced;
+            }
+
+            carry = requested - reduced;
+            advanceTotal += reduced;
+        }
+
+        // At the end of a grapheme, absorb any remainder into earlier pen
+        // steps. Keep the spacing inside the grapheme so wrapping keeps it
+        // with its glyphs. The available range is the sum of unsigned advances.
+        long capacity = (long)Math.Abs(stop - first) * ushort.MaxValue;
+        long remaining = Math.Clamp(carry, -advanceTotal, capacity - advanceTotal);
+        for (int i = stop - step; remaining != 0; i -= step)
+        {
+            ref GlyphShapingBounds bounds = ref buffer.PositionAt(i).Bounds;
+            int advance = vertical ? bounds.Height : bounds.Width;
+            int change = (int)Math.Clamp(remaining, -advance, ushort.MaxValue - advance);
+            remaining -= change;
+
+            // Earlier steps will absorb the remaining change. Their new
+            // pen positions must leave this glyph at its original origin.
+            if (vertical)
+            {
+                bounds.Height += change;
+                bounds.Y += (int)remaining;
+            }
+            else
+            {
+                bounds.Width += change;
+                bounds.X -= (int)remaining;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Resolves a mark's offset using its parent's position, vertical origin, and the intervening pen steps.
+    /// </summary>
+    /// <param name="buffer">The glyph positioning buffer.</param>
+    /// <param name="start">The first glyph index in the range.</param>
+    /// <param name="end">The glyph index after the range.</param>
+    /// <param name="currentIndex">The glyph whose attachment needs resolution.</param>
+    /// <param name="remainingDepth">The number of parent links that may still be followed.</param>
+    private static void FixMarkAttachment(ShapingBuffer buffer, int start, int end, int currentIndex, int remainingDepth)
+    {
+        ref GlyphShapingPosition position = ref buffer.PositionAt(currentIndex);
+        int baseIndex = position.MarkAttachment;
+
+        // Consume each link once. Clearing it before following the parent also ends cycles.
+        position.MarkAttachment = -1;
+        if (remainingDepth == 0 || baseIndex < start || baseIndex >= end)
+        {
+            return;
+        }
+
+        // A link can point to a glyph that the buffer scan will reach later.
+        if (buffer.PositionAt(baseIndex).MarkAttachment != -1)
+        {
+            FixMarkAttachment(buffer, start, end, baseIndex, remainingDepth - 1);
+        }
+
+        bool isVertical = IsVerticalGlyph(buffer[currentIndex].CodePoint, buffer.TextOptions.LayoutMode);
+        if (isVertical)
+        {
+            GetVerticalOrigin(buffer.MetricsAt(currentIndex).Metrics, buffer.UseShapingVerticalOrigin, out int markOriginX, out int markOriginY);
+            GetVerticalOrigin(buffer.MetricsAt(baseIndex).Metrics, buffer.UseShapingVerticalOrigin, out int baseOriginX, out int baseOriginY);
+
+            // The anchor delta is relative to the parent. The caller applies
+            // each glyph's origin later. Add the mark origin and subtract the
+            // parent origin so the anchors meet after the caller applies them.
+            position.Bounds.X += markOriginX - baseOriginX;
+            position.Bounds.Y += markOriginY - baseOriginY;
+        }
+
+        position.Bounds.X += buffer.PositionAt(baseIndex).Bounds.X;
+        position.Bounds.Y += buffer.PositionAt(baseIndex).Bounds.Y;
+
+        bool rightToLeft = buffer[currentIndex].Direction == TextDirection.RightToLeft;
+        int firstAdvance = Math.Min(baseIndex, currentIndex);
+        int endAdvance = Math.Max(baseIndex, currentIndex);
+        bool subtractAdvance = baseIndex < currentIndex;
+        bool reverseGraphemes = rightToLeft && buffer.TextOptions.LayoutMode.IsVertical()
+            && buffer[currentIndex].GraphemeIndex != buffer[baseIndex].GraphemeIndex;
+
+        if (rightToLeft && !isVertical)
+        {
+            subtractAdvance = !subtractAdvance;
+        }
+
+        int width = 0;
+        int height = 0;
+        if (reverseGraphemes)
+        {
+            // Bottom-to-top reverses whole graphemes and preserves their inner order.
+            subtractAdvance = !subtractAdvance;
+            SumBottomToTopAdvances(buffer, start, end, firstAdvance, endAdvance, out width, out height);
+        }
+        else
+        {
+            // Horizontal RTL includes the child's pen step instead of the parent's.
+            if (rightToLeft && !isVertical)
+            {
+                firstAdvance++;
+                endAdvance++;
+            }
+
+            for (int i = firstAdvance; i < endAdvance; i++)
+            {
+                ref GlyphShapingBounds advance = ref buffer.PositionAt(i).Bounds;
+                width += advance.Width;
+                height += advance.Height;
+            }
+        }
+
+        // Vertical pen steps advance down the page. Offset Y is positive up.
+        position.Bounds.X += subtractAdvance ? -width : width;
+        position.Bounds.Y += subtractAdvance == isVertical ? height : -height;
+    }
+
+    /// <summary>
+    /// Sums the pen steps between two glyphs in a bottom-to-top run.
+    /// </summary>
+    /// <param name="buffer">The shaped glyph buffer in logical order.</param>
+    /// <param name="start">The first index in the range.</param>
+    /// <param name="end">The index after the range.</param>
+    /// <param name="lower">The smaller logical index, which comes later visually.</param>
+    /// <param name="higher">The larger logical index, which comes earlier visually.</param>
+    /// <param name="width">The total width.</param>
+    /// <param name="height">The total height.</param>
+    private static void SumBottomToTopAdvances(ShapingBuffer buffer, int start, int end, int lower, int higher, out int width, out int height)
+    {
+        int lowerGrapheme = buffer[lower].GraphemeIndex;
+        int higherGrapheme = buffer[higher].GraphemeIndex;
+        width = 0;
+        height = 0;
+
+        // Visual order keeps the suffix of the first grapheme, every
+        // whole grapheme between them, and the prefix of the last grapheme.
+        // The glyph order inside each grapheme stays the same.
+        for (int i = higher; i < end && buffer[i].GraphemeIndex == higherGrapheme; i++)
+        {
+            ref GlyphShapingBounds advance = ref buffer.PositionAt(i).Bounds;
+            width += advance.Width;
+            height += advance.Height;
+        }
+
+        for (int i = higher - 1; i > lower; i--)
+        {
+            int grapheme = buffer[i].GraphemeIndex;
+            if (grapheme == lowerGrapheme || grapheme == higherGrapheme)
+            {
+                continue;
+            }
+
+            ref GlyphShapingBounds advance = ref buffer.PositionAt(i).Bounds;
+            width += advance.Width;
+            height += advance.Height;
+        }
+
+        for (int i = lower - 1; i >= start && buffer[i].GraphemeIndex == lowerGrapheme; i--)
+        {
+            ref GlyphShapingBounds advance = ref buffer.PositionAt(i).Bounds;
+            width += advance.Width;
+            height += advance.Height;
+        }
+    }
+
+    /// <summary>
+    /// Gets the vertical origin for a glyph in font design units.
+    /// </summary>
+    /// <param name="metrics">The glyph metrics.</param>
+    /// <param name="useShapingVerticalOrigin">Whether to use the shaping fallback when the font has no vertical metrics.</param>
+    /// <param name="x">The horizontal origin.</param>
+    /// <param name="y">The vertical origin.</param>
+    public static void GetVerticalOrigin(FontGlyphMetrics metrics, bool useShapingVerticalOrigin, out int x, out int y)
+    {
+        // OpenType vertical origins are horizontally centered on the glyph's
+        // nominal horizontal advance, using integer division in font units.
+        x = metrics.AdvanceWidth / 2;
+
+        VerticalMetrics verticalMetrics = metrics.FontMetrics.VerticalMetrics;
+        if (verticalMetrics.Synthesized && useShapingVerticalOrigin)
+        {
+            // Public shaping follows the shaping-engine fallback by centering each
+            // glyph's extents within the font's ascender-to-descender height.
+            float fontAdvance = verticalMetrics.Ascender - verticalMetrics.Descender;
+            y = (int)(metrics.Bounds.Max.Y + MathF.Floor((fontAdvance - metrics.Height) * .5F));
+            return;
+        }
+
+        // Authored origins are shared by both contracts. When tables are absent,
+        // synthesized TopSideBearing resolves to the font-ascent origin used by
+        // browsers for layout and painting.
+        y = (int)(metrics.Bounds.Max.Y + metrics.TopSideBearing);
+    }
+
+    /// <summary>
+    /// Adjusts the advance of a glyph that belongs to the positioning font.
+    /// </summary>
+    /// <param name="fontMetrics">The font that supplies the adjustment.</param>
+    /// <param name="buffer">The glyph positioning buffer.</param>
+    /// <param name="index">The glyph index.</param>
+    /// <param name="glyphId">The glyph ID that the adjustment applies to.</param>
+    /// <param name="dx">The horizontal advance adjustment in font design units.</param>
+    /// <param name="dy">The vertical advance adjustment in upward-positive font design units.</param>
+    public static void ApplyAdvance(FontMetrics fontMetrics, ShapingBuffer buffer, int index, ushort glyphId, int dx, int dy)
+    {
+        FontGlyphMetrics m = buffer.MetricsAt(index).Metrics;
+        if (m.GlyphId != glyphId || fontMetrics != m.FontMetrics)
+        {
+            return;
+        }
+
+        bool isVertical = IsVerticalGlyph(m.CodePoint, buffer.TextOptions.LayoutMode)
+            || (buffer[index].AppliedFeatureMask & ShapePlanFeatures.VerticalFeatureMask) != 0;
+
+        ref GlyphShapingBounds bounds = ref buffer.PositionAt(index).Bounds;
+
+        // Advance heights grow downward but font-space grows upward, hence the negation.
+        bounds.Width += dx;
+        if (isVertical)
+        {
+            bounds.Height -= dy;
+        }
+
+        if (bounds.HasOutOfRangeAdvance)
+        {
+            buffer.HasOutOfRangeAdvances = true;
+        }
+    }
+
+    /// <summary>
+    /// Applies the positioning adjustment for a kerning pair.
+    /// </summary>
+    /// <param name="fontMetrics">The font that owns the pair.</param>
+    /// <param name="buffer">The glyph positioning buffer.</param>
+    /// <param name="left">The index of the first glyph in the pair.</param>
+    /// <param name="right">The index of the second glyph in the pair.</param>
+    /// <param name="dx">The horizontal adjustment in font design units.</param>
+    /// <param name="dy">The vertical adjustment in font design units.</param>
+    /// <param name="yDown">Whether a positive vertical adjustment moves down.</param>
+    public static void ApplyPairKerning(FontMetrics fontMetrics, ShapingBuffer buffer, int left, int right, int dx, int dy, bool yDown)
+    {
+        // Give half of the adjustment to the first glyph's advance. The
+        // signed shift rounds down, so the second advance gets the remainder.
+        // Together the two advances move the pen after the pair by the full adjustment.
+        int firstX = dx >> 1;
+        int firstY = dy >> 1;
+        int secondX = dx - firstX;
+        int secondY = dy - firstY;
+
+        // Split in the table's coordinate system so that odd values give
+        // the same remainder before conversion to the font's Y axis.
+        if (yDown)
+        {
+            firstY = -firstY;
+            secondY = -secondY;
+        }
+
+        ApplyAdvance(fontMetrics, buffer, left, buffer[left].GlyphId, firstX, firstY);
+        ApplyAdvance(fontMetrics, buffer, right, buffer[right].GlyphId, secondX, secondY);
+
+        // The first advance moves the pen before the second glyph is drawn.
+        // The offset supplies the rest of the adjustment to that glyph's origin.
+        ref GlyphShapingBounds bounds = ref buffer.PositionAt(right).Bounds;
+        bounds.X += secondX;
+        bounds.Y += secondY;
+    }
+
+    /// <summary>
+    /// Reads a VariationIndex from a device offset. The caller restores the stream position if needed.
+    /// </summary>
+    /// <param name="reader">The positioning table reader.</param>
+    /// <param name="parentBase">The absolute position of the parent table.</param>
+    /// <param name="deviceOffset">The offset of the device table from the parent table.</param>
+    /// <returns>The one-based packed VariationIndex, or zero if there is no variation.</returns>
+    public static uint ReadVariationIndex(BigEndianBinaryReader reader, long parentBase, ushort deviceOffset)
+    {
+        long offset = parentBase + deviceOffset;
+        if (deviceOffset == 0 || offset > reader.BaseStream.Length - (3 * sizeof(ushort)))
+        {
+            return 0;
+        }
+
+        reader.BaseStream.Position = offset;
+        ushort outerIndex = reader.ReadUInt16();
+        ushort innerIndex = reader.ReadUInt16();
+        ushort format = reader.ReadUInt16();
+
+        // This format identifies a VariationIndex. Device tables for
+        // hinting adjustments use the same header with a different format.
+        const ushort variationIndexFormat = 0x8000;
+        if (format != variationIndexFormat)
+        {
+            return 0;
+        }
+
+        // Put the outer index in the high 16 bits and the inner index in the low
+        // 16 bits. Zero selects the first delta set. Store the index plus one so
+        // zero in a value record means no variation. Adding one to an all-ones index wraps to zero.
+        uint packedIndex = ((uint)outerIndex << 16) | innerIndex;
+        return packedIndex == uint.MaxValue ? 0 : packedIndex + 1;
     }
 
     /// <summary>
@@ -917,6 +1373,11 @@ internal static class AdvancedTypographicUtils
             position.Bounds.Y += (short)MathF.Round(fontMetrics.GetGDefVariationDelta(record.YPlacementVariation));
             position.Bounds.Width += (short)MathF.Round(fontMetrics.GetGDefVariationDelta(record.XAdvanceVariation));
             position.Bounds.Height += (short)MathF.Round(fontMetrics.GetGDefVariationDelta(record.YAdvanceVariation));
+        }
+
+        if (position.Bounds.HasOutOfRangeAdvance)
+        {
+            buffer.HasOutOfRangeAdvances = true;
         }
 
         ref GlyphShapingData current = ref buffer[index];
@@ -1215,7 +1676,7 @@ internal static class AdvancedTypographicUtils
                 return false;
             }
 
-            while (i < sequence.Length && i < MaxContextLength && solidOffset < buffer.Count)
+            while (i < sequence.Length && i < MaxContextLength && solidOffset < buffer.SpanEnd)
             {
                 ref GlyphShapingData solidData = ref buffer[solidOffset];
                 if (!iterator.MayMatch(ref solidData) || !TMatcher.Matches(sequence[i], ref solidData))
@@ -1259,7 +1720,7 @@ internal static class AdvancedTypographicUtils
         // A transparent record is stepped over unless it matches the sequence
         // position itself; a solid record that fails the shape test refuses the
         // whole match.
-        while (i < sequence.Length && i < MaxContextLength && offset < buffer.Count)
+        while (i < sequence.Length && i < MaxContextLength && offset < buffer.SpanEnd)
         {
             if (iterator.IsPropertySkipped(offset))
             {
@@ -1321,6 +1782,7 @@ internal static class AdvancedTypographicUtils
 
         // Backtrack reads the records the pass produced, so that side bounds it.
         int limit = Math.Min(endExclusive, iterator.RecordCount);
+        int first = iterator.Collection.SpanStart;
 
         // A transparent record is stepped over unless it matches the sequence
         // position itself; a solid record that fails the shape test refuses the
@@ -1328,7 +1790,7 @@ internal static class AdvancedTypographicUtils
         int i = 0;
         while (i < sequence.Length && i < MaxContextLength)
         {
-            if (offset < 0 || offset >= limit)
+            if (offset < first || offset >= limit)
             {
                 iterator.Index = saved;
                 return false;

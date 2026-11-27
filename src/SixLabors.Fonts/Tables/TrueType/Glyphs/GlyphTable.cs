@@ -2,6 +2,8 @@
 // Licensed under the Six Labors Split License.
 
 using System.Collections.Concurrent;
+using System.Numerics;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.Woff;
 
 namespace SixLabors.Fonts.Tables.TrueType.Glyphs;
@@ -60,7 +62,7 @@ internal class GlyphTable : Table
         return this.glyphCache.GetOrAdd(
             index,
             static (i, state) => state.Table.loaders[i] is CompositeGlyphLoader composite
-                ? composite.CreateGlyph(state.Table, state.CompositeDepth)
+                ? composite.CreateGlyph(state.Table, state.CompositeDepth, null)
                 : state.Table.loaders[i].CreateGlyph(state.Table),
             (Table: this, CompositeDepth: compositeDepth));
     }
@@ -80,6 +82,26 @@ internal class GlyphTable : Table
 
         using BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName);
         return Load(binaryReader, reader.TableFormat, locations, in fallbackEmptyBounds);
+    }
+
+    /// <summary>
+    /// Gets an outline and advance adjustments for the specified font variation.
+    /// </summary>
+    /// <param name="glyphId">The glyph identifier.</param>
+    /// <param name="processor">The processor for the selected variation coordinates.</param>
+    /// <param name="compositeDepth">The number of composite glyphs above this glyph.</param>
+    /// <param name="advanceAdjustment">Receives the advance adjustments for this glyph.</param>
+    /// <returns>The outline at the selected coordinates.</returns>
+    public GlyphVector GetVariedGlyph(ushort glyphId, GlyphVariationProcessor processor, int compositeDepth, out Vector2 advanceAdjustment)
+    {
+        // Each composite component needs its own varied outline before assembly.
+        // Simple glyphs use a copy because the unvaried cache is shared by all instances.
+        GlyphVector vector = glyphId < this.loaders.Length && this.loaders[glyphId] is CompositeGlyphLoader composite
+            ? composite.CreateGlyph(this, compositeDepth, processor)
+            : GlyphVector.DeepClone(this.GetGlyph(glyphId));
+
+        processor.TransformPoints(glyphId, ref vector, out advanceAdjustment);
+        return vector;
     }
 
     /// <summary>

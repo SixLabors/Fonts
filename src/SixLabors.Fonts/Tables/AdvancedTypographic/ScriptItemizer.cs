@@ -9,155 +9,42 @@ using SixLabors.Fonts.Unicode.Resources;
 namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 
 /// <summary>
-/// Splits a shaping buffer into runs of a single script and language and plans a
-/// shaper for each run.
-/// <para>
-/// Planning is what prepares a run's text and registers its features, so it
-/// belongs to every font rather than to the fonts that carry a substitution
-/// table. A font without one still needs the characters a script cannot be read
-/// without, and positioning reuses the runs planning records.
-/// </para>
+/// Determines whether a source character belongs to the current shaping run.
+/// Creates or reuses a plan for each font span and prepares its mapped glyphs.
+/// Text preparation also applies to spans whose font has no substitution table.
 /// </summary>
 internal static class ScriptItemizer
 {
     /// <summary>
-    /// Reads the run of one script that begins at <paramref name="index"/>,
-    /// leaving <paramref name="index"/> on the run's last record.
-    /// <para>
-    /// Feature lookups are assigned to runs rather than to the text as a whole so
-    /// that the shapers of two languages cannot interfere with one another.
-    /// Characters belonging to no script of their own join the run around them.
-    /// </para>
-    /// </summary>
-    /// <param name="buffer">The glyph shaping buffer.</param>
-    /// <param name="index">The zero-based index of the run's first record, left on its last.</param>
-    /// <param name="maxCount">The largest record count a run may reach.</param>
-    /// <param name="count">When this method returns, contains the number of records in the run.</param>
-    /// <returns>The script and culture shared by the run.</returns>
-    public static ShapingRun ReadRun(ShapingBuffer buffer, ref int index, int maxCount, out int count)
-    {
-        ShapingRun run = new(buffer, index);
-        count = 1;
-
-        while (index < buffer.Count - 1)
-        {
-            if (!run.TryInclude(buffer, index + 1))
-            {
-                break;
-            }
-
-            index++;
-            count++;
-
-            if (index >= maxCount)
-            {
-                break;
-            }
-        }
-
-        return run;
-    }
-
-    /// <summary>
-    /// Resolves the script that applies to one shaping record.
-    /// </summary>
-    /// <param name="buffer">The glyph shaping buffer.</param>
-    /// <param name="index">The zero-based record index.</param>
-    /// <returns>The explicit run script, the whole-text script, or the script inferred from the character, in that order.</returns>
-    public static ScriptClass ResolveScript(ShapingBuffer buffer, int index)
-    {
-        ref GlyphShapingData data = ref buffer[index];
-        ScriptClass? script = buffer.TextRuns[data.TextRunIndex].Script ?? buffer.TextOptions.Script;
-
-        // Explicit metadata belongs to the whole declared run, including its
-        // punctuation and any characters whose Unicode Script value differs.
-        return script ?? CodePoint.GetScriptClass(data.CodePoint);
-    }
-
-    /// <summary>
-    /// Resolves the culture that applies to one shaping record.
-    /// </summary>
-    /// <param name="buffer">The glyph shaping buffer.</param>
-    /// <param name="index">The zero-based record index.</param>
-    /// <returns>The explicit run culture, the whole-text culture, or the current culture, in that order.</returns>
-    public static CultureInfo ResolveCulture(ShapingBuffer buffer, int index)
-    {
-        ref GlyphShapingData data = ref buffer[index];
-        return buffer.TextRuns[data.TextRunIndex].Culture ?? buffer.TextOptions.Culture ?? CultureInfo.CurrentCulture;
-    }
-
-    /// <summary>
-    /// Resolves the additional feature tags that apply to one shaping record.
-    /// </summary>
-    /// <param name="buffer">The glyph shaping buffer.</param>
-    /// <param name="index">The zero-based record index.</param>
-    /// <returns>The run-specific tags, or the whole-text tags when the run inherits them.</returns>
-    public static IReadOnlyList<Tag> ResolveFeatureTags(ShapingBuffer buffer, int index)
-    {
-        ref GlyphShapingData data = ref buffer[index];
-
-        // Null means inheritance; an explicitly empty run list must remain empty so
-        // it can disable whole-text features over only that run.
-        return buffer.TextRuns[data.TextRunIndex].FeatureTags ?? buffer.TextOptions.FeatureTags;
-    }
-
-    /// <summary>
-    /// Plans a shaper over every run of the buffer and records the runs for the
-    /// positioning pass. Used for a font that carries no substitution table,
-    /// where there are no lookups to apply but the text still has to be prepared.
+    /// Prepares a span whose font has no substitution table.
     /// </summary>
     /// <param name="fontMetrics">The font metrics.</param>
     /// <param name="buffer">The glyph shaping buffer.</param>
-    public static void PlanRuns(FontMetrics fontMetrics, ShapingBuffer buffer)
+    /// <param name="run">The resolved source run.</param>
+    /// <param name="index">The first glyph of the span.</param>
+    /// <returns>The shape plan for positioning the span.</returns>
+    public static ShapePlan PlanRun(FontMetrics fontMetrics, ShapingBuffer buffer, ShapingRun run, int index)
     {
-        // Set max constraints to prevent OutOfMemoryException or infinite loops from attacks.
-        int maxCount = AdvancedTypographicUtils.GetMaxAllowableShapingCollectionCount(buffer.Count);
+        ShapePlan shapePlan = buffer.GetOrCreatePlan(run.Script, default, fontMetrics, run.Culture, run.FeatureTags, false);
+        shapePlan.Shaper.Plan(fontMetrics, buffer, index, buffer.SpanEnd - index, run.IsVertical);
 
-        for (int i = 0; i < buffer.Count; i++)
+        // The stage actions can change the span length even without lookups.
+        List<ShapePlanStageGroup<GSub.LookupTable>> groups = shapePlan.GetOrBuildGSubStageGroups();
+        List<ShapingStage> stages = shapePlan.Stages;
+        for (int i = 0; i < groups.Count; i++)
         {
-            int index = i;
-            ShapingRun run = ReadRun(buffer, ref i, maxCount, out int count);
-
-            // With no substitution table the font offers no script of its own, so
-            // the run is planned against the default design.
-            ShapePlan shapePlan = buffer.GetOrCreatePlan(run.Script, default, fontMetrics, run.Culture, run.FeatureTags);
-
-            // Preparing the text can insert records, so the run grows with it.
-            int collectionCount = buffer.Count;
-
-            shapePlan.Shaper.Plan(fontMetrics, buffer, index, count);
-
-            int delta = buffer.Count - collectionCount;
-            i += delta;
-            count += delta;
-
-            // A substitution table with no lookups still walks every stage and
-            // invokes its actions. Preserve that path for fonts with no table,
-            // accounting for actions that insert or remove records.
-            List<ShapePlanStageGroup<GSub.LookupTable>> groups = shapePlan.GetOrBuildGSubStageGroups();
-            List<ShapingStage> stages = shapePlan.Stages;
-            for (int g = 0; g < groups.Count; g++)
-            {
-                ShapePlanStageGroup<GSub.LookupTable> group = groups[g];
-
-                collectionCount = buffer.Count;
-                stages[group.Start].PreProcessFeature(shapePlan, buffer, index, count);
-
-                delta = buffer.Count - collectionCount;
-                i += delta;
-                count += delta;
-
-                collectionCount = buffer.Count;
-                stages[group.End - 1].PostProcessFeature(shapePlan, buffer, index, count);
-
-                delta = buffer.Count - collectionCount;
-                i += delta;
-                count += delta;
-            }
-
-            MarkCursiveTrackingRun(buffer, index, count, run.Script);
-            buffer.SegmentPlans.Add((index, count, run.Script, shapePlan));
+            ShapePlanStageGroup<GSub.LookupTable> group = groups[i];
+            stages[group.Start].PreProcessFeature(shapePlan, buffer, index, buffer.SpanEnd - index);
+            stages[group.End - 1].PostProcessFeature(shapePlan, buffer, index, buffer.SpanEnd - index);
         }
+
+        int count = buffer.SpanEnd - index;
+        if (count > 0)
+        {
+            MarkCursiveTrackingRun(buffer, index, count, run.Script);
+        }
+
+        return shapePlan;
     }
 
     /// <summary>
@@ -187,8 +74,8 @@ internal static class ScriptItemizer
         // Browsers implement CSS Text §8.2.1 by suppressing letter spacing inside
         // cursively joined runs:
         // https://www.w3.org/TR/css-text-4/#cursive-tracking
-        // Store the resolved classification on each post-GSUB record so layout
-        // does not re-itemize the shaped glyph stream.
+        // Store the resolved classification on each shaped glyph so layout
+        // can use it without resolving the script again.
         int end = index + count;
         for (int i = index; i < end; i++)
         {
@@ -197,25 +84,23 @@ internal static class ScriptItemizer
     }
 
     /// <summary>
-    /// Tracks the script and language shared by one shaping run.
+    /// Tracks the script, language, features, and orientation of a shaping run.
     /// </summary>
     public struct ShapingRun
     {
-        private int textRunIndex;
-        private readonly TextDirection direction;
-
         /// <summary>
-        /// Initializes a new instance of the <see cref="ShapingRun"/> struct from the first shaping record in a run.
+        /// Initializes a new instance of the <see cref="ShapingRun"/> struct from the first source character's properties.
         /// </summary>
-        /// <param name="buffer">The glyph shaping buffer.</param>
-        /// <param name="index">The zero-based index of the first record.</param>
-        public ShapingRun(ShapingBuffer buffer, int index)
+        /// <param name="script">The character's effective script.</param>
+        /// <param name="culture">The effective language.</param>
+        /// <param name="featureTags">The effective feature tags.</param>
+        /// <param name="isVertical">Whether to shape on the vertical axis.</param>
+        public ShapingRun(ScriptClass script, CultureInfo culture, IReadOnlyList<Tag> featureTags, bool isVertical)
         {
-            this.Script = ResolveScript(buffer, index);
-            this.Culture = ResolveCulture(buffer, index);
-            this.FeatureTags = ResolveFeatureTags(buffer, index);
-            this.textRunIndex = buffer[index].TextRunIndex;
-            this.direction = buffer[index].Direction;
+            this.Script = script;
+            this.Culture = culture;
+            this.FeatureTags = featureTags;
+            this.IsVertical = isVertical;
         }
 
         /// <summary>
@@ -234,60 +119,47 @@ internal static class ScriptItemizer
         public IReadOnlyList<Tag> FeatureTags { get; }
 
         /// <summary>
-        /// Attempts to extend the run through one adjacent shaping record.
+        /// Gets a value indicating whether the run uses vertical shaping.
         /// </summary>
-        /// <param name="buffer">The glyph shaping buffer.</param>
-        /// <param name="index">The zero-based index of the adjacent record.</param>
-        /// <returns><see langword="true"/> when the record belongs to this run.</returns>
-        public bool TryInclude(ShapingBuffer buffer, int index)
+        public bool IsVertical { get; }
+
+        /// <summary>
+        /// Checks the language and features when the text enters a new declaration.
+        /// </summary>
+        /// <param name="culture">The effective language.</param>
+        /// <param name="featureTags">The effective feature tags.</param>
+        /// <returns>Whether the declaration can use the run's language and features.</returns>
+        public readonly bool HasSameSettings(CultureInfo culture, IReadOnlyList<Tag> featureTags)
+            => (ReferenceEquals(culture, this.Culture) || string.Equals(culture.Name, this.Culture.Name, StringComparison.Ordinal))
+                && FeatureTagsEqual(this.FeatureTags, featureTags);
+
+        /// <summary>
+        /// Attempts to extend the run through the next source character.
+        /// </summary>
+        /// <param name="codePoint">The next source character.</param>
+        /// <param name="script">The character's effective script.</param>
+        /// <param name="isVertical">Whether to shape the character on the vertical axis.</param>
+        /// <returns>Whether the character belongs to this run.</returns>
+        public bool TryInclude(CodePoint codePoint, ScriptClass script, bool isVertical)
         {
-            CodePoint codePoint = buffer[index].CodePoint;
-            ScriptClass next = ResolveScript(buffer, index);
-            int nextTextRunIndex = buffer[index].TextRunIndex;
-            if (buffer[index].Direction != this.direction)
-            {
-                // Browsers resolve bidi runs before shaping and require the
-                // direction to match before adjacent segments can share one
-                // shaping call.
-                // Splitting here confines GSUB, GPOS, and cursive attachment to
-                // the same directional boundary without another glyph pass.
-                return false;
-            }
-
-            if (nextTextRunIndex != this.textRunIndex)
-            {
-                // Styling-only TextRun boundaries must not fragment contextual
-                // shaping. Split only when a value consumed by the shaper changes.
-
-                // Language-system features differ within the same script, so a
-                // culture change is a shaping boundary even when the script matches.
-                CultureInfo nextCulture = ResolveCulture(buffer, index);
-                if (!ReferenceEquals(nextCulture, this.Culture) && !string.Equals(nextCulture.Name, this.Culture.Name, StringComparison.Ordinal))
-                {
-                    return false;
-                }
-
-                IReadOnlyList<Tag> nextFeatureTags = ResolveFeatureTags(buffer, index);
-                if (!FeatureTagsEqual(this.FeatureTags, nextFeatureTags))
-                {
-                    return false;
-                }
-            }
-
-            if (next != this.Script &&
-                this.Script is not ScriptClass.Common and not ScriptClass.Unknown and not ScriptClass.Inherited &&
-                next is not ScriptClass.Common and not ScriptClass.Unknown and not ScriptClass.Inherited &&
-                !ScriptExtensionData.Contains(codePoint, this.Script))
+            if (isVertical != this.IsVertical)
             {
                 return false;
             }
 
+            // Common and inherited characters can join the script around them.
+            // Script_Extensions also permits characters shared by several scripts.
             if (this.Script is ScriptClass.Common or ScriptClass.Unknown or ScriptClass.Inherited)
             {
-                this.Script = next;
+                this.Script = script;
+            }
+            else if (script != this.Script
+                && script is not (ScriptClass.Common or ScriptClass.Unknown or ScriptClass.Inherited)
+                && !ScriptExtensionData.Contains(codePoint, this.Script))
+            {
+                return false;
             }
 
-            this.textRunIndex = nextTextRunIndex;
             return true;
         }
 

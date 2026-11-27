@@ -4,6 +4,7 @@
 using System.Numerics;
 using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Aat;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
@@ -166,6 +167,12 @@ internal partial class StreamFontMetrics
         }
     }
 
+    /// <summary>
+    /// Loads the tables and metrics for a font with TrueType outlines.
+    /// </summary>
+    /// <param name="reader">The font reader.</param>
+    /// <param name="source">The source of the font data.</param>
+    /// <returns>The font metrics.</returns>
     private static StreamFontMetrics LoadTrueTypeFont(FontReader reader, FontSource source)
     {
         // Load using recommended order for best performance.
@@ -186,7 +193,7 @@ internal partial class StreamFontMetrics
         HdmxTable? hdmx = HdmxTable.Load(reader, maxp.GlyphCount);
         IndexLocationTable loca = reader.GetTable<IndexLocationTable>();
         GlyphTable glyf = reader.GetTable<GlyphTable>();
-        KerningTable? kern = reader.TryGetTable<KerningTable>();
+        KernTable? kern = reader.TryGetTable<KernTable>();
         NameTable name = reader.GetTable<NameTable>();
         PostTable post = reader.GetTable<PostTable>();
 
@@ -201,6 +208,9 @@ internal partial class StreamFontMetrics
         GlyphDefinitionTable? gdef = reader.TryGetTable<GlyphDefinitionTable>();
         GSubTable? gSub = reader.TryGetTable<GSubTable>();
         GPosTable? gPos = reader.TryGetTable<GPosTable>();
+        MortTable? mort = reader.TryGetTable<MortTable>();
+        MorxTable? morx = reader.TryGetTable<MorxTable>();
+        KerxTable? kerx = KerxTable.Load(reader, maxp.GlyphCount);
 
         FVarTable? fvar = reader.TryGetTable<FVarTable>();
         AVarTable? avar = reader.TryGetTable<AVarTable>();
@@ -234,6 +244,9 @@ internal partial class StreamFontMetrics
             Gdef = gdef,
             GSub = gSub,
             GPos = gPos,
+            Mort = mort,
+            Morx = morx,
+            Kerx = kerx,
             Colr = colr,
             Cpal = cpal,
             Fvar = fvar,
@@ -273,16 +286,11 @@ internal partial class StreamFontMetrics
         HorizontalMetricsTable htmx = tables.Htmx;
         VerticalMetricsTable? vtmx = tables.Vmtx;
 
-        GlyphVector vector = glyf.GetGlyph(glyphId);
         Vector2 glyphAdvanceAdjustment = Vector2.Zero;
-
-        // Apply gvar deltas to the glyph outline if a variation processor is present.
-        // Clone first so we don't mutate the shared glyph cache.
-        if (this.GlyphVariationProcessor is not null)
-        {
-            vector = GlyphVector.DeepClone(vector);
-            this.GlyphVariationProcessor.TransformPoints(glyphId, ref vector, out glyphAdvanceAdjustment);
-        }
+        GlyphVariationProcessor? variationProcessor = this.GlyphVariationProcessor;
+        GlyphVector vector = variationProcessor is not null && tables.Gvar is not null
+            ? glyf.GetVariedGlyph(glyphId, variationProcessor, 0, out glyphAdvanceAdjustment)
+            : glyf.GetGlyph(glyphId);
 
         Bounds bounds = vector.Bounds;
 
