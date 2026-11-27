@@ -13,7 +13,7 @@ SixLabors.Fonts
 
 </div>
 
-**SixLabors.Fonts** is a cross-platform library for loading, measuring, and laying out fonts and text. It supports TrueType and OpenType fonts (including CFF1 and CFF2 outlines), WOFF/WOFF2 web fonts, variable fonts, color fonts (COLR v0/v1 and SVG), and TrueType hinting. The library provides a full OpenType layout engine with GSUB/GPOS support, advanced text shaping for complex scripts, and bidirectional text rendering.
+**SixLabors.Fonts** is a cross-platform library for loading, measuring, and laying out fonts and text. It supports TrueType and OpenType fonts (including CFF1 and CFF2 outlines), WOFF/WOFF2 web fonts, variable fonts, color fonts (COLR v0/v1 and SVG), and TrueType hinting. The library supports OpenType layout (GSUB and GPOS), Apple Advanced Typography (AAT) shaping, complex-script shaping, and bidirectional text rendering.
 
 Fonts also exposes high-level text layout primitives for applications that need more than a single bounding box. Callers can measure advance, ink bounds, renderable bounds, lines, words, graphemes, and glyphs; reuse prepared text across multiple wrapping widths; inspect the resolved font used to shape and render fallback glyphs; and use built-in hit testing, caret placement, and selection geometry.
 
@@ -104,6 +104,7 @@ git lfs pull
 - Support for color fonts ([COLR](https://learn.microsoft.com/en-us/typography/opentype/spec/colr) v0/v1 and [SVG](https://learn.microsoft.com/en-us/typography/opentype/spec/svg)).
 - TrueType hinting (FreeType v40-compatible interpreter).
 - Support for advanced OpenType layout via glyph substitution ([GSUB](https://learn.microsoft.com/en-us/typography/opentype/spec/gsub)) and glyph positioning ([GPOS](https://learn.microsoft.com/en-us/typography/opentype/spec/gpos)).
+- Support for AAT layout via glyph substitution (`morx` and `mort`) and glyph positioning (`kerx`).
 - Advanced text shaping for complex scripts (Indic, Myanmar, Universal Shaping Engine).
 - Support for ligatures and kerning.
 - Support for rendering left to right, right to left, and bidirectional text.
