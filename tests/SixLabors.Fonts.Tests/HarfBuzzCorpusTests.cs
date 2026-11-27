@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using HarfBuzzSharp;
 using SixLabors.Fonts.Tables;
+using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
 using HBBuffer = HarfBuzzSharp.Buffer;
 using HBFace = HarfBuzzSharp.Face;
@@ -270,8 +271,16 @@ public partial class HarfBuzzCorpusTests
         }
 
         buffer.GuessSegmentProperties();
+        ScriptClass? script = ReadScriptClass(requestedScript);
         if (expectedOutput is null)
         {
+            // HarfBuzz selects one script for the whole buffer. Use that script
+            // in Fonts so both engines shape the same input under the same script.
+            if (requestedScript.Length == 0)
+            {
+                script = ReadReferenceScript(buffer.Script);
+            }
+
             referenceFont.Shape(buffer, features, OpenTypeShaper);
         }
 
@@ -309,7 +318,8 @@ public partial class HarfBuzzCorpusTests
             shapingBuffer.LayoutMode = LayoutMode.VerticalLeftRight;
         }
 
-        shapingBuffer.Script = ReadScriptClass(requestedScript);
+        shapingBuffer.Script = script;
+
         if (language.Length != 0)
         {
             shapingBuffer.Language = CultureInfo.GetCultureInfo(language.Replace('_', '-'));
@@ -339,11 +349,13 @@ public partial class HarfBuzzCorpusTests
 
             if (Path.GetFileName(fontPath) == "e3fbfe1110e277b89dc44ad184c4362b6764b237.ttf")
             {
-                // HarfBuzz's OpenType font functions omit outline points. Fonts
-                // aligns base point 1 with acute point 0. The point deltas are
-                // (400, 580) for A and (590, 860) for B at wght=1.
-                // Subtract the acute's pen position and, in vertical text,
-                // express the result relative to its vertical origin.
+                // The corpus runs HarfBuzz with outline-point lookup disabled, so
+                // HarfBuzz leaves the accent in place. These three cases use expected
+                // positions for Fonts, which follows the font's kerx instructions.
+                // The font places point 0 on the accent at point 1 on the letter.
+                // The difference between the points is (400, 580) for A and (590, 860)
+                // for B at wght=1. The offsets account for the accent's pen position
+                // and, in vertical text, the difference between the glyph origins.
                 geometry = (options, codePoints) switch
                 {
                     ("--font-funcs=ot", "U+0041,U+0301") => "[A=0+600|acute=0@-200,580+200]",
@@ -993,6 +1005,29 @@ public partial class HarfBuzzCorpusTests
             "btt" => Direction.BottomToTop,
             _ => null
         };
+    }
+
+    /// <summary>
+    /// Gets the Fonts script class for the script that HarfBuzz selected.
+    /// </summary>
+    /// <param name="script">The HarfBuzz script.</param>
+    /// <returns>The matching script class, or <see langword="null"/> if the map has no match.</returns>
+    private static ScriptClass? ReadReferenceScript(Script script)
+    {
+        // Fonts uses lowercase tags in its map. The OpenType tag for Lao
+        // ends with a space, while the Unicode code is Laoo.
+        ShapingTag tag = new(script);
+        tag = script.Equals(Script.Lao) ? ShapingTag.Parse("lao ") : ShapingTag.Parse(tag.ToString().ToLowerInvariant());
+        foreach ((ScriptClass scriptClass, ShapingTag[] tags) in UnicodeScriptTagMap.Instance)
+        {
+            // Default also lists latn as a fallback. Latn is the Latin script here.
+            if (scriptClass != ScriptClass.Default && Array.IndexOf(tags, tag) >= 0)
+            {
+                return scriptClass;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>

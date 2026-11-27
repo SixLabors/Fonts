@@ -67,15 +67,17 @@ internal abstract class KerningSubTable
             coverage = KerningCoverage.Read(reader);
         }
 
+        long subtableEnd = subtableOffset + length;
         KerningSubTable? subtable = coverage.Variation ? null : coverage.Format switch
         {
             0 => Format0SubTable.Load(reader, coverage),
             2 => Format2SubTable.Load(reader, subtableOffset, length, coverage),
+            3 when useAppleHeader => Format3SubTable.Load(reader, subtableEnd - (reader.BaseStream.Position - reader.StartOfStream), coverage),
             _ => null
         };
 
         // Each header length covers its complete subtable, so unsupported formats cannot desynchronize the next header.
-        reader.Seek(subtableOffset + length, SeekOrigin.Begin);
+        reader.Seek(subtableEnd, SeekOrigin.Begin);
         return subtable;
     }
 
