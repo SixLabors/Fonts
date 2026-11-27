@@ -356,9 +356,9 @@ internal sealed class IndicShaper : DefaultShaper
     }
 
     /// <inheritdoc />
-    protected override void PlanPostprocessingFeatures(ShapingBuffer buffer, int index, int count)
+    protected override void PlanPostprocessingFeatures(ShapingBuffer buffer, int index, int count, bool isVertical)
     {
-        base.PlanPostprocessingFeatures(buffer, index, count);
+        base.PlanPostprocessingFeatures(buffer, index, count, isVertical);
 
         // Standard ligature substitution interferes with the conjunct forms these
         // scripts build through their dedicated features, so the feature is
@@ -1285,16 +1285,27 @@ internal sealed class IndicShaper : DefaultShaper
                                         basePosition++;
                                     }
 
-                                    ref GlyphShapingData newBase = ref buffer[basePosition];
-                                    if (newBase.Syllable.Type != SyllableType.None)
+                                    // A trailing halant can leave no base. The
+                                    // slot at end is outside this syllable.
+                                    if (basePosition < end)
                                     {
-                                        newBase.Syllable.IndicPosition = Positions.Base_C;
-                                        tryPref = false;
+                                        ref GlyphShapingData newBase = ref buffer[basePosition];
+                                        if (newBase.Syllable.Type != SyllableType.None)
+                                        {
+                                            newBase.Syllable.IndicPosition = Positions.Base_C;
+                                        }
                                     }
+
+                                    tryPref = false;
                                 }
 
                                 break;
                             }
+                        }
+
+                        if (basePosition == end)
+                        {
+                            break;
                         }
                     }
 

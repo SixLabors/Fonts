@@ -75,7 +75,7 @@ internal class GSubTable : Table
     /// <returns>The <see cref="GSubTable"/>, or <see langword="null"/> if not present.</returns>
     public static GSubTable? Load(FontReader fontReader)
     {
-        if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
+        if (!fontReader.TryGetBoundedReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
         {
             return null;
         }
@@ -147,89 +147,75 @@ internal class GSubTable : Table
     }
 
     /// <summary>
-    /// Applies glyph substitution to the buffer using GSUB lookup rules.
+    /// Applies GSUB to one run after the caller selects its table.
     /// </summary>
     /// <param name="fontMetrics">The font metrics.</param>
     /// <param name="buffer">The glyph substitution buffer.</param>
-    public void ApplySubstitution(FontMetrics fontMetrics, ShapingBuffer buffer)
+    /// <param name="run">The script, language, features, and orientation of the run.</param>
+    /// <returns>The shape plan for positioning the resulting glyphs.</returns>
+    public ShapePlan ApplySubstitution(FontMetrics fontMetrics, ShapingBuffer buffer, ScriptItemizer.ShapingRun run)
     {
-        // Set max constraints to prevent OutOfMemoryException or infinite loops from attacks.
-        int maxCount = AdvancedTypographicUtils.GetMaxAllowableShapingCollectionCount(buffer.Count);
-        int maxOperationsCount = AdvancedTypographicUtils.GetMaxAllowableShapingOperationsCount(buffer.Count);
-        int currentOperations = 0;
+        int index = buffer.SpanStart;
+        int count = buffer.SpanEnd - index;
+        Tag unicodeScriptTag = this.GetUnicodeScriptTag(run.Script);
+        ShapePlan shapePlan = buffer.GetOrCreatePlan(run.Script, unicodeScriptTag, fontMetrics, run.Culture, run.FeatureTags, false);
 
-        for (int i = 0; i < buffer.Count; i++)
+        BaseShaper shaper = shapePlan.Shaper;
+
+        // Plan substitution features for each glyph.
+        // Shapers can adjust the count during initialization and feature processing so we must capture
+        // the current count to allow resetting indexes and processing counts.
+        int collectionCount = buffer.Count;
+        shaper.Plan(fontMetrics, buffer, index, count, run.IsVertical);
+        int delta = buffer.Count - collectionCount;
+        count += delta;
+
+        // Stages are applied in pause-delimited groups: a stage action is a
+        // synchronization point, and between two actions every registered
+        // feature's lookups apply together in lookup-list order, the order the
+        // specification defines for lookups within a single application pass. A
+        // lookup registered by several of the group's features applies once with
+        // their glyph masks combined. Group boundaries, merged lookup lists, and
+        // entry masks are all prebuilt on the plan.
+        List<ShapePlanStageGroup<LookupTable>> groups = shapePlan.GetOrBuildGSubStageGroups();
+        List<ShapingStage> stages = shapePlan.Stages;
+        SkippingGlyphIterator iterator = new(fontMetrics, buffer, index, default, 0);
+        for (int g = 0; g < groups.Count; g++)
         {
-            // Choose a shaper based on the script.
-            // This determines which features to apply to which glyphs.
-            int index = i;
-            ScriptItemizer.ShapingRun run = ScriptItemizer.ReadRun(buffer, ref i, maxCount, out int count);
+            ShapePlanStageGroup<LookupTable> group = groups[g];
 
-            Tag unicodeScriptTag = this.GetUnicodeScriptTag(run.Script);
-            ShapePlan shapePlan = buffer.GetOrCreatePlan(run.Script, unicodeScriptTag, fontMetrics, run.Culture, run.FeatureTags);
+            collectionCount = buffer.Count;
+            stages[group.Start].PreProcessFeature(shapePlan, buffer, index, count);
 
-            BaseShaper shaper = shapePlan.Shaper;
-
-            // Plan substitution features for each glyph.
-            // Shapers can adjust the count during initialization and feature processing so we must capture
-            // the current count to allow resetting indexes and processing counts.
-            int collectionCount = buffer.Count;
-            shaper.Plan(fontMetrics, buffer, index, count);
-            int delta = buffer.Count - collectionCount;
-            i += delta;
+            // Account for substitutions changing the length of the buffer.
+            delta = buffer.Count - collectionCount;
             count += delta;
 
-            // Stages are applied in pause-delimited groups: a stage action is a
-            // synchronization point, and between two actions every registered
-            // feature's lookups apply together in lookup-list order, the order the
-            // specification defines for lookups within a single application pass. A
-            // lookup registered by several of the group's features applies once with
-            // their glyph masks combined. Group boundaries, merged lookup lists, and
-            // entry masks are all prebuilt on the plan.
-            List<ShapePlanStageGroup<LookupTable>> groups = shapePlan.GetOrBuildGSubStageGroups();
-            List<ShapingStage> stages = shapePlan.Stages;
-            SkippingGlyphIterator iterator = new(fontMetrics, buffer, index, default, 0);
-            for (int g = 0; g < groups.Count; g++)
-            {
-                ShapePlanStageGroup<LookupTable> group = groups[g];
+            this.ApplyMergedLookups(
+                fontMetrics,
+                buffer,
+                ref iterator,
+                group.Lookups,
+                index,
+                ref count,
+                ref collectionCount);
 
-                collectionCount = buffer.Count;
-                stages[group.Start].PreProcessFeature(shapePlan, buffer, index, count);
+            collectionCount = buffer.Count;
+            stages[group.End - 1].PostProcessFeature(shapePlan, buffer, index, count);
 
-                // Account for substitutions changing the length of the buffer.
-                delta = buffer.Count - collectionCount;
-                count += delta;
-                i += delta;
-
-                this.ApplyMergedLookups(
-                    fontMetrics,
-                    buffer,
-                    ref iterator,
-                    group.Lookups,
-                    index,
-                    ref count,
-                    ref i,
-                    ref collectionCount,
-                    maxCount,
-                    maxOperationsCount,
-                    ref currentOperations);
-
-                collectionCount = buffer.Count;
-                stages[group.End - 1].PostProcessFeature(shapePlan, buffer, index, count);
-
-                // Account for substitutions changing the length of the buffer.
-                delta = buffer.Count - collectionCount;
-                count += delta;
-                i += delta;
-            }
-
-            // Record the segment with its post-substitution range so the in-place
-            // positioning pass can reuse the plan; one plan then drives both tables.
-            // Mark after GSUB because substitutions can change the number and order
-            // of glyph records to which layout will later apply tracking.
-            ScriptItemizer.MarkCursiveTrackingRun(buffer, index, count, run.Script);
-            buffer.SegmentPlans.Add((index, count, run.Script, shapePlan));
+            // Account for substitutions changing the length of the buffer.
+            delta = buffer.Count - collectionCount;
+            count += delta;
         }
+
+        // Mark after GSUB because substitutions can change the number and order
+        // of glyph records to which layout will later apply tracking.
+        if (count > 0)
+        {
+            ScriptItemizer.MarkCursiveTrackingRun(buffer, index, count, run.Script);
+        }
+
+        return shapePlan;
     }
 
     /// <summary>
@@ -243,11 +229,7 @@ internal class GSubTable : Table
     /// <param name="merged">The group's lookups, sorted by lookup index.</param>
     /// <param name="index">The starting index in the buffer.</param>
     /// <param name="count">The number of glyphs to process (updated by substitutions).</param>
-    /// <param name="i">The outer loop index (updated by substitutions).</param>
     /// <param name="collectionCount">The tracked buffer count (updated by substitutions).</param>
-    /// <param name="maxCount">The maximum allowable buffer count.</param>
-    /// <param name="maxOperationsCount">The maximum allowable operations count.</param>
-    /// <param name="currentOperations">The current operations counter.</param>
     private void ApplyMergedLookups(
         FontMetrics fontMetrics,
         ShapingBuffer buffer,
@@ -255,12 +237,15 @@ internal class GSubTable : Table
         List<(Tag Feature, ushort Index, LookupTable LookupTable, uint Mask, bool AutoZwnj, bool AutoZwj, bool Random, bool PerSyllable)> merged,
         int index,
         ref int count,
-        ref int i,
-        ref int collectionCount,
-        int maxCount,
-        int maxOperationsCount,
-        ref int currentOperations)
+        ref int collectionCount)
     {
+        int maxCount = buffer.MaxShapingGlyphCount;
+
+        // All lookups in this group spend the same substitution budget. Count
+        // visits locally and update the buffer once when the group ends.
+        int budget = buffer.RemainingOperations;
+        int remaining = budget;
+
         for (int m = 0; m < merged.Count; m++)
         {
             (Tag feature, ushort _, LookupTable featureLookupTable, uint featureMask, bool autoZwnj, bool autoZwj, bool random, bool perSyllable) = merged[m];
@@ -288,10 +273,10 @@ internal class GSubTable : Table
                 int reverseSegmentEnd = index + count;
                 for (int position = reverseSegmentEnd - 1; position >= index; position--)
                 {
-                    if (buffer.Count >= maxCount || currentOperations++ >= maxOperationsCount)
+                    if (buffer.Count >= maxCount || remaining-- == 0)
                     {
                         collectionCount = buffer.Count;
-                        return;
+                        goto EndLookups;
                     }
 
                     ref GlyphShapingData glyphData = ref buffer[position];
@@ -309,33 +294,22 @@ internal class GSubTable : Table
                 continue;
             }
 
-            // One output pass per lookup: the cursor consumes the input side and
-            // every record streams to the output side exactly once, so a length
-            // change costs one streaming pass instead of one shift per mutation.
-            // The pass begins at the segment, adopting everything before it, and
-            // a pass that changes nothing closes without touching the tail.
-            // Input-side indices are stable for the whole pass, which the
-            // matchers rely on.
             buffer.BeginOutputPass(index);
 
-            // The segment's end is held as the number of records that follow it,
-            // which nothing the pass does can disturb: replacements, insertions,
-            // and the room a rewind opens all land before the tail. An absolute
-            // index would have to be corrected after each of them.
+            // The range follows the live glyphs as this lookup inserts or removes
+            // records. Glyphs in the next segment stay outside the range.
             int totalBefore = buffer.Count;
             int segmentEnd = index + count;
             while (buffer.ReadIndex < segmentEnd && buffer.ReadIndex < buffer.Count)
             {
                 // The digest cheaply rejects glyphs no subtable of this lookup can
                 // affect; a maybe falls through to the exact coverage test inside.
-                // Masked and ignored records still stream to the output unchanged,
-                // preserving every record. Consecutive rejections are adopted as
-                // one range so the output pass moves its cursors once.
+                // Skip consecutive masked or ignored glyphs with one cursor move.
                 int position = buffer.ReadIndex;
                 bool operationsLimitReached = false;
                 while (position < segmentEnd && position < buffer.Count)
                 {
-                    if (buffer.Count >= maxCount || currentOperations++ >= maxOperationsCount)
+                    if (buffer.Count >= maxCount || remaining-- == 0)
                     {
                         operationsLimitReached = true;
                         break;
@@ -352,17 +326,14 @@ internal class GSubTable : Table
                     position++;
                 }
 
-                buffer.CopyGlyphs(position - buffer.ReadIndex);
+                buffer.MoveTo(position);
 
                 if (operationsLimitReached)
                 {
-                    // The pass must always close: stream the remainder and
-                    // reconcile the segment bookkeeping before bailing out.
                     buffer.EndOutputPass();
                     count += buffer.Count - totalBefore;
-                    i += buffer.Count - totalBefore;
                     collectionCount = buffer.Count;
-                    return;
+                    goto EndLookups;
                 }
 
                 if (buffer.ReadIndex >= segmentEnd || buffer.ReadIndex >= buffer.Count)
@@ -374,13 +345,12 @@ internal class GSubTable : Table
                 int lengthBefore = buffer.Count;
                 featureLookupTable.TrySubstitution(fontMetrics, this, buffer, feature, featureMask, position, segmentEnd - position);
 
-                // Anything that lengthened the input side moved the records
-                // after the segment along with it: an in-place mutation, or the
-                // room a rewind opened. Both shift the segment's end by the
-                // same amount, so the bound stays a plain comparison.
-                segmentEnd += buffer.Count - lengthBefore;
+                int delta = buffer.Count - lengthBefore;
+                segmentEnd += delta;
 
-                if (buffer.ReadIndex == position)
+                // A deletion brings the next glyph to the current index.
+                // Stay at this index so the lookup visits that glyph.
+                if (buffer.ReadIndex == position && delta >= 0)
                 {
                     buffer.CopyGlyph();
                 }
@@ -388,12 +358,12 @@ internal class GSubTable : Table
 
             buffer.EndOutputPass();
 
-            // The pass closed, so the buffer holds the records it produced: the
-            // whole segment's change surfaces once, here.
             count += buffer.Count - totalBefore;
-            i += buffer.Count - totalBefore;
             collectionCount = buffer.Count;
         }
+
+        EndLookups:
+        buffer.CountOperations(budget - remaining);
     }
 
     /// <summary>

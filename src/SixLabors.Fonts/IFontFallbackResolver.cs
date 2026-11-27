@@ -8,9 +8,9 @@ namespace SixLabors.Fonts;
 
 /// <summary>
 /// Resolves a font family for code points that no configured font can shape.
-/// The shaping pipeline consults the resolver only after <see cref="TextOptions.Font"/> and every
-/// <see cref="TextOptions.FallbackFontFamilies"/> entry have attempted the text, and at most once
-/// per distinct unresolved code point per shaping operation.
+/// The shaping pipeline consults the resolver when the assigned font and every
+/// <see cref="TextOptions.FallbackFontFamilies"/> entry fail to supply a suitable glyph.
+/// It consults the resolver at most once per distinct unresolved code point per shaping operation.
 /// </summary>
 public interface IFontFallbackResolver
 {

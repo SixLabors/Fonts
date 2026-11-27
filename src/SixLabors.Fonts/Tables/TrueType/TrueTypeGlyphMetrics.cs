@@ -75,6 +75,25 @@ public partial class TrueTypeGlyphMetrics : FontGlyphMetrics
     internal GlyphVector GetOutline() => this.vector;
 
     /// <summary>
+    /// Gets a control point from the glyph outline in font design units.
+    /// </summary>
+    /// <param name="index">The zero-based index in the outline point list.</param>
+    /// <param name="point">The point when the index exists in the outline.</param>
+    /// <returns><see langword="true"/> if the outline contains the point at that index.</returns>
+    internal bool TryGetControlPoint(ushort index, out Vector2 point)
+    {
+        IList<ControlPoint> points = this.vector.ControlPoints;
+        if (index < points.Count)
+        {
+            point = points[index].Point;
+            return true;
+        }
+
+        point = default;
+        return false;
+    }
+
+    /// <summary>
     /// Gets the scaled and hinted outline for the given size and mode, building and caching it
     /// on first use. Exposed for diagnostics and tests.
     /// </summary>

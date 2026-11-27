@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
+using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts;
@@ -110,7 +111,7 @@ internal static partial class TextLayout
             ushort advanceHeight = position.AdvanceHeight;
             float rawScaledPPEM = options.Dpi * run.Font.Size;
             bool flowsByWidth = isHorizontalLayout
-                || (isVerticalMixedLayout && CodePoint.GetVerticalOrientationType(info.CodePoint) is VerticalOrientationType.Rotate or VerticalOrientationType.TransformRotate);
+                || (isVerticalMixedLayout && !AdvancedTypographicUtils.IsVerticalGlyph(CodePoint.GetVerticalOrientationType(info.CodePoint)));
 
             if (flowsByWidth && glyphMetrics.TryGetHintedAdvanceWidth(run.Font.Size, options.Dpi, options.HintingMode, out float hintedAdvancePx))
             {
@@ -253,21 +254,16 @@ internal static partial class TextLayout
                         codePoint = glyph.CodePoint;
                     }
 
-                    // Determine whether the glyph advance should be calculated using vertical or horizontal metrics
-                    // For vertical mixed layout we will rotate glyphs with the vertical orientation type R or TR
-                    // which do not already have a vertical substitution.
-                    bool shouldRotate = isVerticalMixedLayout &&
-                         !isVerticalSubstitution &&
-                         CodePoint.GetVerticalOrientationType(codePoint) is
-                                     VerticalOrientationType.Rotate or
-                                     VerticalOrientationType.TransformRotate;
+                    // Glyph orientation and vertical substitution select the advance metrics.
+                    // In mixed vertical layout, rotate glyphs with Unicode orientation R or Tr
+                    // when shaping does not supply a vertical substitution.
+                    bool hasRotatedOrientation = !isHorizontalLayout && !isVerticalSubstitution
+                        && !AdvancedTypographicUtils.IsVerticalGlyph(CodePoint.GetVerticalOrientationType(codePoint));
+
+                    bool shouldRotate = isVerticalMixedLayout && hasRotatedOrientation;
 
                     // Determine whether the glyph advance should be offset for vertical layout.
-                    bool shouldOffset = isVerticalLayout &&
-                        !isVerticalSubstitution &&
-                         CodePoint.GetVerticalOrientationType(codePoint) is
-                                     VerticalOrientationType.Rotate or
-                                     VerticalOrientationType.TransformRotate;
+                    bool shouldOffset = isVerticalLayout && hasRotatedOrientation;
 
                     if (CodePoint.IsVariationSelector(codePoint))
                     {
@@ -671,15 +667,11 @@ internal static partial class TextLayout
         bool isHorizontalLayout = layoutMode.IsHorizontal();
         bool isVerticalLayout = layoutMode.IsVertical();
         bool isVerticalMixedLayout = layoutMode.IsVerticalMixed();
-        bool shouldRotate = isVerticalMixedLayout &&
-            CodePoint.GetVerticalOrientationType(markerCodePoint) is
-                        VerticalOrientationType.Rotate or
-                        VerticalOrientationType.TransformRotate;
+        bool hasRotatedOrientation = !isHorizontalLayout
+            && !AdvancedTypographicUtils.IsVerticalGlyph(CodePoint.GetVerticalOrientationType(markerCodePoint));
 
-        bool shouldOffset = isVerticalLayout &&
-            CodePoint.GetVerticalOrientationType(markerCodePoint) is
-                        VerticalOrientationType.Rotate or
-                        VerticalOrientationType.TransformRotate;
+        bool shouldRotate = isVerticalMixedLayout && hasRotatedOrientation;
+        bool shouldOffset = isVerticalLayout && hasRotatedOrientation;
 
         GlyphLayoutMode markerMode = GlyphLayoutMode.Horizontal;
         if (isVerticalLayout)

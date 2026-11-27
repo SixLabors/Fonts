@@ -248,9 +248,9 @@ internal sealed class ArabicShaper : DefaultShaper
     }
 
     /// <inheritdoc/>
-    protected override void PlanPostprocessingFeatures(ShapingBuffer buffer, int index, int count)
+    protected override void PlanPostprocessingFeatures(ShapingBuffer buffer, int index, int count, bool isVertical)
     {
-        base.PlanPostprocessingFeatures(buffer, index, count);
+        base.PlanPostprocessingFeatures(buffer, index, count, isVertical);
 
         this.EnableFeature(buffer, index, count, MsetTag, ShapingFeatureFlags.ManualZwj);
     }

@@ -147,7 +147,7 @@ internal static class LookupType4SubTable
                 ref GlyphShapingData candidate = ref buffer[baseGlyphIndex];
                 bool acceptsCandidate = !candidate.IsDecomposed
                     || candidate.LigatureComponent == 0
-                    || baseGlyphIndex == 0
+                    || baseGlyphIndex == buffer.SpanStart
                     || AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, buffer[baseGlyphIndex - 1].GlyphId, ref buffer[baseGlyphIndex - 1])
                     || !buffer[baseGlyphIndex - 1].IsDecomposed
                     || candidate.LigatureId != buffer[baseGlyphIndex - 1].LigatureId

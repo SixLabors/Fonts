@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
+using SixLabors.Fonts.Tables.AdvancedTypographic;
 
 namespace SixLabors.Fonts.Tables.General.Kern;
 
@@ -10,7 +11,7 @@ namespace SixLabors.Fonts.Tables.General.Kern;
 /// for positioning glyphs within a font.
 /// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/kern"/>
 /// </summary>
-internal sealed class KerningTable : Table
+internal sealed class KernTable : Table
 {
     /// <summary>
     /// The table tag name identifying the 'kern' table.
@@ -23,10 +24,10 @@ internal sealed class KerningTable : Table
     private readonly KerningSubTable[] kerningSubTable;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="KerningTable"/> class.
+    /// Initializes a new instance of the <see cref="KernTable"/> class.
     /// </summary>
     /// <param name="kerningSubTable">The array of kerning subtables.</param>
-    public KerningTable(KerningSubTable[] kerningSubTable)
+    public KernTable(KerningSubTable[] kerningSubTable)
         => this.kerningSubTable = kerningSubTable;
 
     /// <summary>
@@ -35,17 +36,17 @@ internal sealed class KerningTable : Table
     public int Count => this.kerningSubTable.Length;
 
     /// <summary>
-    /// Loads the <see cref="KerningTable"/> from the specified font reader.
+    /// Loads the <see cref="KernTable"/> from the specified font reader.
     /// Returns an empty table if the 'kern' table is not present.
     /// </summary>
     /// <param name="fontReader">The font reader to read the table from.</param>
-    /// <returns>The loaded <see cref="KerningTable"/>.</returns>
-    public static KerningTable Load(FontReader fontReader)
+    /// <returns>The loaded <see cref="KernTable"/>.</returns>
+    public static KernTable Load(FontReader fontReader)
     {
         if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
         {
             // this table is optional.
-            return new KerningTable([]);
+            return new KernTable([]);
         }
 
         using (binaryReader)
@@ -56,7 +57,7 @@ internal sealed class KerningTable : Table
     }
 
     /// <summary>
-    /// Loads the <see cref="KerningTable"/> from the specified binary reader.
+    /// Loads the <see cref="KernTable"/> from the specified binary reader.
     /// </summary>
     /// <remarks>
     /// The version 0 header is defined by the
@@ -65,8 +66,8 @@ internal sealed class KerningTable : Table
     /// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6kern.html">Apple TrueType Reference Manual</see>.
     /// </remarks>
     /// <param name="reader">The binary reader positioned at the start of the kern table data.</param>
-    /// <returns>The loaded <see cref="KerningTable"/>.</returns>
-    public static KerningTable Load(BigEndianBinaryReader reader)
+    /// <returns>The loaded <see cref="KernTable"/>.</returns>
+    public static KernTable Load(BigEndianBinaryReader reader)
     {
         // +--------+---------+-------------------------------------------+
         // | Type   | Field   | Description                               |
@@ -91,7 +92,7 @@ internal sealed class KerningTable : Table
         }
         else
         {
-            return new KerningTable([]);
+            return new KernTable([]);
         }
 
         List<KerningSubTable> tables = new(subTableCount);
@@ -104,7 +105,7 @@ internal sealed class KerningTable : Table
             }
         }
 
-        return new KerningTable([.. tables]);
+        return new KernTable([.. tables]);
     }
 
     /// <summary>
@@ -126,8 +127,8 @@ internal sealed class KerningTable : Table
             || buffer.MetricsAt(left).Metrics.FontMetrics != fontMetrics
             || buffer.MetricsAt(right).Metrics.FontMetrics != fontMetrics)
         {
-            // A shared shaping buffer can contain glyph ids from several fonts. A
-            // kerning table's glyph ids are meaningful only within its own font.
+            // A shared shaping buffer can contain glyph ids from several fonts.
+            // A kerning table's glyph ids are meaningful only within its own font.
             return;
         }
 
@@ -136,19 +137,7 @@ internal sealed class KerningTable : Table
 
         if (this.TryGetKerningOffset(currentId, nextId, out Vector2 result))
         {
-            int horizontalKern = (int)result.X;
-            int verticalKern = (int)result.Y;
-            short firstHorizontal = (short)(horizontalKern >> 1);
-            short secondHorizontal = (short)(horizontalKern - firstHorizontal);
-            short firstVertical = (short)(verticalKern >> 1);
-            short secondVertical = (short)(verticalKern - firstVertical);
-
-            buffer.Advance(fontMetrics, left, currentId, firstHorizontal, firstVertical);
-            buffer.Advance(fontMetrics, right, nextId, secondHorizontal, secondVertical);
-
-            ref GlyphShapingPosition nextPosition = ref buffer.PositionAt(right);
-            nextPosition.Bounds.X += secondHorizontal;
-            nextPosition.Bounds.Y += secondVertical;
+            AdvancedTypographicUtils.ApplyPairKerning(fontMetrics, buffer, left, right, (int)result.X, (int)result.Y, yDown: false);
             currentPosition.IsKerned = true;
         }
     }
@@ -164,6 +153,9 @@ internal sealed class KerningTable : Table
     public bool TryGetKerningOffset(ushort current, ushort next, out Vector2 result)
     {
         result = Vector2.Zero;
+
+        // Glyph zero stands for a missing character. It does not identify
+        // a specific glyph that the font can kern.
         if (this.Count == 0 || current == 0 || next == 0)
         {
             return false;

@@ -181,21 +181,18 @@ internal static class FallbackMarkPositioner
     private const int LaoNiggahita = 0x0ECD;
 
     /// <summary>
-    /// Applies fallback mark positioning to every eligible segment belonging to the font.
+    /// Applies fallback mark positioning to the active span.
     /// </summary>
     /// <param name="fontMetrics">The font metrics supplying extents and advances.</param>
     /// <param name="buffer">The positioned shaping buffer.</param>
     public static void Apply(FontMetrics fontMetrics, ShapingBuffer buffer)
     {
-        List<(int Index, int Count, ScriptClass Script, ShapePlan Plan)> segments = buffer.SegmentPlans;
-        for (int i = 0; i < segments.Count; i++)
-        {
-            (int index, int count, ScriptClass _, ShapePlan plan) = segments[i];
-            if (plan.FontMetrics == fontMetrics && plan.Shaper.FallbackMarkPositioning)
-            {
-                PositionSegment(buffer, index, count, fontMetrics.UnitsPerEm);
-            }
-        }
+        // In this order the pen advances past the base before it
+        // reaches the mark, even when the run reads right to left.
+        int index = buffer.SpanStart;
+        bool preserveGraphemeOrder = buffer.HorizontalScriptDirection == ScriptHorizontalDirection.LeftToRight;
+        TextDirection direction = preserveGraphemeOrder ? TextDirection.LeftToRight : buffer[index].Direction;
+        PositionSegment(buffer, index, buffer.SpanEnd - index, fontMetrics.UnitsPerEm, direction);
     }
 
     /// <summary>
@@ -205,7 +202,8 @@ internal static class FallbackMarkPositioner
     /// <param name="index">The zero-based index of the first record.</param>
     /// <param name="count">The number of records in the segment.</param>
     /// <param name="unitsPerEm">The font's units per em.</param>
-    private static void PositionSegment(ShapingBuffer buffer, int index, int count, int unitsPerEm)
+    /// <param name="direction">The order of the base and marks in the segment.</param>
+    private static void PositionSegment(ShapingBuffer buffer, int index, int count, int unitsPerEm, TextDirection direction)
     {
         int start = index;
         int end = index + count;
@@ -214,12 +212,12 @@ internal static class FallbackMarkPositioner
             ref GlyphShapingData data = ref buffer[i];
             if (!CodePoint.IsMark(data.CodePoint) && !data.IsHidden && !data.IsDefaultIgnorable)
             {
-                PositionCluster(buffer, start, i, unitsPerEm);
+                PositionCluster(buffer, start, i, unitsPerEm, direction);
                 start = i;
             }
         }
 
-        PositionCluster(buffer, start, end, unitsPerEm);
+        PositionCluster(buffer, start, end, unitsPerEm, direction);
     }
 
     /// <summary>
@@ -229,7 +227,8 @@ internal static class FallbackMarkPositioner
     /// <param name="start">The zero-based cluster start.</param>
     /// <param name="end">The exclusive cluster end.</param>
     /// <param name="unitsPerEm">The font's units per em.</param>
-    private static void PositionCluster(ShapingBuffer buffer, int start, int end, int unitsPerEm)
+    /// <param name="direction">The order of the base and marks in the cluster.</param>
+    private static void PositionCluster(ShapingBuffer buffer, int start, int end, int unitsPerEm, TextDirection direction)
     {
         if (end - start < 2)
         {
@@ -255,7 +254,7 @@ internal static class FallbackMarkPositioner
                 markEnd++;
             }
 
-            PositionAroundBase(buffer, i, markEnd, unitsPerEm);
+            PositionAroundBase(buffer, i, markEnd, unitsPerEm, direction);
             i = markEnd - 1;
         }
     }
@@ -267,23 +266,24 @@ internal static class FallbackMarkPositioner
     /// <param name="baseIndex">The zero-based base record index.</param>
     /// <param name="end">The exclusive end of the marks belonging to the base.</param>
     /// <param name="unitsPerEm">The font's units per em.</param>
-    private static void PositionAroundBase(ShapingBuffer buffer, int baseIndex, int end, int unitsPerEm)
+    /// <param name="direction">The order of the base and its marks.</param>
+    private static void PositionAroundBase(ShapingBuffer buffer, int baseIndex, int end, int unitsPerEm, TextDirection direction)
     {
-        ref ShapingBuffer.GlyphMetricsEntry baseEntry = ref buffer.MetricsAt(baseIndex);
+        FontGlyphMetrics baseMetrics = buffer.MetricsAt(baseIndex).Metrics;
         ref GlyphShapingPosition basePosition = ref buffer.PositionAt(baseIndex);
-        GlyphExtents baseExtents = GetExtents(baseEntry.Metrics);
+        GlyphExtents baseExtents = GetExtents(baseMetrics);
         baseExtents.YBearing += basePosition.Bounds.Y;
 
         // Horizontal advance gives stable component widths even for a zero-ink glyph.
         baseExtents.XBearing = 0;
-        baseExtents.Width = baseEntry.Metrics.AdvanceWidth;
+        baseExtents.Width = baseMetrics.AdvanceWidth;
 
         ref GlyphShapingData baseData = ref buffer[baseIndex];
         int ligatureId = baseData.LigatureId;
         int componentCount = baseData.LigatureComponentCount;
         int xOffset = 0;
         int yOffset = 0;
-        bool isForward = baseData.Direction == TextDirection.LeftToRight
+        bool isForward = direction == TextDirection.LeftToRight
             || buffer.TextOptions.LayoutMode.IsVertical();
         if (isForward)
         {
@@ -329,7 +329,7 @@ internal static class FallbackMarkPositioner
                     lastLigatureComponent = component;
                     lastCombiningClass = byte.MaxValue;
                     componentExtents = baseExtents;
-                    if (baseData.Direction == TextDirection.LeftToRight)
+                    if (direction == TextDirection.LeftToRight)
                     {
                         componentExtents.XBearing += (component * componentExtents.Width) / componentCount;
                     }
@@ -355,7 +355,6 @@ internal static class FallbackMarkPositioner
             markPosition.Bounds.Height = 0;
             markPosition.Bounds.X += xOffset;
             markPosition.Bounds.Y += yOffset;
-            buffer.UpdatePosition(i);
         }
     }
 

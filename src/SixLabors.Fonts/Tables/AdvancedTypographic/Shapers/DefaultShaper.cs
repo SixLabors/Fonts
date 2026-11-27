@@ -186,6 +186,16 @@ internal class DefaultShaper : BaseShaper
         this.hasTracking = textOptions.Tracking != 0;
     }
 
+    /// <summary>
+    /// Creates a default shaper for an AAT run and disables mark zeroing.
+    /// </summary>
+    /// <param name="script">The Unicode script of the run.</param>
+    /// <param name="textOptions">The text options for the run.</param>
+    /// <param name="fallbackMarkPositioning">Whether the run permits fallback mark positioning.</param>
+    /// <returns>The default shaper for the run.</returns>
+    public static DefaultShaper CreateForMetamorphosis(ScriptClass script, TextOptions textOptions, bool fallbackMarkPositioning)
+        => new(script, MarkZeroingMode.None, textOptions) { FallbackMarkPositioning = fallbackMarkPositioning };
+
     /// <inheritdoc />
     protected override void PlanFeatures(ShapingBuffer buffer, int index, int count)
     {
@@ -319,7 +329,7 @@ internal class DefaultShaper : BaseShaper
     }
 
     /// <inheritdoc />
-    protected override void PlanPostprocessingFeatures(ShapingBuffer buffer, int index, int count)
+    protected override void PlanPostprocessingFeatures(ShapingBuffer buffer, int index, int count, bool isVertical)
     {
         // Add common features.
         this.EnableFeature(buffer, index, count, AbvmTag);
@@ -330,16 +340,8 @@ internal class DefaultShaper : BaseShaper
         this.EnableFeature(buffer, index, count, MarkTag, ShapingFeatureFlags.ManualJoiners);
         this.EnableFeature(buffer, index, count, MkmkTag, ShapingFeatureFlags.ManualJoiners);
 
-        LayoutMode layoutMode = buffer.TextOptions.LayoutMode;
-        bool isVerticalLayout = false;
-        for (int i = index; i < index + count; i++)
-        {
-            ref GlyphShapingData shapingData = ref buffer[i];
-            isVerticalLayout |= AdvancedTypographicUtils.IsVerticalGlyph(shapingData.CodePoint, layoutMode);
-        }
-
         // Add horizontal or vertical features.
-        if (!isVerticalLayout)
+        if (!isVertical)
         {
             // Add horizontal features.
             if (!this.hasTracking)

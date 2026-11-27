@@ -35,14 +35,6 @@ internal struct SkippingGlyphIterator
     private bool stepsDirectly;
 
     /// <summary>
-    /// True when this matcher reads the records the active pass has produced
-    /// rather than the input it has yet to consume. Backtrack reads that side:
-    /// the records behind the cursor were consumed by the pass, and a rule must
-    /// see what earlier lookups produced rather than the input they replaced.
-    /// </summary>
-    private bool readsProducedSide;
-
-    /// <summary>
     /// The <see cref="matchFlags"/> bit recording that default-ignorable
     /// transparency is active for the duration of sequence matching; plain
     /// stepping outside a match keeps its historical semantics.
@@ -147,43 +139,23 @@ internal struct SkippingGlyphIterator
     public readonly bool MatchTransparencyActive => (this.matchFlags & TransparencyActiveFlag) != 0;
 
     /// <summary>
-    /// Gets the number of records on the side this matcher reads.
+    /// Gets the number of glyphs up to the end of the current span.
     /// </summary>
-    public readonly int RecordCount
-        => this.readsProducedSide ? this.Collection.PassOutputCount : this.Collection.Count;
+    public readonly int RecordCount => Math.Min(this.Collection.Count, this.Collection.SpanEnd);
 
     /// <summary>
-    /// Gets a reference to the record at the given index on the side this
-    /// matcher reads.
+    /// Gets a reference to the glyph at the given buffer index.
     /// </summary>
-    /// <param name="index">The zero-based index on the read side.</param>
-    /// <returns>A reference to the record.</returns>
-    public readonly ref GlyphShapingData RecordAt(int index)
-    {
-        if (this.readsProducedSide)
-        {
-            return ref this.Collection.PassOutputAt(index);
-        }
-
-        return ref this.Collection[index];
-    }
+    /// <param name="index">The zero-based buffer index.</param>
+    /// <returns>A reference to the glyph.</returns>
+    public readonly ref GlyphShapingData RecordAt(int index) => ref this.Collection[index];
 
     /// <summary>
-    /// Points this matcher at the side backtrack reads, stamps it as context,
-    /// and steps to the first backtrack position. During a substitution pass
-    /// that side is the records the pass has produced; outside one the records
-    /// behind the cursor are the buffer itself.
+    /// Applies the context matching rules and steps to the preceding glyph.
     /// </summary>
     /// <returns>The first backtrack position, or a negative value when none remains.</returns>
     public int StartBacktrack()
     {
-        ShapingBuffer buffer = this.Collection;
-        if (buffer.IsPassActive)
-        {
-            this.readsProducedSide = true;
-            this.Index = buffer.PassOutputCount;
-        }
-
         this.SetMatchContext(0, true);
 
         // The matcher must test the immediately preceding record before deciding
@@ -257,6 +229,12 @@ internal struct SkippingGlyphIterator
     private void Move(int direction)
     {
         this.Index += direction;
+        int start = this.Collection.SpanStart;
+        if (this.Index < start)
+        {
+            this.Index = -1;
+            return;
+        }
 
         // When the flags cannot ignore anything and no transparency is active,
         // ShouldIgnore is provably false for every glyph: the class mask test is
@@ -268,7 +246,7 @@ internal struct SkippingGlyphIterator
         }
 
         int limit = this.RecordCount;
-        while (this.Index >= 0 && this.Index < limit)
+        while (this.Index >= start && this.Index < limit)
         {
             // The class-mask test only runs when the flags can actually ignore
             // something; a skips-nothing iterator steps straight to transparency.
@@ -287,6 +265,11 @@ internal struct SkippingGlyphIterator
             }
 
             this.Index += direction;
+        }
+
+        if (this.Index < start)
+        {
+            this.Index = -1;
         }
     }
 
@@ -361,7 +344,7 @@ internal struct SkippingGlyphIterator
         byte flags = contextMatch ? buffer.ContextMatchFlags : buffer.InputMatchFlags;
 
         this.matchMask = contextMatch ? uint.MaxValue : mask;
-        if ((flags & SyllableLatchFlag) != 0 && (uint)this.Index < (uint)buffer.Count)
+        if ((flags & SyllableLatchFlag) != 0 && (uint)this.Index < (uint)buffer.SpanEnd)
         {
             SyllableInfo syllable = buffer[this.Index].Syllable;
             this.syllableNumber = (byte)syllable.Number;

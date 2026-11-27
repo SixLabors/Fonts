@@ -142,7 +142,8 @@ internal abstract class BaseShaper
     /// <param name="buffer">The glyph shaping buffer.</param>
     /// <param name="index">The zero-based index of the elements to assign.</param>
     /// <param name="count">The number of elements to assign.</param>
-    public void Plan(FontMetrics fontMetrics, ShapingBuffer buffer, int index, int count)
+    /// <param name="isVertical">Whether the run uses vertical shaping.</param>
+    public void Plan(FontMetrics fontMetrics, ShapingBuffer buffer, int index, int count, bool isVertical)
     {
         // The text is prepared before any feature is planned, so every later
         // stage sees the records this step inserts. It reads the text alone, so
@@ -163,8 +164,8 @@ internal abstract class BaseShaper
         // Registration is deterministic for a plan's identity, so the first pass
         // collects it once: feature bits, stages, joiner flags, and the fold of
         // every whole-segment mask. Later passes replay the fold in one walk and
-        // run only the per-text work. A mixed-vertical layout decides features
-        // from the glyphs themselves, so it re-plans every pass.
+        // run only the per-text work. Runs in mixed layout share plans but can
+        // have different orientations, so they collect features for each run.
         if (!this.FeaturesCollected)
         {
             int collectionCount = buffer.Count;
@@ -182,7 +183,7 @@ internal abstract class BaseShaper
             RecalculateCount(buffer, ref collectionCount, ref count);
             this.CollectSegmentCount = count;
 
-            this.PlanPostprocessingFeatures(buffer, index, count);
+            this.PlanPostprocessingFeatures(buffer, index, count, isVertical);
 
             RecalculateCount(buffer, ref collectionCount, ref count);
 
@@ -248,7 +249,8 @@ internal abstract class BaseShaper
     /// <param name="buffer">The glyph shaping buffer.</param>
     /// <param name="index">The zero-based index of the elements to assign.</param>
     /// <param name="count">The number of elements to assign.</param>
-    protected abstract void PlanPostprocessingFeatures(ShapingBuffer buffer, int index, int count);
+    /// <param name="isVertical">Whether the run uses vertical shaping.</param>
+    protected abstract void PlanPostprocessingFeatures(ShapingBuffer buffer, int index, int count, bool isVertical);
 
     /// <summary>
     /// Assigns the shaper specific substitution features to each glyph within the buffer.

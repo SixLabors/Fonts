@@ -142,17 +142,23 @@ internal sealed class ShapePlan
     /// <param name="textOptions">The options whose values the shaper captures.</param>
     /// <param name="featureTags">The additional feature tags for the plan's shaping runs.</param>
     /// <param name="languageTags">The language system candidates to resolve under.</param>
+    /// <param name="useMetamorphosis">Whether the run uses AAT substitution.</param>
     /// <returns>The built <see cref="ShapePlan"/>.</returns>
-    public static ShapePlan Build(FontMetrics fontMetrics, ScriptClass script, Tag scriptTag, TextOptions textOptions, IReadOnlyList<Tag> featureTags, Tag[] languageTags)
+    public static ShapePlan Build(FontMetrics fontMetrics, ScriptClass script, Tag scriptTag, TextOptions textOptions, IReadOnlyList<Tag> featureTags, Tag[] languageTags, bool useMetamorphosis = false)
     {
-        BaseShaper shaper = ShaperFactory.Create(script, scriptTag, fontMetrics, textOptions, languageTags);
+        BaseShaper shaper = ShaperFactory.Create(script, scriptTag, fontMetrics, textOptions, languageTags, useMetamorphosis);
 
         // A TextRun list replaces the whole-text feature list. Assign the already
         // resolved list before planning so GSUB and GPOS use the same features.
         shaper.FeatureTags = featureTags;
         List<ShapingStage> stages = shaper.GetShapingStages();
 
-        _ = fontMetrics.TryGetGSubTable(out GSubTable? gsubTable);
+        GSubTable? gsubTable = null;
+        if (!useMetamorphosis)
+        {
+            _ = fontMetrics.TryGetGSubTable(out gsubTable);
+        }
+
         return new(fontMetrics, script, scriptTag, shaper, stages, languageTags, gsubTable);
     }
 

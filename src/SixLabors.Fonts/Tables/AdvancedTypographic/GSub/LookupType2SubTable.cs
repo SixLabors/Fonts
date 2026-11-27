@@ -72,8 +72,8 @@ internal sealed class LookupType2Format1SubTable : LookupSubTable
     /// <param name="offset">The offset to the beginning of the substitution subtable.</param>
     /// <param name="lookupFlags">The lookup qualifiers flags.</param>
     /// <param name="markFilteringSet">The index into the GDEF mark glyph sets structure.</param>
-    /// <returns>The loaded <see cref="LookupType2Format1SubTable"/>.</returns>
-    public static LookupType2Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
+    /// <returns>The loaded lookup, or an inactive lookup if the sequence data is truncated.</returns>
+    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         // Multiple Substitution Format 1
         // +----------+--------------------------------+-----------------------------------------------------------------+
@@ -92,6 +92,15 @@ internal sealed class LookupType2Format1SubTable : LookupSubTable
         ushort coverageOffset = reader.ReadOffset16();
         ushort sequenceCount = reader.ReadUInt16();
 
+        long tableEnd = reader.BaseStream.Length;
+
+        // The sequence offsets and their targets must fit inside GSUB.
+        // The stream can contain other tables after GSUB.
+        if (sequenceCount * sizeof(ushort) > tableEnd - reader.BaseStream.Position)
+        {
+            return new NotImplementedSubTable();
+        }
+
         using Buffer<ushort> sequenceOffsetsBuffer = new(sequenceCount);
         Span<ushort> sequenceOffsets = sequenceOffsetsBuffer.GetSpan();
         reader.ReadUInt16Array(sequenceOffsets);
@@ -108,8 +117,19 @@ internal sealed class LookupType2Format1SubTable : LookupSubTable
             // +--------+--------------------------------+------------------------------------------------------+
             // | uint16 | substituteGlyphIDs[glyphCount] | String of glyph IDs to substitute                    |
             // +--------+--------------------------------+------------------------------------------------------+
-            reader.Seek(offset + sequenceOffsets[i], SeekOrigin.Begin);
+            long sequenceOffset = offset + sequenceOffsets[i];
+            if (sequenceOffset > tableEnd - reader.StartOfStream - sizeof(ushort))
+            {
+                return new NotImplementedSubTable();
+            }
+
+            reader.Seek(sequenceOffset, SeekOrigin.Begin);
             ushort glyphCount = reader.ReadUInt16();
+            if (glyphCount * sizeof(ushort) > tableEnd - reader.BaseStream.Position)
+            {
+                return new NotImplementedSubTable();
+            }
+
             sequenceTables[i] = new SequenceTable(reader.ReadUInt16Array(glyphCount));
         }
 

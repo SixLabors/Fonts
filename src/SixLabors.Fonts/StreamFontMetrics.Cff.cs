@@ -4,6 +4,7 @@
 using System.Numerics;
 using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Aat;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
@@ -21,6 +22,12 @@ namespace SixLabors.Fonts;
 /// </content>
 internal partial class StreamFontMetrics
 {
+    /// <summary>
+    /// Loads the tables and metrics for a font with CFF outlines.
+    /// </summary>
+    /// <param name="reader">The font reader.</param>
+    /// <param name="source">The source of the font data.</param>
+    /// <returns>The font metrics.</returns>
     private static StreamFontMetrics LoadCompactFont(FontReader reader, FontSource source)
     {
         // Load using recommended order for best performance.
@@ -47,12 +54,15 @@ internal partial class StreamFontMetrics
             vmtx = reader.TryGetTable<VerticalMetricsTable>();
         }
 
-        KerningTable? kern = reader.TryGetTable<KerningTable>();
+        KernTable? kern = reader.TryGetTable<KernTable>();
 
         BaseTable? baseTable = reader.TryGetTable<BaseTable>();
         GlyphDefinitionTable? gdef = reader.TryGetTable<GlyphDefinitionTable>();
         GSubTable? gSub = reader.TryGetTable<GSubTable>();
         GPosTable? gPos = reader.TryGetTable<GPosTable>();
+        MortTable? mort = reader.TryGetTable<MortTable>();
+        MorxTable? morx = reader.TryGetTable<MorxTable>();
+        KerxTable? kerx = KerxTable.Load(reader, maxp.GlyphCount);
 
         ColrTable? colr = reader.TryGetTable<ColrTable>();
         CpalTable? cpal = reader.TryGetTable<CpalTable>();
@@ -86,6 +96,9 @@ internal partial class StreamFontMetrics
             Gdef = gdef,
             GSub = gSub,
             GPos = gPos,
+            Mort = mort,
+            Morx = morx,
+            Kerx = kerx,
             Colr = colr,
             Cpal = cpal,
             FVar = fVar,

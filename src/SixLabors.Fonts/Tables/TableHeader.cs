@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using SixLabors.Fonts.IO;
+
 namespace SixLabors.Fonts.Tables;
 
 /// <summary>
@@ -64,7 +66,16 @@ internal class TableHeader
     public virtual BigEndianBinaryReader CreateReader(Stream stream)
     {
         stream.Seek(this.Offset, SeekOrigin.Begin);
-
         return new BigEndianBinaryReader(stream, true);
     }
+
+    /// <summary>
+    /// Creates a reader restricted to the table data.
+    /// </summary>
+    /// <param name="stream">The font file stream.</param>
+    /// <returns>A reader for the table, or <see langword="null"/> if the file ends before the table does.</returns>
+    public virtual BigEndianBinaryReader? CreateBoundedReader(Stream stream)
+        => this.Length <= stream.Length - this.Offset
+            ? new(new BoundedReadStream(stream, this.Offset, this.Length), false)
+            : null;
 }

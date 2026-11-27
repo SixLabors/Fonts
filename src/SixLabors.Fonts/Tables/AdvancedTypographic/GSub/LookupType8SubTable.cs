@@ -167,7 +167,7 @@ internal sealed class LookupType8Format1SubTable : LookupSubTable
         SkippingGlyphIterator iterator = new(fontMetrics, buffer, index, this.LookupFlags, this.MarkFilteringSet);
         SkippingGlyphIterator backtrack = iterator;
         int backtrackStart = backtrack.StartBacktrack();
-        if (!AdvancedTypographicUtils.MatchBacktrackCoverageSequence(backtrack, this.backtrackCoverageTables, backtrackStart, buffer.Count))
+        if (!AdvancedTypographicUtils.MatchBacktrackCoverageSequence(backtrack, this.backtrackCoverageTables, backtrackStart, buffer.SpanEnd))
         {
             return false;
         }

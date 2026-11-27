@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 namespace SixLabors.Fonts.Tables.TrueType.Glyphs;
 
@@ -35,15 +36,16 @@ internal sealed class CompositeGlyphLoader : GlyphLoader
 
     /// <inheritdoc/>
     public override GlyphVector CreateGlyph(GlyphTable table)
-        => this.CreateGlyph(table, 0);
+        => this.CreateGlyph(table, 0, null);
 
     /// <summary>
     /// Creates a glyph vector while enforcing the TrueType composite nesting limit.
     /// </summary>
     /// <param name="table">The glyph table used to resolve component glyphs.</param>
     /// <param name="compositeDepth">The number of composite glyphs above this glyph.</param>
+    /// <param name="processor">The processor for the requested variation, or null for the default outline.</param>
     /// <returns>The resolved glyph vector, or an empty vector when the component graph exceeds the format limit.</returns>
-    public GlyphVector CreateGlyph(GlyphTable table, int compositeDepth)
+    public GlyphVector CreateGlyph(GlyphTable table, int compositeDepth, GlyphVariationProcessor? processor)
     {
         if (compositeDepth >= MaxCompositeDepth)
         {
@@ -57,18 +59,23 @@ internal sealed class CompositeGlyphLoader : GlyphLoader
         for (int i = 0; i < this.composites.Length; i++)
         {
             Composite composite = this.composites[i];
-            GlyphVector clone = GlyphVector.DeepClone(table.GetGlyph(composite.GlyphIndex, compositeDepth + 1));
-            GlyphVector.TransformInPlace(ref clone, composite.Transformation);
+            GlyphVector component = processor is null
+                ? GlyphVector.DeepClone(table.GetGlyph(composite.GlyphIndex, compositeDepth + 1))
+                : table.GetVariedGlyph(composite.GlyphIndex, processor, compositeDepth + 1, out _);
+
+            // The component's deltas are in its own coordinate system. Apply its
+            // transform after variation so scaling and rotation also affect the deltas.
+            GlyphVector.TransformInPlace(ref component, composite.Transformation);
             ushort endPointOffset = (ushort)controlPoints.Count;
 
             // Store original component offset and point count for gvar processing.
             components[i] = new CompositeComponent(
                 composite.Transformation.Translation.X,
                 composite.Transformation.Translation.Y,
-                clone.ControlPoints.Count);
+                component.ControlPoints.Count);
 
-            controlPoints.AddRange(clone.ControlPoints);
-            foreach (ushort p in clone.EndPoints)
+            controlPoints.AddRange(component.ControlPoints);
+            foreach (ushort p in component.EndPoints)
             {
                 endPoints.Add((ushort)(p + endPointOffset));
             }

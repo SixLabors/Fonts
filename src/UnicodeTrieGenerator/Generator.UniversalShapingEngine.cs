@@ -367,8 +367,14 @@ public static partial class Generator
         || code.Category == GC.OtherNotAssigned;
 
     /// <summary>
-    /// Generates the character categories and state machine used by the Universal Shaping Engine.
+    /// Assigns Universal Shaping Engine categories to Unicode code points.
     /// </summary>
+    /// <param name="unicodeGeneralCategory">The Unicode general category trie.</param>
+    /// <param name="indicSyllabicCategoryTrie">The Indic syllabic category trie.</param>
+    /// <param name="indicPositionalCategoryTrie">The Indic positional category trie.</param>
+    /// <param name="arabicJoiningTrie">The Arabic joining type and group trie.</param>
+    /// <param name="scriptTrie">The Unicode script trie.</param>
+    /// <returns>The code points and their shaping categories.</returns>
     private static List<Codepoint> GenerateUniversalShapingDataTrie(UnicodeTrie unicodeGeneralCategory, UnicodeTrie indicSyllabicCategoryTrie, UnicodeTrie indicPositionalCategoryTrie, UnicodeTrie arabicJoiningTrie, UnicodeTrie scriptTrie)
     {
         static ArabicJoiningType GetJoiningType(int codePoint, uint value, GC category)
@@ -413,6 +419,10 @@ public static partial class Generator
         AddCodePointRanges(universalCodePointValues, "IndicPositionalCategory.txt", propertyRegex);
         AddCodePointRanges(universalCodePointValues, "IndicPositionalCategory-Additional.txt", propertyRegex);
         AddCodePointRanges(universalCodePointValues, "ArabicShaping.txt", ArabicShapingRowRegex());
+
+        // USE names these generic bases directly. They have no Indic
+        // syllabic category, so the Unicode property inputs omit them.
+        universalCodePointValues.UnionWith(GenericBaseCodePoints);
 
         UnicodeTrieBuilder defaultIgnorableBuilder = new();
         using (StreamReader propertyReader = GetStreamReader("DerivedCoreProperties.txt"))
@@ -469,8 +479,8 @@ public static partial class Generator
             codePoints.Add(codepoint);
         }
 
-        // The USE table includes only characters present in the syllabic, positional,
-        // joining, or default-ignorable inputs, then removes scripts handled by dedicated shapers.
+        // Classify characters from the property inputs and the named generic
+        // bases. Remove scripts handled by dedicated shapers.
         List<Codepoint> universalCodePoints = new(universalCodePointValues.Count);
         foreach (int codePointValue in universalCodePointValues)
         {

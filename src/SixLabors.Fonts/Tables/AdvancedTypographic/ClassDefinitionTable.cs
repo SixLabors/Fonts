@@ -90,6 +90,11 @@ internal sealed class ClassDefinitionFormat1Table : ClassDefinitionTable
     }
 
     /// <summary>
+    /// Gets the class definition that assigns every glyph to class zero.
+    /// </summary>
+    public static ClassDefinitionFormat1Table Empty { get; } = new(0, []);
+
+    /// <summary>
     /// Loads a <see cref="ClassDefinitionFormat1Table"/> from the binary reader.
     /// The format identifier has already been read.
     /// </summary>

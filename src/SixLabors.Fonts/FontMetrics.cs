@@ -345,10 +345,12 @@ public abstract class FontMetrics
     internal abstract bool TryGetBaselineCoordinate(Tag baselineTag, bool isVerticalLayout, out short coordinate);
 
     /// <summary>
-    /// Applies any available substitutions to the buffer of glyphs.
+    /// Applies substitution to the active span.
     /// </summary>
-    /// <param name="buffer">The glyph substitution buffer.</param>
-    internal abstract void ApplySubstitution(ShapingBuffer buffer);
+    /// <param name="buffer">The glyph buffer.</param>
+    /// <param name="run">The resolved source run.</param>
+    /// <returns>The shape plan for positioning the same span.</returns>
+    internal abstract ShapePlan ApplySubstitution(ShapingBuffer buffer, ScriptItemizer.ShapingRun run);
 
     /// <summary>
     /// Gets the amount, in font units, the <paramref name="currentId"/> glyph should be offset if it is followed by
@@ -367,10 +369,12 @@ public abstract class FontMetrics
     internal abstract bool TryGetKerningOffset(ushort currentId, ushort nextId, out Vector2 vector);
 
     /// <summary>
-    /// Applies any available positioning updates to the buffer of glyphs.
+    /// Positions the active span with its substitution plan.
     /// </summary>
     /// <param name="buffer">The glyph positioning buffer.</param>
-    internal abstract void UpdatePositions(ShapingBuffer buffer);
+    /// <param name="plan">The shape plan for the span.</param>
+    /// <param name="vertical">Whether the span uses vertical shaping.</param>
+    internal abstract void UpdatePositions(ShapingBuffer buffer, ShapePlan plan, bool vertical);
 
     /// <summary>
     /// Computes a GPOS/GSUB variation delta for the given packed VariationIndex.
@@ -378,7 +382,7 @@ public abstract class FontMetrics
     /// variation coordinates from the GlyphVariationProcessor.
     /// </summary>
     /// <param name="packedVariationIndex">
-    /// The packed VariationIndex: (outerIndex &lt;&lt; 16) | innerIndex.
+    /// One more than the packed VariationIndex: (outerIndex &lt;&lt; 16) | innerIndex.
     /// A value of 0 returns 0.
     /// </param>
     /// <returns>The delta value in design units, or 0 if no variation data is available.</returns>

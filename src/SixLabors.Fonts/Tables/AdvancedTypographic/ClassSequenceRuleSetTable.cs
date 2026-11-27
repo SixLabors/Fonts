@@ -27,7 +27,7 @@ internal sealed class ClassSequenceRuleSetTable
     /// </summary>
     /// <param name="reader">The big endian binary reader.</param>
     /// <param name="offset">Offset from beginning of the ClassSequenceRuleSet table.</param>
-    /// <returns>A class sequence rule set table.</returns>
+    /// <returns>A class sequence rule set table. A truncated set has no rules.</returns>
     public static ClassSequenceRuleSetTable Load(BigEndianBinaryReader reader, long offset)
     {
         // ClassSequenceRuleSet
@@ -40,17 +40,41 @@ internal sealed class ClassSequenceRuleSetTable
         // |          |                                        | tables, from beginning of             |
         // |          |                                        | ClassSequenceRuleSet table.           |
         // +----------+----------------------------------------+---------------------------------------+
+        long tableEnd = reader.BaseStream.Length;
+        if (offset > tableEnd - reader.StartOfStream - sizeof(ushort))
+        {
+            return new ClassSequenceRuleSetTable([]);
+        }
+
         reader.Seek(offset, SeekOrigin.Begin);
         ushort seqRuleCount = reader.ReadUInt16();
+
+        // The rule offsets must fit in the layout table before we read them.
+        if (seqRuleCount * sizeof(ushort) > tableEnd - reader.BaseStream.Position)
+        {
+            return new ClassSequenceRuleSetTable([]);
+        }
 
         using Buffer<ushort> seqRuleOffsetsBuffer = new(seqRuleCount);
         Span<ushort> seqRuleOffsets = seqRuleOffsetsBuffer.GetSpan();
         reader.ReadUInt16Array(seqRuleOffsets);
 
-        var subRules = new ClassSequenceRuleTable[seqRuleCount];
+        ClassSequenceRuleTable[] subRules = new ClassSequenceRuleTable[seqRuleCount];
+        int validCount = 0;
         for (int i = 0; i < subRules.Length; i++)
         {
-            subRules[i] = ClassSequenceRuleTable.Load(reader, offset + seqRuleOffsets[i]);
+            ClassSequenceRuleTable? rule = ClassSequenceRuleTable.Load(reader, offset + seqRuleOffsets[i]);
+            if (rule is not null)
+            {
+                subRules[validCount++] = rule;
+            }
+        }
+
+        if (validCount != subRules.Length)
+        {
+            // Preserve the order of valid rules. A failed rule has no input
+            // to match and cannot stop a later rule from applying.
+            Array.Resize(ref subRules, validCount);
         }
 
         return new ClassSequenceRuleSetTable(subRules);

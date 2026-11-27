@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Numerics;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Aat;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
@@ -239,6 +240,13 @@ internal partial class StreamFontMetrics : FontMetrics
 
     /// <inheritdoc/>
     public override float ItalicAngle => this.italicAngle;
+
+    /// <summary>
+    /// Gets the shared table set for this outline format.
+    /// </summary>
+    private IFontTables FontTables => this.outlineType == OutlineType.TrueType
+        ? this.trueTypeFontTables!
+        : this.compactFontTables!;
 
     /// <inheritdoc/>
     public override bool TryGetTableData(Tag tag, out ReadOnlyMemory<byte> table)
@@ -493,82 +501,141 @@ internal partial class StreamFontMetrics : FontMetrics
     }
 
     /// <inheritdoc/>
-    internal override void ApplySubstitution(ShapingBuffer buffer)
+    internal override ShapePlan ApplySubstitution(ShapingBuffer buffer, ScriptItemizer.ShapingRun run)
     {
-        if (this.TryGetGSubTable(out GSubTable? gSubTable))
+        IFontTables tables = this.FontTables;
+        MorphTable? morph = tables.Morx;
+        morph ??= tables.Mort;
+        GSubTable? gsub = tables.GSub;
+
+        // Prefer morx to mort. Follow HarfBuzz's substitution rule for a font
+        // with both AAT and GSUB. Use GSUB for vertical spans and AAT for horizontal spans.
+        if (morph is not null && (gsub is null || !run.IsVertical))
         {
-            gSubTable.ApplySubstitution(this, buffer);
-            return;
+            return morph.ApplySubstitution(this, buffer, run);
         }
 
-        // A font carrying no substitution table has no lookups to apply, but its
-        // runs are still planned: preparing a run's text is what supplies the
-        // characters a script cannot be read without, and the positioning pass
-        // reuses the runs planning records.
-        ScriptItemizer.PlanRuns(this, buffer);
+        if (gsub is not null)
+        {
+            return gsub.ApplySubstitution(this, buffer, run);
+        }
+
+        // Text preparation also applies to fonts with no substitution table.
+        return ScriptItemizer.PlanRun(this, buffer, run, buffer.SpanStart);
     }
 
     /// <inheritdoc/>
     internal override bool TryGetKerningOffset(ushort currentId, ushort nextId, out Vector2 vector)
     {
-        bool isTTF = this.outlineType == OutlineType.TrueType;
-        KerningTable? kern = isTTF
-            ? this.trueTypeFontTables!.Kern
-            : this.compactFontTables!.Kern;
-
-        if (kern is null)
+        IFontTables tables = this.FontTables;
+        if (tables.Kerx is KerxTable kerx && kerx.TryGetKerningOffset(currentId, nextId, out vector))
         {
-            vector = default;
-            return false;
+            return true;
         }
 
-        return kern.TryGetKerningOffset(currentId, nextId, out vector);
+        if (tables.Kern is KernTable kern)
+        {
+            return kern.TryGetKerningOffset(currentId, nextId, out vector);
+        }
+
+        vector = default;
+        return false;
     }
 
     /// <inheritdoc/>
-    internal override void UpdatePositions(ShapingBuffer buffer)
+    internal override void UpdatePositions(ShapingBuffer buffer, ShapePlan plan, bool vertical)
     {
-        bool isTTF = this.outlineType == OutlineType.TrueType;
-        GPosTable? gpos = isTTF
-            ? this.trueTypeFontTables!.GPos
-            : this.compactFontTables!.GPos;
+        IFontTables tables = this.FontTables;
+        GPosTable? gpos = tables.GPos;
+        KerxTable? kerx = tables.Kerx;
 
         bool kerned = false;
         KerningMode kerningMode = buffer.TextOptions.KerningMode;
 
-        gpos?.TryUpdatePositions(this, buffer, out kerned);
-        if (gpos is null)
+        // GPOS runs the shaper's mark-zeroing stages around its lookups.
+        if (gpos is not null)
         {
-            ZeroMarkAdvances(buffer, this, MarkZeroingMode.PreGPos);
+            GPosTable.KerningFallback? kerningFallback = kerningMode != KerningMode.None ? kerx?.PairKerningFallback : null;
+            gpos.TryUpdatePositions(this, buffer, plan, vertical, kerningFallback, out kerned);
+        }
+        else if (kerx is not null)
+        {
+            // HarfBuzz keeps mark advances when kerx handles positioning.
+            kerx.TryUpdatePositions(this, buffer, vertical, out kerned);
+        }
+        else
+        {
+            // The fallback runs the shaper's early mark-zeroing stage before legacy kerning.
+            this.ZeroMarkAdvances(buffer, plan, MarkZeroingMode.PreGPos);
         }
 
-        // TODO: I don't think we should disable kerning here.
+        // A positioning table can place marks and leave pair spacing to legacy kern.
         if (!kerned && kerningMode != KerningMode.None)
         {
-            KerningTable? kern = isTTF
-                ? this.trueTypeFontTables!.Kern
-                : this.compactFontTables!.Kern;
-
+            KernTable? kern = tables.Kern;
             if (kern?.Count > 0)
             {
-                // Set max constraints to prevent OutOfMemoryException or infinite loops from attacks.
-                int maxCount = AdvancedTypographicUtils.GetMaxAllowableShapingCollectionCount(buffer.Count);
-                for (int index = 0; index < buffer.Count - 1; index++)
+                // Calculate the legacy kerning bound from the active span's end index.
+                int maxCount = AdvancedTypographicUtils.GetMaxAllowableShapingCollectionCount(buffer.SpanEnd);
+                int end = Math.Min(buffer.SpanEnd - 1, maxCount);
+                if (buffer.HorizontalScriptDirection == ScriptHorizontalDirection.LeftToRight)
                 {
-                    if (index >= maxCount)
+                    // Forced right-to-left text keeps the glyph order within each
+                    // grapheme. Across graphemes, the later grapheme draws first.
+                    // Keep the first and last non-mark glyphs to find each pair
+                    // in drawing order while leaving the buffer in input order.
+                    int first = -1;
+                    int last = -1;
+                    int precedingFirst = -1;
+                    for (int index = buffer.SpanStart; index <= end; index++)
                     {
-                        break;
+                        ref GlyphShapingData glyph = ref buffer[index];
+                        if (glyph.IsHidden || glyph.IsDefaultIgnorable || CodePoint.IsMark(glyph.CodePoint))
+                        {
+                            continue;
+                        }
+
+                        if (first < 0 || glyph.GraphemeIndex != buffer[first].GraphemeIndex)
+                        {
+                            if (precedingFirst >= 0)
+                            {
+                                kern.UpdatePositions(this, buffer, last, precedingFirst);
+                            }
+
+                            precedingFirst = first;
+                            first = index;
+                        }
+                        else
+                        {
+                            kern.UpdatePositions(this, buffer, last, index);
+                        }
+
+                        last = index;
                     }
 
-                    kern.UpdatePositions(this, buffer, index, index + 1);
+                    if (precedingFirst >= 0)
+                    {
+                        kern.UpdatePositions(this, buffer, last, precedingFirst);
+                    }
+                }
+                else
+                {
+                    for (int index = buffer.SpanStart; index < end; index++)
+                    {
+                        kern.UpdatePositions(this, buffer, index, index + 1);
+                    }
                 }
             }
         }
 
-        if (gpos is null)
+        if (gpos is null && kerx is null)
         {
-            ZeroMarkAdvances(buffer, this, MarkZeroingMode.PostGpos);
-            FallbackMarkPositioner.Apply(this, buffer);
+            // Place fallback marks after kerning so their offsets use the adjusted advances.
+            this.ZeroMarkAdvances(buffer, plan, MarkZeroingMode.PostGpos);
+            if (plan.Shaper.FallbackMarkPositioning)
+            {
+                FallbackMarkPositioner.Apply(this, buffer);
+            }
         }
     }
 
@@ -576,21 +643,19 @@ internal partial class StreamFontMetrics : FontMetrics
     /// Applies a script's mark-zeroing stage when the font has no positioning table to host that stage.
     /// </summary>
     /// <param name="buffer">The positioned glyph buffer.</param>
-    /// <param name="fontMetrics">The font metrics supplying glyph classes.</param>
+    /// <param name="plan">The shape plan for the active span.</param>
     /// <param name="mode">The mark-zeroing stage to apply.</param>
-    private static void ZeroMarkAdvances(ShapingBuffer buffer, FontMetrics fontMetrics, MarkZeroingMode mode)
+    private void ZeroMarkAdvances(ShapingBuffer buffer, ShapePlan plan, MarkZeroingMode mode)
     {
-        List<(int Index, int Count, ScriptClass Script, ShapePlan Plan)> segments = buffer.SegmentPlans;
-        for (int i = 0; i < segments.Count; i++)
+        if (plan.Shaper.MarkZeroingMode != mode)
         {
-            (int index, int count, ScriptClass _, ShapePlan plan) = segments[i];
-            if (plan.FontMetrics == fontMetrics && plan.Shaper.MarkZeroingMode == mode)
-            {
-                // Without a positioning table, forward text needs the removed
-                // advance folded into the mark offset so it stays over its base.
-                AdvancedTypographicUtils.ZeroMarkAdvances(fontMetrics, buffer, index, count, true);
-            }
+            return;
         }
+
+        // AAT shapers use MarkZeroingMode.None. For this plan, use the
+        // removed advance to keep the mark over its base.
+        int index = buffer.SpanStart;
+        AdvancedTypographicUtils.ZeroMarkAdvances(this, buffer, index, buffer.SpanEnd - index, true);
     }
 
     /// <inheritdoc/>
@@ -609,6 +674,9 @@ internal partial class StreamFontMetrics : FontMetrics
         {
             return 0;
         }
+
+        // Remove the one-based encoding before separating the two uint16 indices.
+        packedVariationIndex--;
 
         // The packed index encodes two uint16 values:
         // - Upper 16 bits: outer index (selects the ItemVariationData subtable)

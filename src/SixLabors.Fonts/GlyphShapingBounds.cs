@@ -59,6 +59,11 @@ internal struct GlyphShapingBounds
     /// </summary>
     public bool IsDirtyWH { get; private set; }
 
+    /// <summary>
+    /// Gets a value indicating whether either advance is outside the unsigned 16-bit range.
+    /// </summary>
+    public readonly bool HasOutOfRangeAdvance => (uint)this.width > ushort.MaxValue || (uint)this.height > ushort.MaxValue;
+
     private string DebuggerDisplay
         => FormattableString.Invariant($"{this.X} : {this.Y} : {this.Width} : {this.Height} : {this.IsDirtyWH}");
 }

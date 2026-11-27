@@ -184,12 +184,13 @@ public static partial class TextShaper
                 ref GlyphShapingData shaping = ref shaped[i];
                 ref ShapingBuffer.GlyphMetricsEntry entry = ref shaped.MetricsAt(i);
                 ref GlyphShapingPosition position = ref shaped.PositionAt(i);
+                FontGlyphMetrics glyphMetrics = entry.Metrics;
 
                 // Internal positioning remains in design units. Scale once by the
                 // supplied Font.Size before publishing, with no caller-side scaling
                 // and no DPI mixed into the shaping result.
-                float scale = font.Size / entry.Metrics.UnitsPerEm;
-                Vector2 offset = (new Vector2(position.Bounds.X, position.Bounds.Y) + entry.Metrics.Offset) * scale;
+                float scale = font.Size / glyphMetrics.UnitsPerEm;
+                Vector2 offset = (new Vector2(position.Bounds.X, position.Bounds.Y) + glyphMetrics.Offset) * scale;
 
                 // Mixed vertical layout shapes upright characters vertically but
                 // leaves sideways characters horizontal for the layout rotation.
@@ -204,25 +205,25 @@ public static partial class TextShaper
                 {
                     // Fonts with vertical metrics place the origin above the glyph
                     // ink by the authored top side bearing.
-                    float verticalOriginY = entry.Metrics.Bounds.Max.Y + entry.Metrics.TopSideBearing;
-                    VerticalMetrics verticalMetrics = entry.Metrics.FontMetrics.VerticalMetrics;
+                    float verticalOriginY = glyphMetrics.Bounds.Max.Y + glyphMetrics.TopSideBearing;
+                    VerticalMetrics verticalMetrics = glyphMetrics.FontMetrics.VerticalMetrics;
                     if (verticalMetrics.Synthesized)
                     {
                         // HarfBuzz centers glyph extents within the synthesized
                         // ascender-to-descender advance when vertical tables are
                         // absent. Floor preserves its integer midpoint behavior.
                         float fontAdvance = verticalMetrics.Ascender - verticalMetrics.Descender;
-                        verticalOriginY = entry.Metrics.Bounds.Max.Y + MathF.Floor((fontAdvance - entry.Metrics.Height) * .5F);
+                        verticalOriginY = glyphMetrics.Bounds.Max.Y + MathF.Floor((fontAdvance - glyphMetrics.Height) * .5F);
                     }
 
                     // The vertical origin lies at half the horizontal advance and
                     // at the authored or synthesized Y origin. Subtracting it turns
                     // the horizontal glyph origin into the vertical shaping origin
                     // while preserving the public Y-up coordinate system.
-                    offset -= new Vector2(entry.Metrics.AdvanceWidth / 2, verticalOriginY) * scale;
+                    offset -= new Vector2(glyphMetrics.AdvanceWidth / 2, verticalOriginY) * scale;
                 }
 
-                destination[i] = new ShapedGlyph(entry.Metrics.GlyphId, shaping.StringIndex, shaping.GraphemeIndex, advanceWidth, advanceHeight, offset);
+                destination[i] = new ShapedGlyph(glyphMetrics.GlyphId, shaping.StringIndex, shaping.GraphemeIndex, advanceWidth, advanceHeight, offset);
             }
 
             // Public shaping has no placeholder text runs, so the paragraph loop's

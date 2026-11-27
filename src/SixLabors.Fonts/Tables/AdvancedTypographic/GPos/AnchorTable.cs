@@ -54,14 +54,25 @@ internal abstract class AnchorTable
     /// <returns>The anchor table.</returns>
     public static AnchorTable Load(BigEndianBinaryReader reader, long offset)
     {
+        // If the offset points outside GPOS, use the same fallback as for an
+        // unsupported anchor format.
+        if (offset > reader.BaseStream.Length - reader.StartOfStream - sizeof(ushort))
+        {
+            return EmptyAnchorTable.Instance;
+        }
+
         reader.Seek(offset, SeekOrigin.Begin);
         ushort anchorFormat = reader.ReadUInt16();
+        long remaining = reader.BaseStream.Length - reader.BaseStream.Position;
 
         return anchorFormat switch
         {
-            1 => AnchorFormat1.Load(reader),
-            2 => AnchorFormat2.Load(reader),
-            3 => AnchorFormat3.LoadFormat3(reader, offset),
+            1 when remaining >= 2 * sizeof(short) => AnchorFormat1.Load(reader),
+            2 when remaining >= 3 * sizeof(short) => AnchorFormat2.Load(reader),
+
+            // Device offsets are relative to the anchor, whose absolute
+            // position includes the start of the GPOS table in the font.
+            3 when remaining >= 4 * sizeof(short) => AnchorFormat3.LoadFormat3(reader, reader.StartOfStream + offset),
 
             // Harfbuzz (Anchor.hh) treats this as an empty table and does not throw..
             // NotoSans Regular can trigger this. See https://github.com/SixLabors/Fonts/issues/417
@@ -186,15 +197,13 @@ internal abstract class AnchorTable
     /// </summary>
     internal sealed class AnchorFormat3 : AnchorTable
     {
-        private const ushort VariationIndexFormat = 0x8000;
-
         /// <summary>
-        /// Packed VariationIndex for X: (outerIndex &lt;&lt; 16) | innerIndex. 0 = none.
+        /// One-based packed VariationIndex for X. Zero means no variation.
         /// </summary>
         private readonly uint xVariation;
 
         /// <summary>
-        /// Packed VariationIndex for Y: (outerIndex &lt;&lt; 16) | innerIndex. 0 = none.
+        /// One-based packed VariationIndex for Y. Zero means no variation.
         /// </summary>
         private readonly uint yVariation;
 
@@ -203,8 +212,8 @@ internal abstract class AnchorTable
         /// </summary>
         /// <param name="xCoordinate">The horizontal value, in design units.</param>
         /// <param name="yCoordinate">The vertical value, in design units.</param>
-        /// <param name="xVariation">The packed VariationIndex for X coordinate.</param>
-        /// <param name="yVariation">The packed VariationIndex for Y coordinate.</param>
+        /// <param name="xVariation">The one-based packed VariationIndex for X.</param>
+        /// <param name="yVariation">The one-based packed VariationIndex for Y.</param>
         public AnchorFormat3(short xCoordinate, short yCoordinate, uint xVariation, uint yVariation)
             : base(xCoordinate, yCoordinate)
         {
@@ -242,8 +251,10 @@ internal abstract class AnchorTable
             ushort xDeviceOffset = reader.ReadOffset16();
             ushort yDeviceOffset = reader.ReadOffset16();
 
-            uint xVariation = ResolveVariationIndex(reader, anchorBase, xDeviceOffset);
-            uint yVariation = ResolveVariationIndex(reader, anchorBase, yDeviceOffset);
+            long savedPosition = reader.BaseStream.Position;
+            uint xVariation = AdvancedTypographicUtils.ReadVariationIndex(reader, anchorBase, xDeviceOffset);
+            uint yVariation = AdvancedTypographicUtils.ReadVariationIndex(reader, anchorBase, yDeviceOffset);
+            reader.BaseStream.Position = savedPosition;
 
             return new AnchorFormat3(xCoordinate, yCoordinate, xVariation, yVariation);
         }
@@ -251,53 +262,11 @@ internal abstract class AnchorTable
         /// <inheritdoc/>
         public override AnchorXY GetAnchor(FontMetrics fontMetrics, ref GlyphShapingData data, ShapingBuffer buffer)
         {
-            short x = this.XCoordinate;
-            short y = this.YCoordinate;
-
-            if (this.xVariation != 0)
-            {
-                x += (short)MathF.Round(fontMetrics.GetGDefVariationDelta(this.xVariation));
-            }
-
-            if (this.yVariation != 0)
-            {
-                y += (short)MathF.Round(fontMetrics.GetGDefVariationDelta(this.yVariation));
-            }
-
-            return new(x, y);
-        }
-
-        /// <summary>
-        /// Reads a Device/VariationIndex table at the given offset and returns a packed VariationIndex
-        /// if it is a VariationIndex table (deltaFormat == 0x8000), or 0 otherwise.
-        /// </summary>
-        /// <param name="reader">The big endian binary reader.</param>
-        /// <param name="anchorBase">The absolute stream position of the anchor table.</param>
-        /// <param name="deviceOffset">The offset to the Device/VariationIndex table from the anchor table base.</param>
-        /// <returns>The packed VariationIndex, or 0 if not applicable.</returns>
-        private static uint ResolveVariationIndex(BigEndianBinaryReader reader, long anchorBase, ushort deviceOffset)
-        {
-            if (deviceOffset == 0)
-            {
-                return 0;
-            }
-
-            long savedPosition = reader.BaseStream.Position;
-            reader.BaseStream.Position = anchorBase + deviceOffset;
-
-            ushort first = reader.ReadUInt16();
-            ushort second = reader.ReadUInt16();
-            ushort format = reader.ReadUInt16();
-
-            reader.BaseStream.Position = savedPosition;
-
-            if (format == VariationIndexFormat)
-            {
-                return ((uint)first << 16) | second;
-            }
-
-            // TODO: Device table (per-ppem adjustments) — not yet implemented.
-            return 0;
+            // Keep both deltas fractional. The positioning lookup rounds
+            // the difference between the resulting anchors.
+            return new(
+                this.XCoordinate + fontMetrics.GetGDefVariationDelta(this.xVariation),
+                this.YCoordinate + fontMetrics.GetGDefVariationDelta(this.yVariation));
         }
     }
 

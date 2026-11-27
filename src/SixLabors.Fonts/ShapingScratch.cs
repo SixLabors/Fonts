@@ -8,10 +8,8 @@ using SixLabors.Fonts.Unicode;
 namespace SixLabors.Fonts;
 
 /// <summary>
-/// Reusable shaping pipeline state: the per-font-run workspace buffer, the accumulated
-/// result buffer, and their shared feature map. Buffer storage grows to the workload's
-/// high-water mark and is reused across calls, so steady-state shaping performs no
-/// per-call allocation for pipeline state.
+/// Reusable storage for source text, glyphs, and the resulting layout.
+/// Storage grows with the text and is reused across calls.
 /// </summary>
 /// <remarks>
 /// A scratch is exclusively owned by one shaping call at a time, enforced by
@@ -22,20 +20,15 @@ namespace SixLabors.Fonts;
 internal sealed class ShapingScratch
 {
     /// <summary>
-    /// The per-font-run workspace buffer glyphs are substituted in.
+    /// The buffer that holds all glyphs through substitution and positioning.
     /// </summary>
-    private ShapingBuffer? workspace;
+    private ShapingBuffer? buffer;
 
     /// <summary>
     /// The options the shaping pipeline is driven through, held for the lifetime of
     /// the pooled scratch so shaping a run never builds them.
     /// </summary>
     private TextOptions? shapingOptions;
-
-    /// <summary>
-    /// The accumulated result buffer glyphs are seeded and positioned in.
-    /// </summary>
-    private ShapingBuffer? result;
 
     /// <summary>
     /// The synthesized run covering the whole text when the options carry no
@@ -258,32 +251,22 @@ internal sealed class ShapingScratch
     }
 
     /// <summary>
-    /// Gets the reusable shaping buffers, reset for a new pass over the given options.
+    /// Gets the glyph buffer for a new shaping call.
     /// </summary>
-    /// <param name="options">The text options for the pass.</param>
-    /// <returns>The reusable buffers, sharing one feature map.</returns>
-    public (ShapingBuffer Workspace, ShapingBuffer Result) Prepare(TextOptions options)
+    /// <param name="options">The text options for the call.</param>
+    /// <returns>The reset glyph buffer.</returns>
+    public ShapingBuffer Prepare(TextOptions options)
     {
-        ShapingBuffer? workspace = this.workspace;
-        ShapingBuffer? result = this.result;
-        if (workspace is null || result is null)
+        if (this.buffer is null)
         {
-            workspace = new(options, ShapingBufferRole.Substitution);
-            result = new(options, ShapingBufferRole.Positioning);
-            this.workspace = workspace;
-            this.result = result;
+            this.buffer = new(options, ShapingBufferRole.Substitution);
         }
         else
         {
-            workspace.Reset(options);
-            result.Reset(options);
-
-            // The single-run fast path flips the workspace to the positioning role in
-            // place; a pooled scratch must hand out buffers in their home roles.
-            workspace.SetRole(ShapingBufferRole.Substitution);
-            result.SetRole(ShapingBufferRole.Positioning);
+            this.buffer.Reset(options);
+            this.buffer.SetRole(ShapingBufferRole.Substitution);
         }
 
-        return (workspace, result);
+        return this.buffer;
     }
 }

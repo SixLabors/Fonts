@@ -35,32 +35,33 @@ internal sealed class WoffTableHeader : TableHeader
     /// <returns>A <see cref="BigEndianBinaryReader"/> positioned at the start of the uncompressed table data.</returns>
     public override BigEndianBinaryReader CreateReader(Stream stream)
     {
-        // Stream is not compressed.
         if (this.Length == this.CompressedLength)
         {
             return base.CreateReader(stream);
         }
 
-        // Read all data from the compressed stream.
         stream.Seek(this.Offset, SeekOrigin.Begin);
-        using var compressedStream = new IO.ZlibInflateStream(stream);
-        byte[] uncompressedBytes = new byte[this.Length];
-        int totalBytesRead = 0;
-        int bytesLeftToRead = uncompressedBytes.Length;
-        while (totalBytesRead < this.Length)
-        {
-            int bytesRead = compressedStream.Read(uncompressedBytes, totalBytesRead, bytesLeftToRead);
-            if (bytesRead <= 0)
-            {
-                throw new InvalidFontFileException($"Could not read compressed data! Expected bytes: {this.Length}, bytes read: {totalBytesRead}");
-            }
+        return this.CreateCompressedReader(stream);
+    }
 
-            totalBytesRead += bytesRead;
-            bytesLeftToRead -= bytesRead;
+    /// <inheritdoc/>
+    public override BigEndianBinaryReader? CreateBoundedReader(Stream stream)
+    {
+        // WOFF stores the original bytes when the stored and original lengths match.
+        if (this.Length == this.CompressedLength)
+        {
+            return base.CreateBoundedReader(stream);
         }
 
-        var memoryStream = new MemoryStream(uncompressedBytes);
-        return new BigEndianBinaryReader(memoryStream, false);
+        if (this.CompressedLength > stream.Length - this.Offset)
+        {
+            return null;
+        }
+
+        // Limit zlib to the stored bytes. The returned reader owns the
+        // decompressed data, so the compressed view can close here.
+        using IO.BoundedReadStream tableStream = new(stream, this.Offset, this.CompressedLength);
+        return this.CreateCompressedReader(tableStream);
     }
 
     // WOFF TableDirectoryEntry
@@ -82,4 +83,31 @@ internal sealed class WoffTableHeader : TableHeader
             reader.ReadUInt32(),
             reader.ReadUInt32(),
             reader.ReadUInt32());
+
+    /// <summary>
+    /// Decompresses the table from a stream positioned at its compressed data.
+    /// </summary>
+    /// <param name="stream">The stream positioned at the start of the compressed table.</param>
+    /// <returns>A reader for the decompressed table.</returns>
+    private BigEndianBinaryReader CreateCompressedReader(Stream stream)
+    {
+        using IO.ZlibInflateStream compressedStream = new(stream);
+        byte[] uncompressedBytes = new byte[this.Length];
+        int totalBytesRead = 0;
+        int bytesLeftToRead = uncompressedBytes.Length;
+        while (totalBytesRead < this.Length)
+        {
+            int bytesRead = compressedStream.Read(uncompressedBytes, totalBytesRead, bytesLeftToRead);
+            if (bytesRead <= 0)
+            {
+                throw new InvalidFontFileException($"Could not read compressed data! Expected bytes: {this.Length}, bytes read: {totalBytesRead}");
+            }
+
+            totalBytesRead += bytesRead;
+            bytesLeftToRead -= bytesRead;
+        }
+
+        MemoryStream memoryStream = new(uncompressedBytes);
+        return new BigEndianBinaryReader(memoryStream, false);
+    }
 }

@@ -35,8 +35,8 @@ internal sealed class ClassSequenceRuleTable
     /// </summary>
     /// <param name="reader">The big endian binary reader.</param>
     /// <param name="offset">Offset from the beginning of the ClassSequenceRule table.</param>
-    /// <returns>The <see cref="ClassSequenceRuleTable"/>.</returns>
-    public static ClassSequenceRuleTable Load(BigEndianBinaryReader reader, long offset)
+    /// <returns>The class rule, or <see langword="null"/> if its input or lookup records are invalid.</returns>
+    public static ClassSequenceRuleTable? Load(BigEndianBinaryReader reader, long offset)
     {
         // ClassSequenceRule
         // +----------------------+----------------------------------+------------------------------------------+
@@ -52,9 +52,24 @@ internal sealed class ClassSequenceRuleTable
         // +----------------------+----------------------------------+------------------------------------------+
         // | SequenceLookupRecord | seqLookupRecords[seqLookupCount] | Array of SequenceLookupRecords           |
         // +----------------------+----------------------------------+------------------------------------------+
+        long tableEnd = reader.BaseStream.Length;
+        if (offset > tableEnd - reader.StartOfStream - (2 * sizeof(ushort)))
+        {
+            return null;
+        }
+
         reader.Seek(offset, SeekOrigin.Begin);
         ushort glyphCount = reader.ReadUInt16();
         ushort seqLookupCount = reader.ReadUInt16();
+
+        // The coverage glyph is the first input. Reject a rule without it.
+        // Each lookup record contains a sequence index and a lookup index.
+        int ruleBytes = ((glyphCount - 1) + (seqLookupCount * 2)) * sizeof(ushort);
+        if (glyphCount == 0 || ruleBytes > tableEnd - reader.BaseStream.Position)
+        {
+            return null;
+        }
+
         ushort[] inputSequence = reader.ReadUInt16Array(glyphCount - 1);
         SequenceLookupRecord[] seqLookupRecords = SequenceLookupRecord.LoadArray(reader, seqLookupCount);
 

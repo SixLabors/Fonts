@@ -195,9 +195,9 @@ internal sealed class HangulShaper : DefaultShaper
     }
 
     /// <inheritdoc/>
-    protected override void PlanPostprocessingFeatures(ShapingBuffer buffer, int index, int count)
+    protected override void PlanPostprocessingFeatures(ShapingBuffer buffer, int index, int count, bool isVertical)
     {
-        base.PlanPostprocessingFeatures(buffer, index, count);
+        base.PlanPostprocessingFeatures(buffer, index, count, isVertical);
 
         // Certain fonts (Noto Sans CJK, Source Han Sans, etc) apply all of the
         // jamo lookups through contextual alternates, which is not desirable.
@@ -211,8 +211,6 @@ internal sealed class HangulShaper : DefaultShaper
     /// <inheritdoc/>
     protected override void AssignFeatures(ShapingBuffer buffer, int index, int count)
     {
-        int entryCount = buffer.Count;
-
         // Apply the state machine to map glyphs to features.
         if (buffer.Role == ShapingBufferRole.Substitution)
         {
@@ -220,16 +218,12 @@ internal sealed class HangulShaper : DefaultShaper
             // fixed scratch span outside the state-machine loop for every syllable.
             Span<ushort> compositionBuffer = stackalloc ushort[3];
 
-            // GSub
+            // The helpers take buffer indices. Start at this span's first
+            // glyph so composition cannot change an earlier font span.
             int state = 0;
-            for (int i = 0; i < count; i++)
+            for (int i = index; i < buffer.SpanEnd; i++)
             {
-                if (i + index >= buffer.Count)
-                {
-                    break;
-                }
-
-                ref GlyphShapingData data = ref buffer[i + index];
+                ref GlyphShapingData data = ref buffer[i];
                 CodePoint codePoint = data.CodePoint;
                 int type = GetSyllableType(codePoint);
                 byte[] actionsWithState = StateTable[state, type];
@@ -250,7 +244,15 @@ internal sealed class HangulShaper : DefaultShaper
 
                     case Compose:
 
-                        // Found a decomposed syllable. Try to compose if supported by the font.
+                        // When L and V are followed by T, try the complete syllable.
+                        // A font can cover LVT even when it lacks LV.
+                        if (type == V && i + 1 < buffer.SpanEnd && GetSyllableType(buffer[i + 1].CodePoint) == T)
+                        {
+                            i++;
+                            type = T;
+                            state = StateTable[state, T][1];
+                        }
+
                         i = this.ComposeGlyph(buffer, i, type, compositionBuffer);
                         break;
 
@@ -279,14 +281,9 @@ internal sealed class HangulShaper : DefaultShaper
             uint vjmoMask = this.Features.GetMask(VjmoTag);
             uint tjmoMask = this.Features.GetMask(TjmoTag);
 
-            for (int i = 0; i < count; i++)
+            for (int i = index; i < index + count; i++)
             {
-                if (i + index >= buffer.Count)
-                {
-                    break;
-                }
-
-                ref GlyphShapingData data = ref buffer[i + index];
+                ref GlyphShapingData data = ref buffer[i];
                 CodePoint codePoint = data.CodePoint;
                 switch (GetSyllableType(codePoint))
                 {
@@ -316,13 +313,12 @@ internal sealed class HangulShaper : DefaultShaper
         // and decomposition so the check sees the segment's final code points:
         // composed syllables keep the feature while the jamo lookups some fonts
         // hide behind it can never fire on the jamo themselves.
-        count += buffer.Count - entryCount;
-        int end = index + count;
+        int end = buffer.SpanEnd;
 
         // The contextual-alternates mask is likewise invariant while this run is
         // scanned for decomposed Jamo.
         uint caltMask = this.Features.GetMask(CaltTag);
-        for (int i = index; i < end && i < buffer.Count; i++)
+        for (int i = index; i < end; i++)
         {
             int type = GetSyllableType(buffer[i].CodePoint);
             if (type is L or V or T)
@@ -433,7 +429,7 @@ internal sealed class HangulShaper : DefaultShaper
     /// <returns>The updated index after composition.</returns>
     private int ComposeGlyph(ShapingBuffer buffer, int index, int type, Span<ushort> compositionBuffer)
     {
-        if (index == 0)
+        if (index == buffer.SpanStart)
         {
             return index;
         }
@@ -514,9 +510,8 @@ internal sealed class HangulShaper : DefaultShaper
 
         if (prevType == LV)
         {
-            // Sequence was originally <L,V>, which got combined earlier.
-            // Either the T was non-combining, or the LVT glyph wasn't supported.
-            // Decompose the glyph again and apply OT features.
+            // The input contained LV, T. The two cannot form a supported
+            // LVT glyph. Decompose LV so its letters can use jamo features.
             this.DecomposeGlyph(buffer, ref buffer[index - 1], index - 1, compositionBuffer);
             return index + 1;
         }
@@ -532,7 +527,7 @@ internal sealed class HangulShaper : DefaultShaper
     /// <param name="index">The index of the tone mark in the buffer.</param>
     private void ReOrderToneMark(ShapingBuffer buffer, ref GlyphShapingData data, int index)
     {
-        if (index == 0)
+        if (index == buffer.SpanStart)
         {
             return;
         }
@@ -554,7 +549,7 @@ internal sealed class HangulShaper : DefaultShaper
 
         ref GlyphShapingData prev = ref buffer[index - 1];
         int len = GetSyllableLength(prev.CodePoint);
-        int syllableStart = index - len;
+        int syllableStart = Math.Max(buffer.SpanStart, index - len);
 
         buffer.CombineInputStarts(syllableStart, index + 1);
         buffer.MoveGlyph(index, syllableStart);

@@ -58,7 +58,7 @@ internal readonly struct KerningCoverage
     public bool Variation { get; }
 
     /// <summary>
-    /// Gets the format of the subtable. Only formats 0 and 2 have been defined.
+    /// Gets the format of the subtable.
     /// </summary>
     public byte Format { get; }
 

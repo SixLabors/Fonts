@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Aat;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
@@ -88,13 +89,22 @@ internal sealed class CompactFontTables : IFontTables
     public GPosTable? GPos { get; set; }
 
     /// <inheritdoc/>
+    public MortTable? Mort { get; set; }
+
+    /// <inheritdoc/>
+    public MorxTable? Morx { get; set; }
+
+    /// <inheritdoc/>
+    public KerxTable? Kerx { get; set; }
+
+    /// <inheritdoc/>
     public ColrTable? Colr { get; set; }
 
     /// <inheritdoc/>
     public CpalTable? Cpal { get; set; }
 
     /// <inheritdoc/>
-    public KerningTable? Kern { get; set; }
+    public KernTable? Kern { get; set; }
 
     /// <inheritdoc/>
     public VerticalHeadTable? Vhea { get; set; }

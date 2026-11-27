@@ -13,7 +13,7 @@ internal readonly struct AnchorXY
     /// </summary>
     /// <param name="x">The horizontal value, in design units.</param>
     /// <param name="y">The vertical value, in design units.</param>
-    public AnchorXY(short x, short y)
+    public AnchorXY(float x, float y)
     {
         this.XCoordinate = x;
         this.YCoordinate = y;
@@ -22,10 +22,10 @@ internal readonly struct AnchorXY
     /// <summary>
     /// Gets the horizontal value, in design units.
     /// </summary>
-    public short XCoordinate { get; }
+    public float XCoordinate { get; }
 
     /// <summary>
     /// Gets the vertical value, in design units.
     /// </summary>
-    public short YCoordinate { get; }
+    public float YCoordinate { get; }
 }
